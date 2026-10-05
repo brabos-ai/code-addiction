@@ -17,8 +17,8 @@
 - command: /add-build
 - command: /add-plan
 - command: /add-wiki
-- script: init.sh
-- script: status.sh
+- script: init.cjs
+- script: status.cjs
 -->
 
 > **REF:** `AGENTS.md` for architecture patterns
@@ -96,7 +96,7 @@ file is never read a second time.
 **READ-ONLY GUARANTEE:**
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
-- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add-build)
+- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO git writes — branch is created later by /add-build)
 <!-- slot:board.ticket-board-write fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-board-write -->
 <!-- /feature:board:ticket-board-write -->
@@ -126,14 +126,14 @@ often as it is a one-line change, and the word list cannot tell those apart.
 
 ## STEP add-new.allocate: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
-**Execute init + allocate ID (`status.sh next-id F`):**
+**Execute init + allocate ID (`status.cjs next-id F`):**
 
 ```bash
-bash .codeadd/scripts/init.sh
-bash .codeadd/scripts/status.sh next-id F
+node .codeadd/scripts/init.cjs
+node .codeadd/scripts/status.cjs next-id F
 ```
 
-**If `init.sh` printed a `LEGACY_CONTEXT:` line**, tell the user which files it lists and that
+**If `init.cjs` printed a `LEGACY_CONTEXT:` line**, tell the user which files it lists and that
 `/add-wiki update` folds them into AGENTS.md — while one of them is left, Claude Code ignores
 AGENTS.md. This is a notice: continue the STEP whatever the answer.
 

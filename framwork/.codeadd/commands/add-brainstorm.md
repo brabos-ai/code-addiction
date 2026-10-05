@@ -11,7 +11,7 @@
 - command: /add-new
 - mention: /add-plan
 - mention: /add-done
-- script: status.sh
+- script: status.cjs
 -->
 
 > **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
@@ -30,7 +30,7 @@ end on one approval that decides how the delivery continues.
 
 **STEPS IN ORDER:**
 ```
-STEP add-brainstorm.load-context:   Load context (status.sh)   → SILENT, FIRST
+STEP add-brainstorm.load-context:   Load context (status.cjs)   → SILENT, FIRST
 STEP add-brainstorm.classify: Classify the request       → spike | bounded | architectural — STATED, NO STOP
 STEP add-brainstorm.explore:   Interactive Exploration    → objective drafted first, then one question at a time
 STEP add-brainstorm.write-doc:   Write the brainstorm doc   → ARCHITECTURAL PATH ONLY — always, before the approval
@@ -93,7 +93,7 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-brainstorm.load-conte
 ## STEP add-brainstorm.load-context: Load Context & Recent Activity (AUTOMATIC - SILENT)
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 Parse output: BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGELOGS.
@@ -381,7 +381,7 @@ IF ON THE architectural PATH AND STEP add-brainstorm.summary-approval IS APPROVE
 
 **Path:** `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` (timestamp prefix for chronological ordering — local time, no separators inside `HHMMSS` because Windows forbids `:` in filenames, so lexicographic sort equals chronological sort even for two brainstorms written the same day)
 
-**ID allocation:** Use fixed ID `BRN-<slug>` derived in kebab-case from topic. DO NOT call `status.sh next-id`.
+**ID allocation:** Use fixed ID `BRN-<slug>` derived in kebab-case from topic. DO NOT call `status.cjs next-id`.
 
 **Schema:** Load the `brainstorm` schema from `{{skill:add--doc-schemas/SKILL.md}}` and write per spec —
 it owns the sections, the `Decision | Serves | Rationale` table and the `Used by` column. DO NOT include
@@ -545,7 +545,7 @@ file as its argument, from its first step, as `add--delivery-mode` describes.
 ## Rules
 
 **ALWAYS:**
-- Run status.sh and load context before answering
+- Run status.cjs and load context before answering
 - State the classified path in one line and continue in the same turn — never ask the user to confirm it
 - Draft the objective and have the user correct it before any other question
 - Ask exactly one question per turn; wait for the answer

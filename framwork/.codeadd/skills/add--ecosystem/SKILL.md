@@ -85,25 +85,25 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: /add-qa-setup
 - mention: /add-review
 - mention: /add-wiki
-- mention: build-setup.sh
-- mention: build-ledger.sh
-- mention: converge-gates.sh
-- mention: review-package.sh
-- mention: task-brief.sh
-- mention: done.sh
-- mention: get-branch-metadata.sh
-- mention: next-id.sh
-- mention: delivered.sh
-- mention: qa-evidence.sh
-- mention: status.sh
-- mention: hotfix-gates.sh
+- mention: build-setup.cjs
+- mention: build-ledger.cjs
+- mention: converge-gates.cjs
+- mention: review-package.cjs
+- mention: task-brief.cjs
+- mention: done.cjs
+- mention: get-branch-metadata.cjs
+- mention: next-id.cjs
+- mention: delivered.cjs
+- mention: qa-evidence.cjs
+- mention: status.cjs
+- mention: hotfix-gates.cjs
 - mention: backlog-cli.cjs
 - mention: backlog-id.cjs
 - mention: backlog-git.cjs
 - mention: backlog-commit.cjs
-- mention: migrate-context-files.sh
-- mention: init.sh
-- mention: qa-preflight.sh
+- mention: migrate-context-files.cjs
+- mention: init.cjs
+- mention: qa-preflight.cjs
 -->
 
 ## When NOT to Use
@@ -124,9 +124,9 @@ for accepted manual instructions; the route itself remains unchanged.
 | add | Intelligent gateway - answers questions, guides flows, suggests next command | add--dev-environment-setup, add--ecosystem |
 | add-audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add--investigation on ambiguous findings | add--doc-schemas, add--ecosystem, add--final-report, add--health-check, add--investigation, add--subagent-driven-development |
 | add-brainstorm | Explore ideas (READ-ONLY) | add--backlog (board), add--delivery-mode, add--doc-schemas, add--final-report, add--knowledge-discovery |
-| add-build | Development Execution Specialist. STEP 2 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). Consumes the review's `## Fix Routing` table and writes the resolution annex back. Generates unit/integration tests via @test-agent (tdd-pipeline) and E2E specs via @e2e-agent (qa-pipeline). `## Final Review` reviews each delivery unit whole (`@reviewer-agent` `MODE: feature`, conditional OWASP, one fix wave) and writes the `Final review:` ledger line `/add-done` accepts; the build then enters its loop end itself — the Checkpoint Sequence on an epic, then the next subfeature or the publish question | add--backend-development, add--backlog (board), add--code-review, add--commit, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--final-report, add--frontend-development, add--id-convention, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--tdd (tdd-pipeline), add--ux-design |
+| add-build | Development Execution Specialist. STEP 2 create-or-checkout of the feature branch via build-setup.cjs (`F[NNNN]` + `--worktree` args). Consumes the review's `## Fix Routing` table and writes the resolution annex back. Generates unit/integration tests via @test-agent (tdd-pipeline) and E2E specs via @e2e-agent (qa-pipeline). `## Final Review` reviews each delivery unit whole (`@reviewer-agent` `MODE: feature`, conditional OWASP, one fix wave) and writes the `Final review:` ledger line `/add-done` accepts; the build then enters its loop end itself — the Checkpoint Sequence on an epic, then the next subfeature or the publish question | add--backend-development, add--backlog (board), add--code-review, add--commit, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--final-report, add--frontend-development, add--id-convention, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--tdd (tdd-pipeline), add--ux-design |
 | add-diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Persists every accepted diagnosis, including no-action. Accepted continuation instructions preserve the hotfix `@docs/diagnose/<file>.md` interface. READ-ONLY | add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development |
-| add-done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Hotfix close-out requires a passed current `about.md` Review receipt via `hotfix-gates.sh`. Final evidence preserves open findings; it is not a pass certificate | add--backlog (board), add--doc-schemas, add--ecosystem, add--final-report, add--id-convention, add--wiki-maintenance |
+| add-done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Hotfix close-out requires a passed current `about.md` Review receipt via `hotfix-gates.cjs`. Final evidence preserves open findings; it is not a pass certificate | add--backlog (board), add--doc-schemas, add--ecosystem, add--final-report, add--id-convention, add--wiki-maintenance |
 | add-hotfix | Urgent fix with global ID ([NNNN]H). Optional `@docs/diagnose/*.md` reuses an accepted diagnosis and skips duplicated investigation. With tdd-pipeline, pins the confirmed root cause with a coordinator-verified RED test before any edit. After the fix, dispatches @reviewer-agent (conditional OWASP) and one @fix-agent wave, then writes the Review receipt in about.md. Creates isolated doc in docs/features/[NNNN]H-*, recording the user-confirmed cause as typed `caused_by` relations in its about.md | add--backlog (board), add--doc-schemas, add--ecosystem, add--final-report, add--id-convention, add--investigation, add--knowledge-discovery, add--subagent-driven-development, add--tdd (tdd-pipeline), add--ux-design |
 | add-new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add-build) | add--backlog (board), add--delivery-mode, add--doc-schemas, add--feature-specification, add--final-report, add--id-convention, add--knowledge-discovery, add--plan-review, add--review-discipline, add--subagent-driven-development |
 | add-plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP add-plan.ux-design UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP qa-pipeline.qa-spec) when qa-pipeline feature enabled. STEP add-plan.review dispatches `@plan-reviewer-agent` before completion. **STEP add-plan.cross-sf-review (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add--backend-development, add--backlog (board), add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--feature-discovery, add--final-report, add--frontend-development, add--id-convention, add--knowledge-discovery, add--plan-review, add--qa-spec (qa-pipeline), add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--test-specification (tdd-pipeline), add--ux-design |
@@ -150,7 +150,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
 | add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, optional manual continuation eligibility, same-session automatic handoff, and its publish-question terminus |
 | add--delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass |
-| add--dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code |
+| add--dev-environment-setup | Detect OS, diagnose missing tools, install Node/git/gh and verify the Node floor |
 | add--doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (incl. the `setup-receipt` schema) — single source of truth for all generated docs |
 | add--ecosystem | Consolidated ecosystem view (source of truth) |
 | add--feature-readback | Cold-read comprehension readback of a closed doc set — says back what it understood would be built and marks every gap the reader filled in; no questions, no verdict. Runs after the pre-delivery review's fixes land |
@@ -161,7 +161,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic |
 | add--gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` |
 | add--health-check | Health check of environment and project dependencies |
-| add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.sh, get-branch-metadata.sh, build-setup.sh, done.sh) |
+| add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
 | add--optimizing-git-workflow | Git patterns, commits, branches, aliases |
@@ -264,7 +264,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--cross-sf-consistency | add-plan (STEP add-plan.cross-sf-review consumes its findings), add-plan (STEP add-plan.consistency, FULL pass) and add-build (Loop End, DELTA pass) via consistency-agent |
 | add--dev-environment-setup | add (environment triage), add-qa-setup (runner install) |
 | add--qa | add-qa-setup, add-review (QA judgement), add-plan; @qa-agent declares it as a skill |
-| add--id-convention | add-plan, add-build, add-hotfix, add-done, add-new, add-pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add--doc-schemas' `references/new-feature.md`; add-build's build-setup.sh enforces the format at branch creation) |
+| add--id-convention | add-plan, add-build, add-hotfix, add-done, add-new, add-pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add--doc-schemas' `references/new-feature.md`; add-build's build-setup.cjs enforces the format at branch creation) |
 | add--tasks-checklist | add-plan, add-build, add-review (tasks.md schema and tick rules) |
 | add--tdd | add-plan, add-build, add-review, add-hotfix (tdd-pipeline RED gate) |
 | add--test-specification | add-plan (STEP tdd-pipeline.test-spec) |
@@ -279,23 +279,23 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--feature-specification (about.md) | add-review (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add--ux-design (design.md) | add-review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add-review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
-| status.sh | add, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-ux |
-| init.sh | add-new — seeds the feature's documents on first use |
-| qa-preflight.sh | add-qa-setup, add-review — checks the QA runner is installed and configured before any evidence is gathered |
-| hotfix-gates.sh | add-diagnose (diagnosis-baseline), add-hotfix (check, snapshot, fingerprint), add-done (review-validate) |
-| build-setup.sh | add-build (STEP 2 branch creation) — enforces the `F[NNNN]` branch format |
-| done.sh | add-build, add-done |
-| delivered.sh | add-done, add-hotfix — delivery-index queries for the iteration log |
-| qa-evidence.sh | add-done, add-qa-setup, add-review — QA evidence gathering and baseline snapshotting |
-| converge-gates.sh | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
-| build-ledger.sh | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
-| task-brief.sh | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
+| status.cjs | add, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-ux |
+| init.cjs | add-new — seeds the feature's documents on first use |
+| qa-preflight.cjs | add-qa-setup, add-review — checks the QA runner is installed and configured before any evidence is gathered |
+| hotfix-gates.cjs | add-diagnose (diagnosis-baseline), add-hotfix (check, snapshot, fingerprint), add-done (review-validate) |
+| build-setup.cjs | add-build (STEP 2 branch creation) — enforces the `F[NNNN]` branch format |
+| done.cjs | add-build, add-done |
+| delivered.cjs | add-done, add-hotfix — delivery-index queries for the iteration log |
+| qa-evidence.cjs | add-done, add-qa-setup, add-review — QA evidence gathering and baseline snapshotting |
+| converge-gates.cjs | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
+| build-ledger.cjs | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
+| task-brief.cjs | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
 | backlog-cli.cjs | add--backlog — the native local entry: the positional grammar, `--record-file` records and native allocation (through `backlog-id.cjs` at the operation root), calling the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app. Reads print a seven-field summary (`--full`/`--ids` opt-in) and `get <id>` answers the exact detail read |
-| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs plus the raw backlog text, anchored exactly the way the bash calculators grep; 9999 overflows refuse rather than wrap |
+| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs plus the raw backlog text, anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
 | backlog-commit.cjs | add--backlog — the git route for a backlog write: the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise, with durable recovery refs on every failed publication |
 | backlog-git.cjs | add--backlog — the git primitives the publication entry composes: base discovery, the path-scoped commit, fetch/rebase/push with verified aborts, and the recovery refs |
-| migrate-context-files.sh | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
-| review-package.sh | add-build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
+| migrate-context-files.cjs | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
+| review-package.cjs | add-build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
 
@@ -312,7 +312,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | Triage | diagnose → (hotfix @report OR new OR no-action) | Vague symptom, unsure if bug/feature |
 | Analysis | wiki / audit | Check project health |
 
-> **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add-new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** step via `build-setup.sh`.
+> **Branch creation:** the documental steps (brainstorm → new → plan) make no git writes — `/add-new` only records the branch name in `about.md` (`branch:`). The branch is created at the **build** step via `build-setup.cjs`.
 
 ## Command Next-Steps Routing
 

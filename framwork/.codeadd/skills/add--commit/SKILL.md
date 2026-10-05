@@ -9,7 +9,7 @@ description: "Knowledge reference for smart mid-workflow commits: adaptive Conve
 - command: /add-build (conditional)
 - mention: /add-done
 - mention: /add-pull-request
-- script: converge-gates.sh
+- script: converge-gates.cjs
 -->
 
 ## When to Use
@@ -90,7 +90,7 @@ the proof.
 
 The commit carries **the six gate lines** — `GATE_REVIEW`, `GATE_QA_BASELINE`,
 `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `GATES_OK` — **copied verbatim** from
-`converge-gates.sh`'s output, as **body lines** below the Conventional Commits
+`converge-gates.cjs`'s output, as **body lines** below the Conventional Commits
 body. The script emits more keys than these (`REVIEW_PATH`, `BASELINE`,
 `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `QA_FEATURE_STATE`); only the six above
 belong in the message.

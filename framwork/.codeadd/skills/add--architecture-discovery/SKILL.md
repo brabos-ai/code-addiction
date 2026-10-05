@@ -38,11 +38,24 @@ Auto-loaded by: `/add-plan`, `/add-build`.
 
 ## Phase 0 — Automated Discovery
 
-Run: `bash .codeadd/scripts/architecture-discover.sh` → `.claude/temp/architecture-discovery.md`
+**There is no discovery script.** The old `architecture-discover.sh` route was removed when this
+skill's exploration was inlined as native tools (see `/add-wiki` STEP add-wiki.explore-project, the
+owning command that dispatches the analyzers below). Explore the project with native tools before
+any manual search — this skill's own App Classification, Architecture Contract and Specialist
+Registry are the discovery procedure:
 
-Collects: {"includes":["package.json","turbo.json","tsconfig","dir structure depth 3","stack detection","patterns (CQRS,Repository,DI)","controllers,services,repositories","frontend (UI,state,forms,stores,hooks)","workers,cron,events,webhooks","integrations","statistics"]}
+```bash
+# Monorepo tooling and candidate app dirs
+ls turbo.json pnpm-workspace.yaml nx.json lerna.json 2>/dev/null
+ls apps/ packages/ libs/ 2>/dev/null
+# Root manifests
+cat package.json
+```
 
-Read the discovery document COMPLETE before any manual searches — primary source (90% of work).
+Also check non-node stacks: `requirements.txt`, `go.mod`, `Cargo.toml`, `composer.json`.
+
+Collect the same signals inline — no temp file and no external script. Read the manifests and
+directory structure COMPLETE before any manual searches — primary source (90% of work).
 
 ## Phase 1 — Architecture Contract
 
@@ -229,7 +242,8 @@ AGENTS.md no longer carries a hand-written `### Implementation Patterns` block �
 
 ## Cleanup
 
-`rm .claude/temp/architecture-discovery.md` after execution.
+There is no discovery temp file to remove — exploration is inline and the analyzers write only
+their wiki pages.
 
 Report discoveries + suggest `/add-wiki` if `.codeadd/wiki/` doesn't exist.
 

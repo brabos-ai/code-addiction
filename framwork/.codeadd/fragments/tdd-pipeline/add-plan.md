@@ -26,7 +26,7 @@ READ: {{skill:add--test-specification/SKILL.md}} — follow ALL rules.
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
 Execute BEFORE any other action:
 
-1. Run: bash .codeadd/scripts/status.sh
+1. Run: node .codeadd/scripts/status.cjs
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
    - docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)

@@ -35,7 +35,7 @@
 - command: /add-done
 - command: /add-review
 - command: /add-wiki
-- script: status.sh
+- script: status.cjs
 -->
 
 > **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
@@ -115,7 +115,7 @@ STEP add-plan.complete: Completion               -> Inform user
 
 ## STEP add-plan.context: Run Context Mapper (FIRST COMMAND)
 
-Execute: `bash .codeadd/scripts/status.sh`
+Execute: `node .codeadd/scripts/status.cjs`
 
 Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN), DESIGN_SYSTEM, FRONTEND (component structure), ALL_FEATURES, RECENT_CHANGELOGS (last 5), HAS_EPIC, EPIC_CURRENT_SF, EPIC_PROGRESS.
 
@@ -135,7 +135,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 - **Agent:** @discovery-agent
 - **Capability:** read-only
 - **Skill:** `add--feature-discovery` Phase 1.5
-- **Input:** about.md + RECENT_CHANGELOGS (from status.sh)
+- **Input:** about.md + RECENT_CHANGELOGS (from status.cjs)
 - **Returns:** the complete `past-features.md` content, in its report
 
 ⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
@@ -160,7 +160,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 
 **Goal:** Use knowledge from recent deliveries to inform planning, avoiding reinventing the wheel.
 
-**Consult Knowledge Base:** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP add-plan.recent status.sh (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP add-plan.load-docs's file-loading matrix and STEP add-plan.subagents's subagent bootstrap block. **GRAPH question:** what has already been delivered in the area this plan touches, and what do those deliveries connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: each hit's `path` and typed relations go into STEP add-plan.load-docs's matrix as documents to read, and the whole set goes into STEP add-plan.subagents's bootstrap block as `${RELATED_WORK}`. **It travels whether or not a wiki exists** — the GRAPH step is standalone and reads no wiki page, so a `WIKI:absent` run still carries it. A plan that proposes work already delivered nearby is the failure this closes.
+**Consult Knowledge Base:** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure using the WIKI fields already parsed from STEP add-plan.recent status.cjs (`WIKI:present`, `WIKI_STALE_COUNT`). SELECT the minimal page set (hub + 1-3 pages) for the feature's domain(s), and freshness-check each. IF `WIKI:present` is false → note "knowledge base unavailable — /add-wiki generates it" and proceed with code-first discovery. Carry the selected page paths + one-line reasons + freshness verdicts forward into STEP add-plan.load-docs's file-loading matrix and STEP add-plan.subagents's subagent bootstrap block. **GRAPH question:** what has already been delivered in the area this plan touches, and what do those deliveries connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK`, from the skill's GRAPH step, travels the same two routes**: each hit's `path` and typed relations go into STEP add-plan.load-docs's matrix as documents to read, and the whole set goes into STEP add-plan.subagents's bootstrap block as `${RELATED_WORK}`. **It travels whether or not a wiki exists** — the GRAPH step is standalone and reads no wiki page, so a `WIKI:absent` run still carries it. A plan that proposes work already delivered nearby is the failure this closes.
 
 ```
 IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
@@ -173,9 +173,9 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 ## STEP add-plan.parse: Parse Key Variables (GATE: feature_identified)
 
-Extract from status.sh: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
+Extract from status.cjs: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or `designed`), `HAS_DESIGN`, `HAS_FOUNDATIONS`.
 
-**Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.sh (branch) > `feature_identified` ask-gate (list features, WAIT — see GATES table).
+**Feature targeting (detection order):** explicit `F[NNNN]` argument > `FEATURE_ID` from status.cjs (branch) > `feature_identified` ask-gate (list features, WAIT — see GATES table).
 
 **IF feature identified:** Display metadata and proceed to STEP add-plan.load-docs.
 **IF feature_identified gate fails:** Show feature list and WAIT for user choice. Ref: GATES table.
@@ -305,7 +305,7 @@ BACKEND_SELECTED  = true|false
 
 ⛔ NO human `[STOP]` anywhere in STEP add-plan.ux-design — every accept/reject decision here belongs to the coordinator.
 
-**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `status.sh`'s `SF_DIR_GLOB` resolves).
+**SF_DIR:** `SF_DIR = ${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` (single match; the same glob `status.cjs`'s `SF_DIR_GLOB` resolves).
 
 **Scope dir:** `SCOPE_DIR = ${SF_DIR}` when HAS_EPIC=true, else `${FEATURE_DIR}` (the same rule `/add-review`'s QA scope resolution uses). All STEP add-plan.ux-design temps AND the final `design.md` live in `${SCOPE_DIR}`. `${SF_SUFFIX}` = ` (subfeature ${EPIC_CURRENT_SF})` when HAS_EPIC=true, empty otherwise.
 
@@ -397,7 +397,7 @@ ${WIKI_PAGES}
 ${RELATED_WORK}
 
 ## MANDATORY: Load Context (FIRST STEP)
-1. Run: bash .codeadd/scripts/status.sh
+1. Run: node .codeadd/scripts/status.cjs
 2. Read ALL files listed in TASK_DOCUMENTS above
 3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
 ```
@@ -935,7 +935,7 @@ that path end to end.
 | Error | Action |
 |-------|--------|
 | about.md or discovery.md missing | STOP — cannot plan without RFs/RNs. Inform user. |
-| status.sh fails | STOP — show error. Check .codeadd setup. |
+| status.cjs fails | STOP — show error. Check .codeadd setup. |
 | Subagent output not written | Re-dispatch once. If still fails, plan manually. |
 | >5 features in Epic | STOP — split into multiple Epics. Inform user. |
 | Coverage < 100% | STOP — resolve gaps in tasks.md. Re-validate. |

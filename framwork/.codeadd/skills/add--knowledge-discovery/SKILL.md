@@ -9,8 +9,8 @@ description: Use at the context/discovery step of add-plan, add-hotfix, add-new,
 - skill: add--wiki-maintenance
 - command: /add-wiki
 - mention: /add-done
-- script: delivered.sh
-- script: status.sh
+- script: delivered.cjs
+- script: status.cjs
 -->
 
 ## Overview
@@ -19,7 +19,7 @@ Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/
 
 ## When to Use
 
-- `add-plan` after status.sh, alongside recent-context load
+- `add-plan` after status.cjs, alongside recent-context load
 - `add-hotfix` at "Consult Knowledge Base" (former "Check Project Patterns")
 - `add-new` at Deep Discovery, beside the Codebase Discovery agent
 - `add-diagnose` at Load Context
@@ -38,10 +38,10 @@ Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/
 
 ### 1. INDEX
 
-Ask the cheap question first: **was this built before, and is it still there?** `delivered.sh` answers it from `docs/delivered.jsonl` — one file, one grep — while the wiki costs several pages and answers a different question entirely.
+Ask the cheap question first: **was this built before, and is it still there?** `delivered.cjs` answers it from `docs/delivered.jsonl` — one file, one grep — while the wiki costs several pages and answers a different question entirely.
 
 ```bash
-bash .codeadd/scripts/delivered.sh read "<terms from the task>"
+node .codeadd/scripts/delivered.cjs read "<terms from the task>"
 ```
 
 Add `--no-verify` when the calling command forbids reading source at that point. Results arrive **already ordered** `live` → `changed` → `superseded` → `gone`, with the latest line per entry applied.
@@ -245,12 +245,12 @@ IF THE GRAPH IS UNREACHABLE:
 
 ### 3. PRESENCE
 
-Read the WIKI fields from `status.sh`, which the command already ran for context: `WIKI:present`/`WIKI:absent`, `WIKI_COMMIT`, `WIKI_STALE_COUNT`, `WIKI_HINT`.
+Read the WIKI fields from `status.cjs`, which the command already ran for context: `WIKI:present`/`WIKI:absent`, `WIKI_COMMIT`, `WIKI_STALE_COUNT`, `WIKI_HINT`.
 
 - `WIKI:absent` → note ONCE: "knowledge base unavailable — /add-wiki generates it", then proceed with code-first discovery (grep/glob/read). Do not repeat the note within the same run.
 - `WIKI:present` → continue to ENTRY. `WIKI_STALE_COUNT` (if >0) primes suspicion for STEP 6 (FRESHNESS), it does not block anything here.
 
-**Exception — `add-new`:** it never runs the full context mapper (only `status.sh next-id`, which emits no WIKI fields). Check presence directly:
+**Exception — `add-new`:** it never runs the full context mapper (only `status.cjs next-id`, which emits no WIKI fields). Check presence directly:
 ```bash
 test -f .codeadd/wiki/index.md
 ```
@@ -284,7 +284,7 @@ git diff --name-only <page.commit>..HEAD -- <page.sources>
 - Empty → trust the page.
 - Non-empty → the page is a MAP, not truth: verify load-bearing claims against current code before relying on them.
 
-`status.sh` `WIKI_STALE_COUNT` primes suspicion (repo-wide signal) but this per-page check is authoritative — a nonzero repo count doesn't mean every selected page is stale, and a zero count doesn't skip this check.
+`status.cjs` `WIKI_STALE_COUNT` primes suspicion (repo-wide signal) but this per-page check is authoritative — a nonzero repo count doesn't mean every selected page is stale, and a zero count doesn't skip this check.
 
 ### 7. STRUCTURE
 
@@ -312,7 +312,7 @@ Wiki contradicts code → CODE WINS. Report the contradiction in the command's u
 | "The page is probably fine, skip the freshness check" | One `git diff --name-only` command. Skipping it turns a map into an unverified guess. |
 | "I'll inline the page content into the dispatch prompt to save the subagent a read" | Handoff is paths + reasons + freshness verdict only. Inlining multiplies tokens across every dispatch. |
 | "The wiki is wrong here, I'll just quietly work around it" | Report the contradiction — code wins locally, but the report is what fixes the wiki for next time. |
-| "add-new can wait for status.sh to give me WIKI fields" | add-new never runs the full context mapper — check `.codeadd/wiki/index.md` existence directly. |
+| "add-new can wait for status.cjs to give me WIKI fields" | add-new never runs the full context mapper — check `.codeadd/wiki/index.md` existence directly. |
 | "The graph returned no hit, so nothing related was ever built" | The graph answers from what documents DECLARE. A project mid-migration has edges nobody wrote yet — `orphans` is the list of them. An empty result narrows nothing on its own. |
 | "The index returned a match, so I understand this area" | The index answers *whether* something shipped, never *how* it works. A match is where to look next, not the answer — keep going into the wiki and the code. |
 | "The `gone` entries aren't relevant, I'll show the live ones" | A `gone` entry is often the most valuable result: it says this was tried and dropped. Dropping it repeats the failure this index exists to fix, inverted. |

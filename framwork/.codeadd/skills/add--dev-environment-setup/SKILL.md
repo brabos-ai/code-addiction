@@ -1,32 +1,32 @@
 ---
 name: add--dev-environment-setup
-description: Use when bash/git/jq/gh CLI are missing or VS Code terminal is not WSL — detects OS, diagnoses gaps, installs missing tools.
+description: Use when Node, git or gh CLI are missing, or Node is older than 22.19.0 — detects OS, diagnoses gaps, installs missing tools.
 ---
 
 # Dev Environment Setup
 
 <!-- uses:
-- script: status.sh
+- script: status.cjs
 -->
 
 ## Overview
 
-Detect OS → diagnose silently → confirm → install → configure VS Code.
-**Never assume what's installed. Never install without confirmation. Never overwrite settings.json.**
+Detect OS → diagnose silently → confirm → install → verify.
+**Node (>=22.19.0) is the one runtime every shipped entry needs — no Bash, WSL or Git Bash. Never
+assume what's installed. Never install without confirmation. Never overwrite settings.json.**
 
 ---
 
 ## When to Use
 
 - User asks about environment setup or "how do I run the scripts"
-- `bash`, `git`, `jq`, or `gh` not found
-- `status.sh` fails due to missing tool
-- VS Code terminal opens PowerShell/Git Bash instead of WSL
+- `node`, `git`, or `gh` not found
+- Node is present but older than 22.19.0
+- `status.cjs` fails because Node is missing or too old
 
 ## When NOT to Use
 
 - All tools already installed and verified
-- User is on Linux with working environment
 - Container or CI environment (ephemeral; tools provisioned by image/workflow)
 
 ---
@@ -34,8 +34,8 @@ Detect OS → diagnose silently → confirm → install → configure VS Code.
 ## ⛔ ABSOLUTE PROHIBITIONS
 
 ```
-⛔ NEVER use Bash tool for sudo/apt/dnf/pacman/brew/curl|bash/wsl --install/gh auth login (hangs on password or interactive prompt)
-⛔ NEVER overwrite .vscode/settings.json, reinstall WSL when a real distro exists, suggest Git Bash, use `apt-get install gh`, or proceed after user says N
+⛔ NEVER use Bash tool for sudo/apt/dnf/pacman/brew/curl|bash/gh auth login (hangs on password or interactive prompt)
+⛔ NEVER overwrite .vscode/settings.json, or proceed after user says N
 ✅ ALWAYS show install commands in code blocks → user runs manually → verify with non-sudo `--version` checks
 ```
 
@@ -54,17 +54,14 @@ $env:OS           # Windows PowerShell → Windows_NT
 
 ## STEP 2: DIAGNOSE (silent — no prompts yet)
 
-| Tool | Check | Windows note |
-|------|-------|-------------|
-| WSL | `wsl -l -v` | `docker-desktop` only = NOT ready |
-| bash | `bash --version` | Must be inside WSL, not Git Bash |
-| git | `git --version` | Inside WSL |
-| gh | `gh --version` | Inside WSL |
+| Tool | Check | Note |
+|------|-------|------|
+| node | `node --version` | MUST be >= 22.19.0 — the shipped entries are native CommonJS and need no other runtime |
+| git  | `git --version` | branches, worktrees and commits |
+| gh   | `gh --version` | pull requests; optional if the user never opens one |
 
-WSL check logic:
-- `wsl -l -v` shows a real distro (Ubuntu, Debian, etc.) → WSL is ready, use existing distro
-- `wsl -l -v` shows only `docker-desktop` or nothing → WSL NOT ready, install Debian
-⛔ DO NOT reinstall WSL if a real distro already exists — use whatever is installed.
+**No shell is a dependency.** Bash, WSL and Git Bash are not required to run any shipped entry:
+`node .codeadd/scripts/<entry>.cjs` is the one invocation form on every platform.
 
 ---
 
@@ -73,8 +70,8 @@ WSL check logic:
 Show what is missing vs already installed:
 
 ```
-✅ WSL2: Debian installed
-❌ git: not found inside WSL
+✅ node: v24.11.0 (>= 22.19.0)
+❌ git: not found
 ✅ gh: installed
 ```
 
@@ -85,11 +82,6 @@ Show what is missing vs already installed:
 SAY: "I'll show you the commands to install. You run them in the terminal and let me know when you're done."
 
 ⛔ IF user says N → STOP.
-
-**Windows only — admin check:**
-⛔ IF `wsl --install` is needed → SAY first:
-"To install WSL you need a terminal with Administrator privileges. Open PowerShell as Administrator and run the command I'll show you."
-⛔ DO NOT USE Bash tool to run `wsl --install`.
 
 ---
 
@@ -102,42 +94,27 @@ SAY: "I'll show you the commands to install. You run them in the terminal and le
 
 ### Windows
 
-**5.1 — WSL2 + Debian** (only if no real distro found in STEP 2)
-⛔ IF user already has Ubuntu, Debian, or any real distro → SKIP this step, use existing distro.
+**5.1 — Node (>=22.19.0; Node 24 LTS recommended)**
 
-SAY: "Run in PowerShell as Administrator:"
+SAY: "Run in PowerShell:"
 
 ```powershell
-wsl --install -d Debian
+winget install OpenJS.NodeJS.LTS
 ```
 
-SAY: "Restart Windows. Open the Debian terminal to complete the setup and let me know."
+If `winget` is unavailable, direct the user to the official installer at
+<https://nodejs.org/en/download>. Open a NEW terminal after install so `node` reaches `PATH`.
 
-**5.2 — Tools inside WSL**
+**5.2 — git and gh**
 
-SAY: "Run in the WSL terminal:"
-
-```bash
-sudo apt update && sudo apt install -y git curl
+```powershell
+winget install --id Git.Git
+winget install --id GitHub.cli
 ```
 
-**5.3 — gh CLI (official repo — NOT `apt-get install gh`)**
+**5.3 — gh auth login**
 
-SAY: "Run these commands in the WSL terminal, one block at a time:"
-
-```bash
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-  | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
-  https://cli.github.com/packages stable main" \
-  | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-sudo apt update && sudo apt install -y gh
-```
-
-**5.4 — gh auth login**
-
-SAY: "Run in the WSL terminal:"
+SAY: "Run in the terminal:"
 
 ```bash
 gh auth login
@@ -145,52 +122,29 @@ gh auth login
 
 SAY: "Select: GitHub.com → HTTPS → Login with a web browser. Paste the code in the browser."
 
-**5.5 — VS Code settings.json (mandatory)**
-
-READ `.vscode/settings.json`. MERGE WSL profile. WRITE back.
-⛔ DO NOT overwrite — preserve all existing profiles (Git Bash, PowerShell, Cmder, etc.).
-
-Use the distro name detected in STEP 2 (e.g., `Debian`, `Ubuntu`, `Ubuntu-24.04`):
-
-```json
-{
-  "terminal.integrated.defaultProfile.windows": "WSL",
-  "terminal.integrated.profiles.windows": {
-    "WSL": {
-      "path": "C:\\WINDOWS\\System32\\wsl.exe",
-      "args": ["-d", "<DETECTED_DISTRO>"],
-      "icon": "terminal-linux"
-    }
-  }
-}
-```
-
-Result: user opens VS Code normally (shortcut/taskbar/recent files) → new terminal opens WSL automatically. No workflow change needed.
-
----
-
 ### Unix (macOS + Linux)
 
 ⛔ DO NOT USE Bash tool. SHOW all commands to user.
 
-Pick the package manager that matches the user's OS:
-
 | OS | Install command |
 |----|-----------------|
-| macOS (Homebrew) | `brew install git gh` (install Homebrew first if missing — see below) |
-| Debian/Ubuntu | `sudo apt update && sudo apt install -y git curl` then official gh repo (same flow as Windows 5.3) |
-| Fedora/RHEL | `sudo dnf install -y git gh` |
-| Arch | `sudo pacman -S git github-cli` |
+| macOS (Homebrew) | `brew install node git gh` (install Homebrew first if missing — see below) |
+| Debian/Ubuntu | `sudo apt update && sudo apt install -y nodejs npm git curl` then the official gh repo (below) |
+| Fedora/RHEL | `sudo dnf install -y nodejs git gh` |
+| Arch | `sudo pacman -S nodejs npm git github-cli` |
 
-SAY: "Run in the terminal:"
+**Node version matters.** A distro package older than 22.19.0 must be replaced by nvm or the
+official installer:
+
+```bash
+# nvm — the version-manager route when the distro package is too old
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+nvm install --lts
+```
 
 ```bash
 # macOS — install Homebrew if missing
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# macOS — bash upgrade if < 4.0
-bash --version
-brew install bash   # if needed
 ```
 
 After install, in all cases:
@@ -206,10 +160,11 @@ gh auth login
 ✅ This step CAN use Bash tool — verification commands are non-sudo, non-interactive.
 
 ```bash
-git --version && gh --version && echo "✅ All tools ready"
+node --version && git --version && gh --version && echo "✅ All tools ready"
 ```
 
-⛔ IF any tool still missing → diagnose installation error. DO NOT declare success.
+⛔ IF `node` is older than 22.19.0, or any tool is still missing → diagnose the installation error.
+DO NOT declare success.
 
 ---
 
@@ -217,15 +172,12 @@ git --version && gh --version && echo "✅ All tools ready"
 
 | Mistake | Fix |
 |---------|-----|
-| `wsl --install` without admin | Confirm admin first → "Run as Administrator" |
-| `sudo apt-get install gh` | Use official gh CLI repo — apt version is outdated |
-| `wsl -l -v` shows only docker-desktop or empty | Install Debian: `wsl --install -d Debian` |
-| Ubuntu already installed | Use it — do NOT reinstall with Debian |
+| Distro `nodejs` older than 22.19.0 | Replace it with nvm or the official installer — check `node --version` |
+| `sudo apt-get install gh` | Use the official gh CLI repo — the apt version is outdated |
+| `node` not found after install on Windows | Open a NEW terminal so `PATH` is refreshed |
 | Overwriting settings.json | Always READ → MERGE → WRITE |
-| Suggesting Git Bash as bash | Git Bash is NOT supported — WSL only |
-| Skipping settings.json | It's mandatory — user won't change VS Code workflow |
 | Proceeding after user says N | Stop immediately, show manual commands only |
-| Declaring success before verifying | Run STEP 6 first |
+| Declaring success before verifying | Run STEP 6 first, including the Node floor |
 | Running sudo/apt/brew via Bash tool | Agent hangs — sudo requires password. SHOW commands, user runs manually |
 | Running `gh auth login` via Bash tool | Agent hangs — interactive prompt. SHOW command, guide user step by step |
 | Running `curl \| bash` via Bash tool | Agent hangs — interactive installer. SHOW command, user runs manually |

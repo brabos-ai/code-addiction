@@ -33,13 +33,13 @@
 - command: /add-review
 - command: /add-wiki
 - command: /add-plan
-- script: build-ledger.sh
-- script: build-setup.sh
-- script: converge-gates.sh
-- script: done.sh
-- script: review-package.sh
-- script: status.sh
-- script: task-brief.sh
+- script: build-ledger.cjs
+- script: build-setup.cjs
+- script: converge-gates.cjs
+- script: done.cjs
+- script: review-package.cjs
+- script: status.cjs
+- script: task-brief.cjs
 -->
 
 Coordinator for feature implementation, bug fixes, and epic feature execution. Detects context automatically, coordinates subagents, validates against skill checklists, and ensures 100% compilation.
@@ -65,13 +65,13 @@ Load `{{skill:add--subagent-driven-development/SKILL.md}}` before STEP add-build
 
 **STEPS IN ORDER:**
 ```
-STEP add-build.context:  Run context mapper          → FIRST COMMAND (status.sh) + read the build ledger
-STEP add-build.branch:  Branch setup                → build-setup.sh (create-or-checkout feature branch)
+STEP add-build.context:  Run context mapper          → FIRST COMMAND (status.cjs) + read the build ledger
+STEP add-build.branch:  Branch setup                → build-setup.cjs (create-or-checkout feature branch)
 STEP add-build.detect:  Detect context              → Epic subfeature | Legacy feature flag | Simple mode
 STEP add-build.parse:  Parse key variables         → Extract FEATURE_ID, flags, phase
 STEP add-build.mode:  Determine mode              → Apply the resume rule, THEN DEVELOPMENT | TASKS | CORRECTION | FEATURE
 STEP add-build.load-docs:  Load feature docs           → BEFORE any implementation
-STEP add-build.wiki:  Load project knowledge      → IF WIKI:present (status.sh)
+STEP add-build.wiki:  Load project knowledge      → IF WIKI:present (status.cjs)
 STEP add-build.scope:  Determine scope             → Database, Backend, Workers, Frontend
 STEP add-build.execution:  Execution decision          → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP add-build.implement: Implementation              → Pre-flight scan, then dispatch by path over the Agent Roster
@@ -88,7 +88,7 @@ STEP add-build.complete: Completion                  → Inform user based on mo
 
 **ABSOLUTE INVARIANTS (enforce at all gates):**
 
-- **FEATURE DETECTION:** Must identify FEATURE_ID before proceeding. If missing → run status.sh
+- **FEATURE DETECTION:** Must identify FEATURE_ID before proceeding. If missing → run status.cjs
 - **DEPENDENCY CHECK:** If feature flag passed → validate N-1 complete in iterations.jsonl before implementation
 - **DOCS FIRST:** Always load feature docs (about.md, discovery.md, plan.md) before dispatching subagents
 - **EXECUTION DECISION VISIBLE:** Output decision (DIRECT vs SUBAGENTS) before ANY implementation
@@ -97,15 +97,15 @@ STEP add-build.complete: Completion                  → Inform user based on mo
 - **IDEMPOTENCY:** Check file existence before writing. Never overwrite artefacts without reading first
 - **BUILD GATE:** Code MUST compile 100%. Fix errors before advancing
 - **COMMIT CONTRACT:** **One semantic commit per batch.** In TASKS MODE a batch is one `tasks.md` task (`T01`, `T02`, …); in DEVELOPMENT and CORRECTION MODE a batch is one area dispatch, because there are no task ids to commit against. Message follows `{{skill:add--commit/SKILL.md}}`, with the task id and the feature id as **trailers** (`Task-Id: T02`, `Feature-Id: ${FEATURE_ID}`) so the ledger, the commit and `tasks.md` can be joined later. ⛔ **The commit lands ONLY after the area validator returned AND the build passed** — STEP add-build.commit is the single place any commit happens, and a commit that lands before validation is a commit of unvalidated code
-- **LEDGER:** `${FEATURE_DIR}/build-ledger.md` (or `${SF_DIR}/build-ledger.md` on an epic) is read on entry and appended after **every** task, fix round, deferred minor, parked finding and ruling — always through `bash .codeadd/scripts/build-ledger.sh`, never by hand. A task carrying a `complete` line is NEVER re-dispatched
-- **BRANCH SETUP FIRST:** build-setup.sh MUST have exited 0 before any implementation step
+- **LEDGER:** `${FEATURE_DIR}/build-ledger.md` (or `${SF_DIR}/build-ledger.md` on an epic) is read on entry and appended after **every** task, fix round, deferred minor, parked finding and ruling — always through `node .codeadd/scripts/build-ledger.cjs`, never by hand. A task carrying a `complete` line is NEVER re-dispatched
+- **BRANCH SETUP FIRST:** build-setup.cjs MUST have exited 0 before any implementation step
 
 ---
 
 ## STEP add-build.context: Run Context Mapper (FIRST COMMAND)
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 This script provides ALL context: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_PLAN, HAS_DESIGN, HAS_IMPLEMENTATION), DESIGN_SYSTEM, FRONTEND (path, components), PROJECT_CONTEXT (ARCHITECTURE_REF), ALL_FEATURES (count, list), FEATURES (X/Y if Legacy Epic), HAS_EPIC, EPIC_CURRENT_SF, HAS_TASKS, TASKS_FILE, LAST_CHECKPOINT.
@@ -144,15 +144,15 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 
 **Runs the feature's recorded branch decision (from `about.md` `branch:`) — build executes, never decides the name.**
 
-1. Resolve target: explicit `F[NNNN]` arg > `FEATURE_ID` from status.sh (branch) > ask-gate listing `PENDING:` features from status.sh output. Normalize to the canonical `[NNNN][L]` ID the script expects.
-2. Run `bash .codeadd/scripts/build-setup.sh <FEATURE_ID> [--worktree]`.
+1. Resolve target: explicit `F[NNNN]` arg > `FEATURE_ID` from status.cjs (branch) > ask-gate listing `PENDING:` features from status.cjs output. Normalize to the canonical `[NNNN][L]` ID the script expects.
+2. Run `node .codeadd/scripts/build-setup.cjs <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory).
 <!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-doing -->
 <!-- /feature:board:ticket-doing -->
 <!-- /slot:board.ticket-doing -->
-5. Then re-run `status.sh` (now on the feature branch/worktree) and continue to STEP add-build.detect.
+5. Then re-run `status.cjs` (now on the feature branch/worktree) and continue to STEP add-build.detect.
 
 ---
 
@@ -194,7 +194,7 @@ ASSEMBLE `TASK_DOCUMENTS` from `docs/features/${FEATURE_ID}/`:
 
 ## STEP add-build.parse: Parse Key Variables
 
-Extract from status.sh output:
+Extract from status.cjs output:
 - **FEATURE_ID** — if empty and count=1, use it; if multiple, ask
 - **CURRENT_PHASE** — discovered | designed | planned
 - **HAS_PLAN** — use plan.md as SOURCE
@@ -254,7 +254,7 @@ separate `qa` argument mode — one correction contract, one path.
 6. about.md exists but no plan.md? → DEVELOPMENT MODE (from about.md)
 7. None? → Inform user to run /add-new first
 
-**Legacy Epic edge case:** IF plan.md has `## Features` AND no flag passed → check FEATURES from status.sh → ask to execute next incomplete feature or inform all complete.
+**Legacy Epic edge case:** IF plan.md has `## Features` AND no flag passed → check FEATURES from status.cjs → ask to execute next incomplete feature or inform all complete.
 
 ### STEP add-build.bug-detection Bug Detection
 
@@ -278,7 +278,7 @@ Starting...
 
 ## STEP add-build.load-docs: Load Feature Documentation (BEFORE implementation)
 
-Read all relevant feature docs based on status.sh flags:
+Read all relevant feature docs based on status.cjs flags:
 - `plan.md` (if HAS_PLAN=true) — use as primary source
 - `design.md` (if HAS_DESIGN=true) — follow mobile-first layouts, component specs, design tokens. Resolve it per the `feature-design` **Location** rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)
 - `about.md` — ALWAYS
@@ -297,7 +297,7 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 
 ## STEP add-build.wiki: Load Project Knowledge (IF wiki exists)
 
-**IF WIKI:present (status.sh):**
+**IF WIKI:present (status.cjs):**
 1. Identify the relevant area(s) for this task (backend, frontend, database, etc.)
 2. Read {{addpath:wiki/index.md}}, then the {{addpath:wiki/domains/<area>.md}} page(s) for the areas being touched (+ {{addpath:wiki/conventions.md}} when conventions matter for the work at hand)
 3. Follow patterns documented. These are project-specific conventions.
@@ -380,7 +380,7 @@ Two kinds of row, **both required**:
 Append every row to the ledger, one line each:
 
 ```bash
-bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Preflight: T02 produces \`UserDto.fullName\`, T05 consumes \`UserDto.name\` — CONFLICT"
+node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" "Preflight: T02 produces \`UserDto.fullName\`, T05 consumes \`UserDto.name\` — CONFLICT"
 ```
 
 ⛔ **The output is a table, not a verdict.** Writing `Preflight: clean` without the rows is not a scan that
@@ -408,7 +408,7 @@ resident in context and are re-read on every turn for the rest of the session.
    bracket every ledger line and every review package needs.
 2. **Write the brief**, passing the failures you have already seen as the optional 4th argument:
    ```bash
-   bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
+   node .codeadd/scripts/task-brief.cjs "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
    ```
    It prints `BRIEF=`, `TASK=` and `SUBBULLETS=`, and **exits 2** when the id is not an `## Execution`
    task — an empty brief is how an agent gets dispatched against nothing and reports success. On exit 2,
@@ -434,7 +434,7 @@ resident in context and are re-read on every turn for the rest of the session.
 | Field the dispatch carries | Content |
 |---|---|
 | `TASK_DOCUMENTS` | file paths, as always — never summaries |
-| `BRIEF` | the path `task-brief.sh` printed. The agent reads it |
+| `BRIEF` | the path `task-brief.cjs` printed. The agent reads it |
 | `REPORT_FILE` | the path where the agent writes its full report |
 | `INTERFACES` | the exact `Produces` signatures from earlier tasks that this task `Consumes` — the brief cannot know them |
 | `GLOBAL CONSTRAINTS` | the plan's `## Global Constraints` block, **copied verbatim from `plan.md`** |
@@ -562,13 +562,13 @@ is the right commit. See the COMMIT CONTRACT invariant and STEP add-build.commit
 
 **Subagent prompt addition for TASKS MODE:**
 
-Hand **brief paths**, never a pasted task table — one `task-brief.sh` call per task in this agent's service
+Hand **brief paths**, never a pasted task table — one `task-brief.cjs` call per task in this agent's service
 area (STEP add-build.handoff-by-path). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
 `Produces`, which are the only thing making two tasks build against the same name.
 ```
 ## YOUR TASKS (briefs — read each one first)
-- T02 → ${BRIEF path printed by task-brief.sh}
-- T04 → ${BRIEF path printed by task-brief.sh}
+- T02 → ${BRIEF path printed by task-brief.cjs}
+- T04 → ${BRIEF path printed by task-brief.cjs}
 
 Execute ALL tasks in order. After each task, confirm the verify command passes.
 <!-- slot:tdd-pipeline.awareness fallback="fallbacks/empty.md" -->
@@ -580,7 +580,7 @@ Execute ALL tasks in order. After each task, confirm the verify command passes.
 **DECISION LOGGING (MANDATORY for TASKS MODE subagents):**
 Each subagent MUST append to `docs/features/${FEATURE_ID}/decisions.jsonl` **only on pivot** (changed approach):
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N],"error":"[if any]"'
+node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N],"error":"[if any]"'
 ```
 
 ---
@@ -597,7 +597,7 @@ agents directly, at depth 1.
 | `@database-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@backend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
 | `@frontend-agent` | full-access | `TASK_DOCUMENTS`, area task list, `${FEATURE_ID}`, `design.md` | `FILES_CREATED`, `FILES_MODIFIED`, `BUILD_STATUS`, decisions logged |
-| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.sh` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
+| `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.cjs` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
 | `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`, `ATTEMPT`, `MAX_ATTEMPTS`, and on the final attempt only an explicit `MODEL` one tier above its declared model | `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `BLOCKED`, `ERRORS`, `CONCERNS`, `RED_TEST` (CORRECTION) |
 | `@fix-agent` | full-access | `AREAS`, the whole wave's `ROUTED_ROWS` in table order, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model. One dispatch per wave | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `FILES_MODIFIED`, `BUILD_STATUS`, `NEW_FINDINGS` |
 | `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
@@ -716,7 +716,7 @@ in this template, not a shortcut.
 You are implementing the ${AREA} for feature ${FEATURE_ID}.
 
 ## MANDATORY: Self-Bootstrap Context (FIRST STEP)
-1. Run: bash .codeadd/scripts/status.sh
+1. Run: node .codeadd/scripts/status.cjs
 2. Read ALL files in TASK_DOCUMENTS below
 3. Read the file at BRIEF
 4. IF WIKI:present in output: read {{addpath:wiki/index.md}}, then {{addpath:wiki/domains/${AREA}.md}} (+ {{addpath:wiki/conventions.md}} when conventions matter for this task)
@@ -750,7 +750,7 @@ Read: skill add-${AREA}-development (patterns, validation, code style)
 ${TASK_LIST}
 
 ## DECISION LOGGING (PRD0031 — pivots only)
-On approach change: `bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
+On approach change: `node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
 ## REPORT FORMAT
 Write your full report to REPORT_FILE. Return inline ONLY:
@@ -852,7 +852,7 @@ counter tracked here. The cap is `MAX_ATTEMPTS = 3` per wave.
 **MANDATORY:** Validator MUST load `{{skill:add--tasks-checklist/SKILL.md}}` to apply tick rules, "non-trivial change" definition, and `[!]` failure-marker semantics.
 
 **This validator runs on the WORKING TREE, not on a diff — deliberately.** It is the gate the commit waits
-on (STEP add-build.commit), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.sh`
+on (STEP add-build.commit), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.cjs`
 belongs to the **re-review** in STEP add-build.re-review, after a fix batch is committed. Dispatch this one with `MODE: task`
 and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exist yet.
 
@@ -876,7 +876,7 @@ by your area. You are read-only: you report those ticks, you do not apply them.
 ${GLOBAL_CONSTRAINTS}
 
 ## Self-Bootstrap (FIRST STEP)
-1. Run: bash .codeadd/scripts/status.sh
+1. Run: node .codeadd/scripts/status.cjs
 2. Read skill: add-${AREA}-development
 3. Read skill: add--tasks-checklist (tick rules, [!] semantics, "non-trivial change")
 4. Read ALL files in FILES_CREATED and FILES_MODIFIED below
@@ -989,7 +989,7 @@ for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; d
 git commit -m "<type>(<scope>): <subject per add--commit>" \
            -m "Task-Id: ${TASK_ID}" -m "Feature-Id: ${FEATURE_ID}"
 HEAD=$(git rev-parse HEAD)
-bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
+node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" \
   "${TASK_ID}: complete (commits ${BATCH_BASE}..${HEAD}, BUILD_STATUS=pass, review clean)"
 ```
 
@@ -1001,13 +1001,13 @@ bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
   **one cross-area commit for a whole fix wave**. `@fix-agent` is a single dispatch spanning every
   area its rows touch (Correction Dispatch), so its output is one batch: stage the union of its
   `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
-  were fixed together against one ordering, and `review-package.sh` packages `FIX_BASE..HEAD` for
+  were fixed together against one ordering, and `review-package.cjs` packages `FIX_BASE..HEAD` for
   STEP add-build.re-review as one range.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
   way, and only when more than one batch exists — the normal case, since STEP add-build.dependency-order dispatches each in-scope
   area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
   leaving the second commit empty and its `${BATCH_BASE}..${HEAD}` range empty too — and
-  `review-package.sh` exits 2 on an empty range, so the fix loop would have nothing to review.
+  `review-package.cjs` exits 2 on an empty range, so the fix loop would have nothing to review.
 - ⛔ **`${AREA_FILES}` comes from the validator's report, never from a glob.** A glob cannot tell this
   area's files from its sibling's, which is the failure this block exists to prevent.
 - **The ledger line carries `BASE..HEAD` and `BUILD_STATUS`.** A `complete` line without the bracket is
@@ -1064,7 +1064,7 @@ After `@fix-agent` returns and its batch is committed (STEP add-build.commit), p
 re-dispatch the reviewer:
 
 ```bash
-bash .codeadd/scripts/review-package.sh "${FIX_BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
+node .codeadd/scripts/review-package.cjs "${FIX_BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
 ```
 
 It prints `PACKAGE=`, `COMMITS=` and `FILES=`, and **exits 2 on an empty range** — an empty package is how
@@ -1077,7 +1077,7 @@ finding.
 | Field | Content |
 |---|---|
 | `MODE` | `re-review` — **explicit, never omitted**; an absent `MODE` is a full task review |
-| `REVIEW PACKAGE` | the path `review-package.sh` printed |
+| `REVIEW PACKAGE` | the path `review-package.cjs` printed |
 | `OPEN FINDINGS` | the findings from the previous review, verbatim, with their ids |
 | `TASK_DOCUMENTS` | the same docs the implementation subagent received |
 
@@ -1089,7 +1089,7 @@ findings every round is a loop that never ends.
 Append one ledger line per round, before the next round starts:
 
 ```bash
-bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" \
+node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" \
   "${TASK_ID}: fix round ${ATTEMPT}/3 (${N_ADDRESSED} addressed, ${N_OPEN} open; commits ${FIX_BASE}..${HEAD})"
 ```
 
@@ -1199,7 +1199,7 @@ Reference: **cache documental** rule from `{{skill:add--doc-schemas/SKILL.md}}`
 Check if `docs/features/${FEATURE_ID}/iterations.jsonl` exists. If not, create empty file. Append entry:
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 IF `HAS_EPIC=true`, add `"sf"` field: `"sf":"${EPIC_CURRENT_SF}"`
@@ -1225,7 +1225,7 @@ Walk the run and confirm one line exists for each of:
 | ruling | `Ruling: <what you decided> — <why> — <what it costs if wrong>` |
 | subagent failure | `T0N: failed — <error excerpt>` |
 
-Append any missing line now with `bash .codeadd/scripts/build-ledger.sh`, and say in the completion report
+Append any missing line now with `node .codeadd/scripts/build-ledger.cjs`, and say in the completion report
 that it was appended late. ⛔ DO NOT hand-edit the ledger and ⛔ DO NOT rewrite its identity header — the
 script owns both, and a ledger whose identity changes mid-build cannot be trusted.
 
@@ -1238,17 +1238,17 @@ absence.
 `/add-build` commits per batch (STEP add-build.commit), so a tag created here would point at real work — that is
 precisely why the prohibition has to be stated as ownership. A `checkpoint/*` tag does not mean "code was
 committed"; it means **this subfeature converged**, and convergence is decided by the gate run
-(`converge-gates.sh`) inside the Checkpoint Sequence, after `## Final Review`. A tag created here,
-before that review, would put the same tag name on a commit nobody reviewed, and `done.sh --merge`'s
+(`converge-gates.cjs`) inside the Checkpoint Sequence, after `## Final Review`. A tag created here,
+before that review, would put the same tag name on a commit nobody reviewed, and `done.cjs --merge`'s
 checkpoint cleanup deletes by name — it cannot tell the two apart.
 
-Until the sequence runs, `status.sh`'s `LAST_CHECKPOINT` correctly reports nothing — and **that silence
+Until the sequence runs, `status.cjs`'s `LAST_CHECKPOINT` correctly reports nothing — and **that silence
 is the signal that this subfeature has not converged.** Commits on the branch prove work happened; only
 the tag proves it converged.
 
 **16.4 epic.md is NOT updated here.** `## The Checkpoint Sequence` flips the row and writes its
 `checkpoint` cell in one edit, and every delivery mode now reaches it. Flipping it here would move
-`status.sh`'s `EPIC_CURRENT_SF` to the next subfeature before this one converged.
+`status.cjs`'s `EPIC_CURRENT_SF` to the next subfeature before this one converged.
 
 ---
 
@@ -1305,7 +1305,7 @@ tagged cannot gate anything. Running it inside the final review lets an open `bl
 After the last subfeature's checkpoint has landed, run the gate script once with NO `SFxx` argument:
 
 ```bash
-bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}"
+node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}"
 ```
 
 Require `GATE_EPIC=ok` — every row reads `done`, because each checkpoint flipped exactly one.
@@ -1328,7 +1328,7 @@ name — `/add-done` owns that feature's commit. `EPIC_CURRENT_SF` below is the 
 by reading the documents yourself:
 
 ```bash
-bash .codeadd/scripts/converge-gates.sh "docs/features/${FEATURE_ID}" "${EPIC_CURRENT_SF}"
+node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}" "${EPIC_CURRENT_SF}"
 ```
 
 `GATES_OK=5/5` → the subfeature **converged**, continue with step 0. Anything short of `5/5` → exit
@@ -1404,12 +1404,12 @@ BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. STEP 
    ⛔ **Do not read commits as evidence of convergence.** This command commits
    once per task, so a subfeature that failed every gate still leaves a branch
    full of commits. The tag is the only artefact that exists solely on the
-   converged path. `status.sh` derives `LAST_CHECKPOINT` from
+   converged path. `status.cjs` derives `LAST_CHECKPOINT` from
    `git tag -l "checkpoint/${FEATURE_ID}-*-done"` — read that.
    Follow `add--commit`'s type and message conventions for the body.
    **Gate lines:** the commit carries **the six gate lines** — `GATE_REVIEW`,
    `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `GATES_OK` —
-   **copied verbatim from `converge-gates.sh`'s output** above, as **body
+   **copied verbatim from `converge-gates.cjs`'s output** above, as **body
    lines** beneath the Conventional Commits body, NOT as git trailers:
    `GATE_REVIEW=ok` carries no `Key: value` colon, so `git interpret-trailers`
    never sees it as a trailer, and calling it one invites someone to "fix" it
@@ -1481,7 +1481,7 @@ separate.
 Append it through the script, like every other ledger event:
 
 ```bash
-bash .codeadd/scripts/build-ledger.sh "${LEDGER_FILE}" "Publish: declined — local merge"
+node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" "Publish: declined — local merge"
 ```
 
 ```
@@ -1649,7 +1649,7 @@ Dispatching subagents..."
 | Build fails after validation | Dispatch `@fix-agent` with validator output + build errors |
 | `@fix-agent` exhausted `MAX_ATTEMPTS`, findings still open | THE BREAKER: rule each open finding into the ledger (`Ruling:` format, STEP add-build.ruling-format) and continue. Do NOT stop the session — in every delivery mode |
 | `@fix-agent` exhausted `MAX_ATTEMPTS`, build still red | Report unresolved rows and last errors; STOP (**deciding**, in every state). The BUILD GATE is not a finding to rule on. Never advance as if the build passed |
-| `review-package.sh` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
+| `review-package.cjs` exits 2 (empty range) | The fix produced no commit — that is the finding. Do NOT dispatch the re-reviewer against nothing; re-open the round |
 | Ledger and `git log` disagree | git wins for what EXISTS, the ledger wins for what was DECIDED. Record the reconciliation as a ledger line |
 | >4 areas detected | Dispatch them one at a time in the STEP add-build.dependency-order dependency order. There is no parallel group to split into |
 | No plan.md or about.md | Inform user to run /feature or /plan first |

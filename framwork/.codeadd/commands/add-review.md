@@ -18,8 +18,8 @@
 - command: /add-plan
 - command: /add-qa-setup
 - command: /add-wiki
-- script: qa-evidence.sh
-- script: status.sh
+- script: qa-evidence.cjs
+- script: status.cjs
 -->
 
 <!--
@@ -66,7 +66,7 @@ delivery mode.
 **STEPS IN ORDER:**
 ```
 STEP add-review.setup: Pre-Review Setup        → CHECK unstaged, ASK user
-STEP add-review.bootstrap: Bootstrap Context       → status.sh, load docs, load AGENTS.md, read changed files
+STEP add-review.bootstrap: Bootstrap Context       → status.cjs, load docs, load AGENTS.md, read changed files
 STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
 <!-- slot:tdd-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step-list -->
@@ -108,7 +108,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 
 | Context | Source | Status |
 |---------|--------|--------|
-| Feature metadata | `bash .codeadd/scripts/status.sh` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
+| Feature metadata | `node .codeadd/scripts/status.cjs` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
 | Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add--knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
 | Architecture reference | `AGENTS.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
@@ -238,7 +238,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add-build` applies it |
 | Do NOT instruct a dispatched agent to fix anything | Reviewer or judge dispatch | Dispatch read-only; collect findings |
 | Do NOT dispatch the QA judges | the `qa-pipeline` preflight has a failed `block` row (that row exists only when the feature is enabled) | Report the consolidated diagnosis and its remedy |
-| Do NOT run `qa-evidence.sh promote` | Any point in workflow | Promotion belongs to `/add-done` alone |
+| Do NOT run `qa-evidence.cjs promote` | Any point in workflow | Promotion belongs to `/add-done` alone |
 
 ---
 
@@ -268,7 +268,7 @@ Can I stage your changes?
 
 **If user agrees (Yes):**
 
-Resolve the current feature first (`bash .codeadd/scripts/status.sh` → `FEATURE_ID`), then stage feature-scoped — all code changes plus ONLY this feature's docs; other features' untracked docs stay untracked (see `{{skill:add--commit/SKILL.md}}` Staging Rules):
+Resolve the current feature first (`node .codeadd/scripts/status.cjs` → `FEATURE_ID`), then stage feature-scoped — all code changes plus ONLY this feature's docs; other features' untracked docs stay untracked (see `{{skill:add--commit/SKILL.md}}` Staging Rules):
 
 ```bash
 git add -A -- . ':(exclude)docs/features/*'
@@ -297,7 +297,7 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 ### STEP add-review.detect-current-feature Detect Current Feature
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 **Parse the output to get:**
@@ -315,7 +315,7 @@ List the feature docs directory, then **load ALL documents IN ORDER:**
 2. `discovery.md` - Discovery insights (CHECK: Prerequisites Analysis)
 3. `plan.md` - Technical plan (PRIMARY - verification checklist)
 4. `design.md` - UX design (if exists). **Resolve it per the `feature-design` Location rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).**, once per subfeature the changed files touch. SET `HAS_DESIGN=true` if ANY resolved, and pass every resolved path into `TASK_DOCUMENTS`. Concluding "no design.md" from the feature-level path alone is a review defect — the frontend validator then reviews contract-free and every `## Design Contract` dimension goes unchecked.
-4b. **QA baseline (`QA_BASELINE`) — resolve now; the `qa-pipeline` evidence step emits it when the feature is enabled.** Run `bash .codeadd/scripts/qa-evidence.sh working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add-done` consumes. Resolve it from the filesystem at review time — never copy it from a previous review document, author it by hand, reformat it, or convert it to a filesystem path. `QA_BASELINE` IS the script's stdout, verbatim, and nothing else. ⛔ DO NOT write a path like `_tests/run-001` in place of the script's `feature:run-001` — that exact substitution once passed review and `/add-done` rejected the whole epic at merge time.
+4b. **QA baseline (`QA_BASELINE`) — resolve now; the `qa-pipeline` evidence step emits it when the feature is enabled.** Run `node .codeadd/scripts/qa-evidence.cjs working-baseline "${FEATURE_DIR}"` and parse `BASELINE`. The script returns the highest WORKING run independently per scope (`feature`, `SFxx`), or `none`; final snapshots never enter a new review baseline. Preserve the returned scope/run pairs as the promotion manifest `/add-done` consumes. Resolve it from the filesystem at review time — never copy it from a previous review document, author it by hand, reformat it, or convert it to a filesystem path. `QA_BASELINE` IS the script's stdout, verbatim, and nothing else. ⛔ DO NOT write a path like `_tests/run-001` in place of the script's `feature:run-001` — that exact substitution once passed review and `/add-done` rejected the whole epic at merge time.
 4c. **Reviewed-tree fingerprint (`REVIEW_TREE_BEFORE`).** Compute a deterministic digest over every tracked or nonignored untracked file in the working tree, including each relative path and current content. Represent deleted tracked files explicitly. Exclude only this review's bookkeeping paths: `${FEATURE_DIR}/review-*.md`, `${FEATURE_DIR}/tasks.md`, and `${FEATURE_DIR}/iterations.jsonl`. Store the digest before dispatching reviewers.
 4d. **Review scope (`SCOPE_DIR`, `REVIEW_SCOPE`) — resolve now, unconditionally.** An epic with subfeatures gives one `SCOPE_DIR` per in-scope `SFxx` under `FEATURE_DIR/subfeatures/`; a simple feature gives `SCOPE_DIR = FEATURE_DIR`. `REVIEW_SCOPE` is the YAML list of those scopes — `[SF01, SF02]`, or `[feature]` for a simple feature. ⛔ **This runs whether or not `qa-pipeline` is enabled.** STEP add-review.report's `Scope` column and STEP add-review.report's mandatory `scope:` frontmatter field both read it, and both are ungated; the QA steps consume the same value when the feature supplies them, and own none of it.
 5. `iterations.jsonl` - Implementation history (JSONL: what was implemented, pivots, areas touched)
@@ -353,7 +353,7 @@ Read AGENTS.md and **extract from specification:**
 
 ### STEP add-review.read-all-changed Read ALL Changed Files (Gate 2)
 
-From `status.sh` output, read ALL files in `FILES_TO_REVIEW`.
+From `status.cjs` output, read ALL files in `FILES_TO_REVIEW`.
 
 **IMPORTANT:** Review must cover ALL changed files (committed, staged, unstaged, untracked).
 
@@ -498,7 +498,7 @@ prompt: |
   You are the FRONTEND REVIEWER for feature ${FEATURE_ID}.
 
   ## BOOTSTRAP
-  1. Run: bash .codeadd/scripts/status.sh
+  1. Run: node .codeadd/scripts/status.cjs
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/frontend.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
@@ -540,7 +540,7 @@ prompt: |
   You are the BACKEND REVIEWER for feature ${FEATURE_ID}.
 
   ## BOOTSTRAP
-  1. Run: bash .codeadd/scripts/status.sh
+  1. Run: node .codeadd/scripts/status.cjs
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/backend.md}} + {{addpath:wiki/domains/database.md}} (+ {{addpath:wiki/conventions.md}})
   4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
@@ -707,7 +707,7 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
 ### STEP add-review.log-iteration Log Iteration
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
+node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
 ```
 
 `files` is always empty: this command modifies no code.
@@ -862,7 +862,7 @@ status: open
 ## Resolution Annex
 [empty on write — /add-build appends here and sets status: finalized]
 ```
-⛔ `${FEATURE_NUMBER}` is the **bare** feature id (`0042F`) — the `[NNNN]F` prefix of the directory name, NOT `${FEATURE_ID}`, which `status.sh:88` sets to the full slug (`0042F-user-preferences`). The sibling `qa-validation` schema is validated against the bare form by `qa-evidence.sh` (it derives it from the directory basename), so a slug here produces an id the schema rejects.
+⛔ `${FEATURE_NUMBER}` is the **bare** feature id (`0042F`) — the `[NNNN]F` prefix of the directory name, NOT `${FEATURE_ID}`, which `status.cjs` sets to the full slug (`0042F-user-preferences`). The sibling `qa-validation` schema is validated against the bare form by `qa-evidence.cjs` (it derives it from the directory basename), so a slug here produces an id the schema rejects.
 
 The frontmatter block above is REQUIRED and its seven fields are the exact set
 the `review` schema declares, in that order — `id`, `type`, `created`,
@@ -952,7 +952,7 @@ so.
 
 **ALWAYS:**
 - Track the STAGED_CHANGES flag throughout execution
-- Resolve `QA_BASELINE` through `qa-evidence.sh working-baseline` — per scope, working `run-NNN`, resolved from the filesystem this run, never copied from a previous review
+- Resolve `QA_BASELINE` through `qa-evidence.cjs working-baseline` — per scope, working `run-NNN`, resolved from the filesystem this run, never copied from a previous review
 - Emit every finding class into the one `## Fix Routing` table, scope-qualified
 - Write `judged-tree` on every `qa-validation-NNN.md` the `qa-pipeline` judgement produced — the next run's skip predicate reads it
 - Load `add--investigation` and apply differential diagnosis before classifying a finding whose root cause is unclear
@@ -965,6 +965,6 @@ so.
 - Accept "it works" as justification for a violation
 - Skip a reviewer if files exist in that area
 - Re-dispatch reviewers after a build failure — the review is one pass over one tree
-- Write QA evidence under `_tests/final/`, or run `qa-evidence.sh promote`
+- Write QA evidence under `_tests/final/`, or run `qa-evidence.cjs promote`
 - Recompute `run-NNN` once the `qa-pipeline` evidence step has resolved it
 - Hand a delivery on to `/add-build` — the user runs the next command

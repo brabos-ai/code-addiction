@@ -147,7 +147,7 @@ move a ticket backwards, so only the entry write needs the phase check.
 | `add-new` | `shaped` | its completion, before the report — once the validation gate passed | `status` |
 | `add-plan` | `planning` | STEP add-plan.load-docs, where it reads the ticket | `status` |
 | `add-plan` | `planned` | its completion, before the report — the plan is written and reviewed | `status` |
-| `add-build` | `doing` and `work_id` | right after `build-setup.sh` returns | `status`, `work_id` |
+| `add-build` | `doing` and `work_id` | right after `build-setup.cjs` returns | `status`, `work_id` |
 | `add-build` | `in-review` | its completion report, reading the `Publish:` outcome it recorded — **only** `pr-opened` or `pr-updated` | `status` |
 | `add-done` | `done` | after the merge | `status` |
 | `add-hotfix` | `doing` and `work_id` | once its branch is confirmed | `status`, `work_id` |
@@ -229,7 +229,7 @@ is what makes the second pass write nothing** once the first subfeature's build 
 
 ### `add-build` — `doing` and `work_id` in one write, then `in-review`
 
-**`doing`, immediately after `build-setup.sh` returns**, and not before: until then the run can still stop on
+**`doing`, immediately after `build-setup.cjs` returns**, and not before: until then the run can still stop on
 a dirty tree or a bad `branch:`, and a ticket marked `doing` for a build that never started is a lie the
 board cannot correct by itself.
 
@@ -272,7 +272,7 @@ by the same literal pattern `add-brainstorm` uses.
 | What | Where |
 |---|---|
 | Resolve the ticket id | at the start, from the invocation |
-| `doing` and `work_id` = the hotfix id, one write | once its branch is confirmed — the hotfix equivalent of `build-setup.sh` returning |
+| `doing` and `work_id` = the hotfix id, one write | once its branch is confirmed — the hotfix equivalent of `build-setup.cjs` returning |
 | `ticket: <id>` into the hotfix `about.md` | the step that writes that file, **before** it is fingerprinted — nothing may change after |
 | `done` | `add-done`, which reads `ticket:` from that `about.md` |
 

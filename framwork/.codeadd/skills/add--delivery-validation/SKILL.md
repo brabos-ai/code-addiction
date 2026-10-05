@@ -45,7 +45,7 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 
 ```bash
 # Identify current feature
-FEATURE_ID=$(bash .codeadd/scripts/status.sh)
+FEATURE_ID=$(node .codeadd/scripts/status.cjs)
 
 # Load specification
 cat docs/features/${FEATURE_ID}/about.md
