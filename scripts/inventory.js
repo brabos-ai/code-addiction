@@ -65,7 +65,10 @@ const GROUPS = {
   skills: (d) => subdirs(path.join(d, 'skills'))
     .filter((n) => fs.existsSync(path.join(d, 'skills', n, 'SKILL.md'))),
   agents: (d) => filesWith(path.join(d, 'agents'), '-agent.md').map((f) => f.slice(0, -9)),
-  scripts: (d) => filesWith(path.join(d, 'scripts'), '.sh'),
+  scripts: (d) => [
+    ...filesWith(path.join(d, 'scripts'), '.sh'),
+    ...filesWith(path.join(d, 'scripts'), '.cjs'),
+  ],
   templates: (d) => filesWith(path.join(d, 'templates'), '.md').map((f) => f.slice(0, -3)),
   fragments: (d) => subdirs(path.join(d, 'fragments')),
   plugins: (d) => subdirs(path.join(d, 'plugins')).filter((n) => !n.startsWith('$')),

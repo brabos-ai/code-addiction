@@ -1731,7 +1731,8 @@ function lintResourcePaths(content, srcPath) {
 // provider dir, and the installer unpacks them into the project root. A file the
 // consumer's toolchain recognises as source therefore becomes their CI failure,
 // and we control neither their ruleset nor their formatter config — so silencing
-// today's warnings only postpones the next one. Ship prose, shell and data.
+// today's warnings only postpones the next one. Ship prose, shell and data — and
+// a `.cjs` only when it sits directly under `scripts/` and is built-ins-only.
 //
 // Regression this exists to prevent: v0.7.1 shipped
 // skills/add-skill-creator/render-graphs.js (an unreferenced upstream orphan),
@@ -1750,30 +1751,85 @@ const LINTABLE_EXTENSIONS = new Set([
 // never a lint rule.
 const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
 
-// Exact allowlist for the six canonical backlog CJS modules. These ship
-// verbatim and are consumed by the board runtime, the agent CLI wrapper, the
-// native allocator and the native publication entry.
-// No broad directory or extension exceptions — only these six full paths.
-const SHIPPED_SOURCE_ALLOWLIST = new Set([
-  'framwork/.codeadd/scripts/backlog-storage.cjs',
-  'framwork/.codeadd/scripts/backlog-core.cjs',
-  'framwork/.codeadd/scripts/backlog-cli.cjs',
-  'framwork/.codeadd/scripts/backlog-id.cjs',
-  'framwork/.codeadd/scripts/backlog-git.cjs',
-  'framwork/.codeadd/scripts/backlog-commit.cjs',
-]);
+// Exact allowlist for non-script shipped exceptions. The native runtime is
+// admitted by the RULE below, not by path — the six legacy backlog modules
+// qualify on their own merits — so this set names only files that cannot pass
+// that rule but must still ship. It is empty today; adding to it is the last
+// resort, never the first, because each entry is an unanalysed hole.
+const SHIPPED_SOURCE_ALLOWLIST = new Set([]);
 
-function collectLintableSources(dir, offenders = []) {
+// What a native shipped `.cjs` may require: a `node:` builtin, or a `./`
+// sibling `.cjs` in the SAME directory. Anything else — a bare package name, a
+// path that walks out with `../`, a nested `./dir/file.cjs`, a non-`.cjs`
+// sibling — is outside the closure.
+const NATIVE_BUILTIN_RE = /^node:[A-Za-z0-9_./-]+$/;
+const NATIVE_SIBLING_RE = /^\.\/[A-Za-z0-9._-]+\.cjs$/;
+
+/**
+ * Every static module specifier in a CommonJS source, plus whether any was
+ * written in a form this guard cannot verify (a dynamic `require(expr)` or
+ * `import(expr)`). An unverifiable specifier is an offender: the point is that
+ * the closure be provable statically.
+ */
+function moduleSpecifiers(source) {
+  const specs = [];
+  let unverifiable = false;
+  const literal = (arg) => {
+    const m = /^(['"])([^'"]+)\1$/.exec(arg.trim());
+    return m ? m[2] : null;
+  };
+  for (const re of [/\brequire\s*\(([^)]*)\)/g, /\bimport\s*\(([^)]*)\)/g]) {
+    let m;
+    while ((m = re.exec(source))) {
+      const spec = literal(m[1]);
+      if (spec === null) unverifiable = true;
+      else specs.push(spec);
+    }
+  }
+  for (const re of [/\bfrom\s*(['"])([^'"]+)\1/g, /\bimport\s*(['"])([^'"]+)\1/g]) {
+    let m;
+    while ((m = re.exec(source))) specs.push(m[2]);
+  }
+  return { specs, unverifiable };
+}
+
+/** Built-ins-only: `node:` builtins and `./` sibling `.cjs` files, nothing else. */
+function isBuiltinsOnlyCjs(absPath) {
+  let source;
+  try {
+    source = fs.readFileSync(absPath, 'utf8');
+  } catch {
+    return false;
+  }
+  const { specs, unverifiable } = moduleSpecifiers(source);
+  if (unverifiable) return false;
+  return specs.every((s) => NATIVE_BUILTIN_RE.test(s) || NATIVE_SIBLING_RE.test(s));
+}
+
+/**
+ * A shipped `.cjs` is admitted only when it is a DIRECT child of the shipped
+ * scripts directory and is built-ins-only. One level deep: a copy in a nested
+ * directory keeps the basename but not the exemption.
+ */
+function isAllowedNativeScript(absPath, scriptsDir) {
+  return path.extname(absPath).toLowerCase() === '.cjs'
+    && path.dirname(absPath) === scriptsDir
+    && isBuiltinsOnlyCjs(absPath);
+}
+
+function collectLintableSources(dir, offenders = [], options = {}) {
+  const scriptsDir = options.scriptsDir ? path.resolve(options.scriptsDir) : null;
   if (!fs.existsSync(dir)) return offenders;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const entryPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      collectLintableSources(entryPath, offenders);
+      collectLintableSources(entryPath, offenders, options);
     } else if (LINTABLE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
-      const relPath = path.relative(ROOT, entryPath).split(path.sep).join('/');
-      if (!SHIPPED_SOURCE_ALLOWLIST.has(relPath)) {
-        offenders.push(relPath);
-      }
+      const absPath = path.resolve(entryPath);
+      const relPath = path.relative(ROOT, absPath).split(path.sep).join('/');
+      if (SHIPPED_SOURCE_ALLOWLIST.has(relPath)) continue;
+      if (scriptsDir && isAllowedNativeScript(absPath, scriptsDir)) continue;
+      offenders.push(relPath);
     }
   }
   return offenders;
@@ -1788,9 +1844,10 @@ function collectLintableSources(dir, offenders = []) {
  */
 function assertNoLintableSources(map, codeaddDir = CODEADD_DIR) {
   const offenders = [];
+  const scriptsDir = path.resolve(path.join(codeaddDir, 'scripts'));
 
   for (const subdir of SHIPPED_SUBDIRS) {
-    collectLintableSources(path.join(codeaddDir, subdir), offenders);
+    collectLintableSources(path.join(codeaddDir, subdir), offenders, { scriptsDir });
   }
   for (const name of Object.keys(map.skills || {})) {
     collectLintableSources(path.join(codeaddDir, 'skills', name), offenders);
@@ -1802,7 +1859,8 @@ function assertNoLintableSources(map, codeaddDir = CODEADD_DIR) {
   throw new Error(
     `Shipped tree carries linter-visible source file(s):\n${list}\n\n` +
       `These install into the consumer's repository and break their lint/format run.\n` +
-      `Delete the file, or move the logic into a .sh script under .codeadd/scripts/.`,
+      `Delete the file, write the logic as a shell script under .codeadd/scripts/, ` +
+      `or ship it as a built-ins-only .cjs directly under .codeadd/scripts/.`,
   );
 }
 
