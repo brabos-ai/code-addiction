@@ -867,14 +867,36 @@ Then, after the seven blocks, state:
 - Design contract: the `design.md` path STEP add-plan.ux-design wrote — or the reason STEP add-plan.ux-design was skipped (no UI in scope / no new screen or component / provenance match / no frontend)
 - Key metrics (endpoint count, task count, RF/RN count)
 - Plan review verdict from STEP add-plan.review, and a one-line summary of any applied fixes
-- Suggested next command: `/add-build`
 
 **Stop kind — confirming.** The report describes a plan the brainstorm's approval already covered.
 
 | `DELIVERY` | Do |
 |---|---|
-| `confirm` | Print the report and the suggestion, and STOP. The user runs `/add-build` |
+| `confirm` | Offer the continuation under `chat-continuation-eligibility-v1`, then STOP |
 | `automatic` | Print the report and the line `(delivering automatically — continuing to /add-build.)`, then follow {{cmd:add-build}} with this feature's id, from its first step, as `add--delivery-mode` describes |
+
+### STEP add-plan.handoff Offer the continuation — `confirm`
+
+**On `confirm`, finish the report, then its metadata, and only then ask ONCE whether the user wants
+instructions for continuing in a fresh context.** Then stop and wait.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents. A plan that was not written — the light path, a blocked review — offers
+nothing.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/features/${FEATURE_ID}/plan.md` | The tasks, requirements and areas `/add-build` implements against |
+| `docs/features/${FEATURE_ID}/design.md` | The design contract STEP add-plan.ux-design settled, when one exists |
+| `docs/features/${FEATURE_ID}/tasks.md` | The dependency order and per-area checklist `/add-build` works from |
+| {{skill:add--delivery-mode/SKILL.md}} | Which stops `/add-build` waits at, and where its automatic path ends |
+
+**`automatic` never reaches this step.** It has already handed off, and `add--delivery-mode` owns
+that path end to end.
 
 ---
 
