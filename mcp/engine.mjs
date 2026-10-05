@@ -26,8 +26,10 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-// The file's only subprocess. See `history` for why it is `bash <path>`.
-import { spawnSync } from 'node:child_process';
+// The delivery reader is a shipped `.cjs` and this module is ESM. It is LOADED
+// through `createRequire`, never spawned: no shell, no interpreter lookup, and
+// the same call reaches the reader on Windows, macOS and Linux alike.
+import { createRequire } from 'node:module';
 import { CORPORA, resolveCorpus, probe } from './corpora.mjs';
 
 /**
@@ -244,6 +246,78 @@ export function globToRegExp(glob) {
 const normalise = (p) => String(p).replace(/\\/g, '/').replace(/^\.\//, '');
 
 // ---------------------------------------------------------------------------
+// The delivery reader — loaded, never spawned
+// ---------------------------------------------------------------------------
+
+/**
+ * Load CommonJS from an absolute path. `mcp/` is ESM and takes no dependency,
+ * and the shipped reader is `.cjs`, so `createRequire` is the only ESM-native
+ * way to reach it. This is a MODULE LOAD: no process is created, so a reader
+ * that exists is reached even where no shell or interpreter is on PATH.
+ */
+const loadCjs = createRequire(import.meta.url);
+
+/**
+ * Where the reader lives, per corpus, installed first.
+ *
+ * The same source ships two ways: a user's project has `.codeadd/scripts/`,
+ * while this repository keeps the shipped tree under `framwork/.codeadd/`.
+ * Both are listed so a repository root AND an installed root resolve the
+ * reader, and neither depends on a path absent from the npm/release output.
+ */
+function readerCandidates(corpus, root, override) {
+  if (override) return [path.isAbsolute(override) ? override : path.join(root, override)];
+  return corpus.delivered.map((rel) => path.join(root, rel));
+}
+
+/** The first candidate that exists, plus the path to name when none does. */
+function resolveReader(corpus, root, override) {
+  const candidates = readerCandidates(corpus, root, override);
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return { path: candidate, expected: candidate };
+  }
+  return { path: null, expected: candidates[0] };
+}
+
+/**
+ * The side-effect-free core BESIDE the reader entry. The entry exports only its
+ * argv boundary; `performRead`/`performTouched` live in the core, so it is the
+ * core that is loaded. An override naming the core directly is honoured as-is.
+ */
+function loadDeliveryCore(readerPath) {
+  if (path.basename(readerPath) === 'delivery-index-core.cjs') return loadCjs(readerPath);
+  return loadCjs(path.join(path.dirname(readerPath), 'delivery-index-core.cjs'));
+}
+
+/**
+ * A context rooted where git says the repository is, or a reported error.
+ *
+ * The reader entry resolves the repository root before every operation, so a
+ * caller handed a non-repository gets its `ERROR=not-a-git-repository`, never a
+ * silent empty answer — an empty index and a missing one mean opposite things.
+ */
+function readerContext(core, root) {
+  const resolved = core.resolveRoot(root);
+  if (!resolved.ok) return { ok: false, detail: `ERROR=${resolved.error}` };
+  return { ok: true, ctx: core.createContext({ root: resolved.root }) };
+}
+
+/**
+ * The two read arguments the reader entry validated at its argv boundary.
+ * Calling the core directly would skip that validation, so it is repeated
+ * here: an invalid layer or limit is a `read-failed`, never a silent change.
+ */
+function readArgsError(layer, limit) {
+  if (layer && layer !== 'product' && layer !== 'internal') {
+    return 'read refused: --layer must be product or internal';
+  }
+  if (!Number.isInteger(limit) || limit <= 0) {
+    return 'read refused: --limit must be a positive whole number';
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // The actions
 // ---------------------------------------------------------------------------
 
@@ -407,10 +481,10 @@ export const actions = {
    * On `docs`, the question is "which DELIVERY changed this file", which lives
    * in the index and not in any document. It is DELEGATED, NEVER REIMPLEMENTED
    * — the same rule the `history` action states below, for the same reason:
-   * `delivered.sh` owns the index, and a second reader of one index is what the
-   * read contract's no-re-ranking rule exists to prevent. It derives each
-   * delivery's commit and answers in two labelled layers, passed through here
-   * untouched.
+   * the shipped delivery reader owns the index, and a second reader of one
+   * index is what the read contract's no-re-ranking rule exists to prevent. It
+   * derives each delivery's commit and answers in two labelled layers, passed
+   * through here untouched.
    *
    * The PAGE half is local in both. A reference page declares `sources` globs in
    * its own frontmatter, so the corpus already holds that answer.
@@ -446,10 +520,8 @@ export const actions = {
 
     const root = context.root ?? process.cwd();
     const corpus = resolveCorpus(data.corpus ?? 'docs');
-    const script = context.script ?? path.join(root, corpus.deliveredScript);
-    const bash = context.bash ?? 'bash';
 
-    // An unavailable script is reported, never thrown: the page half already
+    // An unavailable reader is reported, never thrown: the page half already
     // has an answer and withholding it because the other half could not run
     // would be the less useful of the two failures.
     const degraded = (reason, detail) => ({
@@ -457,52 +529,44 @@ export const actions = {
     });
 
     if (!wanted.length) return { files: wanted, workItems: [], pages, curatedOnly: 0 };
-    if (!fs.existsSync(script)) return degraded('script-missing', `${script} does not exist`);
 
-    const res = spawnSync(bash, [script, 'touched', ...wanted], {
-      cwd: root, encoding: 'utf8', windowsHide: true,
-    });
-    if (res.error) {
-      const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
-      return degraded(reason, `${res.error.message} (bash=${bash}, cwd=${root})`);
-    }
-    const stdout = res.stdout || '';
-    if (res.status !== 0) {
-      const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
-      return degraded('read-failed', key || `delivered.sh exited ${res.status}`);
+    const found = resolveReader(corpus, root, context.script);
+    if (!found.path) return degraded('script-missing', `${found.expected} does not exist`);
+
+    let core;
+    try {
+      core = loadDeliveryCore(found.path);
+    } catch (e) {
+      return degraded('read-failed', e.message);
     }
 
-    // The same split delivered.sh documents: a line starting with `{` is an
-    // entry, anything else is a KEY=VALUE probe result.
-    const workItems = [];
-    const keys = {};
-    for (const line of stdout.split('\n')) {
-      const l = line.trim();
-      if (!l) continue;
-      if (l.startsWith('{')) {
-        try {
-          const e = JSON.parse(l);
-          workItems.push({
-            id: e.id,
-            kind: 'delivery',
-            answer: e.answer,
-            status: e.status,
-            commit: e.commit ?? null,
-            summary: e.name,
-            matched: e.matched,
-          });
-        } catch (err) { /* a corrupt line is delivered.sh's to report, not ours */ }
-        continue;
-      }
-      const eq = l.indexOf('=');
-      if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
+    const bound = readerContext(core, root);
+    if (!bound.ok) return degraded('read-failed', bound.detail);
+
+    let result;
+    try {
+      result = core.performTouched(bound.ctx, { paths: wanted });
+    } catch (e) {
+      return degraded('read-failed', e.message);
     }
+
+    // The shape the shell's JSONL contract produced, field for field. Two
+    // surfaces over one reader must be swappable by a caller.
+    const workItems = [...result.complete, ...result.curated].map((e) => ({
+      id: e.id,
+      kind: 'delivery',
+      answer: e.answer,
+      status: e.status,
+      commit: e.commit ?? null,
+      summary: e.name,
+      matched: e.matched,
+    }));
 
     return {
       files: wanted,
       workItems,
       pages,
-      curatedOnly: Number(keys.CURATED_ONLY || 0),
+      curatedOnly: result.curatedOnly,
     };
   },
 
@@ -576,9 +640,9 @@ export const actions = {
   /**
    * When this arrived, and what it replaced — the time axis.
    *
-   * THE READ IS DELEGATED, NEVER REIMPLEMENTED. `delivered.sh read` owns
-   * last-line-wins, corrupt-line tolerance and status ordering. Parsing the
-   * JSONL here would be a SECOND implementation of one format, which is the
+   * THE READ IS DELEGATED, NEVER REIMPLEMENTED. The shipped delivery reader
+   * owns last-line-wins, corrupt-line tolerance and status ordering. Parsing
+   * the JSONL here would be a SECOND implementation of one format, which is the
    * failure `scripts/graph.js` records at this exact function.
    *
    * This verb owns the JOIN and nothing else:
@@ -599,67 +663,62 @@ export const actions = {
       node, name, entries: [], matched: 0, unavailable: { reason, detail },
     });
 
-    const script = context.script ?? path.join(root, corpus.deliveredScript);
-    const bash = context.bash ?? 'bash';
-    if (!fs.existsSync(script)) {
-      return unavailable('script-missing', `${script} does not exist`);
+    const found = resolveReader(corpus, root, context.script);
+    if (!found.path) return unavailable('script-missing', `${found.expected} does not exist`);
+
+    let core;
+    try {
+      core = loadDeliveryCore(found.path);
+    } catch (e) {
+      return unavailable('read-failed', e.message);
     }
+
+    // `--layer` and `--limit` reached the shell's argv boundary, which validated
+    // them before the read. Calling the core directly skips that boundary, so
+    // its checks are repeated rather than silently relaxed.
+    const invalid = readArgsError(layer, limit);
+    if (invalid) return unavailable('read-failed', invalid);
+
+    const bound = readerContext(core, root);
+    if (!bound.ok) return unavailable('read-failed', bound.detail);
 
     // `--layer` is passed STRAIGHT THROUGH, never reimplemented as a filter
     // here: it narrows which entries are read at all.
-    const args = [script, 'read', name, '--limit', String(limit)];
-    if (layer) args.push('--layer', layer);
-
-    // `bash <path>`, never direct execution. Windows is this repository's
-    // primary platform and a shebang file is not executable by process
-    // creation there.
-    const res = spawnSync(bash, args, { cwd: root, encoding: 'utf8', windowsHide: true });
-
-    if (res.error) {
-      // ENOENT means the interpreter OR the working directory was not found,
-      // and the two read identically. Naming the cwd separates them.
-      const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
-      return unavailable(reason, `${res.error.message} (bash=${bash}, cwd=${root})`);
+    let read;
+    try {
+      read = core.performRead(bound.ctx, { query: name, layer: layer || '', limit });
+    } catch (e) {
+      return unavailable('read-failed', e.message);
     }
 
-    const stdout = res.stdout || '';
-    if (res.status !== 0) {
-      const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
-      return unavailable('read-failed', key || `delivered.sh exited ${res.status}`);
-    }
-
-    // A line starting with `{` is an entry; anything else is a KEY=VALUE probe
-    // result. That split is delivered.sh's documented output contract.
-    const entries = [];
-    const keys = {};
-    for (const line of stdout.split('\n')) {
-      const l = line.trim();
-      if (!l) continue;
-      if (l.startsWith('{')) {
-        // One unparseable line is skipped, never fatal.
-        try { entries.push(JSON.parse(l)); } catch { /* skipped */ }
-      } else {
-        const eq = l.indexOf('=');
-        if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
-      }
-    }
+    // The counts the shell printed as KEY=VALUE, rebuilt from the same result.
+    // `scripts/graph.js` renders the dead-cap note from MATCHED_DEAD vs
+    // RETURNED_DEAD, so both must reach the caller unchanged.
+    const keys = {
+      MATCHED_LIVE: String(read.matchedLive),
+      MATCHED_DEAD: String(read.matchedDead),
+      RETURNED_LIVE: String(read.returnedLive),
+      RETURNED_DEAD: String(read.returnedDead),
+      LIVE_CAP: String(read.liveCap),
+      DEAD_CAP: String(read.deadCap),
+      SKIPPED_LINES: read.skipped.join(','),
+    };
 
     const dependentsOf = (nodeId) => {
       try { return walk(data, nodeId, { reverse: true, depth: 1 }).length; } catch { return null; }
     };
 
     // `node` is read at BOTH levels and the entry level is the one that
-    // matters: the schema puts `node` on the record, and delivered.sh
-    // normalises an item-level one away on write. The item level is read
-    // anyway because `read` returns whatever a line carries and a human may
-    // hand-write one.
+    // matters: the schema puts `node` on the record, and the reader normalises
+    // an item-level one away on write. The item level is read anyway because
+    // `read` returns whatever a record carries and a human may hand-write one.
     const carriesNode = (e) =>
       e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
 
-    // Ordering is delivered.sh's contract (live -> changed -> superseded ->
-    // gone) and is preserved exactly. Re-sorting here would be a consumer
-    // re-ranking one shared structure.
-    const matched = entries.filter(carriesNode).map((e) => {
+    // Ordering is the reader's contract (live -> changed -> superseded -> gone)
+    // and is preserved exactly. Re-sorting here would be a consumer re-ranking
+    // one shared structure.
+    const matched = read.entries.filter(carriesNode).map((e) => {
       const out = {
         ...e,
         items: (Array.isArray(e.items) ? e.items : []).map((it) => (it && it.node

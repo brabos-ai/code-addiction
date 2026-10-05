@@ -150,15 +150,15 @@ export const TOOLS = [
     name: 'history',
     description:
       'When this node was delivered, and what it replaced. Reads the delivery index through ' +
-      'delivered.sh — never its own parser — and joins each entry to the graph, so an item that ' +
-      'carries a node id also carries its current dependant count. Query-only: it never writes, ' +
-      'and an unavailable index is reported rather than thrown.',
+      'the native delivery reader — never its own parser — and joins each entry to the graph, ' +
+      'so an item that carries a node id also carries its current dependant count. Query-only: ' +
+      'it never writes, and an unavailable index is reported rather than thrown.',
     inputSchema: {
       type: 'object',
       properties: {
         id: NODE_ARG,
         limit: { type: 'number', description: 'Maximum LIVE entries to read; defaults to 50. Dead entries (superseded, gone) have their own fixed cap of 2 and no argument raises it — MATCHED_DEAD in the result says whether any were cut.' },
-        layer: { type: 'string', description: 'Passed straight through to delivered.sh.' },
+        layer: { type: 'string', description: 'Passed straight through to the native delivery reader.' },
       },
       required: ['id'],
     },
