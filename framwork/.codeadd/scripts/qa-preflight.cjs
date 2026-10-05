@@ -24,6 +24,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { createRequire } = require('node:module');
 
 // Single source of the manifest feature key. cli/src/features.js owns the
 // registry; this is the one place a shipped script names the key, so a future
@@ -95,7 +96,7 @@ function playwrightCliOk() {
 async function chromiumOk(resolved) {
   try {
     // eslint-disable-next-line import/no-dynamic-require
-    const pw = require(resolved);
+    const pw = createRequire(__filename)(resolved);
     const browser = await pw.chromium.launch();
     await browser.close();
     return true;
