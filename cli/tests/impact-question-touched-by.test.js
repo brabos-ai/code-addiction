@@ -249,10 +249,12 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     run(['config', 'user.name', 'test']);
 
     fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
-    fs.copyFileSync(
-      path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivered.sh'),
-      path.join(tmp, '.codeadd', 'scripts', 'delivered.sh'),
-    );
+    for (const f of ['delivered.cjs', 'delivery-index-core.cjs']) {
+      fs.copyFileSync(
+        path.join(REPO, 'framwork', '.codeadd', 'scripts', f),
+        path.join(tmp, '.codeadd', 'scripts', f),
+      );
+    }
 
     fs.mkdirSync(path.join(tmp, 'src', 'auth'), { recursive: true });
     fs.writeFileSync(path.join(tmp, 'src', 'auth', 'token.ts'), 'export function refreshToken() { return 1; }\n');
@@ -348,10 +350,12 @@ describe('L2.3b — the delivery commit is derived correctly after a merge AND a
     g(['config', 'user.email', 'test@example.com']);
     g(['config', 'user.name', 'test']);
     fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
-    fs.copyFileSync(
-      path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivered.sh'),
-      path.join(tmp, '.codeadd', 'scripts', 'delivered.sh'),
-    );
+    for (const f of ['delivered.cjs', 'delivery-index-core.cjs']) {
+      fs.copyFileSync(
+        path.join(REPO, 'framwork', '.codeadd', 'scripts', f),
+        path.join(tmp, '.codeadd', 'scripts', f),
+      );
+    }
     fs.mkdirSync(path.join(tmp, 'docs'), { recursive: true });
     fs.writeFileSync(path.join(tmp, 'README.md'), 'base\n');
     g(['add', '-A']);

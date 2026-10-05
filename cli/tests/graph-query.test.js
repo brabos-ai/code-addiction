@@ -491,13 +491,16 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     expect(r.entries).toEqual([]);
   });
 
-  it('reports a missing bash instead of throwing', () => {
-    // The case that matters is the long-lived MCP server: a throw there kills
-    // every later query, not just this one.
+  it('retires the missing-interpreter state — the native reader needs no shell', () => {
+    // F4: the read moved in-process, so `opts.bash` no longer names an
+    // interpreter and the `bash-missing` state cannot be reached. The override
+    // is accepted and ignored, and the query still answers. The reporting
+    // contract it guarded (a failure reported, never thrown) is exercised by
+    // the missing-reader case above.
     const r = run('product/skill/skillX', { bash: 'definitely-not-a-real-interpreter-xyz' });
 
-    expect(r.unavailable.reason).toBe('bash-missing');
-    expect(r.entries).toEqual([]);
+    expect(r.unavailable).toBeNull();
+    expect(r.entries.map((e) => e.id)).toEqual(['E-live', 'E-gone']);
   });
 
   it('reports an absent index as an empty answer, never an error', () => {
