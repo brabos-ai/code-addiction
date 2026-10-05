@@ -123,7 +123,7 @@ describe('L1 — product pipeline parity, static contract', () => {
     const text = read(P.build);
     expect(text).toMatch(/## The Checkpoint Sequence/);
     expect(text).toMatch(/git tag -a[^\n]*checkpoint\/\$\{FEATURE_ID\}-\$\{EPIC_CURRENT_SF\}-done/);
-    expect(text).toMatch(/converge-gates\.sh/);
+    expect(text).toMatch(/converge-gates\.cjs/);
     expect(text).toMatch(/GATE_EPIC=ok/);
     expect(text).toMatch(/Fix Routing[^\n]*blocker|blocker[^\n]*Fix Routing/);
   });

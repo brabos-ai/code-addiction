@@ -47,7 +47,7 @@ const GRAPH = () => JSON.parse(read(CODEADD, 'artefact-graph.json'));
 const CONTRACTS = () => JSON.parse(read(CODEADD, 'contracts.json'));
 
 const REFERENCE = path.join(CODEADD, 'skills', 'add--doc-schemas', 'references', 'delivery-index.md');
-const SCRIPT = path.join(CODEADD, 'scripts', 'delivered.sh');
+const SCRIPT = path.join(CODEADD, 'scripts', 'delivered.cjs');
 const BATS = path.join(CODEADD, 'scripts', 'tests', 'delivered.bats');
 const FRAGMENT = path.join(CODEADD, 'fragments', 'docs-pruning', 'add-done.md');
 
@@ -74,14 +74,14 @@ describe('L2 — build integrity', () => {
   // ─── L2.2 — the graph gains three nodes and four dependency edges ──────────
   //
   // Asserted POSITIVELY, per the plan: the build is the primary gate (naming
-  // `delivered.sh` in prose without declaring it fails at build.js:1117), so
+  // `delivered.cjs` in prose without declaring it fails at build.js:1117), so
   // this level proves the declarations landed CORRECTLY, not merely that
   // something landed.
 
   it('L2.2: artefact-graph carries the new script node', () => {
     const g = GRAPH();
-    const node = g.nodes.find((n) => n.id === 'product/script/delivered.sh');
-    expect(node, 'delivered.sh missing from the artefact graph').toBeTruthy();
+    const node = g.nodes.find((n) => n.id === 'product/script/delivered.cjs');
+    expect(node, 'delivered.cjs missing from the artefact graph').toBeTruthy();
     expect(node.kind).toBe('script');
     // Scripts are pushed with registered = true hardcoded (build.js:845) —
     // they are NOT in provider-map.json and must never be added to it.
@@ -103,13 +103,13 @@ describe('L2 — build integrity', () => {
     expect(node, 'docs-pruning fragment missing from the artefact graph').toBeTruthy();
   });
 
-  it('L2.2: the four consumers each declare delivered.sh as a dependency', () => {
+  it('L2.2: the four consumers each declare delivered.cjs as a dependency', () => {
     const g = GRAPH();
     for (const consumer of ['add-done', 'add-hotfix', 'add--knowledge-discovery']) {
       expect(
         dependencyTargets(g, consumer),
-        `${consumer} does not depend on delivered.sh`,
-      ).toContain('delivered.sh');
+        `${consumer} does not depend on delivered.cjs`,
+      ).toContain('delivered.cjs');
     }
     // add-brainstorm reaches the index through the skill, not the script —
     // F11 declares `- skill: add--knowledge-discovery`, which is the fourth edge.
@@ -196,9 +196,9 @@ describe('L2 — build integrity', () => {
     );
     expect(pruning.anchor.position).toBe('after');
     const anchorAt = source.indexOf(pruning.anchor.text);
-    const writeAt = source.indexOf('delivered.sh write');
+    const writeAt = source.indexOf('delivered.cjs write');
     expect(anchorAt, 'the docs-pruning anchor is not in add-done source').toBeGreaterThan(-1);
-    expect(writeAt, 'STEP 6 never calls `delivered.sh write`').toBeGreaterThan(-1);
+    expect(writeAt, 'STEP 6 never calls `delivered.cjs write`').toBeGreaterThan(-1);
     expect(anchorAt, 'the pruning anchor sits above the entry write').toBeGreaterThan(writeAt);
   });
 
@@ -252,7 +252,7 @@ describe('L2 — build integrity', () => {
   // ─── L2.5 — packaging, and the per-provider script directory that must not
   //             be invented ─────────────────────────────────────────────────
 
-  it('L2.5: delivered.sh sits under .codeadd/scripts and release.yml packages it', () => {
+  it('L2.5: delivered.cjs sits under .codeadd/scripts and release.yml packages it', () => {
     expect(exists(SCRIPT)).toBe(true);
     const yml = read(ROOT, '.github', 'workflows', 'release.yml');
     expect(yml).toContain('.codeadd/scripts');
@@ -278,9 +278,9 @@ describe('L2 — build integrity', () => {
 describe('L3 — command integration', () => {
   it('L3.1: add-done STEP 6 writes the entry and commits nothing itself', () => {
     const c = cmd('add-done');
-    expect(c).toContain('delivered.sh write');
+    expect(c).toContain('delivered.cjs write');
     const step6 = c.slice(c.indexOf('## STEP add-done.document'), c.indexOf('## STEP add-done.preview'));
-    expect(step6, 'STEP 6 does not author the index entry').toContain('delivered.sh');
+    expect(step6, 'STEP 6 does not author the index entry').toContain('delivered.cjs');
     expect(step6, 'STEP 6 must leave the entry in the working tree').toMatch(
       /DO NOT USE: Bash for git|working tree/,
     );
@@ -294,9 +294,12 @@ describe('L3 — command integration', () => {
     expect(step7).toContain('DO NOT ask for confirmation');
   });
 
-  it('L3.3: done.sh selects its merge mode by a pre-check, never by a conflict', () => {
-    const done = read(CODEADD, 'scripts', 'done.sh');
-    expect(done, 'no deterministic pre-check for the PR path').toContain('main...');
+  it('L3.3: done.cjs selects its merge mode by a pre-check, never by a conflict', () => {
+    const done = read(CODEADD, 'scripts', 'done.cjs');
+    // The native pre-check is `git merge-base --is-ancestor HEAD origin/<main>`
+    // (MERGED_ON_MAIN) plus a tree comparison, replacing the shell's `main...`
+    // rev-list. Either way the mode is decided BEFORE any merge is attempted.
+    expect(done, 'no deterministic pre-check for the PR path').toMatch(/merge-base[^\n]*--is-ancestor/);
     expect(done, 'the direct-commit mode is missing').toMatch(/MERGE_MODE/);
     // FIX-14's empty-diff handling must survive.
     expect(done).toContain('MERGE_COMMIT=SKIPPED');
@@ -313,12 +316,12 @@ describe('L3 — command integration', () => {
   it('L3.5: add-hotfix STEP 4 reads the index with --no-verify and loads no wiki', () => {
     const c = cmd('add-hotfix');
     const step4 = c.slice(c.indexOf('## STEP add-hotfix.history'), c.indexOf('## STEP add-hotfix.synthesize'));
-    expect(step4, 'STEP 4 does not read the index').toContain('delivered.sh read');
+    expect(step4, 'STEP 4 does not read the index').toContain('delivered.cjs read');
     expect(step4, '--no-verify is the whole reason this is allowed at STEP 4').toContain(
       '--no-verify',
     );
     expect(step4, 'STEP 4 must load no wiki page').not.toMatch(/wiki\/(index|domains|conventions)/);
-    expect(usesBlock(c)).toContain('- script: delivered.sh');
+    expect(usesBlock(c)).toContain('- script: delivered.cjs');
   });
 
   it('L3.5: add--knowledge-discovery lands all THREE pieces, never two', () => {
@@ -334,7 +337,7 @@ describe('L3 — command integration', () => {
     expect(toUse, 'STEP 4 is documented as unreachable — the entry point is missing').toMatch(
       /STEP 4|--no-verify/,
     );
-    expect(usesBlock(s)).toContain('- script: delivered.sh');
+    expect(usesBlock(s)).toContain('- script: delivered.cjs');
   });
 
   it('L3.6: add-brainstorm STEP 1 swaps the unranked sweep for the ranked lookup', () => {
@@ -412,9 +415,9 @@ describe('L5.7 — every F-block landed', () => {
   const LANDED = [
     ['F1  reference', () => exists(REFERENCE)],
     ['F2  skill registration', () => usesBlock(skill('add--doc-schemas')).includes('delivery-index.md')],
-    ['F3  delivered.sh', () => exists(SCRIPT)],
+    ['F3  delivered.cjs', () => exists(SCRIPT)],
     ['F4  delivered.bats', () => exists(BATS)],
-    ['F5  add-done STEP 6 write', () => cmd('add-done').includes('delivered.sh write')],
+    ['F5  add-done STEP 6 write', () => cmd('add-done').includes('delivered.cjs write')],
     // Scoped to the STEP 7 slice. An unscoped /STEP 7[\s\S]*find/ matches the
     // word "find" anywhere below STEP 7 and is green before F6 lands.
     ['F6  add-done STEP 7 preview', () => {
@@ -422,9 +425,9 @@ describe('L5.7 — every F-block landed', () => {
       const step7 = c.slice(c.indexOf('## STEP add-done.preview'), c.indexOf('## STEP add-done.merge'));
       return /delivered|index entry/i.test(step7) && step7.includes('find');
     }],
-    ['F7  done.sh pre-check', () => read(CODEADD, 'scripts', 'done.sh').includes('MERGE_MODE')],
+    ['F7  done.cjs pre-check', () => read(CODEADD, 'scripts', 'done.cjs').includes('MERGE_MODE')],
     ['F8  add-pull-request notice', () => /index entry|delivery index/i.test(cmd('add-pull-request'))],
-    ['F9  knowledge-discovery INDEX', () => skill('add--knowledge-discovery').includes('delivered.sh')],
+    ['F9  knowledge-discovery INDEX', () => skill('add--knowledge-discovery').includes('delivered.cjs')],
     ['F10 hotfix STEP 4', () => cmd('add-hotfix').includes('--no-verify')],
     ['F11 brainstorm STEP 1', () => cmd('add-brainstorm').includes('add--knowledge-discovery')],
     ['F12 features registry', () => Boolean(FEATURES['docs-pruning'])],

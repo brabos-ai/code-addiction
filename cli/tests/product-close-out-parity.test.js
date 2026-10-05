@@ -31,7 +31,7 @@ const P = {
   featurePrScript: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'feature-pr.sh'),
   featurePrBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'feature-pr.bats'),
   ecosystem: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--ecosystem', 'SKILL.md'),
-  convergeGates: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'converge-gates.sh'),
+  convergeGates: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'converge-gates.cjs'),
   convergeBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'converge-gates.bats'),
   done: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-done.md'),
   planToReady: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan-to-ready.md'),
@@ -101,7 +101,7 @@ function sourceFiles() {
       if (entry.isDirectory()) {
         if (entry.name === 'node_modules' || entry.name === 'worktrees') continue;
         walk(full);
-      } else if (/\.(md|sh|js|json|bats)$/.test(entry.name)) {
+      } else if (/\.(md|sh|cjs|js|json|bats)$/.test(entry.name)) {
         out.push(full);
       }
     }
@@ -130,13 +130,13 @@ describe('L1 — the deletion (F1)', () => {
   // guard — this assertion PASSES on the pre-F1 tree. The prohibition at line 83
   // forbids two scripts and only the `feature-pr.sh` half is false, so a fix that
   // deletes the whole line removes a rule that is still true and still needed:
-  // `/add-pull-request` genuinely must not call `done.sh`.
-  it('L1.3 (guard): add-pull-request still forbids calling done.sh', () => {
+  // `/add-pull-request` genuinely must not call `done.cjs`.
+  it('L1.3 (guard): add-pull-request still forbids calling done.cjs', () => {
     const text = read(P.pullRequest);
     const line = text
       .split('\n')
-      .find((l) => l.includes('DO NOT USE') && l.includes('done.sh'));
-    expect(line, 'the done.sh prohibition must survive F1').toBeTruthy();
+      .find((l) => l.includes('DO NOT USE') && l.includes('done.cjs'));
+    expect(line, 'the done.cjs prohibition must survive F1').toBeTruthy();
   });
 
   // guard — add--ecosystem has no row for feature-pr.sh today, so F1's sweep there
@@ -178,7 +178,7 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
 
   it('L2.6c: the summary line and the script header state five', () => {
     const sh = read(P.convergeGates);
-    expect(sh).toContain('GATES_OK=$GATES_OK/5');
+    expect(sh).toContain('GATES_OK=${GATES_OK}/5');
     expect(sh).toMatch(/five .*convergence gates/i);
   });
 
@@ -250,7 +250,7 @@ describe('L3 — add-done reads the fifth gate (F3)', () => {
     const text = read(P.done);
     const s43 = text.slice(text.indexOf('### STEP add-done.validate-build-ledger'), text.indexOf('## STEP add-done.promote-qa'));
     expect(s43).toContain('changelog.md');
-    expect(s43).toContain('done.sh --merge');
+    expect(s43).toContain('done.cjs --merge');
   });
 });
 
@@ -381,11 +381,11 @@ describe('L6 — the PR merge route (F9)', () => {
   it('L6.1: the PR route runs its seven calls in order', () => {
     const s8 = step8();
     const order = [
-      'done.sh --commit-push',
+      'done.cjs --commit-push',
       'gh pr checks',
       'headRefOid',
       'gh pr merge --merge',
-      'done.sh --cleanup',
+      'done.cjs --cleanup',
     ];
     let at = -1;
     for (const token of order) {
@@ -473,7 +473,7 @@ describe('L7 — the resume and recovery routes (F10)', () => {
 
   it('L7.5: Recovery never merges', () => {
     const r = routes();
-    expect(r).toMatch(/done\.sh --merge/);
+    expect(r).toMatch(/done\.cjs --merge/);
     expect(r).toMatch(/gh pr merge/);
     expect(r).toMatch(/[Nn]ever/);
   });
@@ -714,7 +714,7 @@ describe('L12 — the product review-discipline skill (F15)', () => {
     const t = read(P.discipline);
     expect(t).toContain('review-NNN.md');
     expect(t).toContain('qa-validation-NNN.md');
-    expect(t).toMatch(/qa-evidence\.sh|converge-gates\.sh/);
+    expect(t).toMatch(/qa-evidence\.cjs|converge-gates\.cjs/);
   });
 
   it('L12.6: the product sibling carries the note and its uses: names no counterpart', () => {

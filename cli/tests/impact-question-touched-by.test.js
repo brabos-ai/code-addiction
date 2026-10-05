@@ -25,19 +25,22 @@ const CODEADD = path.join(REPO, 'framwork', '.codeadd');
 const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
 const readRepo = (...p) => fs.readFileSync(path.join(REPO, ...p), 'utf8');
 
-const SCRIPT = ['scripts', 'delivered.sh'];
+const SCRIPT = ['scripts', 'delivered.cjs'];
 const CONTRACT = ['skills', 'add--doc-schemas', 'references', 'delivery-index.md'];
 const FIX = ['skills', 'add--doc-schemas', 'references', 'fix.md'];
 const SKILL = ['skills', 'add--knowledge-discovery', 'SKILL.md'];
 
 // ─── L2 — the written contracts describe what the code does ──────────────────
 
-describe('L2.1 — the script header carries the new mode', () => {
+describe('L2.1 — the entry carries the new mode', () => {
   it('documents `touched`, its two layers and its exit codes', () => {
-    const header = read(...SCRIPT).split('set -u')[0];
-    expect(header).toMatch(/touched/);
-    expect(header).toMatch(/complete/i);
-    expect(header).toMatch(/curated/i);
+    // The native entry is one file: the header comment states the contract and
+    // the protocol block below emits TOUCHED_COMPLETE / TOUCHED_CURATED. Both
+    // are read here, where the retired shell header carried the same words.
+    const source = read(...SCRIPT);
+    expect(source).toMatch(/touched/);
+    expect(source).toMatch(/complete/i);
+    expect(source).toMatch(/curated/i);
   });
 });
 
@@ -217,7 +220,7 @@ describe('L3.6 — the rejected design did not come back', () => {
 
   it.each([
     'framwork/.codeadd/commands/add-done.md',
-    'framwork/.codeadd/scripts/done.sh',
+    'framwork/.codeadd/scripts/done.cjs',
     'workbench/skills/add-framework--done/SKILL.md',
     'framwork/.codeadd/skills/add--doc-schemas/references/delivery-index.md',
   ])('%s carries no stored merge sha', (rel) => {

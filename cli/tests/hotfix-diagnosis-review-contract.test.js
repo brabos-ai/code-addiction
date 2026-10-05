@@ -42,8 +42,8 @@ describe('hotfix diagnosis and review contracts', () => {
 
   it('persists every accepted diagnose route and gates the hotfix handoff command on a hotfix route', () => {
     const cmd = read('commands', 'add-diagnose.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
-    expect(cmd).toContain('bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline');
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
+    expect(cmd).toContain('node .codeadd/scripts/hotfix-gates.cjs diagnosis-baseline');
     expect(cmd).toMatch(/hotfix\/feature\/extend\/no-action/);
     expect(cmd).toMatch(/rejected diagnosis is not written/i);
     expect(cmd).not.toMatch(/route = no-action \| Write \| Conversational response only/);
@@ -71,7 +71,7 @@ describe('hotfix diagnosis and review contracts', () => {
 
   it('hotfix reuses a valid diagnose report and reviews with one correction wave', () => {
     const cmd = read('commands', 'add-hotfix.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
     expect(cmd).toContain('@docs/diagnose/');
     expect(cmd).toContain('diagnosis-check');
     expect(cmd).toMatch(/STEPS 4-6/);
@@ -93,7 +93,7 @@ describe('hotfix diagnosis and review contracts', () => {
 
   it('done gates hotfix receipts and never sends them to add-review', () => {
     const cmd = read('commands', 'add-done.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
     expect(cmd).toContain('review-validate');
     expect(cmd).toMatch(/BRANCH_TYPE.*=.*hotfix|hotfix branches/i);
     expect(cmd).toContain('--tree');
