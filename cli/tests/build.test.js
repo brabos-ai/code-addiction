@@ -956,110 +956,101 @@ describe('assertNoLintableSources', () => {
     ).not.toThrow();
   });
 
-  // L1.4 — the three canonical backlog modules are allowed by EXACT relative
-  // path. These pin the negatives that keep the exception from widening into a
-  // directory or extension hole, which is the risk the plan's mitigations name.
-  describe('backlog CJS allowlist is path-exact (L1.4)', () => {
+  // L1.4 — the native shipped runtime is admitted by RULE, not by a list of
+  // names: a `.cjs` directly under `.codeadd/scripts/` may ship only when it is
+  // built-ins-only. Each of the six legacy backlog modules satisfies the rule on
+  // its own merits (node: builtins plus ./backlog-*.cjs siblings), and so will
+  // every native entry the migration adds — without ever admitting an installed
+  // package, a nested file, or a file outside the scripts directory.
+  describe('native .cjs admission is built-ins-only and path-exact (L1.4)', () => {
     const writeScript = (relPath, body = '// x') => {
       const full = path.join(tmp, 'scripts', relPath);
       fs.mkdirSync(path.dirname(full), { recursive: true });
       fs.writeFileSync(full, body);
     };
 
-    it('rejects an unrelated .cjs in the scripts tree', () => {
-      writeScript('helper.cjs');
-      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.cjs/);
+    const guard = () => assertNoLintableSources({ skills: {} }, tmp);
+
+    it('admits a .cjs directly under scripts/ that requires only node: builtins', () => {
+      writeScript('delivered.cjs', "const fs = require('node:fs');\nconst path = require('node:path');\n");
+      expect(guard).not.toThrow();
     });
 
-    it('rejects a nested same-basename lookalike', () => {
-      // The allowlist matches a full relative path, not a basename. A copy one
-      // directory down has the same name and must still be an offender.
-      writeScript(path.join('nested', 'backlog-core.cjs'));
-      expect(() => assertNoLintableSources({ skills: {} }, tmp))
-        .toThrow(/nested[/\\]backlog-core\.cjs/);
+    it('admits a .cjs that requires a ./ sibling .cjs — the native closure', () => {
+      writeScript('delivery-index-core.cjs', "const fs = require('node:fs');\n");
+      writeScript('delivered.cjs', "const core = require('./delivery-index-core.cjs');\n");
+      expect(guard).not.toThrow();
     });
 
-    it('rejects a .cjs outside the scripts tree entirely', () => {
+    it('admits a no-import .cjs — built-ins-only holds vacuously', () => {
+      writeScript('smoke-test.cjs', '#!/usr/bin/env node\nconsole.log("ok");\n');
+      expect(guard).not.toThrow();
+    });
+
+    it('rejects a .cjs that requires an installed package', () => {
+      writeScript('helper.cjs', "const yaml = require('yaml');\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a bare non-builtin specifier reached through import', () => {
+      writeScript('helper.cjs', "import chalk from 'chalk';\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a .cjs that reaches OUT of the scripts dir with ../', () => {
+      writeScript('helper.cjs', "const x = require('../shared/core.cjs');\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a .cjs that reaches into a nested sibling directory', () => {
+      writeScript('helper.cjs', "const x = require('./nested/core.cjs');\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a relative .js sibling — only .cjs is part of the closure', () => {
+      writeScript('helper.cjs', "const x = require('./other.js');\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a dynamic require it cannot verify', () => {
+      writeScript('helper.cjs', "const name = 'yaml';\nconst y = require(name);\n");
+      expect(guard).toThrow(/helper\.cjs/);
+    });
+
+    it('rejects a nested same-basename .cjs lookalike — the rule is one level deep', () => {
+      writeScript(path.join('nested', 'backlog-core.cjs'), "const fs = require('node:fs');\n");
+      expect(guard).toThrow(/nested[/\\]backlog-core\.cjs/);
+    });
+
+    it('rejects a .cjs outside the scripts tree, even when built-ins-only', () => {
       const dir = path.join(tmp, 'templates');
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, 'backlog-core.cjs'), '// x');
-      expect(() => assertNoLintableSources({ skills: {} }, tmp))
-        .toThrow(/templates[/\\]backlog-core\.cjs/);
+      fs.writeFileSync(path.join(dir, 'core.cjs'), "const fs = require('node:fs');\n");
+      expect(guard).toThrow(/templates[/\\]core\.cjs/);
     });
 
-    it('rejects .js in the scripts tree — the exception is per file, not per extension', () => {
+    it('rejects .js in the scripts tree — the exception is .cjs-only', () => {
       writeScript('helper.js');
-      expect(() => assertNoLintableSources({ skills: {} }, tmp)).toThrow(/helper\.js/);
+      expect(guard).toThrow(/helper\.js/);
     });
 
-    // NB — the native-backlog modules join the SAME exact-path exception, one
-    // full relative path each. collectLintableSources computes its relative
-    // path against the build module's ROOT, so a tmp fixture can only carry
-    // the negatives; the positive exemption legs are the exported set (exact
-    // membership) and the real tree, data-driven, as each module appears.
-    describe('the native-backlog allowlist additions are path-exact (L1.4nb)', () => {
-      const NEW_CANONICAL = ['backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs'];
-      const FULL = (name) => `framwork/.codeadd/scripts/${name}`;
-
-      it('the allowlist names exactly the six canonical modules', () => {
-        const expected = [
-          'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-          ...NEW_CANONICAL,
-        ].map(FULL).sort();
-        expect([...SHIPPED_SOURCE_ALLOWLIST].sort()).toEqual(expected);
-      });
-
-      it('every shipped canonical module that exists is exempt from the guard', () => {
-        const root = path.resolve(import.meta.dirname, '..', '..');
-        const realCodeadd = path.join(root, 'framwork', '.codeadd');
-        const names = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', ...NEW_CANONICAL];
-        const present = names.filter((n) => fs.existsSync(path.join(realCodeadd, 'scripts', n)));
-        expect(present.length, 'the fixtures this run test the shipped tree').toBeGreaterThan(0);
-        for (const n of present) {
-          expect(
-            collectLintableSources(path.join(realCodeadd, 'scripts')).filter((p) => p === FULL(n)),
-            `${n} must not be an offender`,
-          ).toEqual([]);
-        }
-        expect(() => assertNoLintableSources(readMap(), realCodeadd)).not.toThrow();
-      });
-
-      it('rejects a nested same-basename lookalike of each new module', () => {
-        for (const name of NEW_CANONICAL) writeScript(path.join('nested', name));
-        try {
-          assertNoLintableSources({ skills: {} }, tmp);
-          expect.unreachable();
-        } catch (e) {
-          for (const name of NEW_CANONICAL) {
-            expect(e.message).toMatch(new RegExp(`nested[/\\\\]${name}`));
-          }
-        }
-      });
-
-      it('rejects a new module name outside the scripts tree', () => {
-        writeScript(path.join('..', 'templates', NEW_CANONICAL[0]));
-
-        expect(() => assertNoLintableSources({ skills: {} }, tmp))
-          .toThrow(new RegExp(`templates[/\\\\]${NEW_CANONICAL[0]}`));
-      });
-
-      it('rejects a wrong-extension shipmate of a new module', () => {
-        writeScript(NEW_CANONICAL[1].replace(/\.cjs$/, '.js'));
-
-        expect(() => assertNoLintableSources({ skills: {} }, tmp))
-          .toThrow(/backlog-git\.js/);
-      });
+    it('rejects .mjs in the scripts tree — the exception is .cjs-only', () => {
+      writeScript('helper.mjs', "import fs from 'node:fs';\n");
+      expect(guard).toThrow(/helper\.mjs/);
     });
 
-    it('the allowlist covers exactly the three canonical modules in the real tree', () => {
-      const root = path.resolve(import.meta.dirname, '..', '..');
-      const scriptsDir = path.join(root, 'framwork', '.codeadd', 'scripts');
-      const CANONICAL = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs'];
-      for (const name of CANONICAL) {
-        expect(fs.existsSync(path.join(scriptsDir, name)), `${name} is missing`).toBe(true);
+    it('the exact allowlist carries no script path — scripts are the rule now', () => {
+      for (const p of SHIPPED_SOURCE_ALLOWLIST) {
+        expect(p, 'the exact allowlist is for non-script exceptions only').not.toMatch(/\/scripts\//);
       }
-      // And the real tree carries no OTHER lintable source under scripts/.
-      expect(collectLintableSources(scriptsDir)).toEqual([]);
+    });
+
+    it('the real shipped tree is clean under the rule', () => {
+      const root = path.resolve(import.meta.dirname, '..', '..');
+      const codeadd = path.join(root, 'framwork', '.codeadd');
+      const scriptsDir = path.join(codeadd, 'scripts');
+      expect(collectLintableSources(scriptsDir, [], { scriptsDir })).toEqual([]);
+      expect(() => assertNoLintableSources(readMap(), codeadd)).not.toThrow();
     });
   });
 });
