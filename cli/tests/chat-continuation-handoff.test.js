@@ -161,6 +161,12 @@ describe('optional chat continuation handoff', () => {
       expect(read(FINAL_REPORT)).toMatch(/official document/i);
     });
 
+    it('explicitly places the complete invocation on the accepted block first line', () => {
+      // The original L3 accepted turn put an introduction before the invocation.
+      // This guard protects the authored correction; live conversations remain L3.
+      expect(read(FINAL_REPORT)).toContain("Start the block's first line with the complete next-command invocation");
+    });
+
     it('binds the offer to a top-level finishing command, not a worker', () => {
       const src = read(FINAL_REPORT);
       expect(src).toMatch(/top-level/i);
@@ -193,7 +199,9 @@ describe('optional chat continuation handoff', () => {
       '%s consumes both contracts at %s',
       (file, anchor) => {
         const src = read(path.join('commands', file));
-        expect(src).toContain(anchor);
+        const name = anchor.replace(/^#{2,3}\s+/, '');
+        const heading = new RegExp(`^#{2,3} (?:STEP )?${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[:\\s]|$)`, 'm');
+        expect(src).toMatch(heading);
         expect(src).toContain(OUTPUT);
         expect(src).toContain(ELIGIBILITY);
       },

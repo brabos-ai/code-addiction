@@ -258,7 +258,7 @@ activity and its documents.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/audits/<date>-audit-report.md` | The findings and severities the new feature is scoped from |
+| `docs/audit/${AUDIT_DATE}.md` | The findings and severities the new feature is scoped from |
 | `docs/features/<id>/about.md` | What the feature created for that critical issue is for |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing a new feature takes next |
 

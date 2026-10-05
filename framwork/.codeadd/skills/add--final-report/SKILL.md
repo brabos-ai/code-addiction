@@ -123,6 +123,7 @@ waits for the answer.
 ```
 IF THE USER ACCEPTS THE PENDING OFFER:
   ✅ DO: Respond with exactly one fenced plain-text block and nothing around it
+  ✅ DO: Start the block's first line with the complete next-command invocation
   ⛔ DO NOT USE: Write on any file — the handoff is chat text, never a generated document
   ⛔ DO NOT: Run the next command, follow its file, or treat acceptance as consent to anything
 
@@ -273,7 +274,7 @@ ALWAYS:
 - Write the Deleted row even when it reads "none"
 - Name the host and the step for every integration point
 - Print a command's own mandatory artefact whole, after the seven blocks
-- Offer the continuation handoff once, after the metadata, at a top-level finishing command
+- Offer the continuation handoff once, after the metadata, only when `add--delivery-mode` makes the top-level completion eligible
 - Answer an accepted offer with one block carrying the invocation, the activity and its official documents
 
 NEVER:

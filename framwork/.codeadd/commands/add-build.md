@@ -1572,10 +1572,9 @@ not rulings and go in their own short list.
 
 ### STEP add-build.next-command Next command
 
-**The next activity, not the next command's text.** Name it here — the command, the feature id and the
-arguments — so the report's metadata says what follows. On `automatic` this line is the handoff and
-the build follows it; on `confirm` it is a statement of fact, and the copyable instruction block is
-the user's to ask for.
+**On `confirm`, name the next activity in prose, with its feature or subfeature scope; do not print
+the full invocation.** On `automatic`, print the complete invocation and follow it. The copyable
+instruction block on `confirm` waits for the user's acceptance.
 
 - After `## Loop End` → the step it reached: `/add-plan ${FEATURE_ID}` for the next subfeature, or,
   past the publish question, `/add-done` — with `/add-review ${FEATURE_ID}` named as optional, for
@@ -1605,8 +1604,7 @@ never merged into one prompt.
 | Document | Role in the next activity |
 |---|---|
 | `docs/features/${FEATURE_ID}/plan.md` | The tasks this build implemented against, and the ones still open |
-| `docs/plans/` ledger path, from the metadata | Which rulings were made and what each cost if wrong |
-| The `Final review:` verdict this build wrote | What the build's own review left open, and what `/add-done` reads |
+| `${LEDGER_FILE}`, resolved to the actual feature or subfeature `build-ledger.md` | The rulings and latest `Final review:` verdict, including what `/add-done` reads |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 
 ---

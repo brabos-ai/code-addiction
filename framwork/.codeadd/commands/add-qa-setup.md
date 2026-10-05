@@ -462,7 +462,7 @@ Then, after the seven blocks, tell the user, in order:
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
-8. Run the audit: `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result.
+8. The audit is the next activity: `/add-review` on the feature, scoped to the SFxx subfeature when one exists. Its QA sections judge the rendered result. Name it here; `STEP add-qa-setup.offer` puts the full invocation behind the offer.
 
 `/add-qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 
@@ -474,7 +474,7 @@ work and there is nothing to continue into.
 
 | State | Next activity |
 |---|---|
-| Feature exists and the audit can run | `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result |
+| Feature exists and the audit can run | `/add-review` on the feature, scoped to the SFxx subfeature when one exists — its QA sections validate the rendered result (UX + functional) |
 | No feature or no `screens.json` yet | none — build the feature first |
 | Migration branch awaiting review | none — that is a human review of an open PR |
 
@@ -491,7 +491,6 @@ row.
 |---|---|
 | `docs/qa/qa-setup.md` | The receipt whose shape hash decides whether setup is current |
 | `${FEATURE_DIR}/about.md` | The feature the audit judges |
-| `docs/decisions/` or the migration Decision Log | What the migration branch still awaits review on |
 | {{skill:add--qa/SKILL.md}} | What the audit's QA sections measure |
 
 ---

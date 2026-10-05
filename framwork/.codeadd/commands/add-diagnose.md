@@ -395,5 +395,5 @@ NEVER:
 - Modify code — READ-ONLY boundary, applies throughout
 - Accept "something is weird" as a symptom (STEP add-diagnose.capture) — push for an observable predicate (WHEN/THEN/BUT)
 - Persist a rejected diagnosis (STEP add-diagnose.persist)
-- Invoke `/add-hotfix` from this command — print the copy-ready path only
+- Invoke `/add-hotfix` from this command — reserve its copy-ready invocation for the accepted continuation response
 - Guess past the 3-failure stop rule (STEP add-diagnose.analyze) — return to framing instead

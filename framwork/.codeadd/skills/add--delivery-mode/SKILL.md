@@ -196,7 +196,8 @@ wave and writes the verdict `/add-done` reads — `add--review-discipline` owns 
 its loop end: the checkpoint on an epic, then the next subfeature or the publish question.
 
 **`/add-review` is not on the automatic path.** It is optional, for detail and QA, and a user runs it.
-It never hands a delivery on, and nothing hands a delivery to it.
+It never hands a delivery on, and no automatic pipeline step hands a delivery to it. An explicit
+review invocation can carry `automatic`; that carrier grants neither execution nor a manual offer.
 
 **The publish question is where the automatic path ends.** Whatever the final review left open is
 printed there, never fixed silently and never dropped.

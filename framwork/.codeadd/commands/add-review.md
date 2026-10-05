@@ -923,7 +923,7 @@ answer.
 
 | How the review was invoked | Ending |
 |---|---|
-| By hand, no automatic carrier | `manual` — finish the report, then ask ONCE for fresh-context instructions, then wait |
+| By hand, no automatic carrier | `confirm` — finish the report, then ask ONCE for fresh-context instructions, then wait |
 | From inside an automatic delivery | Stop under the rule above. **No offer** — there is no one at the keyboard to answer it, and a question the delivery cannot answer is noise |
 
 **Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is

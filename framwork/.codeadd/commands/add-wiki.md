@@ -867,7 +867,6 @@ Finish the report and its metadata, then ask ONCE for instructions only on the s
 | Document | Role in the next activity |
 |---|---|
 | `.codeadd/wiki/index.md` | What the run mapped, and what an audit or a new feature reads first |
-| `docs/audits/<date>-audit-report.md` | Where a deep health check records what it finds |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the run's outcome takes |
 
 ---
