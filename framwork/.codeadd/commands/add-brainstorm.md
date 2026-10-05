@@ -5,6 +5,7 @@
 - skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--knowledge-discovery
+- mention: add--ecosystem
 - command: /add-diagnose
 - command: /add-hotfix
 - command: /add-new
@@ -47,12 +48,13 @@ command on its own initiative.
 IF a feature/bug/plan handoff is warranted:
   ⛔ DO NOT: Run /add-new, /add-diagnose, /add-hotfix or /add-plan because you judged it useful
   ⛔ DO NOT: Type a slash-command as if executing it
-  ✅ DO: Print the suggested command as TEXT at STEP add-brainstorm.handoff, then STOP
+  ⛔ DO NOT: Print the suggested command's full invocation — the offer at STEP add-brainstorm.route puts it behind the user's answer
+  ✅ DO: Name the route in the report's metadata at STEP add-brainstorm.route, then offer and STOP
 
 IF the user asks to implement OR you spot a solution:
   ⛔ DO NOT USE: Edit on application code files
   ⛔ DO NOT USE: Bash for implementation
-  ✅ DO: Keep exploring; route as a suggestion at STEP add-brainstorm.handoff
+  ✅ DO: Keep exploring; name the next route at STEP add-brainstorm.route and offer it there
 
 IF writing the brainstorm document (STEP add-brainstorm.write-doc):
   ⛔ DO NOT: Write full classes/methods or multi-line code blocks
@@ -67,7 +69,7 @@ the user's decision carried out — and it is the one handoff this command makes
 ```
 IF THE USER CHOSE "Approve, deliver automatically" AT STEP add-brainstorm.handoff:
   ✅ DO: Follow {{cmd:add-new}} with the intent file, after writing it — and nothing else
-  ⛔ DO NOT: Follow /add-diagnose, /add-hotfix or /add-plan — those routes stay text on every answer
+  ⛔ DO NOT: Follow /add-diagnose, /add-hotfix or /add-plan — every route stays a suggestion the user accepts, never one you run
 ```
 
 **Two files may be written, and only these two, both under `docs/brainstorm/`:**
@@ -201,7 +203,7 @@ still presented, and this command still stops until the user says yes.
 
 | Path | What STEP add-brainstorm.explore does | Then |
 |------|-----------------|------|
-| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which reports and routes as text. No intent file, no approval question. |
+| **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP add-brainstorm.route, which reports and names the route, then offers it. No intent file, no approval question. |
 | **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
 | **architectural** | Everything written below. | STEPS 3 → 4 → 5. |
 
@@ -452,7 +454,7 @@ option table — with these three options and nothing else:
 
 | Option | What happens |
 |---|---|
-| **Approve, I confirm each stage** | The intent file records `delivery: confirm`. The next command is printed as text and this command stops |
+| **Approve, I confirm each stage** | The intent file records `delivery: confirm`. Each stage stops and offers optional fresh-context instructions; this command stops |
 | **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this command follows `/add-new`. Every stage then hands off without waiting until the build asks whether to open the PR |
 | **Keep discussing** | No intent file, no handoff. Return to STEP add-brainstorm.explore with what the user wants to reopen |
 
@@ -475,7 +477,7 @@ IF THE ANSWER IS "Keep discussing":
 ```
 
 ⛔ **A spike is asked no three-option question.** Its output is a recommendation; keeping it is a new
-request with its own classification. It goes straight to STEP add-brainstorm.route and routes as text.
+request with its own classification. It goes straight to STEP add-brainstorm.route and is named there.
 
 ### STEP add-brainstorm.write-intent-file Write the intent file — `bounded` and `architectural`
 
@@ -512,35 +514,31 @@ extracts decisions from this file without asking.
 
 ### STEP add-brainstorm.route Route
 
-| Signal | Suggest |
-|--------|---------|
-| Feature need emerges / ready to formalize | `/add-new` |
-| Vague symptom / suspected bug | `/add-diagnose` |
-| Clear bug discovered | `/add-hotfix` |
-| Needs more exploration | continue brainstorm — nothing to hand off yet |
-
-**The `Intent:` line appears only where the file exists AND the next command reads it.** That is
+**Include the intent path only where the file exists AND the next command reads it.** That is
 `/add-new` alone — it resolves the intent file at its STEP add-new.intent. `/add-diagnose` and `/add-hotfix` have
 no such step, so naming the file to them would promise a handoff neither receives.
 
-On `delivery: confirm`, and on every route that is not `/add-new`, print and STOP:
+On `delivery: confirm`, and on every route that is not `/add-new`, name the route in the report's
+metadata and offer the continuation:
 
-```text
-Idea is ready to formalize. Run:  /add-new
-Intent: docs/brainstorm/<the file written at STEP add-brainstorm.write-intent-file>
-(brainstorm stops here — it does not run the next command for you.)
-```
+| Route | Next activity | Documents the block points at |
+|---|---|---|
+| `/add-new` | Formalize the idea as a feature | The existing intent file written at STEP add-brainstorm.write-intent-file carries every settled decision; do not invent a feature id or cite its future files as existing references |
+| `/add-diagnose` | Triage a suspected bug | Actual existing project evidence for the symptom; `add--ecosystem` Main Flows carries the routing |
+| `/add-hotfix` | Fix a confirmed bug | Actual existing diagnosis or issue documents, when available; never fabricate a hotfix directory that the next command has not created |
+| Needs more exploration | none — stay in this conversation | Offer nothing |
 
-```text
-Suspected bug. Run:  /add-diagnose
-(brainstorm stops here — it does not run the next command for you.)
-```
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. The last row above is the
+no-activity case: a brainstorm that still needs exploring has no next command, so it ends normally
+with no offer.
 
-On `delivery: automatic`, print the same `/add-new` lines with the last one reading `(delivering
+On `delivery: automatic`, print the `/add-new` line with the last one reading `(delivering
 automatically — the build will ask before opening the PR.)`, then follow {{cmd:add-new}} with the intent
 file as its argument, from its first step, as `add--delivery-mode` describes.
 
-⛔ **On `spike`, print the route as text and stop.** No `Intent:` line — no intent file was written.
+⛔ **On `spike`, name the route and stop.** Include no intent path — no intent file was written.
 
 ---
 

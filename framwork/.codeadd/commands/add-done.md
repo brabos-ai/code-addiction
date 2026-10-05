@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -1003,8 +1004,8 @@ why it is the one call this command makes directly.
 <!-- /feature:board:ticket-carry -->
 <!-- /slot:board.ticket-carry -->
 
-**Resolve the next command here, state it at STEP add-done.complete:**
-READ skill `add--ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
+**Resolve the next activity here, state it at STEP add-done.complete:**
+READ skill `add--ecosystem` Main Flows section. Resolve whether the user stated a next goal for this work FIRST — a merged branch carries none of its own, and branch type alone says only what shipped. Then use the branch type and epic status. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
 
 <!-- slot:gitnexus.graph-reindex fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-reindex -->
@@ -1041,8 +1042,44 @@ Then, after the seven blocks, state:
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
 <!-- /slot:board.ticket-report -->
-- The next command, from the `add--ecosystem` Main Flows section, chosen for the current branch type
+- The next activity, from the `add--ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
+
+### STEP add-done.handoff Offer the continuation
+
+**Every stop in this command is deciding, and none of them is this one.** The merge already happened
+by the time this runs, so the offer is a question about what comes next — never a substitute for a
+gate, and never a merge consent.
+
+**The FIRST row is the test for whether there is a next activity at all, so it is evaluated first.**
+A merged branch carries no goal of its own; the branch type only says what the delivery *was*. Read
+the rows top-to-bottom and stop at the first match, exactly as `add--ecosystem` Main Flows does.
+
+| State after the merge | Next activity |
+|---|---|
+| **No next goal was stated for this work** | none — the delivery is closed |
+| Feature branch, back on main, next feature stated | `/add-new` — start that feature |
+| Epic, subfeatures still pending, next one stated | `/add-build feature N` — the next subfeature |
+| Hotfix, and the user has said what comes next | `/add-new` — return to feature work |
+
+Finish the report and its metadata, then ask ONCE for instructions only on rows 2 to 4.
+
+⛔ **Never propose a new feature the user did not ask for.** "Back on main" and "was an epic" are
+facts about what shipped, not intentions about what comes next. Reading either as a reason to start
+something is how a close-out launches an epic its user never requested, and it is why row 1 is
+evaluated before all three.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
+| `docs/features/<id>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---
 

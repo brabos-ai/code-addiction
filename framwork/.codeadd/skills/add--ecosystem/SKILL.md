@@ -114,13 +114,18 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 ## Commands
 
+The Skills Loaded column below also includes `add--delivery-mode` for `add-audit`, `add-diagnose`,
+`add-done`, `add-hotfix`, `add-pull-request`, `add-qa-setup` and `add-wiki`: each now resolves
+continuation eligibility through it. Diagnosis hotfix routes reserve the full `@report` invocation
+for accepted manual instructions; the route itself remains unchanged.
+
 | Command | Purpose | Skills Loaded |
 |---------|---------|---------------|
 | add | Intelligent gateway - answers questions, guides flows, suggests next command | add--dev-environment-setup, add--ecosystem |
 | add-audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add--investigation on ambiguous findings | add--doc-schemas, add--ecosystem, add--final-report, add--health-check, add--investigation, add--subagent-driven-development |
 | add-brainstorm | Explore ideas (READ-ONLY) | add--backlog (board), add--delivery-mode, add--doc-schemas, add--final-report, add--knowledge-discovery |
 | add-build | Development Execution Specialist. STEP 2 create-or-checkout of the feature branch via build-setup.sh (`F[NNNN]` + `--worktree` args). Consumes the review's `## Fix Routing` table and writes the resolution annex back. Generates unit/integration tests via @test-agent (tdd-pipeline) and E2E specs via @e2e-agent (qa-pipeline). `## Final Review` reviews each delivery unit whole (`@reviewer-agent` `MODE: feature`, conditional OWASP, one fix wave) and writes the `Final review:` ledger line `/add-done` accepts; the build then enters its loop end itself — the Checkpoint Sequence on an epic, then the next subfeature or the publish question | add--backend-development, add--backlog (board), add--code-review, add--commit, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--final-report, add--frontend-development, add--id-convention, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--tdd (tdd-pipeline), add--ux-design |
-| add-diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Persists every accepted diagnosis, including no-action. Hotfix routes print `/add-hotfix @docs/diagnose/<file>.md`. READ-ONLY | add--doc-schemas, add--ecosystem, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development |
+| add-diagnose | Pre-decision investigative triage for ambiguous symptoms. Applies 5-phase methodology in agent-dispatched mode: parallel @feature-history-agent ∥ @git-history-agent, then sequential @architecture-agent. Persists every accepted diagnosis, including no-action. Accepted continuation instructions preserve the hotfix `@docs/diagnose/<file>.md` interface. READ-ONLY | add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development |
 | add-done | Finalize feature, promote the exact reviewed QA baseline to immutable `_tests/final/run-NNN/`, generate changelog, and merge. Hotfix close-out requires a passed current `about.md` Review receipt via `hotfix-gates.sh`. Final evidence preserves open findings; it is not a pass certificate | add--backlog (board), add--doc-schemas, add--ecosystem, add--final-report, add--id-convention, add--wiki-maintenance |
 | add-hotfix | Urgent fix with global ID ([NNNN]H). Optional `@docs/diagnose/*.md` reuses an accepted diagnosis and skips duplicated investigation. With tdd-pipeline, pins the confirmed root cause with a coordinator-verified RED test before any edit. After the fix, dispatches @reviewer-agent (conditional OWASP) and one @fix-agent wave, then writes the Review receipt in about.md. Creates isolated doc in docs/features/[NNNN]H-*, recording the user-confirmed cause as typed `caused_by` relations in its about.md | add--backlog (board), add--doc-schemas, add--ecosystem, add--final-report, add--id-convention, add--investigation, add--knowledge-discovery, add--subagent-driven-development, add--tdd (tdd-pipeline), add--ux-design |
 | add-new | Feature discovery, creates about.md (records `branch:` frontmatter — branch created later by add-build) | add--backlog (board), add--delivery-mode, add--doc-schemas, add--feature-specification, add--final-report, add--id-convention, add--knowledge-discovery, add--plan-review, add--review-discipline, add--subagent-driven-development |
@@ -143,7 +148,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 | add--code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID |
 | add--commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules |
 | add--database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic |
-| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), where each is carried, which stops wait, how one command hands off to the next, and where the automatic path ends — the build's publish question |
+| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, optional manual continuation eligibility, same-session automatic handoff, and its publish-question terminus |
 | add--delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass |
 | add--dev-environment-setup | Detect OS, diagnose missing tools, install WSL/git/jq/gh, configure VS Code |
 | add--doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (incl. the `setup-receipt` schema) — single source of truth for all generated docs |
@@ -313,8 +318,18 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 
 Conditions evaluated top-to-bottom — use FIRST match.
 
-| After | Condition | Suggest | Why |
-|-------|-----------|---------|-----|
+**This table resolves a NEXT ACTIVITY. It does not decide how that activity is delivered to the
+user.** On a manual run the finishing command offers optional fresh-context instructions rather than
+printing an invocation — `chat-continuation-eligibility-v1` in `add--delivery-mode` owns when that
+offer is made, and `chat-continuation-output-v1` in `add--final-report` owns what an accepted answer
+contains. This skill names the rows and stays out of both.
+
+**Read the Next activity column as routing, not as text to paste.** A row whose value is `none`, or
+which names a wait (`none — wait for review`) or staying put (`continue brainstorm`), is the absence of
+a next activity — and a command resolving one of those rows offers nothing at all.
+
+| After | Condition | Next activity | Why |
+|-------|-----------|---------------|-----|
 | add-brainstorm | idea ready to formalize | `/add-new` | Capture as feature |
 | add-brainstorm | needs more exploration | continue brainstorm | Not ready to commit |
 | add-brainstorm | bug suspected, needs investigation | `/add-diagnose` | Structured triage needed |
@@ -322,32 +337,43 @@ Conditions evaluated top-to-bottom — use FIRST match.
 | add-diagnose | route=hotfix | `/add-hotfix @docs/diagnose/<file>.md` | Confirmed bug requiring urgent fix |
 | add-diagnose | route=feature | `/add-new` | Confirmed functional gap |
 | add-diagnose | route=extend | `/add-new` or `/add-plan` | Extend existing feature — load prior context |
-| add-diagnose | route=no-action | done | No real problem — stop here |
+| add-diagnose | route=no-action | none | No real problem — stop here |
 | add-new | feature needs technical planning | `/add-plan` | Architect before building. STEP 7.1 produces the UX contract when the feature touches UI |
 | add-new | feature is simple (1-2 files) | `/add-build` | Skip planning, build directly |
 | add-new | delivery mode is `automatic` (chosen at `/add-brainstorm`'s approval) | (hands off itself) | `/add-new` follows `{{cmd:add-plan}}` from its first step — see `add--delivery-mode` |
 | add-plan | default | `/add-build` | Most common path |
 | add-plan | delivery mode is `automatic` | (hands off itself) | `/add-plan` follows `{{cmd:add-build}}` from its first step — see `add--delivery-mode` |
 | add-build | final review passed or ruled | `/add-done` | The build reviewed the whole unit; `/add-review` is optional, for detail and the QA judgement |
-| add-build | final review blocked | each `Blocker suggestion:` command | Printed ready to paste; `/add-done` blocks until one clears it |
+| add-build | final review blocked | each `Blocker suggestion:` command | The build names them; `/add-done` blocks until one clears it |
 | add-build | mode=CORRECTION | `/add-done` | The correction wrote a newer `Final review:` verdict — no second review needed |
 | add-build | epic, more subfeatures pending | `/add-plan` for the next subfeature (automatic delivery does this itself) | Next subfeature in epic |
-| add-review | status=BLOCKED with routed rows | `/add-build` | It consumes `## Fix Routing`, applies the fixes and appends the resolution annex |
+| add-review | status=BLOCKED with only manual remedies | none — manual action required | No agent-runnable correction is selected |
+| add-review | status=BLOCKED with agent-routed rows | `/add-build` | It consumes `## Fix Routing`, applies the fixes and appends the resolution annex |
 | add-review | status=PASSED | `/add-done` | All gates green, finalize |
 | add-review | status=BLOCKED | fix + `/add-build` | The build's verdict after the fix supersedes this review |
 | add-hotfix | always | `/add-done` | Hotfix ready, finalize branch |
 | add-review | needs team review before merge | `/add-pull-request` | PR for human review |
-| add-pull-request | PR open, awaiting review | wait for review | Human review pending |
+| add-pull-request | PR open, awaiting review | none — wait for review | Human review pending; there is no agent activity to continue into |
 | add-pull-request | PR merged on GitHub | `/add-done` | Cleanup local branch + tags |
 | add-pull-request | scope grew, need to update PR | `/add-pull-request` | Idempotent — appends update section |
-| add-done | was feature, back on main | `/add-new` | Start next feature |
-| add-done | was epic, more subfeatures | `/add-build feature N` | Next subfeature |
-| add-done | was hotfix | `/add-new` | Return to feature work |
+| add-done | no next goal stated for this work | none | The delivery is closed — see the prohibition below. Evaluated FIRST, because a merged branch carries no goal of its own |
+| add-done | was feature, back on main, next feature stated | `/add-new` | Start that feature |
+| add-done | was epic, more subfeatures pending, next one stated | `/add-build feature N` | Next subfeature |
+| add-done | was hotfix, and the user said what comes next | `/add-new` | Return to feature work |
 | add-ux | within active feature | return to current flow | UX applied, resume workflow |
-| add-ux | standalone | done | One-off UX task |
+| add-ux | standalone | none | One-off UX task |
 | add-wiki | issues found | `/add-audit` | Deep health check |
 | add-wiki | context mapped, ready to build | `/add-new` | Start building with context |
-| add-wiki | standalone analysis | done | Analysis delivered |
+| add-wiki | standalone analysis | none | Analysis delivered |
 | add-audit | critical issues found | `/add-new` per issue | Create features to fix findings |
 | add-qa-setup | prereqs + config ready | `/add-review` | Its QA sections validate the rendered result (UX + functional) — optionally `codeadd plugins enable playwright` first for live driving |
-| add-audit | project healthy | done | No action needed |
+| add-audit | project healthy | none | No action needed |
+
+⛔ **Never propose a feature nobody asked for at `add-done`.** The `was feature / was epic / was
+hotfix` rows fire on the branch's own history, which is a fact. A branch merged with no stated next
+goal is a completed delivery, and inventing an epic to fill the column is how a close-out starts work
+its user never requested.
+
+**Two rows are exempt from the offer by role, not by state.** `add` routes and transforms; `add-ux`
+rewrites an instruction. Neither finishes work, so neither reports, and neither offers — a
+continuation question from a router leaves the user two threads and no delivery to attach either to.
