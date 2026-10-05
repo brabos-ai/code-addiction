@@ -1027,6 +1027,7 @@ test('delivered#070 node: an entry-level node SURVIVES --repair, so the join is 
     commitAll(r.repo);
     const res0 = runWrite(r.repo, validRecord({ node: 'product/skill/add-doc-schemas' }));
     assert.equal(res0.status, 0, res0.output);
+    require('node:fs').mkdirSync(`${r.repo}/src/auth2`, { recursive: true });
     h.git(r.repo, ['mv', 'src/auth/google.ts', 'src/auth2/google.ts']);
     commitAll(r.repo, 'moved');
     const res = runVerify(r.repo, ['--repair']);
