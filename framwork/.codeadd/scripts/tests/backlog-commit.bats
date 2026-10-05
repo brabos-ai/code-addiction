@@ -69,6 +69,11 @@ seed_board() {
   run commit search 'provider map'
   [ "$status" -eq 2 ]
   printf '%s\n' "$output" | grep -q 'ERROR=read-mode'
+
+  # get joins the read set: exact detail is a local read too.
+  run commit get 0001B
+  [ "$status" -eq 2 ]
+  printf '%s\n' "$output" | grep -q 'ERROR=read-mode'
 }
 
 @test "L1.4: a native add lands, persists and commits locally" {

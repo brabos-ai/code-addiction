@@ -3,8 +3,8 @@
  * capture, one operation root, the same domain operation as the local CLI,
  * and the publication report.
  *
- * WRITE MODES ONLY. `list` and `search` commit nothing and are refused by
- * name (ERROR=read-mode), exactly as the wrapper refused them.
+ * WRITE MODES ONLY. `list`, `search` and `get` commit nothing and are
+ * refused by name (ERROR=read-mode), exactly as the wrapper refused them.
  *
  * THE ORDER THAT KEEPS DATA RECOVERABLE:
  *   1. Parse once — the local CLI's grammar, verbatim.
@@ -57,7 +57,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   move    <id> --top | --after <id> | --bottom
   remove  <id>
 
-\`list\` and \`search\` are reads. Call backlog-cli.cjs directly for those.
+\`list\`, \`search\` and \`get\` are reads. Call backlog-cli.cjs directly for those.
 Records also accept stdin when --record-file is absent.
 `;
 
@@ -191,8 +191,9 @@ function protectOrDegrade(callerRoot, sha, report, state) {
 function main(argv) {
   const args = argv !== undefined ? argv : process.argv.slice(2);
   // Reads are refused BY NAME before any parsing, exactly as the wrapper
-  // refused them: `list`/`search` never reach the grammar's argument rules.
-  if (['list', 'search'].includes((args[0] || ''))) {
+  // refused them: `list`/`search`/`get` never reach the grammar's argument
+  // rules, so a read with a record-file spelling never captures a file.
+  if (['list', 'search', 'get'].includes((args[0] || ''))) {
     process.stdout.write('ERROR=read-mode\n');
     usage();
     process.exit(2);

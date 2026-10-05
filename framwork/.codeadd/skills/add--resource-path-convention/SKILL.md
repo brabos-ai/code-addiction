@@ -78,8 +78,9 @@ node .codeadd/scripts/backlog-cli.cjs
 node .codeadd/scripts/backlog-commit.cjs
 ```
 
-The shipped backlog entries are Node CommonJS modules: `backlog-cli.cjs` (the seven local modes),
-`backlog-id.cjs` (global id allocation), `backlog-git.cjs` and `backlog-commit.cjs` (publication and
+The shipped backlog entries are Node CommonJS modules: `backlog-cli.cjs` (the seven local modes —
+`list`/`search` print a seven-field summary with `--full`/`--ids` opt-in projections, and `get <id>`
+answers the exact detail read), `backlog-id.cjs` (global id allocation), `backlog-git.cjs` and `backlog-commit.cjs` (publication and
 recovery), plus `backlog-core.cjs` and `backlog-storage.cjs` (the canonical core the board server
 imports directly). Invoke the backlog entries with `node .codeadd/scripts/<entry>.cjs`.
 Use the local CLI for reads and local operations; use the publication entry for writes that

@@ -48,7 +48,7 @@ function findRow(rows, id) {
  *
  * @param {object} params
  * @param {string} params.root - absolute path to the project root
- * @param {string} params.mode - one of: list, search, add, update, comment, move, remove
+ * @param {string} params.mode - one of: list, search, get, add, update, comment, move, remove
  * @param {string} [params.targetId] - ticket id for update/comment/remove/move
  * @param {string} [params.moveDir] - 'top'|'bottom'|'after' for move
  * @param {string} [params.moveAnchor] - anchor id for move --after
@@ -232,14 +232,34 @@ function executeBacklog(params) {
   const parsed = board.rows.filter(r => r.ticket);
   const damaged = board.rows.filter(r => !r.ticket);
 
+  // Global status counts over the WHOLE board, before any filter, in
+  // first-occurrence order. Entries, not an object, so the adapter can
+  // serialize the ordering without depending on enumeration order, and
+  // numeric-status names never collide with object prototype keys.
+  const statusCountMap = new Map();
+  for (const r of parsed) {
+    const s = r.ticket.status;
+    if (typeof s === 'string') {
+      statusCountMap.set(s, (statusCountMap.get(s) || 0) + 1);
+    }
+  }
+  const statusCounts = [...statusCountMap.entries()];
+
   let hits = parsed;
-  if (mode === 'list') {
+  if (mode === 'get') {
+    // The exact detail read: an exact, case-sensitive id match with no
+    // status filter — the one read that returns a ticket's whole body.
+    hits = parsed.filter(r => r.ticket.id === params.targetId);
+  } else if (mode === 'list') {
     const filter = params.filter || 'open';
     if (filter !== '*') hits = parsed.filter(r => r.ticket.status === filter);
   } else if (mode === 'search') {
     const q = String(params.query || '').toLowerCase();
     hits = parsed.filter(r => {
       const t = r.ticket;
+      // Exact id equality, case-insensitive, joins the text fields — a
+      // target known by id is answered by search without separating reads.
+      if (typeof t.id === 'string' && t.id.toLowerCase() === q) return true;
       const hay = [t.title || '', t.tldr || ''].concat(Array.isArray(t.notes) ? t.notes : []).join(' ').toLowerCase();
       return hay.includes(q);
     });
@@ -262,6 +282,7 @@ function executeBacklog(params) {
     returned: hits.length,
     damaged: damaged.map(d => d.n),
     undefinedStatuses: undef,
+    statusCounts,
     rows: hits.map(r => r.text),
     tickets: hits.map(r => r.ticket),
     diagnostics,

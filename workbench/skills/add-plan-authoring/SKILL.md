@@ -256,13 +256,18 @@ a product hotfix makes.
 
 ### Reading one ticket
 
-The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
-agent parsing: run the read, scan the raw lines for `"id":"<id>"`, keep the one line and nothing
-else. No matching line means the id is not on the board: report it and continue with no ticket.
+A declared id is answered by the exact detail read: `get <id>` — exact, case-sensitive, no filter,
+returning the raw row. Run it BEFORE the phase guard and the `work_id` read: `status` and `work_id`
+both come from the detail, never from a summary. No match (`TICKETS_RETURNED=0`, exit 0) means the id
+is not on the board: report it and continue with no ticket.
 
 ```bash
-node framwork/.codeadd/scripts/backlog-cli.cjs list --all
+node framwork/.codeadd/scripts/backlog-cli.cjs get <id>
 ```
+
+A subject, not an id, is resolved with `search`, which runs over every status and also answers an
+exact id; a `list --all` summary remains the board view for choosing, never the source of ticket
+detail.
 
 ### The two rules that decide whether a write happens
 

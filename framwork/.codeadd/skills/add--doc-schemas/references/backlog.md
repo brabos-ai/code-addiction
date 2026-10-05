@@ -184,7 +184,7 @@ they are entitled to make, so the two directions differ:
 | Direction | An undefined status |
 |---|---|
 | **write** — `add`, `update` | Refused: exit 2, `REFUSED=unknown-status`, the board unchanged |
-| **read** — `list`, `search` | Reported as `UNDEFINED_STATUS=<name>`, exit 0, every ticket still returned |
+| **read** — `list`, `search`, `get` | Reported as `UNDEFINED_STATUS=<name>`, exit 0, every ticket still returned |
 
 ## Reading rules
 
@@ -197,10 +197,21 @@ they are entitled to make, so the two directions differ:
   consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is
   why `id` is written first and is never omitted.
 - **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
+  `--full` restores the raw rows; `--ids` emits just the identities, filter and order preserved.
 - **`search` matches `title`, `tldr` and `notes`**, and returns in board order — priority order survives
-  the filter.
-- **Output is `KEY=VALUE` lines, then raw JSONL entries.** A line starting with `{` is a ticket; anything
-  else is a key. This is the same shape `delivered.sh` emits, so one consumer parses both.
+  the filter. **It answers all statuses** (so a target in flight is never hidden), also matches an
+  exact ticket id case-insensitively, and takes only one literal query plus an optional `--full`.
+- **`get <id>` is the detail read.** An exact, case-sensitive lookup with no status filter that returns
+  the raw row: notes, paths, `done_when` and `work_id` come from `get`, never from a summary. Exit 0 with
+  `TICKETS_RETURNED=0` on an unknown id or absent board — a result, not a refusal; `get` with no id is
+  `ERROR=missing-id`, exit 2.
+- **`list` and `search` print a seven-field summary.** Exactly `id, status, title, tldr, theme, labels,
+  updated_at`, in that order; the `tldr` is a preview cut at 120 code points (`…` when cut), without
+  splitting surrogate pairs. The projection is presentation only: nothing is rewritten, and the board
+  export and the board API keep the complete records.
+- **Output is `KEY=VALUE` metadata, then payload lines.** A line starting with `{` is a ticket; anything
+  else is a key; `--ids` emits one id per line instead. This is the same shape `delivered.sh` emits, so
+  one consumer parses both.
 
 | Key | On | Means |
 |---|---|---|
@@ -210,6 +221,8 @@ they are entitled to make, so the two directions differ:
 | `DAMAGED_LINES` | every read | How many lines failed to parse |
 | `DAMAGED_LINE` | per damaged line | Its 1-based line number |
 | `UNDEFINED_STATUS` | per such status | A status in use that the definitions no longer define |
+| `READ_VIEW` | every read | `summary`, `full` or `ids` — which projection the payload carries |
+| `STATUS_COUNTS` | every read | One JSON object counting the whole board before any filter, statuses in first-occurrence order |
 | `TICKET_ID` | every write | The id written, allocated or targeted |
 
 ## Hard bans

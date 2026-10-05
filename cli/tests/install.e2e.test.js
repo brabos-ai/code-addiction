@@ -260,6 +260,43 @@ describe('install command e2e', () => {
       expect(result.status).toBe(0);
       expect(result.stdout).toContain('BACKLOG_PRESENT=no');
       expect(result.stdout).toContain('TICKETS_TOTAL=0');
+      // The summary protocol ships with the entry: READ_VIEW on every read,
+      // get as the exact detail read, --full restoring raw rows.
+      expect(result.stdout).toContain('READ_VIEW=summary');
+      expect(result.stdout).toContain('STATUS_COUNTS={}');
+    });
+
+    it('an installed project reads summary, full and get through the shipped protocol', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'),
+        JSON.stringify({
+          id: '0001B', title: 'installed read', theme: '', labels: [], tldr: 'installed body',
+          notes: ['body note'], done_when: 'works', paths: [], grounded: false, status: 'open',
+          created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z',
+          comments: [], feature: null, work_id: null,
+        }) + '\n');
+
+      const { spawnSync } = await import('node:child_process');
+      const run = (args) => spawnSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', ...args], {
+        cwd: tmpDir, encoding: 'utf8',
+      });
+
+      const summary = run(['list', '--all']);
+      expect(summary.status).toBe(0);
+      expect(summary.stdout).toContain('READ_VIEW=summary');
+      expect(summary.stdout).toContain('"id":"0001B"');
+      expect(summary.stdout).not.toContain('"notes"');
+
+      const got = run(['get', '0001B']);
+      expect(got.status).toBe(0);
+      expect(got.stdout).toContain('"notes":["body note"]');
+
+      const full = run(['list', '--all', '--full']);
+      expect(full.stdout).toContain('"notes":["body note"]');
     });
 
     it('an installed project runs the native PUBLICATION entry — reads refused by name', async () => {
