@@ -51,7 +51,7 @@ the decision read at the time it mattered, the archived ledger is the record rea
 
 **Append-only. Identity on the first line, written once, never rewritten.** A ledger whose identity
 changes mid-build cannot be trusted. It is a **log, not a set** — the same line twice appends twice.
-There is no `build-ledger.sh`; append the line yourself.
+There is no `build-ledger.cjs` for this ledger — the product entry owns feature build ledgers, not the plan ledger; append the line yourself.
 
 ```markdown
 # Build ledger — plan: docs/plans/<plan-basename>.md

@@ -17,11 +17,11 @@ description: "Use when a delivered branch is ready to close out — gates it on 
 -->
 
 <!--
-`delivered.sh` and `add-doc-schemas/references/delivery-index.md` are PRODUCT
+`delivered.cjs` and `add-doc-schemas/references/delivery-index.md` are PRODUCT
 nodes and are named in prose below on purpose. They are deliberately NOT
 declared: `uses:` targets resolve inside the declaring artefact's own layer
-(scripts/build.js), so `- script: delivered.sh` from here would resolve to
-`internal/script/delivered.sh`, which does not exist, and the dangling gate
+(scripts/build.js), so `- script: delivered.cjs` from here would resolve to
+`internal/script/delivered.cjs`, which does not exist, and the dangling gate
 would fail the build. The prose sniff skips cross-layer names, so naming them
 costs nothing.
 -->
@@ -205,7 +205,7 @@ test-scripts         npm run test:scripts   (bats, -j 4)                        
 
 **Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a *second* gate that can disagree with the one that governs the merge — and the local copy is the weaker of the two: it runs on one machine, one Node version, and a developer's dirty environment. This repository has the receipts. **Forced down its native Windows path** — which `CODEADD_TESTS_RUNNER=native` still reaches — `npm run test:scripts` is slow enough to be unusable and reports a `qa-preflight.bats` failure that exists on no other machine, because a `node_modules` above `TMPDIR` resolves a package the test asserts is absent. A local verdict that contradicts the merge gate is worse than no local verdict.
 
-**By default neither suite takes either cost, and neither fact promotes them.** Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`, which runs them inside a Linux container on Windows — both suites together in under a minute, `qa-preflight` passing. That makes them usable for iteration, which is why a `.sh` or `cli/` F-block is gated on them. It does not make them the authority: one machine is still one machine.
+**By default neither suite takes either cost, and neither fact promotes them.** Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`, which runs them inside a Linux container on Windows — both suites together in under a minute, `qa-preflight` passing. That makes them usable for iteration, which is why a `.cjs` or `cli/` F-block is gated on them. It does not make them the authority: one machine is still one machine.
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
@@ -299,16 +299,16 @@ here repairs it. Report the refusal reason from `gh pr view --json mergeStateSta
 
 ## STEP 3: Author the Index Entry
 
-Write **one** entry to `docs/delivered.jsonl` via `delivered.sh`. The record shape, the four statuses, the corpus rule and the hard bans are owned by `add-doc-schemas/references/delivery-index.md` — read it rather than re-deriving them.
+Write **one** entry to `docs/delivered.jsonl` via `delivered.cjs`. The record shape, the four statuses, the corpus rule and the hard bans are owned by `add-doc-schemas/references/delivery-index.md` — read it rather than re-deriving them.
 
 The internal layer runs the product's own script here. That is dogfooding, not a layering breach: it is the only arrangement where the two layers cannot disagree about what a line in the index means.
 
 ### 3.1 Resolve existing entries first
 
-Run `delivered.sh verify` (report-only, no `--repair`) before comparing anything, so every existing entry's items carry their **current** location. An item's `at` is a hint that goes stale; matching against a stale one produces false negatives.
+Run `delivered.cjs verify` (report-only, no `--repair`) before comparing anything, so every existing entry's items carry their **current** location. An item's `at` is a hint that goes stale; matching against a stale one produces false negatives.
 
 ```bash
-bash framwork/.codeadd/scripts/delivered.sh verify
+node framwork/.codeadd/scripts/delivered.cjs verify
 ```
 
 ### 3.2 Derive the items — git supplies the diff, the graph classifies
@@ -340,14 +340,14 @@ Entry fields:
   split `AGENTS.md` documents. `mcp/` sits at the repository root and still counts as product,
   because `scripts/build.js` copies it into the npm package — a three-path test indexes the graph
   server as internal and the delivery vanishes from a product-layer read. A narrower "under `framwork/` or else internal" reading indexes a
-  `cli/`-heavy delivery as internal, and it then vanishes from `delivered.sh read --layer product`.
+  `cli/`-heavy delivery as internal, and it then vanishes from `delivered.cjs read --layer product`.
 
   ⛔ **Derive it from the item paths, NOT from the entry's `node`.** STEP 3.2 above records that
   top-level `scripts/`, `AGENTS.md` and `.gitignore` produce no graph node, so `node` is legitimately
   absent on some entries — a rule keyed to it would have no answer for exactly the cross-layer
   deliveries one plan now produces. Item paths are always present.
 
-  `delivered.sh` validates `layer` against `product | internal` and refuses anything else. A
+  `delivered.cjs` validates `layer` against `product | internal` and refuses anything else. A
   cross-layer delivery is therefore ONE entry carrying its dominant layer, never two entries and never
   a third value.
 - `by`: `"done"`
@@ -355,7 +355,7 @@ Entry fields:
 - `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
-⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.sh` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
+⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.cjs` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
 
 **One consequence, stated rather than discovered later:** one `node` per entry means a delivery that creates several artefacts is findable by its primary one only. Choose the artefact a reader would look the delivery up by, and author `words` so the others stay reachable by text.
 
@@ -374,10 +374,10 @@ Both answers are truthful records, and a wrong one is corrected by appending a l
 
 ### 3.4 Write it
 
-Pipe the record to `delivered.sh write` on stdin:
+Pipe the record to `delivered.cjs write` on stdin:
 
 ```bash
-bash framwork/.codeadd/scripts/delivered.sh write < record.json
+node framwork/.codeadd/scripts/delivered.cjs write < record.json
 ```
 
 `v` and `ts` are generated by the script — **never supply them.** Every other required field comes from the record you authored.

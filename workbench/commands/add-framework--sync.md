@@ -355,7 +355,7 @@ Then print the sync report (omit empty sections):
 No commit was made. Run `git diff` to review changes before committing.
 ```
 
-No iteration log to write: `log-iteration.sh` is a product-layer script, shipped for projects that installed
+No iteration log to write: `log-iteration.cjs` is a product-layer script, shipped for projects that installed
 code-addiction via `.codeadd/scripts/`. This repo IS the framework's source — it has no `.codeadd/` at its
 root — so there is nothing here to call it against.
 

@@ -266,7 +266,7 @@ authored after the fix proves nothing.
 
 ### Shell scripts — the bats suite runs before the block closes
 
-An F-block touching `framwork/.codeadd/scripts/*.sh` does not close until the suite has been run and
+An F-block touching `framwork/.codeadd/scripts/*.cjs` does not close until the suite has been run and
 read:
 
 ```bash
@@ -274,7 +274,7 @@ npm run test:scripts
 ```
 
 ```
-IF THE BLOCK CHANGED A .sh FILE AND THE SUITE HAS NOT BEEN RUN:
+IF THE BLOCK CHANGED A .cjs FILE AND THE SUITE HAS NOT BEEN RUN:
   ⛔ DO NOT: Report the F-block complete
   ⛔ DO NOT: Append its `complete` line to the ledger
   ✅ DO: Run it and read the result
@@ -287,7 +287,7 @@ machine. A gate nobody can afford to satisfy is a gate everybody rules their way
 **Run the suite the change can reach, one file at a time, through the container:**
 `node scripts/run-tests.js bats framwork/.codeadd/scripts/tests/<name>.bats`. It returns in seconds; the full
 `test:scripts` takes the better part of an hour. **That scoped run is what closes the block** when the
-change reaches only those files — a `.sh` whose own `.bats` is the only suite that calls it. When the
+change reaches only those files — a `.cjs` whose own `.bats` is the only suite that calls it. When the
 change reaches a script other suites exercise, run each of those files too, or the whole suite.
 
 ```

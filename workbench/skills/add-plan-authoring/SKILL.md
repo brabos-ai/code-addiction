@@ -199,7 +199,7 @@ nodes, named in prose on purpose and deliberately NOT declared under
 (scripts/build.js), so a `- script:` entry here would resolve to a
 nonexistent internal/script/ node and fail the graph gate. This
 repository is those scripts' source and calls them by repository path, as
-add-framework--done calls delivered.sh.
+add-framework--done calls delivered.cjs.
 
 The seven statuses and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
@@ -442,7 +442,7 @@ instead of committing one half of a working change and waiting.
 
 ```
 - **F1** [internal] — `workbench/commands/foo.md`: ...
-- **F2** [product]  — `framwork/.codeadd/scripts/bar.sh`: ...
+- **F2** [product]  — `framwork/.codeadd/scripts/bar.cjs`: ...
 ```
 
 | Tag | Means | Paths |
@@ -469,8 +469,8 @@ sidecar key, a frontmatter field, an injection anchor name — whatever one F-bl
 later one reads.
 
 ```
-- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds a sixth delivery gate.
-  - **Produces:** `converge-gates.sh` emits `GATE6=pass|fail|skip`
+- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.cjs`: adds a sixth delivery gate.
+  - **Produces:** `converge-gates.cjs` emits `GATE6=pass|fail|skip`
 - **F7** [product] — `framwork/.codeadd/commands/add-done.md`: STEP 4 reads the new gate.
   - **Consumes:** `GATE6` (F3)
 ```
