@@ -462,11 +462,11 @@ Then, after the seven blocks, tell the user, in order:
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
-8. Run the audit: `/add-review <feature-id> [SFxx]` - its QA sections judge the rendered result.
+8. Run the audit: `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result.
 
 `/add-qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 
-### STEP add-qa-setup.handoff-cont Offer the continuation
+### STEP add-qa-setup.offer Offer the continuation
 
 **Item 8 above is a real next activity whenever the audit can run.** Where it cannot — no feature
 yet, no `screens.json`, an unavailable MCP server — the remaining steps are the user's own manual

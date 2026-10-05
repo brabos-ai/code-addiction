@@ -103,6 +103,42 @@ const REPLACED = [
   { file: 'commands/add-review.md', phrase: 'Print the report and the next command, and STOP, on every delivery mode' },
 ];
 
+/**
+ * The CLASS L1 was asked to detect, not six strings.
+ *
+ * A lexical class check was written and REJECTED, and the reason is worth
+ * keeping. Pairing a print verb with a next-command object flags eight more
+ * lines than real survivors, and every one of those eight is legitimate:
+ * "Emit the report FIRST — the rulings table, the ledger path and the next
+ * command all come after it" is the plan's own "Emit the report BEFORE any
+ * metadata" constraint, and it appears in six commands. A check that cannot
+ * separate the defect from the rule it would enforce is worse than no check,
+ * because it passes vacuously and reads as coverage.
+ *
+ * So the class is enumerated per site instead. These are the survivors the six
+ * literals missed; each was found by reading, and each phrased it differently,
+ * which is exactly why no single literal found them.
+ */
+const SURVIVORS = [
+  {
+    file: 'commands/add-diagnose.md',
+    phrase: 'copy-ready command',
+    why: 'carry-these-step printed the hotfix invocation before the offer',
+  },
+  {
+    file: 'commands/add-new.md',
+    phrase: 'suggest the next command based on discovery',
+    why: 'the completion line named the next command on every manual run',
+  },
+];
+
+/** The scoped closings: the twelve adapters plus the two owners. */
+const SCOPED = [
+  ...Object.keys(ADAPTERS).map((f) => path.join('commands', f)),
+  FINAL_REPORT,
+  DELIVERY_MODE,
+];
+
 describe('optional chat continuation handoff', () => {
   describe('F1 -- the output owner', () => {
     it('declares the two-response output contract', () => {
@@ -203,13 +239,56 @@ describe('optional chat continuation handoff', () => {
 
     it('keeps the diagnosis-to-hotfix handoff interface', () => {
       // The interface is the `@docs/diagnose/<file>.md` argument the diagnosis
-      // emits and the hotfix parses into DIAGNOSE_REPORT. It is NOT a literal
+      // routes to and the hotfix parses into DIAGNOSE_REPORT. It is NOT a literal
       // `@report` token -- that spelling belongs to the ecosystem routing table,
       // and asserting it here tested a string the tree never carried.
+      //
+      // Asserting only that the string EXISTS was not enough, and that was the
+      // defect the conformance audit found: add-diagnose carried the same
+      // invocation in a second place as a print instruction, directly
+      // contradicting the offer. So this pins WHERE it lives as much as that it
+      // is there.
       const diagnose = read(path.join('commands', 'add-diagnose.md'));
       const hotfix = read(path.join('commands', 'add-hotfix.md'));
-      expect(diagnose).toContain('/add-hotfix @docs/diagnose/<file>.md');
       expect(hotfix).toContain('DIAGNOSE_REPORT');
+
+      const carry = diagnose.slice(
+        diagnose.indexOf('STEP add-diagnose.carry-these-step'),
+        diagnose.indexOf('STEP add-diagnose.validate'),
+      );
+      expect(carry).not.toContain('/add-hotfix @docs/diagnose/');
+
+      const handoff = diagnose.slice(diagnose.indexOf('STEP add-diagnose.handoff'));
+      expect(handoff).toContain('/add-hotfix @docs/diagnose/');
+    });
+
+    it('a review inside an automatic delivery does not gain a manual offer', () => {
+      // Caught behaviourally, not by reading: the first L3 run of this scenario
+      // DID offer, because the step read "never on the automatic path, so it is
+      // always manual". L3 is the only thing that found it, so it needs an
+      // authored guard or the next edit collapses the two rows back together.
+      const review = read(path.join('commands', 'add-review.md'));
+      expect(review).toMatch(
+        /From inside an automatic delivery \| Stop under the rule above\. \*\*No offer\*\*/,
+      );
+      expect(review).not.toMatch(/so it is always `manual`/);
+    });
+
+    it('the merged-branch no-goal row is reachable, not shadowed', () => {
+      // Both tables evaluate FIRST match, and the branch-type rows used to sit
+      // ABOVE the no-goal row -- so a merged branch with no stated goal always
+      // matched one of them and the offer fired on a closed delivery. The no-goal
+      // test has to come first in both.
+      for (const rel of ['commands/add-done.md', 'skills/add--ecosystem/SKILL.md']) {
+        const src = read(rel);
+        const noGoal = src.search(/no next goal was stated|no next goal stated/i);
+        const branchType = src.search(/was feature, back on main|Feature branch, back on main/);
+        expect(noGoal, `${rel} has no no-goal row`).toBeGreaterThan(-1);
+        expect(branchType, `${rel} has no branch-type row`).toBeGreaterThan(-1);
+        expect(noGoal, `${rel} tests the branch type before the no-goal row`).toBeLessThan(
+          branchType,
+        );
+      }
     });
 
     it('keeps the merge in the user hands at close-out', () => {
@@ -220,6 +299,25 @@ describe('optional chat continuation handoff', () => {
 
     it.each(REPLACED)('drops the replaced print in $file', ({ file, phrase }) => {
       expect(read(file)).not.toContain(phrase);
+    });
+
+    it('no scoped closing still tells the agent to print the invocation before the offer', () => {
+      // The class, enumerated. Six literals passed while these survived, so each
+      // one is named rather than inferred -- see the note on SURVIVORS for why
+      // the lexical version was rejected.
+      const survivors = [];
+      for (const { file, phrase, why } of SURVIVORS) {
+        if (read(file).includes(phrase)) survivors.push(`${file}: "${phrase}" — ${why}`);
+      }
+      expect(survivors, `surviving print instructions:\n${survivors.join('\n')}`).toEqual([]);
+    });
+
+    it('every scoped closing is one this suite actually scans', () => {
+      // SCOPED is built from ADAPTERS plus the two owners. If an adapter is ever
+      // added to the plan and not here, the class check silently stops covering
+      // it -- so the count is pinned rather than trusted.
+      expect(SCOPED).toHaveLength(Object.keys(ADAPTERS).length + 2);
+      expect(SCOPED).toHaveLength(14);
     });
   });
 

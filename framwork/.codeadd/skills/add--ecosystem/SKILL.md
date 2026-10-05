@@ -319,9 +319,9 @@ printing an invocation — `chat-continuation-eligibility-v1` in `add--delivery-
 offer is made, and `chat-continuation-output-v1` in `add--final-report` owns what an accepted answer
 contains. This skill names the rows and stays out of both.
 
-**Read the `Suggest` column as the next activity, not as text to paste.** A row whose suggest is
-`done`, `wait for review` or `continue brainstorm` names the absence of a next activity, and a
-command resolving one of those rows offers nothing at all.
+**Read the last column as the next activity, not as text to paste.** A row whose value is `none`, or
+which names a wait (`none — wait for review`) or staying put (`continue brainstorm`), is the absence of
+a next activity — and a command resolving one of those rows offers nothing at all.
 
 | After | Condition | Next activity | Why |
 |-------|-----------|---------------|-----|
@@ -350,10 +350,10 @@ command resolving one of those rows offers nothing at all.
 | add-pull-request | PR open, awaiting review | none — wait for review | Human review pending; there is no agent activity to continue into |
 | add-pull-request | PR merged on GitHub | `/add-done` | Cleanup local branch + tags |
 | add-pull-request | scope grew, need to update PR | `/add-pull-request` | Idempotent — appends update section |
-| add-done | was feature, back on main | `/add-new` | Start next feature |
-| add-done | was epic, more subfeatures | `/add-build feature N` | Next subfeature |
-| add-done | was hotfix | `/add-new` | Return to feature work |
-| add-done | no stated next goal | none | The delivery is closed — see the prohibition below |
+| add-done | no next goal stated for this work | none | The delivery is closed — see the prohibition below. Evaluated FIRST, because a merged branch carries no goal of its own |
+| add-done | was feature, back on main, next feature stated | `/add-new` | Start that feature |
+| add-done | was epic, more subfeatures pending, next one stated | `/add-build feature N` | Next subfeature |
+| add-done | was hotfix, and the user said what comes next | `/add-new` | Return to feature work |
 | add-ux | within active feature | return to current flow | UX applied, resume workflow |
 | add-ux | standalone | none | One-off UX task |
 | add-wiki | issues found | `/add-audit` | Deep health check |

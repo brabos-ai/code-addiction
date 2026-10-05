@@ -314,9 +314,9 @@ the next command at STEP add-diagnose.carry-these-step puts metadata in front of
 
 STEP add-diagnose.complete states:
 - Report path (if persisted)
-- Recommended next command (from ecosystem map routing)
-- When the accepted route is hotfix: the copy-ready command `/add-hotfix @docs/diagnose/<file>.md`. Print it only for an accepted hotfix route. Never invoke `/add-hotfix`
-- Reminder: `add-diagnose` is READ-ONLY; user executes the next command when ready
+- The accepted route, named in prose from the `add--ecosystem` routing
+- When the accepted route is hotfix: that `/add-hotfix` is the next activity. ⛔ Do NOT print its full invocation here — STEP add-diagnose.handoff puts it behind the offer, where `add--delivery-mode` requires it. Never invoke `/add-hotfix`
+- Reminder: `add-diagnose` is READ-ONLY; the user runs the next command when ready
 
 ---
 
@@ -348,7 +348,8 @@ Then, after the seven blocks, state the accepted route and that this command nev
 ### STEP add-diagnose.handoff Offer the continuation
 
 **This command is READ-ONLY and advisory.** The next activity exists only when the accepted route is
-one an agent can pick up.
+one an agent can pick up. Print the hotfix invocation only for an accepted hotfix route, and never
+invoke it.
 
 | Accepted route | Next activity |
 |---|---|

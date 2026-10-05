@@ -41,6 +41,6 @@ permission to build, and a ticket moved by one that ends in "no" would stay ther
 
 **Ticket — the exit write.** Once the gate passed and the intent file exists, write `shaped`, per the
 `add-brainstorm` row of `{{skill:add--backlog/references/lifecycle.md}}`. It follows the intent file and not
-the report, because the report came before the approval. A write that did not land is one line printed
-with STEP add-brainstorm.route's handoff.
+the report, because the report came before the approval. A write that did not land is one line stated
+at STEP add-brainstorm.route, beside the route it names.
 <!-- /section:ticket-shaped -->

@@ -1004,8 +1004,8 @@ why it is the one call this command makes directly.
 <!-- /feature:board:ticket-carry -->
 <!-- /slot:board.ticket-carry -->
 
-**Resolve the next command here, state it at STEP add-done.complete:**
-READ skill `add--ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
+**Resolve the next activity here, state it at STEP add-done.complete:**
+READ skill `add--ecosystem` Main Flows section. Resolve whether the user stated a next goal for this work FIRST — a merged branch carries none of its own, and branch type alone says only what shipped. Then use the branch type and epic status. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
 
 <!-- slot:gitnexus.graph-reindex fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-reindex -->
@@ -1051,18 +1051,23 @@ Then, after the seven blocks, state:
 by the time this runs, so the offer is a question about what comes next — never a substitute for a
 gate, and never a merge consent.
 
+**The FIRST row is the test for whether there is a next activity at all, so it is evaluated first.**
+A merged branch carries no goal of its own; the branch type only says what the delivery *was*. Read
+the rows top-to-bottom and stop at the first match, exactly as `add--ecosystem` Main Flows does.
+
 | State after the merge | Next activity |
 |---|---|
-| Feature branch, back on main | `/add-new` — start the next feature |
-| Epic, subfeatures still pending | `/add-build feature N` — the next subfeature |
-| Hotfix | `/add-new` — return to feature work |
-| Nothing pending and no goal stated | none — this delivery is closed |
+| **No next goal was stated for this work** | none — the delivery is closed |
+| Feature branch, back on main, next feature stated | `/add-new` — start that feature |
+| Epic, subfeatures still pending, next one stated | `/add-build feature N` — the next subfeature |
+| Hotfix, and the user has said what comes next | `/add-new` — return to feature work |
 
-Finish the report and its metadata, then ask ONCE for instructions only on the first three rows.
+Finish the report and its metadata, then ask ONCE for instructions only on rows 2 to 4.
 
-⛔ **Never propose a new feature the user did not ask for.** A merged branch with no stated next goal
-is a completed delivery, and inventing an epic to have somewhere to point is the failure this table's
-last row exists to prevent.
+⛔ **Never propose a new feature the user did not ask for.** "Back on main" and "was an epic" are
+facts about what shipped, not intentions about what comes next. Reading either as a reason to start
+something is how a close-out launches an epic its user never requested, and it is why row 1 is
+evaluated before all three.
 
 **Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
 `chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and

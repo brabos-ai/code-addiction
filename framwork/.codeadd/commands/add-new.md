@@ -441,7 +441,7 @@ user, not with what the document contains.
 <!-- /feature:board:ticket-shaped -->
 <!-- /slot:board.ticket-shaped -->
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`’s own UX step when the feature touches UI), `/add-build` for implementation.
+Then, after the seven blocks, summarize the created artifacts. Name the next activity in ordinary prose based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`'s own UX step when the feature touches UI), `/add-build` for implementation. ⛔ Do not print its full invocation here — `STEP add-new.handoff` puts that behind the offer.
 
 **Stop kind — confirming.** The report describes work the brainstorm's approval already covered.
 

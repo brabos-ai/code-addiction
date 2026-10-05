@@ -1530,7 +1530,7 @@ Fill the blocks from this build:
 <!-- /slot:board.ticket-attention -->
 
 Then, after the seven blocks and before any metadata, print STEP add-build.rulings-i-made and STEP add-build.next-command below — whole, in their
-own shape.
+own shape. Then apply STEP add-build.handoff, which runs last because the offer comes after the metadata.
 
 **Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
 its commit brackets.
