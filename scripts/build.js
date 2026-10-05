@@ -1765,6 +1765,19 @@ const SHIPPED_SOURCE_ALLOWLIST = new Set([]);
 const NATIVE_BUILTIN_RE = /^node:[A-Za-z0-9_./-]+$/;
 const NATIVE_SIBLING_RE = /^\.\/[A-Za-z0-9._-]+\.cjs$/;
 
+// Bare builtin spellings (`fs`, `path`, …) are built-ins too, and a shipped
+// `.cjs` may use either form. Resolved against Node's own list rather than a
+// hand-maintained one, so a new builtin is admitted without a build.js edit.
+const BUILTIN_SPECIFIERS = new Set([
+  ...require('node:module').builtinModules,
+  ...require('node:module').builtinModules.map((m) => `node:${m}`),
+]);
+
+/** A builtin under either spelling. */
+function isBuiltinSpecifier(spec) {
+  return NATIVE_BUILTIN_RE.test(spec) || BUILTIN_SPECIFIERS.has(spec);
+}
+
 /**
  * Every static module specifier in a CommonJS source, plus whether any was
  * written in a form this guard cannot verify (a dynamic `require(expr)` or
@@ -1786,7 +1799,9 @@ function moduleSpecifiers(source) {
       else specs.push(spec);
     }
   }
-  for (const re of [/\bfrom\s*(['"])([^'"]+)\1/g, /\bimport\s*(['"])([^'"]+)\1/g]) {
+  // Static ESM form only: anchored to an import/export statement so the word
+  // "from" inside ordinary prose or a string cannot be read as a specifier.
+  for (const re of [/^\s*import\s+[^;\n]*?from\s*(['"])([^'"]+)\1/gm, /^\s*export\s+[^;\n]*?from\s*(['"])([^'"]+)\1/gm]) {
     let m;
     while ((m = re.exec(source))) specs.push(m[2]);
   }
@@ -1803,7 +1818,7 @@ function isBuiltinsOnlyCjs(absPath) {
   }
   const { specs, unverifiable } = moduleSpecifiers(source);
   if (unverifiable) return false;
-  return specs.every((s) => NATIVE_BUILTIN_RE.test(s) || NATIVE_SIBLING_RE.test(s));
+  return specs.every((s) => isBuiltinSpecifier(s) || NATIVE_SIBLING_RE.test(s));
 }
 
 /**
