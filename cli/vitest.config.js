@@ -34,12 +34,10 @@ import { serialFiles } from './tests/helpers/test-groups.js';
  *   native, CODEADD_TESTS_RUNNER=native (serial)    93s   all green
  *   container, these two projects, three runs    13-18s   all green, same count each time
  *
- * So on Windows the parallel projects are only safe inside the Linux
- * container, which is what root `npm test` uses by default; the native
- * override keeps the serial run (scripts/run-tests.js passes
- * --no-file-parallelism there). The container copies the checkout in rather
- * than bind-mounting it: through the bind mount, 11 tests walking the tree
- * timed out at 5000ms and three files took 121s.
+ * Supported test commands now delegate execution and isolation to scripts/run-tests.js.
+ * Keep these project groups independent of transport policy. The isolated copy
+ * also avoids slow file bridges: a historical bind-mounted run timed out in
+ * 11 tree-walking tests, and three files took 121s.
  */
 
 const SERIAL = serialFiles();

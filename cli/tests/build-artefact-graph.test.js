@@ -1160,19 +1160,19 @@ describe('/add-framework--done — the CI gate it reproduces', () => {
   for (const file of sources) {
     const label = path.relative(ROOT, file).split(path.sep).join('/');
 
-    it(`${label} runs test:package through --prefix cli`, () => {
+    it(`${label} includes package smoke through the exhaustive group`, () => {
       const src = fs.readFileSync(file, 'utf8');
 
-      expect(src).toContain('npm --prefix cli run test:package');
+      expect(src).toContain('npm run test:all');
       // A bare `npm run test:package` anywhere in the file would be the false
       // gate, whatever else the file also says.
       expect(src).not.toMatch(/(?<!--prefix cli )\bnpm run test:package\b/);
     });
 
-    it(`${label} carries all four CI commands`, () => {
+    it(`${label} carries build and exhaustive fallback gates`, () => {
       const src = fs.readFileSync(file, 'utf8');
 
-      for (const cmd of ['node scripts/build.js', 'npm test', 'npm run test:scripts']) {
+      for (const cmd of ['node scripts/build.js', 'node scripts/build-workbench.js', 'npm run test:all']) {
         expect(src, `${label} is missing the ${cmd} gate`).toContain(cmd);
       }
     });

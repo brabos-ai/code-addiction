@@ -12,6 +12,14 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import testContext from '../../scripts/test-context.cjs';
+
+try {
+  testContext.authorize({ selection: process.env.CODEADD_TESTS_SELECTION, leaf: 'package' });
+} catch (error) {
+  console.error(error.message);
+  process.exit(2);
+}
 
 const CLI_DIR = fileURLToPath(new URL('..', import.meta.url));
 const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
