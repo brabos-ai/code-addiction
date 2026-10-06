@@ -148,26 +148,7 @@ function imageTag({ dockerfile, pkg, lock }) {
  * transport, not a silent fall back to the slow native path.
  */
 function resolveRunner({ platform, env }) {
-  const forced = env.CODEADD_TESTS_RUNNER;
-  if (forced === 'native') {
-    return { runner: 'native', reason: 'CODEADD_TESTS_RUNNER=native overrode the platform' };
-  }
-  if (forced === 'docker') {
-    return { runner: 'docker', reason: 'CODEADD_TESTS_RUNNER=docker overrode the platform' };
-  }
-  if (forced !== undefined) {
-    throw new Error(`CODEADD_TESTS_RUNNER must be "native" or "docker", got "${forced}"`);
-  }
-  if (platform === 'win32') {
-    return {
-      runner: 'docker',
-      reason: 'Windows runs the suites in a Linux container; native is the slow path',
-    };
-  }
-  return {
-    runner: 'native',
-    reason: `${platform} runs the suites natively`,
-  };
+  return require('./test-context.cjs').resolveRunner({ platform, env });
 }
 
 /**
