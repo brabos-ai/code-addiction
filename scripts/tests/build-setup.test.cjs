@@ -39,6 +39,28 @@ function repo(t) {
 
 const run = (r, args) => h.runScript('build-setup', args, { cwd: r.repo });
 
+test('build-setup refuses a branch checked out elsewhere without reporting success', (t) => {
+  const r = repo(t);
+  makeFeature(r, '0001F-test', 'feature/0001F-test');
+  assert.equal(r.git('worktree', 'add', '-b', 'feature/0001F-test', path.join(r.base, 'other')).status, 0);
+  const res = run(r, ['0001F']);
+  assert.notEqual(res.status, 0, res.output);
+  assert.doesNotMatch(res.stdout, /STATE:/);
+  assert.equal(r.git('branch', '--show-current').stdout.trim(), 'main');
+});
+
+test('build-setup does not copy docs into an occupied unregistered worktree destination', (t) => {
+  const r = repo(t);
+  makeFeature(r, '0001F-test', 'feature/0001F-test');
+  const dest = path.join(r.repo, '.worktrees', '0001F-test');
+  h.write(path.join(dest, 'personal.txt'), 'preserve');
+  const res = run(r, ['0001F', '--worktree']);
+  assert.notEqual(res.status, 0, res.output);
+  assert.equal(h.read(path.join(dest, 'personal.txt')), 'preserve');
+  assert.equal(fs.existsSync(path.join(dest, 'docs')), false);
+  assert.doesNotMatch(res.stdout, /STATE:/);
+});
+
 /** docs/features/<dir>/about.md with optional `branch:` frontmatter. */
 function makeFeature(r, dir, branch = '') {
   let body = `---\nid: ${dir}\n`;

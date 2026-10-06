@@ -42,7 +42,7 @@ This is the FIRST question `add-framework--plan` must answer. Wrong artefact typ
 | Orchestrate a multi-step workflow with gates and user interaction | **Command** | Commands control execution flow, enforce gates, dispatch agents |
 | Teach patterns/rules that multiple commands need | **Skill** | Skills are reusable knowledge packs loaded by commands and agents |
 | Specialize an agent with restricted tools, model, and memory | **Agent** | Agents are isolated specialists with persistent project memory |
-| Automate a deterministic task (no LLM reasoning needed) | **Script** | Scripts are bash, fast, predictable, no token cost |
+| Automate a deterministic task (no LLM reasoning needed) | **Script** | Native Node scripts are fast, predictable, and need no LLM tokens |
 
 ### Decision Tree
 

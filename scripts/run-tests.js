@@ -225,12 +225,22 @@ function vitestArgs(extra) {
  *
  * Two shapes, one rule: `scriptsArgv` is the native argv (its program is
  * process.execPath), and `scriptsArgs` is the flags-and-target string the
- * container's `bash -c` composes after `node --test`. The selection is named
+ * container's `sh -c` composes after `node --test`. The selection is named
  * once so the two runners cannot point at different files.
  */
 function scriptsSelection(extra) {
-  const flags = extra.filter((a) => a.startsWith('-'));
-  const paths = extra.filter((a) => !a.startsWith('-'));
+  const flags = [];
+  const paths = [];
+  const valuedOptions = new Set(['--test-name-pattern', '--test-skip-pattern', '--test-concurrency', '--test-timeout', '--test-reporter', '--test-reporter-destination', '--test-shard', '--test-isolation', '--test-coverage-exclude', '--test-coverage-include']);
+  for (let i = 0; i < extra.length; i += 1) {
+    const arg = extra[i];
+    if (!arg.startsWith('-')) { paths.push(arg); continue; }
+    flags.push(arg);
+    if (valuedOptions.has(arg)) {
+      if (i + 1 >= extra.length) throw new Error(`${arg} requires a value`);
+      flags.push(extra[++i]);
+    }
+  }
   return { flags, target: paths.length > 0 ? paths : [SCRIPTS_TEST_GLOB] };
 }
 
@@ -241,7 +251,8 @@ function scriptsArgv(extra) {
 
 function scriptsArgs(extra) {
   const { flags, target } = scriptsSelection(extra);
-  return [...flags, ...target].join(' ');
+  return [...flags, ...target].map((arg) => /^[a-zA-Z0-9_./*:=+-]+$/.test(arg)
+    ? arg : `'${arg.replace(/'/g, `'"'"'`)}'`).join(' ');
 }
 
 /**
@@ -253,9 +264,9 @@ function scriptsArgs(extra) {
  *
  * The container branch must NOT go through the outer shell. On Windows that
  * shell is cmd.exe, which does not understand the quoting around the inner
- * `bash -c` command and splits it mid-string. Passing argv directly hands the
+ * `sh -c` command and splits it mid-string. Passing argv directly hands the
  * inner command to docker as one element. `all` in the container is one start
- * running both suites, with the exit codes combined in bash.
+ * running both suites, with the exit codes combined in POSIX sh.
  */
 function buildCommands({ suite, runner, repoRoot, tag, extra = [], treeTar = '', gitMount = null, platform }) {
   const canonical = canonicalSuite(suite);
@@ -316,7 +327,7 @@ function buildCommands({ suite, runner, repoRoot, tag, extra = [], treeTar = '',
     '-e', `${COPY_MARKER}=1`,
     '-w', '/code',
     tag,
-    'bash', '-c', inner,
+    'sh', '-c', inner,
   ];
   return [{ file: 'docker', args, shell: false, display: `docker ${args.join(' ')}` }];
 }

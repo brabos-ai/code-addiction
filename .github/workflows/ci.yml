@@ -62,7 +62,7 @@ jobs:
         run: node scripts/build-workbench.js
 
       # The framework/test boundary rejects Bash on every host, hosted or local.
-      # Only `bash` is shadowed — Git and npm use `sh`/`cmd`, and the native
+      # Bash is shadowed and Node subprocess calls are instrumented — Git and npm use `sh`/`cmd`, and the native
       # harness spawns process.execPath with `shell: false` — so transport is
       # preserved while a fallback to Bash fails loudly instead of passing on a
       # runner that happens to ship it. `--run` prefixes PATH for the child
@@ -72,7 +72,8 @@ jobs:
 
       # NEGATIVE CONTROL: attempt Bash through the platform shell and require a
       # non-zero result. This is what turns "we did not use Bash" from an
-      # assumption about the runner image into an assertion.
+      # assumption about the runner image into an assertion. A shell:false
+      # negative control also verifies the Node subprocess preload on Windows.
       - name: Negative control — Bash is rejected
         run: node scripts/no-bash-guard.js --probe
 

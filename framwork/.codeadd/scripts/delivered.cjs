@@ -10,7 +10,7 @@
  *        node .codeadd/scripts/delivered.cjs verify [<id>] [--repair]
  *        node .codeadd/scripts/delivered.cjs touched <path> [<path>...]
  *
- * Dependencies: Node >= 18 built-ins and git. No bash, no WSL. The entry IS a
+ * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL. The entry IS a
  * Node program, so the shell's separate `node` lookup (`ERROR=node-missing`) is
  * retired; the surviving hard dependency is git, for the corpus, and an unmet
  * one is an `ERROR=` value distinct from `REFUSED=`, exit 2.
@@ -206,7 +206,7 @@ function main(argv) {
   process.exit(2);
 }
 
-module.exports = { parseInvocation, main, USAGE };
+module.exports = { parseInvocation, main, USAGE, core };
 
 if (require.main === module) {
   main(process.argv.slice(2));

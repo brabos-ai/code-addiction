@@ -44,7 +44,7 @@
  * root, call the same domain operation as the local CLI, and render the
  * publication result. The functions here are the git primitives it composes.
  *
- * Dependencies: Node >= 18 built-ins and git. No bash, no WSL, no stdin.
+ * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL, no stdin.
  */
 
 const { execFileSync } = require('node:child_process');

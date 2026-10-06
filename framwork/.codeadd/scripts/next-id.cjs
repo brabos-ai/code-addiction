@@ -17,13 +17,10 @@
  * `backlog-id.cjs`; the two entries differ only in their public argument
  * validation and exit codes, exactly as the two shells did.
  *
- * ALLOCATION FAILURES ARE SURFACED, NOT SILENT. The canonical core refuses an
- * unreadable source or exhaustion at 9999 rather than handing out a number
- * already on the board; this entry reports that on stderr and exits 1. The
- * old shell's `find`/`grep` swallowed an unreadable source and its `printf`
- * emitted a five-digit id at 9999; the canonical refusal is the deliberate
- * native replacement (pinned by cli/tests/backlog-id.test.js), and this
- * public adapter is the route the workflow uses.
+ * An unreadable source is reported on stderr with exit 1. At 9999 this adapter
+ * preserves the old printf's minimum-width behavior and emits a five-digit
+ * number. Backlog allocation has its own four-digit refusal policy in the same
+ * canonical core; it does not change this public entry's output contract.
  *
  * Built-ins only: no dependency beyond the canonical core beside it. No
  * import-time I/O and no import-time exit — requiring this module allocates
@@ -65,7 +62,7 @@ function main(argv) {
     return 1;
   }
 
-  const result = idc.calculate(process.cwd(), typeLetter);
+  const result = idc.calculate(process.cwd(), typeLetter, { allowOverflow: true });
   if (!result.ok) {
     process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);
     return 1;

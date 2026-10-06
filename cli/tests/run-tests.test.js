@@ -43,7 +43,7 @@ function loadRunner() {
   return require_(RUNNER_PATH);
 }
 
-/** The inner `bash -c` string of a docker spec. */
+/** The inner `sh -c` string of a docker spec. */
 function innerOf(spec) {
   expect(spec.args[spec.args.length - 2]).toBe('-c');
   return spec.args[spec.args.length - 1];
@@ -193,7 +193,7 @@ describe('L1 — the runner\'s decisions', () => {
     expect(r.combineExitCodes([0, 3])).toBe(3);
     expect(r.combineExitCodes([2, 1])).toBe(2);
 
-    // Docker: one container start, both suites, the combination done in bash.
+    // Docker: one container start, both suites, the combination done in POSIX sh.
     const docker = r.buildCommands({ suite: 'all', runner: 'docker', repoRoot: 'C:/repo', tag: 'codeadd-tests:x', treeTar: 'C:/t/tree.tar' });
     expect(docker).toHaveLength(1);
     const inner = innerOf(docker[0]);

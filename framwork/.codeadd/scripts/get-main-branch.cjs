@@ -20,7 +20,7 @@
  *   1 — not a git repository
  *   2 — no default branch found (no hardcoded fallback)
  *
- * Dependencies: Node >= 18 built-ins and git. No bash, no WSL, no stdin.
+ * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL, no stdin.
  */
 
 'use strict';

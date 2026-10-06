@@ -82,6 +82,23 @@ test('no native suite spawns a `.sh` route', () => {
   }
 });
 
+test('optional Docker transport does not require Bash for either suite', () => {
+  for (const suite of ['vitest', 'scripts', 'all']) {
+    const specs = runner.buildCommands({ suite, runner: 'docker', repoRoot: h.REPO_ROOT, tag: 'test', treeTar: '/tmp/tree.tar' });
+    assert.equal(specs[0].args.at(-3), 'sh');
+    assert.equal(specs[0].args.includes('bash'), false);
+  }
+});
+
+test('script selection preserves separate option values and paths with spaces', () => {
+  assert.deepEqual(runner.scriptsArgv(['--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']),
+    ['--test', '--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']);
+  assert.deepEqual(runner.scriptsArgv(['--test-name-pattern', 'case with spaces']),
+    ['--test', '--test-name-pattern', 'case with spaces', runner.SCRIPTS_TEST_GLOB]);
+  assert.equal(runner.scriptsArgs(['--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']),
+    "--test-name-pattern 'case with spaces' 'scripts/tests/file with spaces.test.cjs'");
+});
+
 // --- platform resolution ----------------------------------------------------
 
 test('Windows resolves to the native runner without probing or requiring Docker', () => {
@@ -116,6 +133,29 @@ test('NEGATIVE CONTROL: the native boundary cannot be talked into running Bash',
   } finally {
     h.rmrf(dir);
   }
+});
+
+test('Bash negative control accepts only the rejector, not an unrelated spawn failure', () => {
+  const guard = require('../no-bash-guard.js');
+  assert.equal(guard.wasRejected({ status: 127, stderr: guard.REJECT_MESSAGE }), true);
+  assert.equal(guard.wasRejected({ status: 127, stderr: 'command not found' }), false);
+  assert.equal(guard.wasRejected({ status: null, error: new Error('spawn failed') }), false);
+  assert.equal(guard.wasRejected({ status: 0, stderr: guard.REJECT_MESSAGE }), false);
+});
+
+test('the guard rejects direct and absolute Bash spawns while preserving native Git', () => {
+  const preload = path.join(h.ROOT_SCRIPTS_DIR, 'no-bash-preload.cjs');
+  const result = h.runNode(['-e', `
+    const cp = require('node:child_process');
+    for (const name of ['bash', 'bash.exe', '/bin/bash', 'C:\\\\Git\\\\bin\\\\bash.exe']) {
+      try { cp.spawnSync(name, ['--version'], { shell: false }); process.exit(1); }
+      catch (e) { if (e.code !== 'CODEADD_BASH_REFUSED') throw e; }
+    }
+    const nested = cp.spawnSync(process.execPath, ['-e', "try { require('node:child_process').spawnSync('bash'); process.exit(1); } catch(e) { if(e.code !== 'CODEADD_BASH_REFUSED') throw e; }"], { env: { ...process.env, NODE_OPTIONS: '' } });
+    if(nested.status !== 0) process.exit(1);
+    process.exit(cp.spawnSync('git', ['--version']).status);
+  `], { env: { NODE_OPTIONS: `--require=${JSON.stringify(preload)}` } });
+  assert.equal(result.status, 0, result.output);
 });
 
 test('the shared harness never spawns a shell (shell: true is absent)', () => {

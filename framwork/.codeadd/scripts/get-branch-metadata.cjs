@@ -24,7 +24,7 @@
  * BRANCH_TYPE=detached and the literal quoted name `'(detached)'`. Always
  * exits 0.
  *
- * Dependencies: Node >= 18 built-ins and git. No bash, no WSL, no stdin.
+ * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL, no stdin.
  */
 
 'use strict';

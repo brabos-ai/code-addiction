@@ -30,7 +30,7 @@
  * between the first `---` and the closing `---`, CRLF-tolerant, so a Decision
  * Log row that also names a shape can never leak into the recorded value.
  *
- * Dependencies: Node >= 18 built-ins and `git`. No bash, no WSL, and no
+ * Dependencies: Node >= 22.19.0 built-ins and `git`. No bash, no WSL, and no
  * import-time I/O in the sibling modules it requires.
  */
 
@@ -469,7 +469,7 @@ function main(argv) {
       process.stderr.write('ERROR:backlog-id.cjs not found or unreadable beside status.cjs\n');
       return 1;
     }
-    const result = idc.calculate(cwd, prefix);
+    const result = idc.calculate(cwd, prefix, { allowOverflow: true });
     if (!result.ok) {
       process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);
       return 1;

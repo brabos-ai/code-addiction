@@ -22,6 +22,11 @@ const h = require('./helpers.cjs');
 function project(t) {
   const base = h.mkTmp('codeadd-qa-preflight-');
   t.after(() => h.rmrf(base));
+  // Mask host/ancestor installations with an intentionally incomplete local
+  // package. Non-runner cases must not launch the user's installed Chromium.
+  // The dedicated installed-runner case replaces this with a functional CLI.
+  h.write(path.join(base, 'node_modules', '@playwright', 'test', 'package.json'),
+    JSON.stringify({ name: '@playwright/test', main: 'not-installed.js' }));
   return base;
 }
 
@@ -150,15 +155,10 @@ test('qa-preflight#013 — 172.32.x is public, NOT the docker bridge → QA_BASE
 
 test('qa-preflight#014 — runner absent in project → QA_RUNNER=missing, QA_CHROMIUM=not-probed', (t) => {
   const base = project(t);
-  // Pinned environment: the temp dir is created outside any JS project, but
-  // require.resolve walks parent dirs AND a user-level node_modules above the
-  // temp dir makes this unprovable. The Bats suite asserted the absence and
-  // failed on such a host; a native suite must be honest instead of green for
-  // the wrong reason, so an unresolvable runner is required to run the probe.
+  // The incomplete project-local package masks any ancestor installation;
+  // runner absence is deterministic even on hosts with Playwright installed.
   const probe = h.runNode(['-e', "require.resolve('@playwright/test')"], { cwd: base });
-  if (probe.status === 0) {
-    return t.skip('@playwright/test resolvable from the fixture cwd; runner-absence is unprovable here');
-  }
+  assert.notEqual(probe.status, 0, 'the fixture must not resolve a host runner');
   const res = h.runScript('qa-preflight', ['a'], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_RUNNER=missing/);
@@ -166,6 +166,18 @@ test('qa-preflight#014 — runner absent in project → QA_RUNNER=missing, QA_CH
 });
 
 // ─── Phase A: qa-project skill ───────────────────────────────────────────────
+
+test('qa-preflight — installed project CLI runs natively even without npx on PATH', (t) => {
+  const base = project(t);
+  const pkg = path.join(base, 'node_modules', '@playwright', 'test');
+  h.write(path.join(pkg, 'package.json'), JSON.stringify({ name: '@playwright/test', main: 'index.js', bin: { playwright: 'cli.js' } }));
+  h.write(path.join(pkg, 'index.js'), 'exports.chromium = { launch: async () => ({ close: async () => {} }) };');
+  h.write(path.join(pkg, 'cli.js'), 'if (process.argv[2] !== "--version") process.exit(1); console.log("Version 1.0.0");');
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base, env: { PATH: '' } });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_RUNNER=ok/);
+  assert.match(res.output, /QA_CHROMIUM=ok/);
+});
 
 test('qa-preflight#015 — qa-project skill present in a provider skills dir → ok', (t) => {
   const base = project(t);

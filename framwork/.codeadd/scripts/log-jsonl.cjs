@@ -28,7 +28,7 @@
  *   file/type/agent/fields arguments. Any extra arguments beyond the fourth are
  *   ignored, matching the shell's positional read. Success exits 0.
  *
- * Dependencies: Node >= 18 built-ins only. No shell.
+ * Dependencies: Node >= 22.19.0 built-ins only. No shell.
  */
 
 'use strict';

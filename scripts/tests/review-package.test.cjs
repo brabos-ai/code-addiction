@@ -20,6 +20,17 @@ const h = require('./helpers.cjs');
 
 const OUT = 'docs/features/0003F-signup/_build';
 
+test('review-package includes the final hunk of a diff larger than the default spawn buffer', (t) => {
+  const r = h.makeRepo();
+  t.after(r.cleanup);
+  h.write(path.join(r.repo, 'large.txt'), `${'content line\n'.repeat(100000)}FINAL-HUNK-MARKER\n`);
+  assert.equal(r.git('add', 'large.txt').status, 0);
+  assert.equal(r.git('commit', '-qm', 'large diff').status, 0);
+  const result = h.runScript('review-package', ['HEAD~1', 'HEAD', OUT], { cwd: r.repo });
+  assert.equal(result.status, 0, result.output);
+  assert.match(pkgText(r.repo, result), /\+FINAL-HUNK-MARKER/);
+});
+
 const abs = (repo, rel) => path.join(repo, rel);
 const sha = (repo, ref) => h.git(repo, ['rev-parse', ref]).stdout.trim();
 

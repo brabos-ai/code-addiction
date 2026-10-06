@@ -20,6 +20,17 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const h = require('./helpers.cjs');
 
+test('next-id preserves the public five-digit output at the four-digit boundary', (t) => {
+  const dir = h.mkTmp('codeadd-overflow-');
+  t.after(() => h.rmrf(dir));
+  h.write(path.join(dir, 'docs', 'backlog.jsonl'), '{"id":"9999B"}\n');
+  for (const [name, args] of [['next-id', ['F']], ['status', ['next-id', 'F']]]) {
+    const result = h.runScript(name, args, { cwd: dir });
+    assert.equal(result.status, 0, result.output);
+    assert.equal(result.stdout.trim(), '10000F');
+  }
+});
+
 /** A temp cwd for one test. */
 function tmpDir(t, prefix = 'codeadd-nextid-') {
   const dir = h.mkTmp(prefix);

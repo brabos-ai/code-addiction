@@ -183,27 +183,16 @@ describe('L2 — calculate: the exact raw-text anchor, and its neighbors', () =>
 });
 
 describe('L2 — calculate: exhaustion and unreadable sources', () => {
-  it('9999 refuses explicitly in the core and in both native entries', () => {
+  it('9999 is refused by backlog but preserves the next-id/status overflow contract', () => {
     const root = fixture('id-max-');
     featureDir(root, '9999F-mid');
     backlogRow(root, ticketRow({ id: '9999B' }));
     const native = idc.calculate(root, 'B');
     expect(native).toEqual({ ok: false, reason: 'id-exhausted' });
-    // The retired shells overflowed: next-id.sh and status.sh printed five
-    // digits, and the wrapper's `^[0-9]{4}B$` filter was what refused the
-    // chain. The native entries refuse at the source, preserving that
-    // effective rejection — Node to Node, with no shell in the route.
+    // Public next-id/status adapters retain the shell's five-digit output;
+    // backlog allocation retains its separate four-digit refusal.
     for (const entry of [[NEXT_ID, ['B']], [STATUS, ['next-id', 'B']]]) {
-      let status = 0;
-      let stderr = '';
-      try {
-        nodeNextId(entry[0], entry[1], root);
-      } catch (err) {
-        status = err.status;
-        stderr = String(err.stderr || '');
-      }
-      expect(status, `${path.basename(entry[0])} must refuse at exhaustion`).toBe(1);
-      expect(stderr).toMatch(/exhausted/i);
+      expect(nodeNextId(entry[0], entry[1], root)).toBe('10000B');
     }
   });
 

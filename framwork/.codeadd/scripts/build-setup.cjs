@@ -246,10 +246,12 @@ function main(argv = process.argv.slice(2)) {
     if (current === branch) {
       state = 'current';
     } else if (refExists(cwd, branch)) {
-      git(cwd, ['checkout', '-q', branch]);
+      const result = git(cwd, ['checkout', '-q', branch]);
+      if (result.status !== 0) { process.stderr.write(result.stderr); return result.status || 1; }
       state = 'existing';
     } else {
-      git(cwd, ['checkout', '-q', '-b', branch, mainBranch]);
+      const result = git(cwd, ['checkout', '-q', '-b', branch, mainBranch]);
+      if (result.status !== 0) { process.stderr.write(result.stderr); return result.status || 1; }
       state = 'created';
     }
   } else {
@@ -262,10 +264,12 @@ function main(argv = process.argv.slice(2)) {
       state = 'current';
     } else {
       if (refExists(cwd, branch)) {
-        git(cwd, ['worktree', 'add', '-q', wtPath, branch]);
+        const result = git(cwd, ['worktree', 'add', '-q', wtPath, branch]);
+        if (result.status !== 0) { process.stderr.write(result.stderr); return result.status || 1; }
         state = 'existing';
       } else {
-        git(cwd, ['worktree', 'add', '-q', '-b', branch, wtPath, mainBranch]);
+        const result = git(cwd, ['worktree', 'add', '-q', '-b', branch, wtPath, mainBranch]);
+        if (result.status !== 0) { process.stderr.write(result.stderr); return result.status || 1; }
         state = 'created';
       }
       // Untracked feature docs do not follow `worktree add` — copy them in.

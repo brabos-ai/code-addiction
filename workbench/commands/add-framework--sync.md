@@ -153,7 +153,7 @@ node scripts/graph.js neighbors <artefact> --json   # per-row "skills loaded" / 
 ⛔ **The calls above are literal on purpose, and this is the one step in this ecosystem where that is
 still correct.** It is deterministic transcription with no agent deciding anything: one `neighbors`
 run per row, `--json` because the output is parsed rather than read, and `stats` once for the counts.
-The flags are the point, and `building-commands` keeps explicit bash exactly here — where the flags
+The flags are the point, and `building-commands` keeps explicit native commands exactly here — where the flags
 matter and are not obvious.
 
 **They are not the graph's whole surface, and no question outside this loop is answered from them.**

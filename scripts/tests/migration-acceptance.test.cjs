@@ -1,6 +1,6 @@
 'use strict';
 // =============================================================================
-// MIGRATION ACCEPTANCE — INTENTIONALLY RED (F1 seed; F27 owns completion)
+// MIGRATION ACCEPTANCE — final runtime and case-transfer guards
 // =============================================================================
 // ⛔ THESE ASSERTIONS ARE MEANT TO FAIL TODAY. F1 writes them so the end state
 //    is a test, not a promise, and records them as intentional Red in the
@@ -30,6 +30,17 @@ const ACTIVE_ROOTS = [
   path.join(h.REPO_ROOT, 'framwork', '.codeadd', 'plugins'),
   path.join(h.REPO_ROOT, 'workbench'),
 ];
+
+test('CASE TRANSFER: every baseline case resolves to an existing native test ID', () => {
+  const map = h.loadCaseMap();
+  for (const script of map.scripts) {
+    const text = h.read(path.join(h.REPO_ROOT, script.nativeTest));
+    for (const entry of script.cases) {
+      const declaration = new RegExp('\\btest\\(\\s*[\\x27\\x22\\x60]' + entry.nativeCaseId + '\\b');
+      assert.match(text, declaration, `${entry.id} has no native test declaration in ${script.nativeTest}`);
+    }
+  }
+});
 
 /** Recursively collect files under `root` matching `pred`. */
 function walk(root, pred, out = []) {

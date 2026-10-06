@@ -28,7 +28,7 @@
  * and tags in the current repository. Nothing is rolled back after the work has
  * landed; a refused cleanup reports CLEANUP=SKIPPED and still exits 0.
  *
- * Dependencies: Node >= 18 built-ins, git, and the sibling native helpers
+ * Dependencies: Node >= 22.19.0 built-ins, git, and the sibling native helpers
  * get-main-branch.cjs / get-branch-metadata.cjs. No shell, no WSL, no stdin.
  */
 

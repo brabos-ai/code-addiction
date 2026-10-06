@@ -57,10 +57,11 @@ test('runNode executes a Node entry without a shell and records the exit', () =>
 });
 
 test('runNode gives the child a clean environment', () => {
-  // The harness sets NODE_OPTIONS to the empty string, so the injected
-  // debugger bootloader cannot print onto a child's stdout.
+  // Clear debugger bootloaders. Guarded acceptance may retain only the
+  // explicitly installed no-Bash preload across this subprocess boundary.
   const res = h.runNode(['-e', 'process.stdout.write(String(process.env.NODE_OPTIONS))']);
-  assert.equal(res.stdout, '');
+  const preload = process.env.CODEADD_NO_BASH_PRELOAD;
+  assert.equal(res.stdout, preload ? `--require=${JSON.stringify(preload)}` : '');
 });
 
 test('runNode runs with an explicit cwd', () => {

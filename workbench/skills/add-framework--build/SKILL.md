@@ -335,8 +335,11 @@ A red build is not a ruling: it reports and STOPS.
 **Per F-block, before its commit — never once at the end.** The checks belong to the block's layer
 skill. Both layers share one non-negotiable:
 
-```bash
-ADD_GRAPH_WARNINGS=1 node scripts/build.js   # exit 0, no new warning — the three graph gates run here
+Set `ADD_GRAPH_WARNINGS` to `1` in the build process environment using the tool's environment
+option or the current shell's native syntax, then run:
+
+```text
+node scripts/build.js   # exit 0, no new warning — the three graph gates run here
 ```
 
 ⛔ **`ADD_GRAPH_WARNINGS=1` is not optional.** Without it `build.js` prints `N graph warning(s)` and

@@ -254,10 +254,13 @@ function stats(graph) {
  */
 const DELIVERY_CORE = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivery-index-core.cjs');
 
-let deliveryIndexModule = null;
-function deliveryIndex() {
-  if (!deliveryIndexModule) deliveryIndexModule = require(DELIVERY_CORE);
-  return deliveryIndexModule;
+function deliveryIndex(reader = DELIVERY_CORE) {
+  const loaded = require(path.resolve(reader));
+  const core = loaded?.core ?? loaded;
+  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performTouched']) {
+    if (typeof core?.[method] !== 'function') throw new Error(`Native delivery reader lacks ${method}`);
+  }
+  return core;
 }
 
 /** Flags `history` refuses outright. graph.js is query-only, by plan 0077. */
@@ -287,9 +290,8 @@ const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
  *
  * RETIRED BASH OVERRIDES and what replaced them:
  *   opts.script  was the path to the `delivered.sh` this verb executed. It now
- *                names the READER ENTRY for an existence preflight only — the
- *                read itself always goes through the core, so an explicit path
- *                answers "is the reader present?" and nothing more. Default:
+ *                names a native core module or an entry exporting `core`.
+ *                The selected module supplies the implementation. Default:
  *                the core path above.
  *   opts.bash    was the interpreter. Retired with the spawn: the native path
  *                has no interpreter, so passing it changes nothing.
@@ -319,12 +321,21 @@ function history(graph, ref, opts = {}) {
 
   let core;
   try {
-    core = deliveryIndex();
+    core = deliveryIndex(reader);
   } catch (e) {
-    return unavailable('script-missing', `${DELIVERY_CORE} could not be loaded: ${e.message}`);
+    return unavailable('read-failed', e.message);
   }
 
-  const rootRes = core.resolveRoot(cwd);
+  if (opts.layer && opts.layer !== 'product' && opts.layer !== 'internal') {
+    return unavailable('read-failed', 'read refused: --layer must be product or internal');
+  }
+  const limit = opts.limit ?? 50;
+  if (!Number.isInteger(limit) || limit <= 0) {
+    return unavailable('read-failed', 'read refused: --limit must be a positive whole number');
+  }
+  let rootRes;
+  try { rootRes = core.resolveRoot(cwd); }
+  catch (e) { return unavailable('read-failed', e.message); }
   if (!rootRes.ok) {
     // The shell reported this as an `ERROR=` line and exit 2; the core returns
     // the same fact as a value. Same `read-failed` answer either way.

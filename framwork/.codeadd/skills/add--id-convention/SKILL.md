@@ -128,10 +128,12 @@ The number is global across every letter. It is the max over **both** the
 sources, anchored on the raw text, and every route delegates to it: `next-id.cjs` (one uppercase
 A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
 prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), `backlog-cli.cjs add` and the `init.cjs` seed are
-thin adapters that differ only in their public argument validation and exit codes. The local CLI
+thin adapters that retain their public argument validation, exit codes and exhaustion policy. The local CLI
 allocates for you
 when `add` runs — `node .codeadd/scripts/backlog-cli.cjs add --record-file <ticket.json>` needs no
-allocator call. `10000` overflows are refused (`ERROR=id-allocation-failed`) rather than emitted.
+allocator call. Backlog allocation refuses `10000` (`ERROR=id-allocation-failed`). The public
+`next-id`, `status next-id` and `init` adapters preserve the old minimum-width formatting and
+can emit a five-digit number at the boundary; this does not expand the four-digit backlog schema.
 
 ```
 IF CHANGING HOW AN ID IS ALLOCATED:

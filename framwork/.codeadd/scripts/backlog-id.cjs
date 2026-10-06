@@ -38,14 +38,15 @@
  * caller, and no reservation is made here: calculate is max+1 by definition,
  * stateless, with no concurrency protocol.
  *
- * At 9999 the sequence is refused rather than emitted as five digits — the
- * effective rejection the old wrapper's `^[0-9]{4}B$` filter produced.
+ * Backlog allocation refuses at 9999. Public next-id/status/init adapters opt
+ * into allowOverflow to preserve the old printf's minimum-width output: 10000F.
+ * The scan remains shared; only the public adapter's exhaustion policy differs.
  *
  * NO IMPORT-TIME I/O. Everything happens inside scanIds()/calculate();
  * requiring this module reads nothing, so the publication entry and the CLI
  * can both load it before any operation root is selected.
  *
- * Dependencies: Node >= 18 built-ins only. No argv, stdin, stdout, exit,
+ * Dependencies: Node >= 22.19.0 built-ins only. No argv, stdin, stdout, exit,
  * shell, or Git.
  */
 
@@ -129,10 +130,11 @@ function scanIds(root) {
  *
  * @param {string} root - absolute path to the project root
  * @param {string} letter - a single uppercase letter (the work type suffix)
+ * @param {{allowOverflow?: boolean}} options - preserve a public adapter's minimum-width output
  * @returns {{ok: true, id: string} |
  *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'|'id-exhausted'}}
  */
-function calculate(root, letter) {
+function calculate(root, letter, { allowOverflow = false } = {}) {
   const scanned = scanIds(root);
   if (!scanned.ok) return { ok: false, reason: scanned.reason };
 
@@ -142,7 +144,7 @@ function calculate(root, letter) {
     if (Number.isFinite(n) && n > max) max = n;
   }
 
-  if (max >= MAX_NUMBER) return { ok: false, reason: 'id-exhausted' };
+  if (max >= MAX_NUMBER && !allowOverflow) return { ok: false, reason: 'id-exhausted' };
   return { ok: true, id: String(max + 1).padStart(4, '0') + letter };
 }
 

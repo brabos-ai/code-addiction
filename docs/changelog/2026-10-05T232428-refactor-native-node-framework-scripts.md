@@ -33,19 +33,36 @@ testing the framework on Windows, macOS and Linux.
 
 - Each native entry is pinned by the ported Bats cases, run through `node --test`.
 - `npm run test:scripts` is native: 627 tests, 624 pass, 3 platform-conditional skips, 0 fail.
-- `npm test` runs the CLI suite on the native runner across the six-job CI matrix
-  (Windows/macOS/Linux × Node 22.19.0/24).
+- `npm test` runs the CLI suite on the native runner. The six-job CI matrix is configured for
+  Windows/macOS/Linux × Node 22.19.0/24; remote execution remains pending publication.
 - `migration-acceptance.test.cjs` is fully green: no shipped or root `.sh`, no Bats tree, native
   `test:scripts`, and no active `bash .codeadd/scripts/*.sh` invocation.
-- `scripts/no-bash-guard.js` shadows `bash` for the test children and proves, with a negative
-  control, that a Bash route is rejected while native Git and npm transport still work.
+- `scripts/no-bash-guard.js` shadows `bash` and preloads Node subprocess instrumentation for
+  the test children. Shell-based and direct/absolute Bash negative controls prove rejection
+  while native Git and npm transport still work, including shell:false on Windows.
 
 ## Compatibility
 
 Node `>=22.19.0` becomes the unified floor (Node 24 recommended), declared in the root, `cli`,
-`board` and `web` manifests. Node 18/20 and older Node 22 are no longer supported. One public
-contract changed deliberately: the allocator refuses at `9999` (`id-exhausted`, exit 1) instead of
-the retired shell's five-digit rollover.
+`board` and `web` manifests. Node 18/20 and older Node 22 are no longer supported. Per the user's
+review decision, `next-id`, `status next-id` and `init` retain the retired shell's five-digit
+output at `9999`. Backlog allocation retains its separate four-digit refusal policy; both
+policies use the same canonical scan and calculation.
+
+## Critical review corrections — 2026-10-06
+
+- Stop setup immediately after Git refuses a checkout or worktree creation; do not report success
+  or copy documents into an occupied destination.
+- Preserve complete review diffs beyond the subprocess default buffer and reject collection
+  failures rather than publishing a truncated package.
+- Probe the project's installed Playwright CLI with Node rather than executing `npx.cmd` as a
+  native Windows binary.
+- Honor alternate native core/entry readers consistently in graph and MCP; preserve invalid
+  layer/limit refusal and malformed-reader degradation.
+- Enforce the exact Node floor in the CLI doctor and align runtime/authoring documentation.
+- Preserve separate test-option values, include native CJS/MJS files in rename discovery, and
+  remove Bash from the optional Docker test route.
+- Assert that every baseline case ID resolves to its actual native suite.
 
 ## Commits
 

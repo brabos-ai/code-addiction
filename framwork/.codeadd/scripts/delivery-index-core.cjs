@@ -40,7 +40,7 @@
  *   performVerify(ctx, opts)             -> results, repaired, skipped | error
  *   performTouched(ctx, opts)            -> complete, curated, curatedOnly, ...
  *
- * Dependencies: Node >= 18 built-ins and git. No bash, no WSL.
+ * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL.
  */
 
 'use strict';

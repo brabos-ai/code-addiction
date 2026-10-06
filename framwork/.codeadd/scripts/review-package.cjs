@@ -57,7 +57,12 @@ function git(args) {
     env: process.env,
     shell: false,
     encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
   });
+  if (result.error) throw result.error;
+  if (result.status !== 0 && args[0] !== 'rev-parse') {
+    throw new Error(result.stderr || `git ${args[0]} failed (${result.status})`);
+  }
   return {
     status: result.status,
     stdout: result.stdout ?? '',
@@ -75,7 +80,7 @@ function stripTrailingNewlines(s) {
  * @param {string[]} argv - arguments after the executable
  * @returns {number}
  */
-function main(argv) {
+function buildPackage(argv) {
   if (argv.length !== 3) return usage();
 
   const base = argv[0];
@@ -164,6 +169,11 @@ function main(argv) {
   process.stdout.write(`COMMITS=${commits}\n`);
   process.stdout.write(`FILES=${filesChanged || 0}\n`);
   return 0;
+}
+
+function main(argv) {
+  try { return buildPackage(argv); }
+  catch (error) { return fail(`Cannot build complete review package: ${error.message}`); }
 }
 
 if (require.main === module) {

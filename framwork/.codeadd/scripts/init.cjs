@@ -207,7 +207,7 @@ function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
   fs.mkdirSync(docsAbs, { recursive: true });
   const dirs = featureDirs(docsAbs);
 
-  const allocated = idc.calculate(cwd, 'F');
+  const allocated = idc.calculate(cwd, 'F', { allowOverflow: true });
   const next = allocated.ok ? allocated.id : '0001F';
   lines.push(`FEATURES:count=${dirs.length} next=${next}`);
 

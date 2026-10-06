@@ -38,6 +38,41 @@ afterAll(() => {
   removeTree(emptyTree);
 });
 
+it('native history overrides select the same implementation in graph and MCP', () => {
+  const probe = 'product/command/add-done';
+  const coreFile = path.join(emptyTree, 'alternate-reader.cjs');
+  const entryFile = path.join(emptyTree, 'alternate-entry.cjs');
+  const realCore = path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivery-index-core.cjs');
+  fs.writeFileSync(coreFile, `const base = require(${JSON.stringify(realCore)}); module.exports = { ...base, performRead(ctx, args) { const r = base.performRead(ctx, args); return { ...r, entries: [{ id: 'OVERRIDE-READER', node: ${JSON.stringify(probe)}, items: [] }], matchedLive: 1, returnedLive: 1 }; } };`);
+  fs.writeFileSync(entryFile, `module.exports = { core: require(${JSON.stringify(coreFile)}) };`);
+  for (const script of [coreFile, entryFile]) {
+    const shell = G.history(G.loadGraph(), probe, { cwd: REPO, script });
+    const mcp = actions.history(artefacts, { id: probe }, { root: REPO, script });
+    expect(shell.entries[0]?.id).toBe('OVERRIDE-READER');
+    expect(mcp).toEqual(shell);
+  }
+});
+
+it('invalid history arguments degrade identically in graph and MCP', () => {
+  const probe = 'product/command/add-done';
+  for (const opts of [{ layer: 'invalid' }, { limit: 0 }, { limit: -1 }, { limit: 1.5 }]) {
+    const shell = G.history(G.loadGraph(), probe, { cwd: REPO, ...opts });
+    const mcp = actions.history(artefacts, { id: probe, ...opts }, { root: REPO });
+    expect(shell.unavailable?.reason).toBe('read-failed');
+    expect(mcp).toEqual(shell);
+  }
+});
+
+it('malformed native reader overrides are unavailable rather than uncaught exceptions', () => {
+  const probe = 'product/command/add-done';
+  const script = path.join(emptyTree, 'malformed-reader.cjs');
+  fs.writeFileSync(script, 'module.exports = {};');
+  const shell = G.history(G.loadGraph(), probe, { cwd: REPO, script });
+  const mcp = actions.history(artefacts, { id: probe }, { root: REPO, script });
+  expect(shell.unavailable?.reason).toBe('read-failed');
+  expect(mcp).toEqual(shell);
+});
+
 // ---------------------------------------------------------------------------
 // The surface
 // ---------------------------------------------------------------------------

@@ -80,11 +80,14 @@ function resolvePlaywright() {
   }
 }
 
-/** `npx --no-install playwright --version`: a functional CLI, never a network install. */
+/** Probe the installed project's CLI directly: no npx shim or network install. */
 function playwrightCliOk() {
   try {
-    const bin = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-    const result = spawnSync(bin, ['--no-install', 'playwright', '--version'], {
+    const packageFile = require.resolve('@playwright/test/package.json', { paths: [process.cwd()] });
+    const pkg = JSON.parse(fs.readFileSync(packageFile, 'utf8'));
+    const bin = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin?.playwright;
+    if (!bin) return false;
+    const result = spawnSync(process.execPath, [path.resolve(path.dirname(packageFile), bin), '--version'], {
       stdio: 'ignore',
       shell: false,
     });

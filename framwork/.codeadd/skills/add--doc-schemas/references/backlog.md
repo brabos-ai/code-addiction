@@ -5,7 +5,7 @@ document an agent authors, with frontmatter, depth floors and a Decision Log. Th
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
 its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
 (`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files. Local operations need Node >= 18; publication also needs Git.
+and write both files. Local operations need Node >= 22.19.0; publication also needs Git.
 Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none

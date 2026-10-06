@@ -38,6 +38,12 @@ const {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+it('history rejects invalid layer and limits at the native reader boundary', () => {
+  for (const opts of [{ layer: 'invalid' }, { limit: 0 }, { limit: -1 }, { limit: 1.5 }]) {
+    expect(history(G, 'product/skill/skillX', { cwd: ROOT, ...opts }).unavailable?.reason).toBe('read-failed');
+  }
+});
+
 /**
  *   cmdA ──uses──> skillX ──uses──> skillY
  *   cmdB ──uses──> skillX

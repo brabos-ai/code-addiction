@@ -177,7 +177,7 @@ Key files:
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
-| `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
+| `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — native on every platform, with an explicit optional Linux container transport |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |

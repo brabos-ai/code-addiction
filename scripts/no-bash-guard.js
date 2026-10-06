@@ -40,9 +40,10 @@
  *   • The native test harness spawns `process.execPath` and `git` with
  *     `shell: false` and an explicit argv, so it never consults `bash` at all.
  *
- * The shadow is deliberately name-based: it catches a real Bash invocation
- * (`bash -c …`), which is the failure this boundary exists to prevent, without
- * hiding the interpreters Git and npm legitimately need.
+ * The PATH shadow covers shell-based name resolution. A Node preload also
+ * rejects Bash at child_process boundaries, including shell:false on Windows
+ * and absolute Bash executable paths. The preload propagates across children
+ * that clear debugger NODE_OPTIONS. Git and npm remain available.
  *
  * WHERE IT LIVES. Installed as CI steps in `.github/workflows/ci.yml` before
  * `npm test` and `npm run test:scripts`, for all six platform × Node jobs. The
@@ -84,24 +85,33 @@ function guardedEnv(dir) {
   return {
     ...process.env,
     PATH: `${dir}${path.delimiter}${process.env.PATH ?? ''}`,
+    CODEADD_NO_BASH_PRELOAD: path.join(__dirname, 'no-bash-preload.cjs'),
+    NODE_OPTIONS: `--require=${JSON.stringify(path.join(__dirname, 'no-bash-preload.cjs'))}`,
   };
 }
 
 /**
  * The negative control. Runs `bash --version` through the platform shell (so
  * `cmd.exe`/`sh` resolve the name on PATH, exactly as a suite would) and reports
- * success only when it did NOT exit zero.
+ * success only when the rejector's exit and diagnostic were both observed.
  */
 function probe({ dir = DEFAULT_DIR } = {}) {
   installShim(dir);
   const result = spawnSync('bash --version', { shell: true, encoding: 'utf8', env: guardedEnv(dir) });
-  const rejected = Boolean(result.error) || result.status !== 0;
-  if (rejected) {
+  const rejected = wasRejected(result);
+  const direct = spawnSync(process.execPath, ['-e', `try { require('node:child_process').spawnSync('bash', ['--version'], { shell: false }); process.exit(1); } catch (e) { if (e.code !== 'CODEADD_BASH_REFUSED') throw e; console.error(e.message); process.exit(127); }`], {
+    encoding: 'utf8', env: guardedEnv(dir),
+  });
+  if (rejected && wasRejected(direct)) {
     process.stdout.write(`NEGATIVE CONTROL: bash rejected (status ${result.status ?? 'spawn error'}).\n`);
     return true;
   }
-  process.stderr.write('NEGATIVE CONTROL FAILED: bash ran (status 0); the guard is not active.\n');
+  process.stderr.write(`NEGATIVE CONTROL FAILED: rejector not observed (status ${result.status ?? 'spawn error'}).\n`);
   return false;
+}
+
+function wasRejected(result) {
+  return !result.error && result.status === EXIT_REFUSED && String(result.stderr ?? '').includes(REJECT_MESSAGE);
 }
 
 /** Run one command, as a shell command string, with the shim on its PATH. */
@@ -167,6 +177,7 @@ module.exports = {
   installShim,
   guardedEnv,
   probe,
+  wasRejected,
   runGuarded,
   parse,
 };

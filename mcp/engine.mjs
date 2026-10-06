@@ -280,13 +280,17 @@ function resolveReader(corpus, root, override) {
 }
 
 /**
- * The side-effect-free core BESIDE the reader entry. The entry exports only its
- * argv boundary; `performRead`/`performTouched` live in the core, so it is the
- * core that is loaded. An override naming the core directly is honoured as-is.
+ * A native override selects the module itself: a core's exports or an entry's
+ * exported `core`. This matches scripts/graph.js and honors alternate readers
+ * without spawning a shell or silently falling back to a different module.
  */
 function loadDeliveryCore(readerPath) {
-  if (path.basename(readerPath) === 'delivery-index-core.cjs') return loadCjs(readerPath);
-  return loadCjs(path.join(path.dirname(readerPath), 'delivery-index-core.cjs'));
+  const loaded = loadCjs(readerPath);
+  const core = loaded?.core ?? loaded;
+  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performTouched']) {
+    if (typeof core?.[method] !== 'function') throw new Error(`Native delivery reader lacks ${method}`);
+  }
+  return core;
 }
 
 /**
@@ -297,9 +301,13 @@ function loadDeliveryCore(readerPath) {
  * silent empty answer — an empty index and a missing one mean opposite things.
  */
 function readerContext(core, root) {
-  const resolved = core.resolveRoot(root);
-  if (!resolved.ok) return { ok: false, detail: `ERROR=${resolved.error}` };
-  return { ok: true, ctx: core.createContext({ root: resolved.root }) };
+  try {
+    const resolved = core.resolveRoot(root);
+    if (!resolved.ok) return { ok: false, detail: `ERROR=${resolved.error}` };
+    return { ok: true, ctx: core.createContext({ root: resolved.root }) };
+  } catch (error) {
+    return { ok: false, detail: error.message };
+  }
 }
 
 /**
