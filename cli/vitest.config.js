@@ -31,7 +31,7 @@ import { serialFiles } from './tests/helpers/test-groups.js';
  *
  *   native, fully serial (the old config)          113s   all green
  *   native, these two projects                      88s   2 timeouts (mcp-server, qa-reachability)
- *   native, CODEADD_TESTS_RUNNER=native (serial)    93s   all green
+ *   historical serial override                   93s   all green
  *   container, these two projects, three runs    13-18s   all green, same count each time
  *
  * Supported test commands now delegate execution and isolation to scripts/run-tests.js.

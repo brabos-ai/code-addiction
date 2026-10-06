@@ -44,7 +44,7 @@ export default defineConfig({
   testMatch: '*.spec.ts',
   outputDir: './test-results/runs',
   fullyParallel: true,
-  reporter: [['list']],
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   metadata: {
     layersURL: `http://127.0.0.1:${LAYERS_PORT}`,
   },
