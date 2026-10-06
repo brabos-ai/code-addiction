@@ -54,9 +54,28 @@ npx codeadd uninstall --force
   - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
 
+## Runtime
+
+Installed framework scripts run on Node — `node .codeadd/scripts/<entry>.cjs` — so no
+Bash, WSL or Git-Bash is required on any platform.
+
 ## Requirements
 
-- Node.js >= 18.0.0
+- Node.js >= 22.19.0 (Node 24 LTS recommended)
+- Windows, macOS or Linux — plain Node, no shell prerequisite
+
+## Development
+
+The framework scripts and their suites run on Node's own runtime — no Bash, no Docker.
+
+```bash
+npm ci                    # root tooling
+npm --prefix cli ci       # CLI dependencies (vitest)
+
+npm test                  # CLI suite through scripts/run-tests.js
+npm run test:scripts      # root native script suite (node --test)
+npm run test:all          # both of the above
+```
 
 ## Links
 
