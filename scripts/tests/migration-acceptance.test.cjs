@@ -74,7 +74,11 @@ test('END STATE: root test:scripts no longer routes through Bats (F22)', () => {
 // --- no-Bash guard / negative control (seed; F27 completes) ------------------
 
 test('END STATE: no active source invokes bash .codeadd/scripts/*.sh (F18/F19/F20)', () => {
-  const pattern = /\.codeadd\/scripts\/[a-z0-9-]+\.sh/;
+  // The ticket's own guard is `grep -rn "bash .codeadd/scripts"` — an EXECUTION,
+  // never a bare mention. A legacy clean-up instruction that names
+  // `pattern-search.sh` in order to delete it is not an invocation, so the
+  // pattern requires a shell interpreter before the path.
+  const pattern = /\b(?:bash|sh)\s+(?:framwork\/)?\.codeadd\/scripts\/[a-z0-9-]+\.sh/;
   const offenders = [];
   for (const root of ACTIVE_ROOTS) {
     for (const file of walk(root, (f) => /\.(md|js|cjs|mjs)$/.test(f))) {
