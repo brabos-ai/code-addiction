@@ -42,7 +42,11 @@ export type ColumnGroup = {
   column: Column;
   /** The per-status groups this column holds, in vocabulary order — what each card's badge reads. */
   statuses: StatusGroup[];
-  /** Every ticket in the column, in board line order: the priority, across its statuses. */
+  /**
+   * Every ticket in the column. Backlog keeps board line order. Every other
+   * column is newest `updated_at` first; equal instants, and invalid timestamps
+   * among themselves, keep that line order.
+   */
   tickets: Ticket[];
   /** A status names this column and the columns list does not define it. */
   undefined: boolean;
@@ -75,7 +79,28 @@ export function groupByColumn(tickets: Ticket[], statuses: Status[], columns: Co
     home.set(sg.status.name, g);
   }
   for (const t of tickets) home.get(t.status)?.tickets.push(t);
+  for (const g of groups) {
+    if (g.column.name === 'backlog') continue;
+    g.tickets = g.tickets.slice().sort(byUpdatedAtDesc);
+  }
   return groups;
+}
+
+/** A missing or unparseable timestamp is older than every real instant. */
+function updatedInstant(value: string): number | null {
+  if (!value) return null;
+  const n = Date.parse(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function byUpdatedAtDesc(a: Ticket, b: Ticket): number {
+  const ia = updatedInstant(a.updated_at);
+  const ib = updatedInstant(b.updated_at);
+  if (ia === null && ib === null) return 0;
+  if (ia === null) return 1;
+  if (ib === null) return -1;
+  if (ia === ib) return 0;
+  return ib - ia;
 }
 
 /** A column shows unless it is hidden by default and the `column` param does not name it. */

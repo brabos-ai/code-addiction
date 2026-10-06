@@ -255,3 +255,67 @@ describe('L15.6 the feature a ticket points at', () => {
     expect(term('Work')?.nextElementSibling).toHaveTextContent('Not picked up');
   });
 });
+
+describe('column recency on the rendered board', () => {
+  const ticket = (id: string, title: string, status: string, updated_at: string) => ({
+    ...data.tickets[0]!,
+    id, title, status, updated_at, labels: ['product'] as string[],
+  });
+  const phased: BoardData = {
+    ...data,
+    statuses: [
+      { name: 'open', order: 1, means: '', column: 'backlog', label: 'Open' },
+      { name: 'refining', order: 2, means: '', column: 'shaping', label: 'Refining' },
+      { name: 'shaped', order: 3, means: '', column: 'shaping', label: 'Shaped' },
+    ],
+    columns: [
+      { name: 'backlog', order: 1, label: 'Backlog' },
+      { name: 'shaping', order: 2, label: 'Shaping' },
+    ],
+    tickets: [
+      ticket('0001B', 'Older backlog', 'open', '2026-09-01T00:00:00Z'),
+      ticket('0002B', 'Newer backlog', 'open', '2026-01-01T00:00:00Z'),
+      ticket('0003B', 'Oldest shaping', 'refining', '2026-01-01T00:00:00Z'),
+      ticket('0004B', 'Middle shaping', 'shaped', '2026-06-01T00:00:00Z'),
+      ticket('0005B', 'Newest shaping', 'refining', '2026-09-01T00:00:00Z'),
+    ],
+  };
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(phased), { headers: { 'content-type': 'application/json' } })));
+  });
+
+  it('keeps Backlog canonical and sorts the shaping column newest first', async () => {
+    await open('/board');
+    const backlog = await screen.findByRole('region', { name: 'Backlog' });
+    const shaping = screen.getByRole('region', { name: 'Shaping' });
+    const titles = (region: HTMLElement) => within(region).getAllByRole('link').map((link) => within(link).getByRole('heading').textContent);
+    expect(titles(backlog)).toEqual(['Older backlog', 'Newer backlog']);
+    expect(titles(shaping)).toEqual(['Newest shaping', 'Middle shaping', 'Oldest shaping']);
+    expect(within(shaping).getByLabelText('Priority 5')).toBeInTheDocument();
+    expect(within(within(shaping).getByRole('link', { name: /Oldest shaping/ })).getByLabelText('Priority 3')).toBeInTheDocument();
+    expect(within(within(backlog).getByRole('link', { name: /Newer backlog/ })).getByLabelText('Priority 2')).toBeInTheDocument();
+  });
+
+  it('keeps unfiltered priority numbers after a status filter', async () => {
+    await open('/board?status=%5B%22refining%22%2C%22shaped%22%5D');
+    const shaping = await screen.findByRole('region', { name: 'Shaping' });
+    const links = within(shaping).getAllByRole('link');
+    expect(links.map((link) => within(link).getByRole('heading').textContent)).toEqual([
+      'Newest shaping', 'Middle shaping', 'Oldest shaping',
+    ]);
+    expect(within(links[0]!).getByLabelText('Priority 5')).toBeInTheDocument();
+    expect(within(links[2]!).getByLabelText('Priority 3')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Backlog' })).not.toBeInTheDocument();
+  });
+
+  it('keeps canonical order on /list', async () => {
+    await open('/list');
+    const list = await screen.findByRole('region', { name: 'Tickets by priority' });
+    const titles = within(list).getAllByRole('link').map((link) => link.textContent ?? '');
+    expect(titles[0]).toContain('Older backlog');
+    expect(titles[1]).toContain('Newer backlog');
+    expect(titles[2]).toContain('Oldest shaping');
+    expect(titles[3]).toContain('Middle shaping');
+    expect(titles[4]).toContain('Newest shaping');
+  });
+});

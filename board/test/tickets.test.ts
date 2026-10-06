@@ -1,7 +1,7 @@
 // Pure data functions and the shared search schema (plan F3, L2.1–L2.2). RED-FIRST.
 import { describe, expect, it } from 'vitest';
 import type { Column, Status, Ticket } from '@/api/types';
-import { columnVisible, filterTickets, groupByColumn, groupByStatus } from '@/lib/tickets';
+import { columnVisible, filterTickets, groupByColumn, groupByStatus, rankOf } from '@/lib/tickets';
 import { effectiveBoardSearch, hasFilters, parseBoardSearch } from '@/lib/search';
 
 function t(id: string, over: Partial<Ticket> = {}): Ticket {
@@ -113,6 +113,105 @@ describe('L14 groupByColumn', () => {
     expect(g.implicit).toBe(true);
     expect(g.undefined).toBe(false);
     expect(g.statuses[0]!.undefined).toBe(false);
+  });
+
+  it('keeps Backlog in input order when timestamps conflict, including after a filter', () => {
+    const tickets = [
+      t('0001B', { status: 'open', updated_at: '2026-01-01T00:00:00Z' }),
+      t('0002B', { status: 'open', updated_at: '2026-09-01T00:00:00Z' }),
+      t('0003B', { status: 'open', updated_at: '2026-03-01T00:00:00Z' }),
+    ];
+    const backlog = () => groupByColumn(tickets, phased, cols).find((g) => g.column.name === 'backlog')!;
+    expect(backlog().tickets.map((x) => x.id)).toEqual(['0001B', '0002B', '0003B']);
+    const filtered = filterTickets(tickets, { status: ['open'] });
+    expect(groupByColumn(filtered, phased, cols).find((g) => g.column.name === 'backlog')!.tickets.map((x) => x.id))
+      .toEqual(['0001B', '0002B', '0003B']);
+  });
+
+  it('orders a multi-status column newest first, not as per-status blocks', () => {
+    const tickets = [
+      t('0001B', { status: 'refining', updated_at: '2026-01-01T00:00:00Z' }),
+      t('0002B', { status: 'shaped', updated_at: '2026-06-01T00:00:00Z' }),
+      t('0003B', { status: 'refining', updated_at: '2026-09-01T00:00:00Z' }),
+    ];
+    const shaping = groupByColumn(tickets, phased, cols).find((g) => g.column.name === 'shaping')!;
+    expect(shaping.tickets.map((x) => x.id)).toEqual(['0003B', '0002B', '0001B']);
+    expect(shaping.statuses.map((s) => s.status.name)).toEqual(['refining', 'shaped']);
+  });
+
+  it('keeps incoming order when instants tie, including offset-equivalent timestamps', () => {
+    const tickets = [
+      t('0001B', { status: 'refining', updated_at: '2026-06-01T12:00:00Z' }),
+      t('0002B', { status: 'shaped', updated_at: '2026-06-01T08:00:00-04:00' }),
+      t('0003B', { status: 'shaped', updated_at: '2026-06-01T12:00:00+00:00' }),
+    ];
+    expect(groupByColumn(tickets, phased, cols).find((g) => g.column.name === 'shaping')!.tickets.map((x) => x.id))
+      .toEqual(['0001B', '0002B', '0003B']);
+  });
+
+  it('places empty and invalid timestamps after valid ones, in their input order', () => {
+    const tickets = [
+      t('0001B', { status: 'refining', updated_at: '' }),
+      t('0002B', { status: 'shaped', updated_at: 'not-a-date' }),
+      t('0003B', { status: 'shaped', updated_at: '2026-01-01T00:00:00Z' }),
+    ];
+    expect(groupByColumn(tickets, phased, cols).find((g) => g.column.name === 'shaping')!.tickets.map((x) => x.id))
+      .toEqual(['0003B', '0001B', '0002B']);
+  });
+
+  it('does not mutate inputs or ranks, and sorts a trailing fallback and a hidden column', () => {
+    const tickets = [
+      t('0001B', { status: 'waiting', updated_at: '2026-01-01T00:00:00Z', title: 'older wait' }),
+      t('0002B', { status: 'waiting', updated_at: '2026-08-01T00:00:00Z' }),
+      t('0003B', { status: 'parked', updated_at: '2026-02-01T00:00:00Z' }),
+      t('0004B', { status: 'parked', updated_at: '2026-07-01T00:00:00Z' }),
+    ];
+    const snapshot = structuredClone(tickets);
+    const vocabulary: Status[] = [
+      ...phased,
+      { name: 'waiting', order: 6, means: '' },
+      { name: 'parked', order: 7, means: '', column: 'attic' },
+    ];
+    const hidden: Column[] = [...cols, { name: 'attic', order: 9, hidden: true }];
+    const groups = groupByColumn(tickets, vocabulary, hidden);
+    expect(tickets).toEqual(snapshot);
+    expect(groups.map((g) => g.column.name)).toEqual(['backlog', 'shaping', 'review', 'attic', 'waiting']);
+    expect(rankOf(tickets).get('0001B')).toBe(1);
+    expect(rankOf(tickets).get('0004B')).toBe(4);
+    expect(groups.find((g) => g.column.name === 'waiting')!.implicit).toBe(true);
+    expect(groups.find((g) => g.column.name === 'waiting')!.tickets.map((x) => x.id)).toEqual(['0002B', '0001B']);
+    expect(groups.find((g) => g.column.name === 'attic')!.tickets.map((x) => x.id)).toEqual(['0004B', '0003B']);
+  });
+
+  it('keys the priority exception on the canonical name, not the display label', () => {
+    const labeled: Column[] = [
+      { name: 'backlog', order: 1, label: 'Inbox' },
+      { name: 'queue', order: 2, label: 'Backlog' },
+    ];
+    const named: Status[] = [
+      { name: 'open', order: 1, means: '', column: 'backlog' },
+      { name: 'refining', order: 2, means: '', column: 'queue' },
+    ];
+    const tickets = [
+      t('0001B', { status: 'open', updated_at: '2026-01-01T00:00:00Z' }),
+      t('0002B', { status: 'open', updated_at: '2026-09-01T00:00:00Z' }),
+      t('0003B', { status: 'refining', updated_at: '2026-01-01T00:00:00Z' }),
+      t('0004B', { status: 'refining', updated_at: '2026-09-01T00:00:00Z' }),
+    ];
+    const groups = groupByColumn(tickets, named, labeled);
+    expect(groups.find((g) => g.column.name === 'backlog')!.tickets.map((x) => x.id)).toEqual(['0001B', '0002B']);
+    expect(groups.find((g) => g.column.name === 'queue')!.tickets.map((x) => x.id)).toEqual(['0004B', '0003B']);
+  });
+
+  it('keeps priority on an implicit column whose canonical name is backlog', () => {
+    const tickets = [
+      t('0001B', { status: 'backlog', updated_at: '2026-01-01T00:00:00Z' }),
+      t('0002B', { status: 'backlog', updated_at: '2026-09-01T00:00:00Z' }),
+    ];
+    const groups = groupByColumn(tickets, [{ name: 'backlog', order: 1, means: '' }], []);
+    const backlog = groups.find((g) => g.column.name === 'backlog')!;
+    expect(backlog.implicit).toBe(true);
+    expect(backlog.tickets.map((x) => x.id)).toEqual(['0001B', '0002B']);
   });
 
   it('a column hidden by default shows only when the column param names it', () => {

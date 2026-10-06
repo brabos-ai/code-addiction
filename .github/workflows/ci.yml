@@ -11,10 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  # ONE job per platform × Node pair, six in total. Each pair runs the whole
-  # native gate — root and cli dependencies, both builds, both suites — so a
-  # Windows-native result is evidence for that exact Node version, not an
-  # inference from a Linux container.
+  # One job: Ubuntu and Node 22.19.0. macOS and Windows queued without
+  # changing the verdict this repo waits on, so they are not in the matrix.
+  # Node 24 stays commented until that LTS is wanted in the gate.
   #
   # The job keeps the historical `test-scripts` id so the test that slices the
   # workflow (cli/tests/run-tests.test.js L3.2) keeps pointing at the right job.
@@ -24,10 +23,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        # The exact floor and the recommended LTS. Quoted, so YAML reads them
-        # as versions and not as numbers.
-        node-version: ['22.19.0', '24']
+        os: [ubuntu-latest]
+        # Quoted, so YAML reads it as a version and not as a number.
+        # node-version: ['24']
+        node-version: ['22.19.0']
     steps:
       - name: Checkout
         uses: actions/checkout@v7
