@@ -1,6 +1,6 @@
 'use strict';
 // =============================================================================
-// scripts/run-tests.js — native root runner (F27 red → F22 green)
+// scripts/run-tests.js — authorized Linux workers and the no-Bash boundary
 // =============================================================================
 // The NO-BASH GUARD, its negative control, and the native Git/npm transport
 // assertions for the native root runner the plan builds in F22.
@@ -9,20 +9,14 @@
 //   • `npm run test:scripts` runs the root `scripts/tests/*.test.cjs` files
 //     through Node's own test runner. The legacy selector may remain a native
 //     alias, but it must NEVER execute Bats.
-//   • On Windows the runner defaults to the Linux container. It does not probe
-//     the daemon and it does not fall back to native. `CODEADD_TESTS_RUNNER=native`
-//     is the escape hatch.
+//   • Every local platform dispatches to Linux Docker without a native escape hatch.
 //   • Git and npm remain real native tools — isolation must not be achieved by
 //     hiding them behind a shell. The harness reaches git with `shell:false`
 //     and npm through the CLI's own package scripts.
 //   • A Bash attempt at the process boundary is refused: the harness exposes no
 //     `runBash`, spawns no shell, and a `.sh` probe cannot execute.
 //
-// ⛔ RED TODAY: `test:scripts` still builds `npx bats …`, and Windows without
-//    Docker still resolves to `unavailable`. Those two assertions fail on
-//    purpose — they state the native contract F22 must satisfy.
-//
-// Run: node --test scripts/tests/run-tests.test.cjs
+// Run through npm run test:scripts -- scripts/tests/run-tests.test.cjs.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -33,20 +27,13 @@ const h = require('./helpers.cjs');
 
 const RUNNER_PATH = path.join(h.ROOT_SCRIPTS_DIR, 'run-tests.js');
 const runner = require(RUNNER_PATH);
+const worker = require('../test-worker.cjs');
+const context = require('../test-context.cjs');
+const transport = require('../test-transport.cjs');
 
 /** The native spawn specs for one suite, through the runner's own builder. */
 function nativeSpecs(suite) {
-  assert.equal(typeof runner.buildCommands, 'function', 'run-tests.js must export buildCommands');
-  return runner.buildCommands({
-    suite,
-    runner: 'native',
-    platform: 'linux',
-    repoRoot: h.REPO_ROOT,
-    tag: null,
-    jobs: 4,
-    parallelAvailable: true,
-    extra: [],
-  });
+  return context.leavesFor(suite).map(leaf => worker.toolSpec({ leaf, root: h.REPO_ROOT }));
 }
 
 /** Everything a spec would execute, joined for pattern assertions. */
@@ -69,10 +56,9 @@ test('the native scripts suite runs under node --test, never a bats binary or th
   assert.match(text, /--test\b|\.test\.cjs\b/, 'the scripts suite must use the Node test runner');
 });
 
-test('the native vitest suite still goes through npm (native npm transport preserved)', () => {
+test('the authorized CLI worker invokes Vitest directly, avoiding recursive npm dispatch', () => {
   const text = specText(nativeSpecs('vitest'));
-  assert.match(text, /npm/, 'vitest is reached through npm, not a shell wrapper');
-  assert.match(text, /cli/, 'the CLI package is the npm target');
+  assert.match(text, /vitest/); assert.match(text, /cli/); assert.doesNotMatch(text, /npm/);
 });
 
 test('no native suite spawns a `.sh` route', () => {
@@ -83,21 +69,17 @@ test('no native suite spawns a `.sh` route', () => {
   }
 });
 
-test('optional Docker transport does not require Bash for either suite', () => {
-  for (const suite of ['vitest', 'scripts', 'all']) {
-    const specs = runner.buildCommands({ suite, runner: 'docker', repoRoot: h.REPO_ROOT, tag: 'test', treeTar: '/tmp/tree.tar' });
-    assert.equal(specs[0].args.at(-3), 'sh');
-    assert.equal(specs[0].args.includes('bash'), false);
-  }
+test('Docker transport uses fixed unpack shell and argv worker, never Bash', () => {
+  const src = h.read(path.join(h.ROOT_SCRIPTS_DIR, 'test-transport.cjs'));
+  assert.match(src, /'sh', '-c'/); assert.match(src, /test-worker\.cjs/); assert.doesNotMatch(src, /'bash'/);
 });
 
 test('script selection preserves separate option values and paths with spaces', () => {
-  assert.deepEqual(runner.scriptsArgv(['--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']),
+  assert.deepEqual(worker.scriptArgs(['--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs'], h.REPO_ROOT),
     ['--test', '--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']);
-  assert.deepEqual(runner.scriptsArgv(['--test-name-pattern', 'case with spaces']),
-    ['--test', '--test-name-pattern', 'case with spaces', runner.SCRIPTS_TEST_GLOB]);
-  assert.equal(runner.scriptsArgs(['--test-name-pattern', 'case with spaces', 'scripts/tests/file with spaces.test.cjs']),
-    "--test-name-pattern 'case with spaces' 'scripts/tests/file with spaces.test.cjs'");
+  const all = worker.scriptArgs(['--test-name-pattern', 'case with spaces'], h.REPO_ROOT);
+  assert.deepEqual(all.slice(0, 3), ['--test', '--test-name-pattern', 'case with spaces']);
+  assert.ok(all.slice(3).every(file => file.endsWith('.test.cjs')));
 });
 
 // --- platform resolution ----------------------------------------------------
@@ -109,11 +91,8 @@ test('Windows defaults to the Linux container and does not fall back to native',
   assert.notEqual(resolved.runner, 'unavailable', 'a missing daemon is the transport refusing, not this choice');
 });
 
-test('an explicit runner override is still honored', () => {
-  assert.equal(
-    runner.resolveRunner({ platform: 'win32', env: { CODEADD_TESTS_RUNNER: 'native' }, dockerAvailable: true }).runner,
-    'native',
-  );
+test('native override is prohibited and Docker selection remains explicit', () => {
+  assert.throws(() => runner.resolveRunner({ platform: 'win32', env: { CODEADD_TESTS_RUNNER: 'native' } }), /native/);
   assert.equal(
     runner.resolveRunner({ platform: 'linux', env: { CODEADD_TESTS_RUNNER: 'docker' }, dockerAvailable: true }).runner,
     'docker',
@@ -176,9 +155,9 @@ test('exit codes are forwarded, never coerced to zero', () => {
 });
 
 test('the copy-isolation marker and NODE_OPTIONS clearing are preserved', () => {
-  assert.equal(runner.COPY_MARKER, 'CODEADD_TESTS_COPY');
-  assert.ok(runner.NATIVE_COPY_EXCLUDES.includes('.worktrees'));
-  assert.match(h.read(RUNNER_PATH), /NODE_OPTIONS:\s*''/, 'children must get a cleared NODE_OPTIONS');
+  const src = h.read(path.join(h.ROOT_SCRIPTS_DIR, 'test-transport.cjs'));
+  assert.match(src, /CODEADD_TESTS_COPY=1/); assert.ok(transport.EXCLUDES.includes('.worktrees'));
+  assert.match(src, /NODE_OPTIONS:\s*''/, 'children must get a cleared NODE_OPTIONS');
 });
 
 test('native Git transport still works through the harness', () => {
