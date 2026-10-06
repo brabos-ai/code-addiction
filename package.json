@@ -10,15 +10,10 @@
     "board": "node board/server.mjs --layers",
     "test": "node scripts/run-tests.js vitest",
     "test:all": "node scripts/run-tests.js all",
-    "test:scripts": "node scripts/run-tests.js bats",
+    "test:scripts": "node scripts/run-tests.js scripts",
     "test:board": "npm --prefix board test",
-    "release": "bash scripts/release.sh",
+    "release": "node scripts/release.cjs",
     "publish": "cd cli && npm publish",
     "login": "npm login"
-  },
-  "devDependencies": {
-    "bats": "^1.13.0",
-    "bats-assert": "^2.2.4",
-    "bats-support": "^0.3.0"
   }
 }
