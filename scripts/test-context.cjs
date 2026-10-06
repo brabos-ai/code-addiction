@@ -17,6 +17,7 @@ function refusal({ platform = process.platform, env = process.env, selection = e
   let leaves;
   try { leaves = leavesFor(selection); } catch (error) { return error.message; }
   if (env.CODEADD_TESTS_CONTEXT === 'github-actions') {
+    if (env.CODEADD_TESTS_SELECTION !== canonicalSuite(selection)) return 'CI selection does not match propagated selection';
     if (env.GITHUB_ACTIONS !== 'true' || env.CI !== 'true') return 'github-actions requires GITHUB_ACTIONS=true and CI=true';
   } else if (env.CODEADD_TESTS_CONTEXT === 'container') {
     const record = receipt === undefined ? readReceipt() : receipt;

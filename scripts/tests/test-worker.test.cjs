@@ -19,6 +19,27 @@ test('scripts name filters cannot turn skipped-only result into green', () => {
   assert.equal(worker.noTestsSelected('scripts', '# tests 3\n# pass 0\n# fail 0\n# skipped 3\n'), true);
   assert.equal(worker.noTestsSelected('scripts', '# tests 3\n# pass 2\n# fail 0\n# skipped 1\n'), false);
 });
+test('unverifiable reporter choices refuse and valued Node options retain boundaries', () => {
+  for (const extra of [['--test-reporter', 'dot'], ['--reporter=json'], ['--reporters', 'json']]) assert.throws(() => worker.validateRequest({ selection: 'cli', extra }), /reporter/);
+  assert.deepEqual(worker.scriptArgs(['--require', 'preload with spaces.cjs', '--test-name-pattern', 'one two', 'file.cjs'], '/fixture'), ['--test', '--require', 'preload with spaces.cjs', '--test-name-pattern', 'one two', 'file.cjs']);
+  assert.throws(() => worker.scriptArgs(['--unknown', 'value'], '/fixture'), /Unsupported/);
+  assert.equal(worker.noTestsSelected('board-e2e', '3 skipped'), true);
+});
+test('group cancellation stops before a subsequent leaf starts', async () => {
+  const seen = [];
+  const result = await worker.runSelection({ selection: 'framework', root: require('node:path').resolve(__dirname, '../..'), authorize: () => {}, execute: async ({ leaf }) => { seen.push(leaf); return { code: 130, output: '', canceled: true }; } });
+  assert.equal(result, 130); assert.deepEqual(seen, ['cli']);
+});
+test('receipt-free explicit CI dispatcher runs in Linux and rejects mismatched outer selection', () => {
+  const { spawnSync } = require('node:child_process'); const path = require('node:path');
+  const root = path.resolve(__dirname, '../..');
+  const env = { ...process.env, NODE_OPTIONS: '', CODEADD_TESTS_CONTEXT: 'github-actions', CODEADD_TESTS_SELECTION: 'scripts', CODEADD_TESTS_LEAF: '', GITHUB_ACTIONS: 'true', CI: 'true' };
+  delete env.NODE_TEST_CONTEXT;
+  const result = spawnSync(process.execPath, ['scripts/run-tests.js', 'scripts', 'scripts/tests/test-context.test.cjs'], { cwd: root, env, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /on worker/);
+  const mismatch = spawnSync(process.execPath, ['scripts/run-tests.js', 'cli', 'global-setup'], { cwd: root, env, encoding: 'utf8' });
+  assert.equal(mismatch.status, 2); assert.match(mismatch.stderr, /selection/);
+});
 test('real subprocess preserves hostile arguments and no-match CLI/scripts never pass', async () => {
   const root = require('node:path').resolve(__dirname, '../..');
   const hostile = ['space value', "a'; touch /tmp/codeadd-injection; #", 'Ω'];

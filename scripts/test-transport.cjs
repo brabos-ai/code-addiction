@@ -100,13 +100,17 @@ async function runDocker({ root, selection, extra = [], mode = 'run' }) {
     const tar = path.join(scratch, 'tree.tar'); pack(root, [...snapshot(root, { initial: true }).keys()], tar, scratch);
     const receipt = path.join(scratch, 'context.json');
     fs.writeFileSync(receipt, JSON.stringify({ v: 1, context: 'container', selection, leaves: context.leavesFor(selection) }));
+    if (canceled) return 130;
     const args = ['create', '--name', container, '-i', '-v', `${dockerPath(tar)}:/src/tree.tar:ro`, ...gitMounts(root, scratch), '-v', `${dockerPath(receipt)}:${context.RECEIPT}:ro`, '-e', 'NODE_OPTIONS=', '-e', 'GIT_OPTIONAL_LOCKS=0', '-e', 'CODEADD_TESTS_COPY=1', '-e', 'CODEADD_TESTS_CONTEXT=container', '-e', `CODEADD_TESTS_SELECTION=${selection}`, '-w', '/code', tag, 'sh', '-c', 'tar -x --no-same-owner -f /src/tree.tar -C /code || exit 2; exec node scripts/test-worker.cjs "$@"', 'worker', selection, mode, ...extra];
     command('docker', args, { encoding: 'utf8' });
+    if (canceled) return 130;
     if (mode === 'watch') {
       timer = setInterval(() => {
         if (syncBusy || watchFailure || canceled) return;
         syncBusy = true;
         try {
+          const ready = spawnSync('docker', ['exec', container, 'test', '-f', '/tmp/codeadd-worker-ready'], { stdio: 'ignore' });
+          if (ready.status !== 0) return;
           const next = snapshot(root); const delta = diffSnapshots(previous, next);
           if ([...delta.changed, ...delta.deleted].some(file => INPUTS.includes(file) || file === 'scripts/tests.Dockerfile')) {
             watchFailure = 'Dependency/image inputs changed. Restart watch to resolve matching Linux dependencies.'; stop(); return;
@@ -124,6 +128,7 @@ async function runDocker({ root, selection, extra = [], mode = 'run' }) {
       }, 500);
     }
     const code = await new Promise(resolve => {
+      if (canceled) { resolve(130); return; }
       child = spawn('docker', ['start', '-a', '-i', container], { stdio: 'inherit', env: { ...process.env, NODE_OPTIONS: '' } });
       child.on('error', error => { console.error(`UNAVAILABLE: ${error.message}`); });
       child.on('close', (status, signal) => resolve(signal ? 130 : status ?? 2));

@@ -18,7 +18,7 @@ test('receipt binds canonical outer request and exact deterministic leaves', () 
 });
 test('generic flags, absent or malformed receipts and incomplete CI refuse', () => {
   for (const env of [{ CI: 'true' }, { CODEADD_TESTS_COPY: '1' }, { GITHUB_ACTIONS: 'true', CI: 'true' }, { CODEADD_TESTS_CONTEXT: 'container' }, { CODEADD_TESTS_CONTEXT: 'unknown' }]) assert.ok(context.refusal({ platform: 'linux', env, selection: 'cli', receipt: null }));
-  const env = { CODEADD_TESTS_CONTEXT: 'github-actions', GITHUB_ACTIONS: 'true', CI: 'true' };
+  const env = { CODEADD_TESTS_CONTEXT: 'github-actions', CODEADD_TESTS_SELECTION: 'cli', GITHUB_ACTIONS: 'true', CI: 'true' };
   assert.equal(context.refusal({ platform: 'linux', env, selection: 'cli' }), null);
   assert.ok(context.refusal({ platform: 'win32', env, selection: 'cli' }));
   assert.ok(context.refusal({ platform: 'linux', env: { ...env, CI: undefined }, selection: 'cli' }));
