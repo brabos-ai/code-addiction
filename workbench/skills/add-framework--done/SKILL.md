@@ -195,17 +195,28 @@ If any block is missing its `complete` line → report which ones and STOP.
 
 ### 2.3 CI's four commands — read the run, do not re-run them locally
 
-CI already runs the four commands this gate needs, on the four combinations this project supports:
+CI already runs the four commands this gate needs, on the six platform × version combinations this
+project supports:
 
 ```
-test-cli (node 20)   node scripts/build.js  →  npm test  →  the package smoke test  [working-directory: cli]
-test-cli (node 22)   the same, on the other supported major
-test-scripts         npm run test:scripts   (bats, -j 4)                            [working-directory: root]
+test-scripts (ubuntu-latest, macos-latest, windows-latest × Node 22.19.0, 24)
+  npm ci (root and cli/)  →  node scripts/build.js  →  node scripts/build-workbench.js
+  →  npm test  →  npm run test:scripts  →  npm --prefix cli run test:package
+board (ubuntu-latest, Node 22.19.0)   npm ci  →  npm test  →  npm run build  →  e2e
 ```
 
-**Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a *second* gate that can disagree with the one that governs the merge — and the local copy is the weaker of the two: it runs on one machine, one Node version, and a developer's dirty environment. This repository has the receipts. **Forced down its native Windows path** — which `CODEADD_TESTS_RUNNER=native` still reaches — `npm run test:scripts` is slow enough to be unusable and reports a `qa-preflight.bats` failure that exists on no other machine, because a `node_modules` above `TMPDIR` resolves a package the test asserts is absent. A local verdict that contradicts the merge gate is worse than no local verdict.
+**Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a
+*second* gate that can disagree with the one that governs the merge — and the local copy is the weaker
+of the two: it runs on one machine, one Node version, and a developer's dirty environment. This
+repository has the receipts: a host whose temp tree sat under a stray `node_modules` once flipped the
+`qa-preflight` case, and a hand-picked `CODEADD_TESTS_RUNNER=native` run is not the environment CI
+grades. A local verdict that contradicts the merge gate is worse than no local verdict.
 
-**By default neither suite takes either cost, and neither fact promotes them.** Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`, which runs them inside a Linux container on Windows — both suites together in under a minute, `qa-preflight` passing. That makes them usable for iteration, which is why a `.cjs` or `cli/` F-block is gated on them. It does not make them the authority: one machine is still one machine.
+**By default both suites run natively on every platform, Windows included, on a copy of the
+checkout.** Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`; no
+container and no Docker daemon are required. That makes them usable for iteration, which is why a
+`.cjs` or `cli/` F-block is gated on them. It does not make them the authority: one machine is still
+one machine.
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 
@@ -227,7 +238,7 @@ test-scripts         npm run test:scripts   (bats, -j 4)                        
 
 **The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run the four commands here instead — `node scripts/build.js`, `npm test`, `npm --prefix cli run test:package`, `npm run test:scripts` — and **say in the STEP 9 report that the gate ran locally and why**. A gate that quietly changes which evidence it accepted is worse than a slow one.
 
-⛔ **In the fallback, `npm test` or `npm run test:scripts` exiting 2 or 127 is a REFUSAL to run, never a failing suite.** Both go through the same runner. On Windows with no Docker daemon it declines rather than taking the slow native path (exit 2), and a fresh worktree with no root `node_modules` fails the same way (exit 127, `./node_modules/.bin/bats: No such file or directory`) — `npm install` at the worktree root fixes it. Treat either exit as that suite's gate being unavailable — say so in the STEP 9 report and resolve it from CI — never as a red suite. Reporting a refusal as a failure blocks a merge on evidence nobody produced.
+⛔ **In the fallback, `npm test` or `npm run test:scripts` exiting 2 or 127 is a REFUSAL to run, never a failing suite.** Both go through the same runner. Exit 2 is a usage or override refusal (an unusable `CODEADD_TESTS_RUNNER`, a bad suite name); exit 127 is a missing executable — a fresh worktree without `cli/node_modules` fails that way, and `npm ci` in `cli/` fixes it. Treat either exit as that suite's gate being unavailable — say so in the STEP 9 report and resolve it from CI — never as a red suite. Reporting a refusal as a failure blocks a merge on evidence nobody produced.
 
 `test:package` exists **only** in `cli/package.json`. In the fallback, invoked from the root without `--prefix cli`, it fails with "Missing script" — a *false* gate, which is worse than a failing one. CI avoids this by setting `working-directory: cli`; the fallback must attach the prefix by hand.
 
@@ -355,7 +366,7 @@ Entry fields:
 - `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
-⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.cjs` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `delivered.bats` now pin both directions.
+⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.cjs` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `scripts/tests/delivered.test.cjs` now pin both directions.
 
 **One consequence, stated rather than discovered later:** one `node` per entry means a delivery that creates several artefacts is findable by its primary one only. Choose the artefact a reader would look the delivery up by, and author `words` so the others stay reachable by text.
 

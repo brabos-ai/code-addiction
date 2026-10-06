@@ -1,6 +1,9 @@
 {
   "name": "codeadd",
   "private": true,
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
     "setup": "node scripts/build-workbench.js && npm run build:board",
     "build": "node scripts/build.js",

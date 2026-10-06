@@ -164,9 +164,32 @@ Commands and skills install to every provider you select. Subagents install to C
 
 ## Compatibility
 
-- Node.js 18+
+- Node.js >=22.19.0 (Node 24 LTS recommended) — the floor the shipped runtime and locked dependencies require
 - GitHub-hosted releases for distribution
-- Works on Windows, macOS, Linux (via Node runtime)
+- Works on Windows, macOS, Linux (native Node runtime — no Bash required)
+
+## Development
+
+Requires Node.js >=22.19.0; Node 24 LTS is recommended. The suites run on
+Node's own runtime — no Bash, no Docker.
+
+```bash
+npm ci                              # root tooling (pins the lock)
+npm --prefix cli ci                 # CLI dependencies (vitest)
+node scripts/build.js               # compile product provider files + sidecars
+node scripts/build-workbench.js     # compile this repo's own pipeline
+
+npm test                            # CLI suite (vitest) through scripts/run-tests.js
+npm run test:scripts                # root native script suite (node --test)
+npm run test:all                    # both, vitest first
+npm --prefix cli run test:package   # pack + install + execute the CLI bin
+
+npm run release                     # maintainers: tag, GitHub release, CLI publish
+```
+
+`npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`,
+work on a copy of the checkout rather than the tree you are standing in, and run
+natively on Windows, macOS and Linux.
 
 ## Contributing
 

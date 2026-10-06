@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -428,5 +429,14 @@ describe('L3 — the documentation and registry edits', () => {
     const mentions = claude.split('\n').filter((l) => l.includes('scripts/run-tests.js'));
     expect(mentions).toHaveLength(1);
     expect(mentions[0].length).toBeLessThan(200);
+
+    // The generated scripts group names the .cjs entries the cutover left; a
+    // stale block would still list .sh. F2 regenerated it and this pins that it
+    // stayed current across the runtime blocks.
+    const check = spawnSync(process.execPath, [path.join(REPO_ROOT, 'scripts', 'inventory.js'), '--check'], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    });
+    expect(check.status, check.stderr).toBe(0);
   });
 });
