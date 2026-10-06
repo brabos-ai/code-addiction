@@ -22,4 +22,8 @@ test('generic flags, absent or malformed receipts and incomplete CI refuse', () 
   assert.equal(context.refusal({ platform: 'linux', env, selection: 'cli' }), null);
   assert.ok(context.refusal({ platform: 'win32', env, selection: 'cli' }));
   assert.ok(context.refusal({ platform: 'linux', env: { ...env, CI: undefined }, selection: 'cli' }));
+  const containerEnv = { CODEADD_TESTS_CONTEXT: 'container', CODEADD_TESTS_SELECTION: 'cli', CODEADD_TESTS_LEAF: 'cli', CI: 'true', GITHUB_ACTIONS: 'true' };
+  const receipt = { v: 1, context: 'container', selection: 'cli', leaves: ['cli'] };
+  assert.equal(context.refusal({ platform: 'linux', env: containerEnv, selection: 'cli', leaf: 'cli', receipt }), null);
+  assert.ok(context.refusal({ platform: 'linux', env: { ...containerEnv, CODEADD_TESTS_CONTEXT: 'github-actions', GITHUB_ACTIONS: undefined }, selection: 'cli', receipt }));
 });

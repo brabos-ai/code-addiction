@@ -28,7 +28,7 @@ function toolSpec({ leaf, root, extra = [], mode = 'run' }) {
   const args = leaf === 'scripts' ? scriptArgs(extra, root)
     : leaf === 'package' ? [path.join(root, 'cli/tests/package-smoke.mjs')]
     : leaf === 'board-e2e' ? [path.join(root, 'board/node_modules/@playwright/test/cli.js'), 'test', ...extra]
-    : [path.join(cwd, 'node_modules/vitest/vitest.mjs'), ...(mode === 'watch' ? ['--watch'] : ['run']), ...(mode === 'coverage' ? ['--coverage'] : []), ...extra];
+    : [path.join(cwd, 'node_modules/vitest/vitest.mjs'), ...(mode === 'watch' ? ['--watch'] : ['run']), ...(mode === 'coverage' ? ['--coverage', '--coverage.reportOnFailure'] : []), ...extra];
   return { file: process.execPath, args, cwd, shell: false };
 }
 function preparations(leaf, root) {
@@ -41,6 +41,7 @@ function preparations(leaf, root) {
   return [];
 }
 function noTestsSelected(leaf, output) {
+  output = output.replace(/\u001b\[[0-9;]*m/g, '');
   if (leaf === 'scripts') {
     if (/^1\.\.0$/m.test(output)) return true;
     const pass = /# pass (\d+)/.exec(output); const fail = /# fail (\d+)/.exec(output);
