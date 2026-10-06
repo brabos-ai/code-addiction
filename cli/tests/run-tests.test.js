@@ -79,13 +79,18 @@ describe('L1 — the runner\'s decisions', () => {
 
     const [spec] = r.buildCommands({ suite: 'scripts', runner: 'native', repoRoot: REPO_ROOT, platform: 'linux' });
     expect(spec.display).toBe(expected);
-    expect(spec.file).toBe(expected);
-    expect(spec.shell).toBe(true);
+    // The native spec is process.execPath plus an argv, never a shell string: the
+    // program is Node itself, `--test` and the glob ride in args, and no shell
+    // parses a test path.
+    expect(spec.file).toBe(process.execPath);
+    expect(spec.args).toEqual(['--test', SCRIPTS_GLOB]);
+    expect(spec.shell).toBe(false);
 
-    // The legacy selector is an alias, not a second command: same bytes, one suite.
+    // The legacy selector is an alias, not a second command: same argv, one suite.
     const [legacy] = r.buildCommands({ suite: 'bats', runner: 'native', repoRoot: REPO_ROOT, platform: 'linux' });
-    expect(legacy.file).toBe(expected);
-    expect(legacy.file).not.toMatch(/bats/);
+    expect(legacy.file).toBe(spec.file);
+    expect(legacy.args).toEqual(spec.args);
+    expect(legacy.display).not.toMatch(/bats/);
   });
 
   it('L1.3: an unusable runner override and `all` with arguments are refused with a named reason', () => {
@@ -222,8 +227,8 @@ describe('L1 — the runner\'s decisions', () => {
     const one = 'scripts/tests/delivered.test.cjs';
 
     const [nb] = r.buildCommands({ suite: 'bats', runner: 'native', repoRoot: 'C:/repo', extra: [one] });
-    expect(nb.file).toContain(one);
-    expect(nb.file).not.toContain('*');
+    expect(nb.args).toContain(one);
+    expect(nb.args).not.toContain('*');
 
     const [db] = r.buildCommands({ suite: 'bats', runner: 'docker', repoRoot: 'C:/repo', tag: 'x', treeTar: 'C:/t/tree.tar', extra: [one] });
     expect(innerOf(db)).toContain(one);
@@ -305,7 +310,7 @@ describe('L1 — the runner\'s decisions', () => {
     expect(r.SCRIPTS_TEST_GLOB).toBe(SCRIPTS_GLOB);
 
     const [native] = r.buildCommands({ suite: 'scripts', runner: 'native', repoRoot: REPO_ROOT, platform: 'linux' });
-    expect(native.file).toContain(r.SCRIPTS_TEST_GLOB);
+    expect(native.args).toContain(r.SCRIPTS_TEST_GLOB);
 
     const [docker] = r.buildCommands({ suite: 'scripts', runner: 'docker', repoRoot: 'C:/repo', tag: 'x', treeTar: 'C:/t/tree.tar' });
     expect(innerOf(docker)).toContain(r.SCRIPTS_TEST_GLOB);

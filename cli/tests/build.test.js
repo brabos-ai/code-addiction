@@ -1039,9 +1039,22 @@ describe('assertNoLintableSources', () => {
       expect(guard).toThrow(/helper\.mjs/);
     });
 
-    it('the exact allowlist carries no script path — scripts are the rule now', () => {
+    it('the exact allowlist carries the one playwright probe, admitted by rationale', () => {
+      // Exactly one entry, and it is a SCRIPT path the built-ins-only rule
+      // cannot admit: qa-preflight.cjs resolves the PROJECT's optional
+      // @playwright/test through require.resolve and createRequire, so its
+      // specifier is dynamic by nature. That is the recorded rationale for the
+      // hole. Every OTHER shipped .cjs is admitted by the built-ins-only rule,
+      // which the real-tree case below proves.
+      expect([...SHIPPED_SOURCE_ALLOWLIST]).toEqual(['framwork/.codeadd/scripts/qa-preflight.cjs']);
+
       for (const p of SHIPPED_SOURCE_ALLOWLIST) {
-        expect(p, 'the exact allowlist is for non-script exceptions only').not.toMatch(/\/scripts\//);
+        expect(p, 'the allowlist admits a runtime .cjs under scripts/').toMatch(/\/scripts\/[A-Za-z0-9._-]+\.cjs$/);
+        const source = fs.readFileSync(path.resolve(import.meta.dirname, '..', '..', p), 'utf8');
+        // The rationale: the probe's playwright specifier is dynamic, so the
+        // built-ins-only rule cannot verify it — hence the allowlist.
+        expect(source).toMatch(/require\.resolve\(\s*'@playwright\/test'/);
+        expect(source).toMatch(/createRequire\([^)]*\)\(/);
       }
     });
 
