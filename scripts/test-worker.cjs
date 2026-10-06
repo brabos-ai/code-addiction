@@ -44,6 +44,7 @@ function preparations(leaf, root) {
   return [];
 }
 function noTestsSelected(leaf, output) {
+  if (leaf === 'package') return false;
   output = output.replace(/\u001b\[[0-9;]*m/g, '');
   if (leaf === 'scripts') {
     if (/^1\.\.0$/m.test(output)) return true;
