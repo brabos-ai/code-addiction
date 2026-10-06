@@ -188,21 +188,16 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN THROUGH `npm test`:
   ✅ DO: Run it and read the result
 ```
 
-**Root `npm test` goes through `scripts/run-tests.js`.** It runs the suite natively on every
-platform, Windows included, on a copy of the checkout. The optional Linux container
-(`CODEADD_TESTS_RUNNER=docker`) exists only to reproduce a Linux run from a Windows host; it is
-never required, and a missing daemon is a refusal (exit 2), not a fallback. `npm test` and
-`npm run test:scripts` are the two native routes.
-
-**Both native routes work on a copy of the checkout, never on the checkout itself.** The suite
-rebuilds `framwork/` output, the sidecars and `cli/src/mcp`, and a developer's tree must come out
-of a run unchanged. The native copy lives in the OS temp directory and is removed on exit.
+**Root `npm test` goes through `scripts/run-tests.js`.** It selects the framework gate: CLI,
+scripts and package smoke. `npm run test:all` adds board typecheck/unit and built-app E2E.
+The runner owns execution, dependencies and isolation; use ordinary npm commands and read its
+result. Its header owns transport mechanics. Generated output and sidecars must leave the
+developer's checkout unchanged.
 
 ```
 IF YOU WANT ONE FILE:
-  ⛔ DO NOT: Run `npx vitest` inside cli/ — outside CI the global setup refuses, because that is the
-             real checkout
-  ✅ DO: `npm test -- tests/<name>.test.js` at the root
+  ⛔ DO NOT: Bypass the dispatcher with a direct test tool
+  ✅ DO: `npm run test:cli -- tests/<name>.test.js` at the root
 ```
 
 **The suite runs in two projects, and a green run is proof.** Every file that does not spawn a
@@ -225,7 +220,7 @@ every test reading it afterwards, in whatever order the workers run.
 IF ANY TEST FAILS:
   ⛔ DO NOT: Attribute it to flakiness without evidence
   ⛔ DO NOT: Report the raw failure count as this block's result
-  ✅ DO: Re-run that file alone (`npm test -- <name>`), baseline against a clean tree, report the delta
+  ✅ DO: Re-run that file alone (`npm run test:cli -- <name>`), baseline against a clean tree, report the delta
 ```
 
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
@@ -242,14 +237,10 @@ count.
 IF YOU NEED A CLEAN-TREE BASELINE FOR THE SUITE:
   ⛔ DO NOT USE: Bash for git stash, git checkout, git reset, git clean or git restore
   ✅ DO: git worktree add <tmp> HEAD --detach, run the suite in <tmp>, then git worktree remove <tmp>
-  ✅ DO: Copy `cli/node_modules` into <tmp> (`cp -r`, never a junction) before running the CLI suite
 ```
 
-⛔ **A fresh worktree has no `cli/node_modules`, and `npm test` needs it.** The runner works on a copy
-of the checkout and runs vitest out of the copy's `cli/`, so a worktree without its dependencies
-refuses rather than runs. The native scripts suite is built-ins-only and needs no root
-`node_modules` at all. To take a junction out of a worktree, `cmd //c rmdir <path>` removes the link
-alone; `rm -rf` through a junction can empty the checkout it points at.
+**A fresh worktree uses the same npm commands.** The runner owns dependency preparation;
+do not copy or link another checkout's dependencies to manufacture evidence.
 
 `git stash` empties the tree you are standing in. Your own edits come back with `git stash pop`, but
 any sibling agent running against that same tree loses its uncommitted work for as long as the stash
@@ -298,8 +289,8 @@ IF THE SCOPED RUN REPORTS A FAILURE:
          lines; an empty grep is not a pass
 ```
 
-**`npm run test:scripts` owns the runner decision.** It runs natively on every platform, Windows
-included, through `scripts/run-tests.js`. Exit 2 is a usage or override refusal, never a test result.
+**`npm run test:scripts` owns the runner decision.** Read the dispatcher's diagnostics to distinguish
+assertion failures from refusal or unavailable preparation. An unavailable run is not passing evidence.
 
 ```
 IF `npm run test:scripts` EXITED 2 BECAUSE THE RUNNER REFUSED:
@@ -322,7 +313,7 @@ changes nothing about that.
 |--------|---------|
 | "I'll edit the provider file directly, it's faster" | build.js overwrites it. Edit `.codeadd/` |
 | "The suite is flaky, this failure is noise" | Baseline against a clean tree, report the delta |
-| "I ran vitest natively on Windows, it is the same run" | It is the same suite, but `npm test` through `scripts/run-tests.js` is the gate: it works on a copy and normalizes the runner. A hand-rolled `npx vitest` in the real checkout can write sidecars the copy protects |
+| "I ran the tool directly, it is the same gate" | Use the supported npm command; the dispatcher owns isolation and execution policy. Direct tools can mutate state before the gate protects it |
 | "It's a small artefact, registration can wait" | Unregistered ships to nobody and fails the gate |
 | "That test asserts the old rule, delete it" | Update it, and comment why |
 
