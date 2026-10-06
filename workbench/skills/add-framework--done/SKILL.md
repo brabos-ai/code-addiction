@@ -195,11 +195,11 @@ If any block is missing its `complete` line → report which ones and STOP.
 
 ### 2.3 CI's four commands — read the run, do not re-run them locally
 
-CI already runs the four commands this gate needs, on the six platform × version combinations this
-project supports:
+CI already runs the four commands this gate needs, on Ubuntu with Node 22.19.0.
+macOS, Windows and Node 24 are not in that gate.
 
 ```
-test-scripts (ubuntu-latest, macos-latest, windows-latest × Node 22.19.0, 24)
+test-scripts (ubuntu-latest, Node 22.19.0)
   npm ci (root and cli/)  →  node scripts/build.js  →  node scripts/build-workbench.js
   →  npm test  →  npm run test:scripts  →  npm --prefix cli run test:package
 board (ubuntu-latest, Node 22.19.0)   npm ci  →  npm test  →  npm run build  →  e2e
