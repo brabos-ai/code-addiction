@@ -53,7 +53,7 @@ function flatten(text) {
 }
 
 function usage() {
-  process.stdout.write('Usage: converge-gates.sh <FEATURE_DIR> [SFxx]\n');
+  process.stdout.write('Usage: node .codeadd/scripts/converge-gates.cjs <FEATURE_DIR> [SFxx]\n');
   process.exitCode = 2;
 }
 

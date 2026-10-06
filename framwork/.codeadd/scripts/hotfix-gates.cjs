@@ -33,7 +33,7 @@ class ExitError extends Error {
 }
 
 if (process.argv.length < 3) {
-  process.stderr.write('Usage: hotfix-gates.sh <mode> [arguments]\n');
+  process.stderr.write('Usage: node .codeadd/scripts/hotfix-gates.cjs <mode> [arguments]\n');
   process.exit(2);
 }
 

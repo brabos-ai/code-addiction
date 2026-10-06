@@ -36,7 +36,9 @@ function write(line) {
 }
 
 function usage() {
-  process.stdout.write('Usage: qa-preflight.sh a | qa-preflight.sh b <FEATURE_DIR> [SPEC_GLOB]\n');
+  process.stdout.write(
+    'Usage: node .codeadd/scripts/qa-preflight.cjs a | node .codeadd/scripts/qa-preflight.cjs b <FEATURE_DIR> [SPEC_GLOB]\n',
+  );
   process.exitCode = 2;
 }
 

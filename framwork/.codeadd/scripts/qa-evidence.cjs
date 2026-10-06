@@ -46,11 +46,11 @@ function write(line) {
 function usage() {
   process.stdout.write(
     [
-      'Usage: qa-evidence.sh scopes|working-baseline <feature-dir>',
-      '       qa-evidence.sh next <scope-dir>',
-      '       qa-evidence.sh previous <scope-dir> <run-NNN>',
-      '       qa-evidence.sh validate|promote <feature-dir> <baseline>',
-      '       qa-evidence.sh ensure-ignore <project-root>',
+      'Usage: node .codeadd/scripts/qa-evidence.cjs scopes|working-baseline <feature-dir>',
+      '       node .codeadd/scripts/qa-evidence.cjs next <scope-dir>',
+      '       node .codeadd/scripts/qa-evidence.cjs previous <scope-dir> <run-NNN>',
+      '       node .codeadd/scripts/qa-evidence.cjs validate|promote <feature-dir> <baseline>',
+      '       node .codeadd/scripts/qa-evidence.cjs ensure-ignore <project-root>',
     ].join('\n') + '\n',
   );
   process.exitCode = 2;

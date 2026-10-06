@@ -311,7 +311,7 @@ function doCleanup() {
   if (CLEANUP_SHA === '') {
     out('CHECK=2 FAILED — no merge commit to prove against');
     out('CLEANUP=SKIPPED');
-    out('HINT=Pass it: done.sh --cleanup <merge-sha>. Nothing was deleted.');
+    out('HINT=Pass it: node .codeadd/scripts/done.cjs --cleanup <merge-sha>. Nothing was deleted.');
     return;
   }
   if (git(['merge-base', '--is-ancestor', CLEANUP_SHA, `origin/${MAIN_BRANCH}`]).status !== 0) {

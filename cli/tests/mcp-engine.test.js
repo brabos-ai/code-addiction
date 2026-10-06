@@ -337,7 +337,8 @@ describe('scenario — "what breaks if I change this"', () => {
 
 describe('scenario — "what do these files belong to"', () => {
   it('L2.3 touched_by still answers the PAGE half locally, from sources globs', () => {
-    // The work-item half moved to `delivered.sh` (plan 2026-09-14T145149): the
+    // The work-item half moved to `delivered.cjs` + `delivery-index-core.cjs`
+    // (plan 2026-09-14T145149): the
     // question "which DELIVERY changed this file" lives in the index, not in
     // any document, and the only thing that ever filled a work item's file set
     // was a `hotfix-related` attachment — a retired schema this fixture still
@@ -348,7 +349,7 @@ describe('scenario — "what do these files belong to"', () => {
   });
 
   it('L2.3 the work-item half degrades rather than throwing when the script is absent', () => {
-    // This fixture is a bare tree with no `.codeadd/scripts/delivered.sh` and no
+    // This fixture is a bare tree with no `.codeadd/scripts/delivered.cjs` and no
     // git history, which is exactly the shape the delegation must survive. It
     // reports why and still hands back the page half — withholding a good answer
     // because the other half could not run is the worse of the two failures.

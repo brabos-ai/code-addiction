@@ -36,7 +36,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const USAGE = "USAGE: bash log-jsonl.sh <file> <type> <agent> '<extra-fields>'";
+const USAGE = "USAGE: node .codeadd/scripts/log-jsonl.cjs <file> <type> <agent> '<extra-fields>'";
 
 function fail(slug) {
   process.stdout.write(`ERROR:${slug}\n`);

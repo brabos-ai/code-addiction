@@ -125,7 +125,7 @@ const recordOutside = (space, title, name = 'ticket.json') => {
 };
 
 /** The caller side the run is allowed to carry besides the committed work:
- *  the .worktrees/ convention line in .gitignore, which the old script also
+ *  the .worktrees/ convention line in .gitignore, which `backlog-commit.cjs` also
  *  wrote, and nothing else. */
 const callerResidue = (main) =>
   gitOut(['status', '--porcelain'], main)
@@ -133,7 +133,7 @@ const callerResidue = (main) =>
 
 // ─── Discovery -----------------------------------------------------------
 
-describe('L3 — base discovery mirrors get-main-branch.sh', () => {
+describe('L3 — base discovery mirrors get-main-branch.cjs', () => {
   it('origin/HEAD, then remote main/master, then the LOCAL base branch', () => {
     const withRemote = repo('mirror-remote-', { seed });
     expect(Git.discoverBase(withRemote.main)).toEqual({ ok: true, branch: 'main' });
