@@ -23,4 +23,8 @@
 - The exception is `column.name === 'backlog'`, not the label, the status `open`, or column position.
 - Instants are `Date.parse`. A non-ISO value that `Date.parse` rejects sorts as invalid.
 
-Implementation commits: `40c3aac` (F1), `7cbf1d8` (F2).
+Implementation commits: `40c3aac` (F1), `7cbf1d8` (F2). Changelog: `090b378`.
+
+## CI
+
+The native-suites matrix no longer runs macOS, Windows, or Node 24. The gate is Ubuntu with Node 22.19.0. Node 24 stays commented in `.github/workflows/ci.yml`. That landed in `b091705`, with the close-out text in `workbench/skills/add-framework--done/SKILL.md` updated to the same gate.
