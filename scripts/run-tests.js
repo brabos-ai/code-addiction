@@ -11,8 +11,9 @@
  *   never executes Bats, which is no longer a dependency.
  *
  * Environment:
- *   CODEADD_TESTS_RUNNER=native|docker   force a runner; the default is native
- *                                        on every platform, Windows included.
+ *   CODEADD_TESTS_RUNNER=native|docker   force a runner. Windows defaults to
+ *                                        docker; every other platform defaults
+ *                                        to native.
  *
  * Exit codes: the suite's own, forwarded unchanged; for `all`, the first
  * non-zero of the two. 2 when the optional Docker transport cannot build its
@@ -24,9 +25,11 @@
  * old runner defaulted to a Linux container there and refused to run without
  * one. The suite is now Node's own built-in test runner over
  * scripts/tests/*.test.cjs, so it needs no Bats, no GNU parallel and no
- * container on any platform. Native is the default everywhere; Docker is an
- * explicit opt-in only (CODEADD_TESTS_RUNNER=docker) for reproducing a Linux
- * run, since a Windows checkout's native bindings do not load on Linux.
+ * container on any platform. Windows defaults to the Linux container, because
+ * the native path there is an order of magnitude slower. Everywhere else the
+ * default stays native, so CI does not nest Docker. `CODEADD_TESTS_RUNNER=native`
+ * is the escape hatch on Windows. A Windows checkout's native bindings do not
+ * load on Linux, which is why the container carries its own `cli/node_modules`.
  *
  * Isolation: every run works on a COPY, never the checkout it started from.
  * The cli suite's globalSetup rebuilds framwork/ output and its sidecars, and a
@@ -55,7 +58,7 @@
  * Architecture:
  *   parseArgs       → the suite, then the arguments that follow it
  *   canonicalSuite  → `bats` folds into `scripts`
- *   resolveRunner   → override, then native everywhere
+ *   resolveRunner   → override, then docker on Windows, native elsewhere
  *   buildCommands   → the spawn specs for a suite on a runner
  *   scriptsArgv / scriptsArgs → node --test flags, then the test paths or the default glob
  *   combineExitCodes / exitCodeFrom → never coerce a failure to 0
@@ -139,9 +142,10 @@ function imageTag({ dockerfile, pkg, lock }) {
 }
 
 /**
- * Override first, then native. Native is the default on every platform,
- * Windows included, so no daemon probe decides a normal run. The optional
- * `docker` transport is reachable only by asking for it.
+ * Override first. Windows defaults to docker. Every other platform defaults
+ * to native, so a Linux CI job does not start a nested container. No daemon
+ * probe decides the choice: a missing daemon is a refusal from the docker
+ * transport, not a silent fall back to the slow native path.
  */
 function resolveRunner({ platform, env }) {
   const forced = env.CODEADD_TESTS_RUNNER;
@@ -154,11 +158,15 @@ function resolveRunner({ platform, env }) {
   if (forced !== undefined) {
     throw new Error(`CODEADD_TESTS_RUNNER must be "native" or "docker", got "${forced}"`);
   }
+  if (platform === 'win32') {
+    return {
+      runner: 'docker',
+      reason: 'Windows runs the suites in a Linux container; native is the slow path',
+    };
+  }
   return {
     runner: 'native',
-    reason: platform === 'win32'
-      ? 'Windows runs the suites natively; Docker is not required'
-      : `${platform} runs the suites natively`,
+    reason: `${platform} runs the suites natively`,
   };
 }
 

@@ -212,11 +212,11 @@ repository has the receipts: a host whose temp tree sat under a stray `node_modu
 `qa-preflight` case, and a hand-picked `CODEADD_TESTS_RUNNER=native` run is not the environment CI
 grades. A local verdict that contradicts the merge gate is worse than no local verdict.
 
-**By default both suites run natively on every platform, Windows included, on a copy of the
-checkout.** Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`; no
-container and no Docker daemon are required. That makes them usable for iteration, which is why a
-`.cjs` or `cli/` F-block is gated on them. It does not make them the authority: one machine is still
-one machine.
+**On Windows both suites default to a Linux container. Everywhere else they run natively.**
+Root `npm test` and `npm run test:scripts` both go through `scripts/run-tests.js`. The container
+is what makes a Windows iteration usable — the native path there took about fifteen minutes for
+the same two suites. `CODEADD_TESTS_RUNNER=native` still reaches that path. It does not make a
+local run the authority: one machine is still one machine.
 
 `ci.yml` triggers on `pull_request`, so **the PR must exist before this gate can pass.** Creating it is part of the gate, not part of STEP 7:
 

@@ -13,9 +13,9 @@ import os from 'node:os';
  *
  * The runner selects the suite and the platform, then spawns the right command:
  * the cli suite through `npm --prefix cli test`, the root scripts suite through
- * Node's own built-in test runner over `scripts/tests/*.test.cjs`. Native is the
- * default on every platform, Windows included; the Docker transport survives as
- * an explicit `CODEADD_TESTS_RUNNER=docker` opt-in for reproducing a Linux run.
+ * Node's own built-in test runner over `scripts/tests/*.test.cjs`. Windows
+ * defaults to the Linux container. Everywhere else native is the default.
+ * `CODEADD_TESTS_RUNNER=native` is the Windows escape hatch.
  *
  * Cases here that must never be relaxed:
  *
@@ -50,12 +50,12 @@ function innerOf(spec) {
 }
 
 describe('L1 — the runner\'s decisions', () => {
-  it('L1.1: CODEADD_TESTS_RUNNER overrides; native is the default on every platform', () => {
+  it('L1.1: CODEADD_TESTS_RUNNER overrides; Windows defaults to docker', () => {
     const r = loadRunner();
 
-    // No override: native everywhere, Windows included, with a reason that names the platform.
+    // No override: docker on Windows, native everywhere else.
     expect(r.resolveRunner({ platform: 'linux', env: {} }).runner).toBe('native');
-    expect(r.resolveRunner({ platform: 'win32', env: {} }).runner).toBe('native');
+    expect(r.resolveRunner({ platform: 'win32', env: {} }).runner).toBe('docker');
     expect(r.resolveRunner({ platform: 'win32', env: {} }).reason).toMatch(/Windows/i);
 
     // The override wins in both directions.
@@ -68,9 +68,9 @@ describe('L1 — the runner\'s decisions', () => {
     expect(() => r.resolveRunner({ platform: 'linux', env: { CODEADD_TESTS_RUNNER: 'podman' } }))
       .toThrow(/CODEADD_TESTS_RUNNER/);
 
-    // The old names are gone, not aliased: an old override does not select Docker on Windows.
+    // The old names are gone, not aliased: an old override does not change the Windows default.
     expect(r.resolveRunner({ platform: 'win32', env: { CODEADD_BATS_RUNNER: 'docker' } }).runner)
-      .toBe('native');
+      .toBe('docker');
   });
 
   it('L1.2: the native scripts command is exactly what `npm run test:scripts` executes; `bats` folds into it', () => {

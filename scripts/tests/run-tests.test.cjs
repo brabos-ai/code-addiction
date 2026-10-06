@@ -9,8 +9,9 @@
 //   • `npm run test:scripts` runs the root `scripts/tests/*.test.cjs` files
 //     through Node's own test runner. The legacy selector may remain a native
 //     alias, but it must NEVER execute Bats.
-//   • On Windows the runner defaults to the NATIVE path and does not probe or
-//     require Docker. The old `resolveRunner` returned `unavailable` there.
+//   • On Windows the runner defaults to the Linux container. It does not probe
+//     the daemon and it does not fall back to native. `CODEADD_TESTS_RUNNER=native`
+//     is the escape hatch.
 //   • Git and npm remain real native tools — isolation must not be achieved by
 //     hiding them behind a shell. The harness reaches git with `shell:false`
 //     and npm through the CLI's own package scripts.
@@ -101,11 +102,11 @@ test('script selection preserves separate option values and paths with spaces', 
 
 // --- platform resolution ----------------------------------------------------
 
-test('Windows resolves to the native runner without probing or requiring Docker', () => {
+test('Windows defaults to the Linux container and does not fall back to native', () => {
   assert.equal(typeof runner.resolveRunner, 'function', 'run-tests.js must export resolveRunner');
   const resolved = runner.resolveRunner({ platform: 'win32', env: {}, dockerAvailable: false });
-  assert.equal(resolved.runner, 'native', 'Windows without Docker must default to native');
-  assert.notEqual(resolved.runner, 'unavailable', 'the old Docker refusal must be gone');
+  assert.equal(resolved.runner, 'docker', 'Windows must default to the Linux container');
+  assert.notEqual(resolved.runner, 'unavailable', 'a missing daemon is the transport refusing, not this choice');
 });
 
 test('an explicit runner override is still honored', () => {
