@@ -11,11 +11,9 @@
     "dev": "vite",
     "preboard": "node ../scripts/build-board-runtime.js",
     "prebuild": "node ../scripts/build-board-runtime.js",
-    "pretest:e2e": "node ../scripts/build-board-runtime.js",
     "build": "tsc -b && vite build",
-    "pretest": "node ../scripts/build-board-runtime.js",
-    "test": "tsc -b --noEmit && vitest run",
-    "test:e2e": "playwright test"
+    "test": "node ../scripts/run-tests.js board",
+    "test:e2e": "node ../scripts/run-tests.js board-e2e"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
