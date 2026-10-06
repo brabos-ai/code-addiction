@@ -32,9 +32,11 @@ testing the framework on Windows, macOS and Linux.
 ## How it is proven
 
 - Each native entry is pinned by the ported Bats cases, run through `node --test`.
-- `npm run test:scripts` is native: 627 tests, 624 pass, 3 platform-conditional skips, 0 fail.
+- `npm run test:scripts` is native. Final local guarded acceptance: 638 tests, 635 pass,
+  3 platform-conditional skips, 0 fail; the refined QA fixture suite separately passed 26/26.
 - `npm test` runs the CLI suite on the native runner. The six-job CI matrix is configured for
-  Windows/macOS/Linux × Node 22.19.0/24; remote execution remains pending publication.
+  Windows/macOS/Linux × Node 22.19.0/24. All six jobs passed on commit `963169e` in
+  CI run `37467193563`; board and all CodeQL checks also passed.
 - `migration-acceptance.test.cjs` is fully green: no shipped or root `.sh`, no Bats tree, native
   `test:scripts`, and no active `bash .codeadd/scripts/*.sh` invocation.
 - `scripts/no-bash-guard.js` shadows `bash` and preloads Node subprocess instrumentation for
@@ -63,6 +65,17 @@ policies use the same canonical scan and calculation.
 - Preserve separate test-option values, include native CJS/MJS files in rename discovery, and
   remove Bash from the optional Docker test route.
 - Assert that every baseline case ID resolves to its actual native suite.
+- Parse Git worktree registrations with NUL delimiters and compare canonical paths, including
+  macOS aliases and Windows short paths. Preserve the linked-worktree start guard in close-out.
+- Use platform-valid test filenames and account for Linux's portable and legacy temp paths
+  coinciding. Give the combined injection integration case an explicit timeout.
+
+## Close-out record
+
+The existing narrative completion records were normalized into the ledger's required per-block
+completion lines using their recorded commits and validation evidence. No implementation block was
+re-executed. The delivery archive preserves the plan, ledger, design and intent byte for byte.
+The operator approved recording the historical shell/Bats references as superseded by this migration.
 
 ## Commits
 
