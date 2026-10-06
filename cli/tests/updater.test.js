@@ -479,3 +479,61 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
     expect(readManifest(tmpDir).version).toBe('2.0.0');
   });
 });
+
+// ---------------------------------------------------------------------------
+// F23 — the update path retires the migrated shell runtime (L6)
+//
+// install.e2e proves the fresh and reinstall boundaries. This is the `update`
+// command's own half: the SAME manifest diff that prunes any obsolete file must
+// remove the old managed shells while leaving a manual file that no manifest
+// ever listed. The new release is the real shipped `.cjs` closure, so a shell
+// surviving here would be a migration defect, not a fixture accident.
+// ---------------------------------------------------------------------------
+
+const SHIPPED_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+const NATIVE_NAMES = fs.readdirSync(SHIPPED_DIR).filter((n) => n.endsWith('.cjs')).sort();
+
+function buildNativeZip() {
+  const zip = new AdmZip();
+  zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+  for (const name of NATIVE_NAMES) {
+    zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(SHIPPED_DIR, name)));
+  }
+  return zip.toBuffer();
+}
+
+describe('F23 — update retires the migrated shell runtime (L6)', () => {
+  it('removes manifest-owned shells, keeps a manual file, and installs the native closure', async () => {
+    const installed = path.join(tmpDir, '.codeadd', 'scripts');
+    fs.mkdirSync(installed, { recursive: true });
+
+    const managed = ['status.sh', 'delivered.sh', 'qa-evidence.sh'];
+    for (const name of managed) fs.writeFileSync(path.join(installed, name), '# old shell\n');
+    const manual = path.join(installed, 'local-helper.sh');
+    fs.writeFileSync(manual, '# manual\n');
+
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: managed.map((n) => `.codeadd/scripts/${n}`),
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildNativeZip());
+
+    await update(tmpDir);
+
+    for (const name of managed) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(false);
+    }
+    // Never in the manifest, so never in a diff: the user's file survives.
+    expect(fs.readFileSync(manual, 'utf8')).toBe('# manual\n');
+    for (const name of NATIVE_NAMES) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(true);
+    }
+    const manifest = readManifest(tmpDir);
+    for (const name of managed) expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
+  });
+});
