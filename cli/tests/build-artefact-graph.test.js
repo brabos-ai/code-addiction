@@ -43,6 +43,16 @@ const {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
 
+/**
+ * Every file directly under `.codeadd/scripts/` is one script node. Derived
+ * from disk rather than named, so a retirement (F20 removed the 19 shells) or
+ * an addition moves a snapshot by its own on-disk delta and never leaves a
+ * hardcoded total to drift.
+ */
+const shippedScripts = () =>
+  fs.readdirSync(path.join(CODEADD, 'scripts'), { withFileTypes: true })
+    .filter((e) => e.isFile()).length;
+
 const TMP_DIRS = [];
 
 function tmpDir(prefix) {
@@ -974,8 +984,10 @@ describe('node inventory snapshot', () => {
       // script 25 -> 27: backlog-git.cjs and backlog-commit.cjs, the native
       // publication pair — routing/recovery and the orchestration entry.
       // (plan 2026-10-04T004044-PLAN--native-node-backlog, F3.)
-      // Two shell compatibility entries retired; six native modules remain.
-      script: 25,
+      // Two shell compatibility entries retired; six native backlog modules
+      // remain, plus the native runtime closure F20 retired the 19 shells into.
+      // Derived from disk, so this line states the count without pinning it.
+      script: shippedScripts(),
       // fragment 24 -> 25: fragments/qa-pipeline/add-review.md, which carries
       // add-review's QA judgement steps under the feature
       // (plan 2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary, F15).
@@ -1097,26 +1109,33 @@ describe('node inventory snapshot', () => {
     // The exists() formula below covers all six exactly-path-allowlisted
     // modules, so each F-block asserts its own increment and nothing else.
     // (plan 2026-10-04T004044-PLAN--native-node-backlog, F1's three-node L1.)
-    expect(nodes).toHaveLength(242 + ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs']
-      .map((n) => Number(fs.existsSync(path.join(CODEADD, 'scripts', n))))
-      .reduce((a, b) => a + b, 0));
+    // Data-derived: the 223 non-script nodes are fixed by the registered
+    // commands/skills/agents/references/templates/fragments/features/plugins,
+    // while every file directly under `.codeadd/scripts/` is one script node.
+    // Counting that directory instead of naming the native closure means a
+    // retirement (F20 removed the 19 shells) or an addition moves this by
+    // exactly the on-disk delta, with no hardcoded total to drift.
+    const shippedScriptsCount = shippedScripts();
+    expect(nodes).toHaveLength(223 + shippedScriptsCount);
     expect(nodes.filter((n) => n.declares)).toHaveLength(140);
   });
 
-  it('the shipped backlog CJS modules carry their graph node as they land', () => {
+  it('every on-disk script has a graph node, and no shell entry survives', () => {
     const nodes = collectNodes(readMap(), CODEADD);
     const ids = new Set(nodes.map((n) => n.id));
-    expect(ids).not.toContain('product/script/backlog.sh');
-    expect(ids).not.toContain('product/script/backlog-commit.sh');
-    for (const name of [
-      'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
-    ]) {
-      // Data-driven: a module asserts its node the moment it is on disk, so
-      // F2 proves one and F3 proves the other two without a further edit.
-      if (!fs.existsSync(path.join(CODEADD, 'scripts', name))) continue;
+    // No shipped shell entry remains: the native runtime is the only route.
+    const shellNodes = nodes.filter((n) => n.kind === 'script' && n.name.endsWith('.sh'));
+    expect(shellNodes.map((n) => n.name)).toEqual([]);
+    // Data-driven in both directions: each file on disk asserts its node, and
+    // each script node names a file that is really there. The 19 retired shells
+    // are proven absent by the disk listing itself, not by a second allowlist.
+    const onDisk = fs.readdirSync(path.join(CODEADD, 'scripts'), { withFileTypes: true })
+      .filter((e) => e.isFile()).map((e) => e.name);
+    for (const name of onDisk) {
       expect(ids, name).toContain(`product/script/${name}`);
     }
+    expect(nodes.filter((n) => n.kind === 'script').map((n) => n.name).sort())
+      .toEqual([...onDisk].sort());
   });
 });
 

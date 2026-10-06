@@ -303,7 +303,7 @@ describe('F18 — L4.1 what the graph says after the harvest', () => {
     // legacy documents.
     //
     // The question is now answered from the delivery index, which every project
-    // has. This fixture is a bare tree with no `.codeadd/scripts/delivered.sh`,
+    // has. This fixture is a bare tree with no `.codeadd/scripts/delivered.cjs`,
     // so the delegation degrades and says why rather than throwing.
     const result = actions.touched_by(corpus, { files: ['src/auth/refresh.ts'] });
     expect(result.workItems).toEqual([]);

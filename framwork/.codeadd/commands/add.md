@@ -11,7 +11,7 @@
 - command: /add-new
 - command: /add-plan
 - command: /add-review
-- script: status.sh
+- script: status.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -61,7 +61,7 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 | **Compliance** | "does implementation follow the plan?" | -> STEP add.detect + STEP add.respondD |
 | **Project** | "does the project have multi-tenancy?" | -> STEP add.detect + STEP add.respondE |
 | **Next step** | "what to do now?", "next command?" | -> STEP add.detect + STEP add.suggest |
-| **Setup/Environment** | "how to install WSL?", "bash not found", "git missing", env errors | -> STEP add.respondF |
+| **Setup/Environment** | "how to install Node?", "node not found", "git missing", env errors | -> STEP add.respondF |
 
 ---
 
@@ -69,10 +69,10 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 
 Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### STEP add.status Execute status.sh
+### STEP add.status Execute status.cjs
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 **Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
@@ -108,7 +108,7 @@ Include: feature ID, name, summary from changelog, explanation, main files (if a
 
 ### Type C: Status/Context
 
-Use output from STEP add.detect (status.sh).
+Use output from STEP add.detect (status.cjs).
 
 Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, the highest review-NNN.md).
 
@@ -142,7 +142,6 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 **IF user has not granted permission to install:** Show diagnostic report only (STEP add.detect-3 of skill). Ask for confirmation before installing.
 
 NEVER:
-- Suggest Git Bash as bash alternative
 - Use `apt-get install gh` -- use official gh repo
 - Overwrite `.vscode/settings.json` -- always merge
 
@@ -166,8 +165,8 @@ ALWAYS include at end of response (except if question was only about a specific 
 | Clear bug in production | `/add-hotfix` | Urgent fix |
 | Vague symptom / unsure if bug or feature | `/add-diagnose` | Structured investigative triage before deciding |
 | Does not know where to start | `/add-brainstorm` | Explore ideas |
-| bash/git/jq/gh missing or env errors | Load `dev-environment-setup` skill | Setup dev environment |
-| User asks about WSL or VS Code terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
+| node/git/gh missing, or Node older than 22.19.0 | Load `dev-environment-setup` skill | Setup dev environment |
+| User asks about terminal setup | Load `dev-environment-setup` skill | Guide environment configuration |
 
 Base the suggestion on current branch, phase, and document availability.
 
@@ -191,7 +190,7 @@ Only go down the hierarchy if the previous level does not answer the question.
 ALWAYS:
 - Load ecosystem-map in STEP add.ecosystem
 - Use ecosystem-map to answer about commands/skills
-- Execute status.sh when question involves context
+- Execute status.cjs when question involves context
 - Read changelog before going to code
 - Include smart suggestion at end
 - Be specific about files and paths

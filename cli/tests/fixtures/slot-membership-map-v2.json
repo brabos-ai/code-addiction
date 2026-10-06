@@ -1586,11 +1586,11 @@
           "via": "INJECTS_INTO"
         },
         {
-          "id": "product/script/qa-evidence.sh",
+          "id": "product/script/qa-evidence.cjs",
           "via": "RUNS_SCRIPT"
         },
         {
-          "id": "product/script/qa-preflight.sh",
+          "id": "product/script/qa-preflight.cjs",
           "via": "RUNS_SCRIPT"
         },
         {

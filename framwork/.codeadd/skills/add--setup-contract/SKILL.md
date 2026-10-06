@@ -9,7 +9,7 @@ description: Use when a state-materializing command starts — compare the recei
 - skill: add--doc-schemas
 - mention: add--wiki-maintenance
 - command: /add-qa-setup
-- script: status.sh
+- script: status.cjs
 -->
 
 ## Overview
@@ -34,7 +34,7 @@ Procedure for comparing a project's materialized state with the shape the framew
 | `RECEIPT_PATH` | ``<command's doc root>/<command name without `add.`>.md`` — `add-qa-setup` → `docs/qa/qa-setup.md` |
 | `RECORDED` | `setup-shape` in the receipt frontmatter (`sha256:` + 16 hex) |
 | `CURRENT` | `contracts.<command>.shape` in `{{addpath:contracts.json}}` |
-| `SIGNAL` | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
+| `SIGNAL` | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 | `FORCE_UPGRADE` | `--upgrade` flag on the calling command |
 
 ## Procedure

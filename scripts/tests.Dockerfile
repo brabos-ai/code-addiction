@@ -1,10 +1,11 @@
-# The Linux image `scripts/run-tests.js` runs both test suites in on Windows.
+# The optional Linux image `scripts/run-tests.js` runs a suite in when asked for
+# with CODEADD_TESTS_RUNNER=docker.
 #
-# bats spends its time forking, and process creation under Git Bash on Windows
-# costs far more than on Linux: the same 386 tests take about 69 minutes there
-# and about a minute on CI. The cli vitest suite pays the same tax on every file
-# that spawns a subprocess. Inside this image both run at Linux speed and give
-# the answer CI gives.
+# It is NOT the default on any platform. The root scripts suite runs under
+# Node's built-in test runner, and the cli suite runs natively, so a normal run
+# needs no daemon and no image. The container survives as an explicit opt-in for
+# reproducing a Linux run from a Windows host, where vitest's Windows native
+# bindings do not load.
 #
 # The image is built on demand and tagged with a hash of this file plus
 # cli/package.json and cli/package-lock.json, so editing any of the three
@@ -12,13 +13,13 @@
 
 FROM node:22-bookworm-slim
 
-# ca-certificates is here for apt itself; git, jq and parallel are what the
-# suites and the scripts under test actually call. `parallel` backs `bats -j`.
+# ca-certificates is here for apt itself; git and jq are what the suites and the
+# scripts under test actually call. No GNU parallel: the native scripts suite
+# needs no fork-per-case parallelism, and Bats is gone.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
       git \
       jq \
-      parallel \
  && rm -rf /var/lib/apt/lists/*
 
 # The cli dependencies are installed HERE, not taken from the checkout.
@@ -34,12 +35,8 @@ WORKDIR /code/cli
 COPY cli/package.json cli/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-# bats is deliberately NOT installed here, and this is not an oversight.
-# Debian bookworm ships 1.8.2; this repository pins 1.13.0 in its root
-# package.json, and that pinned copy is what the CI job runs. The container
-# executes ./node_modules/.bin/bats out of the mounted repository instead, so
-# the local gate and the merge gate grade on the same binary. Installing the
-# distribution package would quietly put them on two.
+# No Bats is installed, and the root scripts suite never needs it: it runs on
+# the container's own Node through `node --test scripts/tests/*.test.cjs`.
 
 # No global git identity is set here, and that too is deliberate. The GitHub
 # runner has none either, and several tests under framwork/.codeadd/scripts/

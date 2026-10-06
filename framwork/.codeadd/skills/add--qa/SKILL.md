@@ -17,7 +17,7 @@ description: Use when running agent-judged QA validation (read-PNG by default; t
 - command: /add-done
 - command: /add-qa-setup
 - command: /add-review
-- script: qa-evidence.sh
+- script: qa-evidence.cjs
 -->
 
 ## Overview
@@ -83,7 +83,7 @@ Every `type: functional` finding carries **exactly one** root cause, cited to th
 | `env-boot` | app or dependency not up; environmental |
 | `regression` | a criterion that passed in the immediately previous run now fails |
 
-`regression` reads ONLY the immediately previous numeric `run-NNN` report from the union of working and final evidence — no deeper history walk; the first run has no regression class. Resolve it through `.codeadd/scripts/qa-evidence.sh previous`, never by assuming `NNN-1` exists. Expected error states are correct behavior, never classified. `@qa-agent`'s deterministic conformance findings are `type: ux` and instead carry one of `contract-violated | contract-inadequate`.
+`regression` reads ONLY the immediately previous numeric `run-NNN` report from the union of working and final evidence — no deeper history walk; the first run has no regression class. Resolve it through `.codeadd/scripts/qa-evidence.cjs previous`, never by assuming `NNN-1` exists. Expected error states are correct behavior, never classified. `@qa-agent`'s deterministic conformance findings are `type: ux` and instead carry one of `contract-violated | contract-inadequate`.
 
 ## Coordinator-only knowledge (NOT for the judges)
 
@@ -105,7 +105,7 @@ Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expec
 - **Scope:** SF folder when scoped to a subfeature (`SCOPE_DIR = .../subfeatures/SFxx-*`), feature folder otherwise.
 - **Working evidence:** `SCOPE_DIR/_tests/run-NNN/qa-validation-NNN.md`; screenshots stay in the same complete run directory. Working runs are local, ephemeral, and remain the only live fix queue the review draws its routed rows from.
 - **Final evidence:** `/add-done` copies the exact reviewed baseline to `SCOPE_DIR/_tests/final/run-NNN/`. A final snapshot is immutable delivery evidence, may retain unresolved findings, and is not a pass certificate.
-- **Numbering:** per scope, `qa-validation-NNN` starts at `001`; the next ID is `max(working IDs, final IDs) + 1`, resolved by `.codeadd/scripts/qa-evidence.sh next`. Each SF keeps its own sequence. See `{{skill:add--id-convention/SKILL.md}}` and the `qa-validation` schema in `{{skill:add--doc-schemas/SKILL.md}}`.
+- **Numbering:** per scope, `qa-validation-NNN` starts at `001`; the next ID is `max(working IDs, final IDs) + 1`, resolved by `.codeadd/scripts/qa-evidence.cjs next`. Each SF keeps its own sequence. See `{{skill:add--id-convention/SKILL.md}}` and the `qa-validation` schema in `{{skill:add--doc-schemas/SKILL.md}}`.
 - **Fresh clones:** final-only history participates in numbering and predecessor lookup, but never becomes a live fix queue. Run `/add-review` to create working evidence before `/add-build` applies its routed fixes.
 
 ## Config & Catalog Formats (reference)

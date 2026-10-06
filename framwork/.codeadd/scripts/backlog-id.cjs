@@ -1,11 +1,20 @@
 /**
- * backlog-id.cjs — Global [NNNN][L] ID calculation from raw text.
+ * backlog-id.cjs — THE canonical global [NNNN][L] ID allocator, from raw text.
+ *
+ * This is the one allocator. Two public entries delegate here and differ only
+ * in their argument validation and exits, exactly as the two shells did:
+ *   - `next-id.cjs`  — one uppercase A–Z letter, exit 1 on a bad argument.
+ *   - `status next-id` (native in F8) — named prefixes F|H|PRD|CHG|B, exit 2
+ *     on a bad prefix.
+ * `backlog-cli.cjs` also allocates through `calculate(root, 'B')`. Keeping the
+ * scan in one place is the whole point: a second copy is how the old
+ * next-id.sh / status.sh pair drifted apart.
  *
  * The number is global across every work letter: it is the max over BOTH
  * sources the shell allocators scan — the immediate `docs/features/` slugs
  * (`[NNNN][L]-<name>`, one level, basename only) and the ids already on the
- * raw backlog text, docs/backlog.jsonl. Counting only the first would hand out a number a
- * ticket already holds.
+ * raw backlog text, docs/backlog.jsonl. Counting only the first would hand out
+ * a number a ticket already holds.
  *
  * THE BACKLOG IS READ BY RAW-TEXT ANCHOR, NEVER PARSED. The exact anchor is
  * next-id.sh's and status.sh next-id's `"id":"[0-9]{4}[A-Z]"` grep, closing
@@ -14,7 +23,9 @@
  * probe on a row carrying `"work_id":"0043F"` shows both shells allocating
  * 0002F while a work_id-aware scanner would give 0044F: the claim is false,
  * and parity with what the allocators DO decides. A title quoting an id, a
- * work_id value and parent-path digits are all never counted.
+ * work_id value and parent-path digits are all never counted. Whitespace is
+ * NOT normalized away either: `"id": "0042B"` (a space after the colon) counts
+ * nothing, in both the shells and here.
  *
  * THE MATCH IS ON THE DIRECTORY BASENAME, NEVER THE PATH ABOVE IT. A parent
  * directory carrying four digits, or a slug with a year (`0001F-auth-2024`),
@@ -27,14 +38,15 @@
  * caller, and no reservation is made here: calculate is max+1 by definition,
  * stateless, with no concurrency protocol.
  *
- * At 9999 the sequence is refused rather than emitted as five digits — the
- * effective rejection the old wrapper's `^[0-9]{4}B$` filter produced.
+ * Backlog allocation refuses at 9999. Public next-id/status/init adapters opt
+ * into allowOverflow to preserve the old printf's minimum-width output: 10000F.
+ * The scan remains shared; only the public adapter's exhaustion policy differs.
  *
- * NO IMPORT-TIME I/O. Everything happens inside calculate(); requiring this
- * module reads nothing, so the publication entry and the CLI can both load it
- * before any operation root is selected.
+ * NO IMPORT-TIME I/O. Everything happens inside scanIds()/calculate();
+ * requiring this module reads nothing, so the publication entry and the CLI
+ * can both load it before any operation root is selected.
  *
- * Dependencies: Node >= 18 built-ins only. No argv, stdin, stdout, exit,
+ * Dependencies: Node >= 22.19.0 built-ins only. No argv, stdin, stdout, exit,
  * shell, or Git.
  */
 
@@ -64,14 +76,16 @@ const RAW_ID_RE = /"id":"([0-9]{4}[A-Z])"/g;
 const MAX_NUMBER = 9999;
 
 /**
- * Calculate the next free id for `letter` under the operation root.
+ * The canonical scan. Collects every id both sources expose and reports them
+ * as a Set of `"%04d%s"` strings, or refuses an existing-but-unreadable
+ * source. This is the single implementation of the scan; `calculate` renders
+ * its result and every public adapter calls `calculate`.
  *
  * @param {string} root - absolute path to the project root
- * @param {string} letter - a single uppercase letter (the work type suffix)
- * @returns {{ok: true, id: string} |
- *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'|'id-exhausted'}}
+ * @returns {{ok: true, ids: Set<string>} |
+ *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'}}
  */
-function calculate(root, letter) {
+function scanIds(root) {
   const ids = new Set();
 
   // Source 1 — the immediate docs/features/ directory basenames.
@@ -104,14 +118,34 @@ function calculate(root, letter) {
     }
   }
 
+  return { ok: true, ids };
+}
+
+/**
+ * Calculate the next free id for `letter` under the operation root.
+ *
+ * `letter` is appended verbatim: a single work suffix (next-id.cjs, `B` for a
+ * ticket) or a named prefix (status next-id's `PRD`/`CHG`). No validation
+ * happens here — each public adapter owns its own contract and exit codes.
+ *
+ * @param {string} root - absolute path to the project root
+ * @param {string} letter - a single uppercase letter (the work type suffix)
+ * @param {{allowOverflow?: boolean}} options - preserve a public adapter's minimum-width output
+ * @returns {{ok: true, id: string} |
+ *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'|'id-exhausted'}}
+ */
+function calculate(root, letter, { allowOverflow = false } = {}) {
+  const scanned = scanIds(root);
+  if (!scanned.ok) return { ok: false, reason: scanned.reason };
+
   let max = 0;
-  for (const id of ids) {
+  for (const id of scanned.ids) {
     const n = parseInt(id.slice(0, 4), 10);
     if (Number.isFinite(n) && n > max) max = n;
   }
 
-  if (max >= MAX_NUMBER) return { ok: false, reason: 'id-exhausted' };
+  if (max >= MAX_NUMBER && !allowOverflow) return { ok: false, reason: 'id-exhausted' };
   return { ok: true, id: String(max + 1).padStart(4, '0') + letter };
 }
 
-module.exports = { calculate, RAW_ID_RE, DIR_ID_RE, MAX_NUMBER };
+module.exports = { calculate, scanIds, RAW_ID_RE, DIR_ID_RE, MAX_NUMBER };

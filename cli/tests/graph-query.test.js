@@ -38,6 +38,12 @@ const {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
+it('history rejects invalid layer and limits at the native reader boundary', () => {
+  for (const opts of [{ layer: 'invalid' }, { limit: 0 }, { limit: -1 }, { limit: 1.5 }]) {
+    expect(history(G, 'product/skill/skillX', { cwd: ROOT, ...opts }).unavailable?.reason).toBe('read-failed');
+  }
+});
+
 /**
  *   cmdA ──uses──> skillX ──uses──> skillY
  *   cmdB ──uses──> skillX
@@ -348,13 +354,13 @@ describe('the real emitted graph', () => {
 /**
  * history — the time axis, delegated.
  *
- * The levels drive the REAL delivered.sh against a real temporary git repo
+ * The levels drive the REAL delivered.cjs against a real temporary git repo
  * rather than a stubbed reader. That is the point of the verb: it owns the join
  * and delegates the read, so a test that mocked the read would assert the one
  * thing the design forbids reimplementing here.
  *
  * Which is also why this block, alone in the file, sets its own timeout. One
- * `delivered.sh read` shells out to git and walks every record, and each test
+ * `delivered.cjs read` shells out to git and walks every record, and each test
  * makes one or two of them.
  *
  * Sized from the measurement, not from a failure. On an idle Windows checkout
@@ -362,14 +368,14 @@ describe('the real emitted graph', () => {
  * of work was seen taking 10.5s — roughly 3x — and crossing the 5000ms default,
  * which reports as a failure on a tree with nothing wrong with it. 20s is ~6x
  * the measured idle worst, so it absorbs well past the contention actually
- * observed, and still catches a regression: a delivered.sh read that takes 20s
+ * observed, and still catches a regression: a delivered.cjs read that takes 20s
  * is broken, not busy.
  *
  * Scoped here rather than raised globally, because 5000ms is the right answer
  * everywhere else in this suite.
  */
 describe('history — when this arrived, and what it replaced', { timeout: 20_000 }, () => {
-  const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
+  const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.cjs');
   let repo;
 
   const line = (o) => `${JSON.stringify(o)}\n`;
@@ -378,7 +384,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     repo = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-'));
     execFileSync('git', ['init', '-q'], { cwd: repo });
 
-    // The corpus delivered.sh verifies against: `git ls-files --cached --others
+    // The corpus delivered.cjs verifies against: `git ls-files --cached --others
     // --exclude-standard`, so files on disk count without a commit.
     fs.writeFileSync(path.join(repo, 'x.md'), 'contains skillX_marker here\n');
     fs.writeFileSync(path.join(repo, 'y.md'), 'contains skillY_marker here\n');
@@ -388,7 +394,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     fs.writeFileSync(
       path.join(repo, 'docs', 'delivered.jsonl'),
       // Written gone-first on purpose: if the verb preserved insertion order
-      // instead of delivered.sh's status ordering, this file would pass a
+      // instead of delivered.cjs's status ordering, this file would pass a
       // "live comes first" assertion by accident.
       line({
         v: 1, ts: '2026-01-01T00:00:00Z', id: 'E-gone', layer: 'internal', by: 'done',
@@ -462,7 +468,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
   });
 
   it('filters on the item node, not on the word', () => {
-    // E-prose carries "skillX" in `words`, so delivered.sh returns it for the
+    // E-prose carries "skillX" in `words`, so delivered.cjs returns it for the
     // free-text query. It has no item whose node is skillX, so the verb drops
     // it — which is the whole difference between an answer about the ARTEFACT
     // and an answer about the string.
@@ -484,20 +490,23 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     expect(withoutNode.dependents).toBeUndefined();
   });
 
-  it('reports a missing delivered.sh instead of throwing', () => {
+  it('reports a missing delivered.cjs instead of throwing', () => {
     const r = run('product/skill/skillX', { script: path.join(repo, 'no-such-script.sh') });
 
     expect(r.unavailable.reason).toBe('script-missing');
     expect(r.entries).toEqual([]);
   });
 
-  it('reports a missing bash instead of throwing', () => {
-    // The case that matters is the long-lived MCP server: a throw there kills
-    // every later query, not just this one.
+  it('retires the missing-interpreter state — the native reader needs no shell', () => {
+    // F4: the read moved in-process, so `opts.bash` no longer names an
+    // interpreter and the `bash-missing` state cannot be reached. The override
+    // is accepted and ignored, and the query still answers. The reporting
+    // contract it guarded (a failure reported, never thrown) is exercised by
+    // the missing-reader case above.
     const r = run('product/skill/skillX', { bash: 'definitely-not-a-real-interpreter-xyz' });
 
-    expect(r.unavailable.reason).toBe('bash-missing');
-    expect(r.entries).toEqual([]);
+    expect(r.unavailable).toBeNull();
+    expect(r.entries.map((e) => e.id)).toEqual(['E-live', 'E-gone']);
   });
 
   it('reports an absent index as an empty answer, never an error', () => {
@@ -510,16 +519,16 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     expect(r.entries).toEqual([]);
   });
 
-  it('passes --layer straight through to delivered.sh', () => {
+  it('passes --layer straight through to delivered.cjs', () => {
     // add-framework--plan asks a PRODUCT-layer question. The filter narrows
-    // what delivered.sh reads; it is never re-implemented as a filter here.
+    // what delivered.cjs reads; it is never re-implemented as a filter here.
     expect(run('product/skill/skillX', { layer: 'product' }).entries).toEqual([]);
     expect(run('product/skill/skillX', { layer: 'internal' }).entries.map((e) => e.id))
       .toEqual(['E-live', 'E-gone']);
   });
 
-  it('matches an ENTRY-level node, which is the shape delivered.sh actually writes', () => {
-    // The shape delivered.sh actually emits, and the one that matters.
+  it('matches an ENTRY-level node, which is the shape delivered.cjs actually writes', () => {
+    // The shape delivered.cjs actually emits, and the one that matters.
     // The schema puts `node` on the RECORD and defines an item as exactly
     // {what, at, find}, so a node inside an item is normalised away on write —
     // correct behaviour, pinned from the other side in delivered.bats. A reader

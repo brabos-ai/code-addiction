@@ -42,7 +42,7 @@ This is the FIRST question `add-framework--plan` must answer. Wrong artefact typ
 | Orchestrate a multi-step workflow with gates and user interaction | **Command** | Commands control execution flow, enforce gates, dispatch agents |
 | Teach patterns/rules that multiple commands need | **Skill** | Skills are reusable knowledge packs loaded by commands and agents |
 | Specialize an agent with restricted tools, model, and memory | **Agent** | Agents are isolated specialists with persistent project memory |
-| Automate a deterministic task (no LLM reasoning needed) | **Script** | Scripts are bash, fast, predictable, no token cost |
+| Automate a deterministic task (no LLM reasoning needed) | **Script** | Native Node scripts are fast, predictable, and need no LLM tokens |
 
 ### Decision Tree
 
@@ -76,7 +76,7 @@ Does it need LLM reasoning?
 | Command | `framwork/.codeadd/commands/{name}.md` | Markdown with structured sections |
 | Skill | `framwork/.codeadd/skills/{name}/SKILL.md` | Markdown with YAML frontmatter |
 | Agent | `framwork/.codeadd/agents/{name}-agent.md` | Markdown with YAML frontmatter |
-| Script | `framwork/.codeadd/scripts/{name}.sh` | Bash |
+| Script | `framwork/.codeadd/scripts/{name}.cjs` | Node |
 
 No counts: `AGENTS.md`'s generated inventory lists what exists.
 
@@ -327,7 +327,7 @@ framwork/.codeadd/          ← SOURCE OF TRUTH (you write here)
   ├── agents/               ← agent definitions
   ├── commands/             ← command definitions
   ├── skills/               ← skill modules
-  └── scripts/              ← bash scripts
+  └── scripts/              ← node scripts
 
      ↓ node scripts/build.js (reads provider-map.json)
      ↓ per provider: lint → strip comments → resolve paths → transform format → write
@@ -451,7 +451,7 @@ Load .github/skills/add--backend-development/SKILL.md before implementation.
 
 Scripts live at `.codeadd/scripts/` and this path is the same for all providers:
 ```markdown
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 ### Provider Capabilities — What to Check When Writing Commands
@@ -603,17 +603,17 @@ Commands invoke scripts via `Bash` tool:
 ````markdown
 ## STEP 1: Run Context Mapper
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 ````
 
-`status.sh` is the most common — returns project context (feature ID, branch, owner profile, etc.) as key-value pairs that commands parse to set variables like `${FEATURE_ID}`, `${OWNER_LEVEL}`.
+`status.cjs` is the most common — returns project context (feature ID, branch, owner profile, etc.) as key-value pairs that commands parse to set variables like `${FEATURE_ID}`, `${OWNER_LEVEL}`.
 
 ### Runtime Loading Order (typical command)
 
 ```
 1. Command prompt loaded into LLM context
-2. LLM runs status.sh via Bash → gets project variables
+2. LLM runs status.cjs via Bash → gets project variables
 3. LLM reads skill files via Read → gets domain knowledge
 4. LLM dispatches @agents via Agent tool → specialists execute in isolation
 5. LLM waits for agent results → continues to next step
@@ -720,7 +720,7 @@ Body lines:
 - agent: <agent-name>
 - command: /<command-name>
 - handoff: <next-stage-name>
-- script: <script-name>.sh
+- script: <script-name>.cjs
 - mention: <name-the-prose-points-away-from>
 ```
 

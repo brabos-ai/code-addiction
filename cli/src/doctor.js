@@ -4,14 +4,14 @@ import { spawn } from 'node:child_process';
 import { intro, outro, spinner, log } from '@clack/prompts';
 
 /**
- * Check if Node version is >= 18.
+ * Check the common framework runtime floor, Node >=22.19.0.
  * @returns {{ok: boolean, version: string}}
  */
-function checkNode() {
-  const version = process.version;
-  const major = parseInt(version.slice(1).split('.')[0], 10);
+export function checkNode(version = process.version) {
+  const match = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(version);
+  const [major, minor, patch] = match ? match.slice(1).map(Number) : [];
   return {
-    ok: major >= 18,
+    ok: Boolean(match) && (major > 22 || (major === 22 && (minor > 19 || (minor === 19 && patch >= 0)))),
     version,
   };
 }
@@ -113,7 +113,7 @@ export async function doctor(cwd, scope = 'project') {
   log.info('');
 
   const nodeIcon = nodeCheck.ok ? 'OK' : 'ERROR';
-  log.info(`${nodeIcon} Node.js: ${nodeCheck.version} ${nodeCheck.ok ? '(>= 18)' : '(< 18 required)'}`);
+  log.info(`${nodeIcon} Node.js: ${nodeCheck.version} ${nodeCheck.ok ? '(>= 22.19.0)' : '(>= 22.19.0 required)'}`);
 
   const gitIcon = gitCheck.ok ? 'OK' : 'ERROR';
   log.info(`${gitIcon} Git: ${gitCheck.ok ? gitCheck.version : 'not found'}`);
@@ -145,7 +145,7 @@ export async function doctor(cwd, scope = 'project') {
     process.exit(0);
   } else {
     const issues = [];
-    if (!nodeCheck.ok) issues.push('Node.js >= 18 required');
+    if (!nodeCheck.ok) issues.push('Node.js >= 22.19.0 required');
     if (!gitCheck.ok) issues.push('Git not found');
     if (!addCheck.ok) issues.push('.codeadd/ directory missing or empty');
     if (!manifestCheck.ok) issues.push('manifest.json missing or invalid');

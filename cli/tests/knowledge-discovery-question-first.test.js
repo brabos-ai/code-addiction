@@ -7,9 +7,9 @@ import { ACTIONS } from '../../mcp/engine.mjs';
  * Plan 2026-09-14T102848 — the product layer's knowledge discovery answers the
  * question it was asked.
  *
- * Validation Matrix levels L2 and L3. L1 lives in
- * `framwork/.codeadd/scripts/tests/delivered.bats`, because the contract it
- * proves is bash.
+ * Validation Matrix levels L2 and L3. L1 lives in the native
+ * `scripts/tests/delivered.test.cjs`, because the contract it
+ * proves is the native delivery reader.
  *
  * RED FIRST for the assertions that carry the change. Every one of those was
  * authored and confirmed FAILING against the tree before F1 landed.
@@ -33,7 +33,8 @@ const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
 
 const SKILL = ['skills', 'add--knowledge-discovery', 'SKILL.md'];
 const CONTRACT = ['skills', 'add--doc-schemas', 'references', 'delivery-index.md'];
-const SCRIPT = ['scripts', 'delivered.sh'];
+const SCRIPT = ['scripts', 'delivered.cjs'];
+const CORE = ['scripts', 'delivery-index-core.cjs'];
 const GITNEXUS = ['plugins', 'gitnexus', 'skills', 'add--gitnexus', 'SKILL.md'];
 
 /** The six commands that load the skill and consume its GRAPH step. */
@@ -63,12 +64,15 @@ const commandFragments = () =>
 
 // ─── L2 — the written contracts describe what the code does ──────────────────
 
-describe('L2.1 — the script header carries its own contract', () => {
+describe('L2.1 — the entry and its side-effect-free core carry the contract', () => {
   it('names the two caps and the scoring rule in the usage block', () => {
-    const header = read(...SCRIPT).split('set -u')[0];
+    // The native reader split the shell header across two files: the entry
+    // owns argv/exit, and the core owns the caps and the scoring rule.
+    const header = read(...CORE);
     expect(header).toMatch(/per-term|terms? are scored|score/i);
     expect(header).toMatch(/5 live|five live/i);
     expect(header).toMatch(/2 dead|two dead/i);
+    expect(read(...SCRIPT)).toMatch(/MATCHED_LIVE|RETURNED_LIVE|LIVE_CAP|DEAD_CAP/);
   });
 });
 
@@ -100,12 +104,12 @@ describe('L2.3 — every reader of doRead output speaks the new keys, and there 
     for (const k of BUCKET_KEYS) expect(s).toContain(k);
   });
 
-  it('add-hotfix.md, which calls `delivered.sh read` directly, names them too', () => {
+  it('add-hotfix.md, which calls `delivered.cjs read` directly, names them too', () => {
     const h = read('commands', 'add-hotfix.md');
     for (const k of BUCKET_KEYS) expect(h).toContain(k);
   });
 
-  it('no third artefact invokes `delivered.sh read`', () => {
+  it('no third artefact invokes `delivered.cjs read`', () => {
     // GUARD. add-done.md calls `verify` and `write` and never `read`, so it
     // carries no output key and must not be asserted to.
     const hits = [];
@@ -113,7 +117,7 @@ describe('L2.3 — every reader of doRead output speaks the new keys, and there 
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
         if (e.isDirectory()) walk(full);
-        else if (e.name.endsWith('.md') && /delivered\.sh\s+read\b/.test(fs.readFileSync(full, 'utf8'))) {
+        else if (e.name.endsWith('.md') && /delivered\.cjs\s+read\b/.test(fs.readFileSync(full, 'utf8'))) {
           hits.push(path.relative(CODEADD, full).replace(/\\/g, '/'));
         }
       }

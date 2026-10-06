@@ -536,11 +536,11 @@ const INTERNAL_CMD = {
 };
 
 const PRODUCT_SCRIPT = {
-  id: 'product/script/delivered.sh',
+  id: 'product/script/delivered.cjs',
   kind: 'script',
   layer: 'product',
-  name: 'delivered.sh',
-  path: 'framwork/.codeadd/scripts/delivered.sh',
+  name: 'delivered.cjs',
+  path: 'framwork/.codeadd/scripts/delivered.cjs',
   registered: true,
   declares: false,
 };
@@ -567,12 +567,12 @@ describe('L5 the cross-layer gate', () => {
   });
 
   it('L5.2 an internal artefact naming a product artefact does not warn', () => {
-    // Passes today, and must keep passing: the close-out names `delivered.sh`
+    // Passes today, and must keep passing: the close-out names `delivered.cjs`
     // on purpose, and its own source comment explains why.
     const { warnings } = check([INTERNAL_CMD, PRODUCT_SCRIPT], {
-      [INTERNAL_CMD.id]: 'The close-out calls delivered.sh to write the entry.',
+      [INTERNAL_CMD.id]: 'The close-out calls delivered.cjs to write the entry.',
     });
-    expect(warnings.join('\n')).not.toContain('delivered.sh');
+    expect(warnings.join('\n')).not.toContain('delivered.cjs');
   });
 
   it('L5.3 a distributed artefact naming no internal command does not warn', () => {

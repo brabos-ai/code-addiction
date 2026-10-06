@@ -160,15 +160,15 @@ describe('scenario 3 — fragment self-detection notices (always-present body te
 });
 
 describe('scenario 4 — QA preflight contract + shared probe script', () => {
-  it('qa-preflight.sh exists in the source scripts dir', () => {
-    expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-preflight.sh'))).toBe(true);
+  it('qa-preflight.cjs exists in the source scripts dir', () => {
+    expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-preflight.cjs'))).toBe(true);
   });
 
   // Plan 0070: the preflight contract was absorbed into add-review's base body,
   // self-gating on the add-qa-setup receipt rather than on a feature flag.
   it('built add-review invokes the shared probe script and declares block/degrade phases', () => {
     const review = qaEnabledReview();
-    expect(review).toContain('.codeadd/scripts/qa-preflight.sh');
+    expect(review).toContain('.codeadd/scripts/qa-preflight.cjs');
     expect(review).toContain('Phase A');
     expect(review).toContain('Phase B');
     expect(review).toContain('degrade');
@@ -177,7 +177,7 @@ describe('scenario 4 — QA preflight contract + shared probe script', () => {
   it('built add-qa-setup carries the feature-gate opt-in with the exact remedy', () => {
     const setup = builtCommand('add-qa-setup');
     expect(setup).toContain(REMEDY);
-    expect(setup).toContain('.codeadd/scripts/qa-preflight.sh');
+    expect(setup).toContain('.codeadd/scripts/qa-preflight.cjs');
   });
 });
 
@@ -473,13 +473,13 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
     fs.readFileSync(path.join(BUILT_CLAUDE, 'skills', name, file), 'utf8');
 
   it('ships the deterministic evidence lifecycle script', () => {
-    expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-evidence.sh'))).toBe(true);
+    expect(fs.existsSync(path.join(CODEADD, 'scripts', 'qa-evidence.cjs'))).toBe(true);
   });
 
-  it('the absorbed QA allocates and resolves predecessors through qa-evidence.sh', () => {
+  it('the absorbed QA allocates and resolves predecessors through qa-evidence.cjs', () => {
     const review = qaEnabledReview();
-    expect(review).toContain('.codeadd/scripts/qa-evidence.sh next');
-    expect(review).toContain('.codeadd/scripts/qa-evidence.sh previous');
+    expect(review).toContain('.codeadd/scripts/qa-evidence.cjs next');
+    expect(review).toContain('.codeadd/scripts/qa-evidence.cjs previous');
     expect(review).toMatch(/working plus final evidence/i);
     expect(review).toMatch(/NEVER write a new audit under `_tests\/final\/`/i);
   });
@@ -506,7 +506,7 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
   it('review captures the working baseline and done promotes it before changelog and merge', () => {
     const review = qaEnabledReview();
     const done = builtCommand('add-done');
-    expect(review).toContain('.codeadd/scripts/qa-evidence.sh working-baseline');
+    expect(review).toContain('.codeadd/scripts/qa-evidence.cjs working-baseline');
     const promote = done.indexOf('## STEP add-done.promote-qa:');
     const changelog = done.indexOf('## STEP add-done.document:');
     const merge = done.indexOf('## STEP add-done.merge:');
@@ -515,12 +515,12 @@ describe('scenario 10 — QA evidence lifecycle (plan 0061)', () => {
     expect(merge).toBeGreaterThan(changelog);
     // Promotion is add-done's alone. The review may NAME it in a prohibition;
     // what it must never do is invoke it, so match the invocation form.
-    expect(review).not.toMatch(/bash .*qa-evidence\.sh promote/);
-    expect(review).toMatch(/NEVER invoke\s+`qa-evidence\.sh promote`/);
-    expect(done).toContain('.codeadd/scripts/qa-evidence.sh validate');
-    expect(done).toContain('.codeadd/scripts/qa-evidence.sh promote');
+    expect(review).not.toMatch(/node .*qa-evidence\.cjs promote/);
+    expect(review).toMatch(/NEVER invoke\s+`qa-evidence\.cjs promote`/);
+    expect(done).toContain('.codeadd/scripts/qa-evidence.cjs validate');
+    expect(done).toContain('.codeadd/scripts/qa-evidence.cjs promote');
     expect(done).toMatch(/DO NOT USE: Write to create `changelog\.md`/);
-    expect(done).toMatch(/DO NOT USE: Bash for `done\.sh --merge`/);
+    expect(done).toMatch(/DO NOT USE: Bash for `done\.cjs --merge`/);
     // Plan 0070: with the review read-only, REVIEW_TREE_AFTER equals
     // REVIEW_TREE_BEFORE by construction, so the whole "corrections invalidated
     // the QA evidence" category is structurally unreachable. It was REMOVED,

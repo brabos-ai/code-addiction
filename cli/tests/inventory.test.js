@@ -89,7 +89,15 @@ function fixtureCodeadd() {
   write(path.join(dir, 'agents', 'ux-agent.md'));
   write(path.join(dir, 'scripts', 'done.sh'));
   write(path.join(dir, 'scripts', 'status.sh'));
+  // Native shipped entries are `.cjs` siblings of the `.sh` ones. The group is
+  // disk-derived across both extensions; a native entry is as invocable as a
+  // shell one, and omitting it would make the block disagree with the tree.
+  write(path.join(dir, 'scripts', 'status.cjs'));
+  write(path.join(dir, 'scripts', 'delivered.cjs'));
   write(path.join(dir, 'scripts', 'tests', 'done.bats'));
+  // A nested native test file is not an invocable artefact: the collector never
+  // recurses into scripts/tests/, exactly as it ignores the .bats suite there.
+  write(path.join(dir, 'scripts', 'tests', 'status.test.cjs'));
   write(path.join(dir, 'templates', 'hotfix.md'));
   write(path.join(dir, 'fragments', 'qa-pipeline', 'add-plan.md'));
   write(path.join(dir, 'fragments', 'tdd-pipeline', 'add-plan.md'));
@@ -111,7 +119,7 @@ const EXPECTED_BLOCK = [
   '{"commands":["add","add-plan","add.init","add.plan-to-ready"]}',
   '{"skills":["add--qa","add--qa-spec"]}',
   '{"agents":["qa","ux"]}',
-  '{"scripts":["done.sh","status.sh"]}',
+  '{"scripts":["delivered.cjs","done.sh","status.cjs","status.sh"]}',
   '{"templates":["hotfix"],"fragments":["qa-pipeline","tdd-pipeline"],'
     + '"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],'
     + `"sidecars":${JSON.stringify([...SIDECARS].sort())}}`,
@@ -137,8 +145,16 @@ describe('L1.1 renderBlock — byte-for-byte against a known tree', () => {
     expect(collectInventory(fixtureCodeadd()).skills).not.toContain('not-a-skill');
   });
 
-  it('omits scripts/tests/ — a .bats suite is not an invocable artefact', () => {
-    expect(collectInventory(fixtureCodeadd()).scripts).not.toContain('tests');
+  it('lists native .cjs entries alongside .sh, from disk', () => {
+    const { scripts } = collectInventory(fixtureCodeadd());
+    expect(scripts).toEqual(['delivered.cjs', 'done.sh', 'status.cjs', 'status.sh']);
+  });
+
+  it('omits scripts/tests/ — a nested suite is not an invocable artefact', () => {
+    const { scripts } = collectInventory(fixtureCodeadd());
+    expect(scripts).not.toContain('tests');
+    expect(scripts).not.toContain('status.test.cjs');
+    expect(scripts).not.toContain('done.bats');
   });
 });
 

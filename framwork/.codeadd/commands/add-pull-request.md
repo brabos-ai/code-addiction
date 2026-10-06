@@ -81,7 +81,7 @@ ALWAYS:
   ⛔ DO NOT: Force push
   ⛔ DO NOT: Rebase
   ⛔ DO NOT: Rename branches
-  ⛔ DO NOT USE: Bash for done.sh — `/add-done` owns every git write it makes, and this command never calls it
+  ⛔ DO NOT USE: Bash for done.cjs — `/add-done` owns every git write it makes, and this command never calls it
 ```
 
 ---
@@ -121,7 +121,7 @@ If `BRANCH` is `main` or `master` → STOP (see prohibitions).
 Use `{{skill:add--id-convention/SKILL.md}}` rules. Run:
 
 ```bash
-bash .codeadd/scripts/get-branch-metadata.sh
+node .codeadd/scripts/get-branch-metadata.cjs
 ```
 
 Output captures: `BRANCH_TYPE` (feature | hotfix | other), `FEATURE_ID` (e.g. `0012F`), `FEATURE_DIR` (e.g. `docs/features/0012F-*`).
@@ -156,7 +156,7 @@ Check if `${FEATURE_DIR}/changelog.md` already exists.
 ```
 IF THE CHANGELOG ALREADY EXISTS:
   ⛔ DO NOT: Skip the narrative — a skip leaves the state the first writer produced
-  ⛔ DO NOT USE: Bash for status.sh next-id CHG
+  ⛔ DO NOT USE: Bash for status.cjs next-id CHG
   ⛔ DO NOT: Rewrite id:, created:, type: or related:
   ✅ DO: Apply the schema's complement table and bump updated:
 ```
@@ -168,7 +168,7 @@ through `{{cmd:add-done}}` STEP add-done.complement-changelog, which complements
 ### STEP add-pull-request.allocate-changelog-id Allocate changelog ID
 
 ```bash
-bash .codeadd/scripts/status.sh next-id CHG
+node .codeadd/scripts/status.cjs next-id CHG
 ```
 
 Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` references the feature ID (`0012F` or equivalent).

@@ -12,7 +12,7 @@ Two layers with distinct purposes.
 
 Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
 `commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
-`scripts/*.sh` plus the shipped CommonJS backlog entries at `scripts/*.cjs`.
+`scripts/*.cjs` — the native runtime, entry points and shared cores alike.
 
 The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
 `/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an
@@ -22,7 +22,7 @@ array has a length.
 {"commands":["add","add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
 {"skills":["add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--id-convention","add--investigation","add--knowledge-discovery","add--optimizing-git-workflow","add--plan-based-features","add--plan-review","add--project-scaffolding","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--skill-creator","add--stripe","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
-{"scripts":["build-ledger.sh","build-setup.sh","converge-gates.sh","delivered.sh","done.sh","get-branch-metadata.sh","get-main-branch.sh","hotfix-gates.sh","init.sh","log-iteration.sh","log-jsonl.sh","migrate-context-files.sh","migrate-ids.sh","next-id.sh","qa-evidence.sh","qa-preflight.sh","review-package.sh","status.sh","task-brief.sh"]}
+{"scripts":["backlog-cli.cjs","backlog-commit.cjs","backlog-core.cjs","backlog-git.cjs","backlog-id.cjs","backlog-storage.cjs","build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
@@ -177,10 +177,10 @@ Key files:
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
-| `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
+| `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — native on every platform, with an explicit optional Linux container transport |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
-| `framwork/.codeadd/scripts/*` | Shipped verbatim (.sh shells and the shipped CommonJS backlog `.cjs` entries). Each documents its own usage and exit codes in its header |
+| `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
 
@@ -189,7 +189,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 | Sidecar | Carries | Read by |
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
-| `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
+| `contracts.json` | The `shape` of every `## Materializes` block | `status.cjs` |
 | `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/`, the composable layer included — fragments declare what they dispatch, and a plugin's bundled skills, the shipped templates and a node per feature and per plugin are all in it | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
@@ -238,7 +238,7 @@ A command that materializes state into a user's project declares a `## Materiali
 | Receipt schema | `add--doc-schemas/references/receipt.md` |
 | Receipt in user project | `docs/qa/qa-setup.md` |
 | Comparison procedure | `add--setup-contract` skill |
-| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
+| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 
 Current consumer: `add-qa-setup` only. `add-wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
 
@@ -282,5 +282,5 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Doc schemas, voice, output length | `add--doc-schemas` |
 | How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
 | Setup-contract comparison | `add--setup-contract` |
-| A script's contract and exit codes | that script's own header, plus its `.bats` suite |
+| A script's contract and exit codes | that script's own header, plus its native `scripts/tests/<name>.test.cjs` suite |
 | Injection anchor internals | `cli/src/injection-core.js` |

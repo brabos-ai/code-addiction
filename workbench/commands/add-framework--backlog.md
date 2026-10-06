@@ -13,7 +13,7 @@ inside the declaring artefact's own layer (scripts/build.js), so a
 `- script: backlog-cli.cjs` from here would resolve to
 `internal/script/backlog-cli.cjs`, which does not exist. This repository is those
 scripts' source, so it calls them by their repository path — the same way
-add-framework--done calls delivered.sh.
+add-framework--done calls delivered.cjs.
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.

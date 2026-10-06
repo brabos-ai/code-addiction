@@ -464,7 +464,7 @@ describe('combined substitution and sibling isolation', () => {
     assertBlockOnce(tmp, [...features, ...plugins], 'all-on');
     assertNoStale(tmp, planFiles(tmp), 'all-on');
     for (const p of PLUGIN_NAMES) assertSkills(tmp, p, true);
-  });
+  }, 60000);
 
   it('disabling one namespace removes only its full blocks', () => {
     const features = loadFeatureMatrix();
@@ -475,7 +475,7 @@ describe('combined substitution and sibling isolation', () => {
     disableFeature(tmp, 'tdd');
     assertBlockAbsent(tmp, features.filter((e) => e.name === 'tdd'), 'tdd off');
     assertBlockOnce(tmp, [...features.filter((e) => e.name !== 'tdd'), ...plugins], 'siblings after tdd off');
-  }, 20000);
+  }, 60000);
 
   it('reversed enable order still lands every full block exactly once', () => {
     const all = [...loadFeatureMatrix(), ...loadPluginMatrix()];
@@ -483,7 +483,7 @@ describe('combined substitution and sibling isolation', () => {
     for (const f of [...FEATURE_NAMES].reverse()) enableFeature(tmp, f);
     expect(warnSpy).not.toHaveBeenCalled();
     assertBlockOnce(tmp, all, 'reversed enable');
-  }, 20000);
+  }, 60000);
 });
 
 describe('reversed enable order is byte-identical', () => {

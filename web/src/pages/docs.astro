@@ -109,7 +109,7 @@ import "../styles/global.css";
       <!-- INSTALL -->
       <section id="install" class="mb-20">
         <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
-        <p class="text-muted-light mb-6">Requires Node.js 18+. Works on Windows, macOS, and Linux.</p>
+        <p class="text-muted-light mb-6">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended). Works on Windows, macOS and Linux &mdash; no Bash, WSL or Git-Bash needed.</p>
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
           <div><span class="text-muted select-none"># install in your project</span></div>
@@ -130,6 +130,10 @@ import "../styles/global.css";
           <span class="text-foreground">├── .cursor/</span><span class="text-muted ml-6">← Cursor</span><br/>
           <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
         </div>
+
+        <p class="text-muted text-sm mt-4">
+          Framework scripts are Node entries — <code class="font-mono text-xs">node .codeadd/scripts/&lt;entry&gt;.cjs</code> — so no Bash, WSL or Git-Bash is required on any platform.
+        </p>
       </section>
 
       <!-- QUICKSTART -->
@@ -561,7 +565,7 @@ import "../styles/global.css";
             { name: "ecosystem", desc: "ADD ecosystem map and framework overview" },
             { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
             { name: "resource-path-convention", desc: "Consistent resource path conventions across the project" },
-            { name: "id-convention", desc: "Canonical [NNNN][L] ID and branch naming format expected by next-id.sh, get-branch-metadata.sh, done.sh" },
+            { name: "id-convention", desc: "Canonical [NNNN][L] ID and branch naming format expected by next-id.cjs, get-branch-metadata.cjs, done.cjs" },
             { name: "skill-creator", desc: "Create and structure new ADD skills" },
             { name: "agents-md-style", desc: "Use when generating or updating the project's AGENTS.md — migrates any legacy context file into it first, then defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any AGENTS.md write." },
             { name: "add--tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add-build." },

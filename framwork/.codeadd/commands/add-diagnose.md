@@ -19,8 +19,8 @@
 - command: /add-new
 - command: /add-plan
 - command: /add-wiki
-- script: hotfix-gates.sh
-- script: status.sh
+- script: hotfix-gates.cjs
+- script: status.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -39,7 +39,7 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-diagnose.context (sch
 
 **STEPS IN ORDER:**
 ```
-STEP add-diagnose.context: Load context          → status.sh + add--ecosystem
+STEP add-diagnose.context: Load context          → status.cjs + add--ecosystem
 STEP add-diagnose.capture: Capture & reformulate → internal only, no stop
 STEP add-diagnose.investigate: Load investigation    → add--investigation skill, apply Phase 0
 STEP add-diagnose.dispatch: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
@@ -57,12 +57,12 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP add-diagnose.context** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add--ecosystem |
+| **STEP add-diagnose.context** | Context not loaded | Grep, Read code files, dispatch agents | Run status.cjs + load add--ecosystem |
 | **STEP add-diagnose.investigate** | Skill not loaded | Begin investigation, suggest route | Read add--investigation skill |
 | **STEP add-diagnose.dispatch** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP add-diagnose.dispatch** | A outputs incomplete | Proceed to STEP add-diagnose.analyze, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
 | **STEP add-diagnose.analyze** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
-| **READ-ONLY** | Always | Edit files, Bash (except status.sh and hotfix-gates.sh), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
+| **READ-ONLY** | Always | Edit files, Bash (except status.cjs and hotfix-gates.cjs), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
 | **STEP add-diagnose.persist** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
 | **STEP add-diagnose.validate** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
 | **STEP add-diagnose.complete** | Always | Report before STEP add-diagnose.complete, or skip it on a no-action route | Emit the report in the shape, on every route |
@@ -71,10 +71,10 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 
 ## STEP add-diagnose.context: Load Context
 
-### STEP add-diagnose.run-status-sh Run status.sh
+### STEP add-diagnose.run-status-sh Run status.cjs
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in STEP add-diagnose.context), RECENT_CHANGELOGS.
@@ -235,7 +235,7 @@ Use the Command Next-Steps Routing table from {{skill:add--ecosystem/SKILL.md}} 
 Run:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline
+node .codeadd/scripts/hotfix-gates.cjs diagnosis-baseline
 ```
 
 Store `DIAGNOSED_BRANCH`, `DIAGNOSED_COMMIT`, and the `BASELINE_BEGIN` / `BASELINE_END` block. This is the working-tree state the investigation used. Do not recapture after the user answers. The script is read-only.

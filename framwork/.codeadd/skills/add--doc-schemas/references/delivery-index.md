@@ -3,7 +3,7 @@
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes a
 **minified machine log**: `docs/delivered.jsonl`, one JSON object per line, written by
-`.codeadd/scripts/delivered.sh` and read by `add--knowledge-discovery`. It has no frontmatter template, no
+`.codeadd/scripts/delivered.cjs` and read by `add--knowledge-discovery`. It has no frontmatter template, no
 `id:` under the skill's ID convention, no TL;DR, no depth floors and no Decision Log, because none of those
 apply to a log a script appends to.
 
@@ -37,7 +37,7 @@ independently trustworthy.
 | Field | Required | Meaning |
 |---|---|---|
 | `v` | yes | Schema version, **on every line**, never in a header. A log accumulates lines across versions; one header cannot say which version a given line was written under |
-| `ts` | yes | UTC ISO-8601, second precision — the format `log-jsonl.sh` already emits |
+| `ts` | yes | UTC ISO-8601, second precision — the format `log-jsonl.cjs` already emits |
 | `id` | yes | The entry's identity. Product: the `[NNNN][L]` id the project already allocated. Internal: the plan file's basename without extension, **verbatim** — not a slug, because a substring is a lookup convenience and would let two lines for one plan carry different ids, silently breaking last-line-wins |
 | `layer` | yes | `product` \| `internal` |
 | `by` | yes | `done` \| `verify` \| `human` — who wrote this line. Makes "a machine repaired this" distinguishable from "a person declared this" |
@@ -209,7 +209,7 @@ which is a new line like any other correction.
 
 ## The impact question — which deliveries touched a path
 
-`delivered.sh touched <path>...` answers it, in two layers that are labelled on every returned entry and
+`delivered.cjs touched <path>...` answers it, in two layers that are labelled on every returned entry and
 never merged into one list.
 
 ⛔ **The label is `answer`, never `layer`.** `layer` is already this record's own `product | internal`
@@ -229,7 +229,7 @@ git log --first-parent -m --format=%h -S'"id":"<id>"' -- docs/delivered.jsonl | 
 | Route | What lands on the default branch | The first-parent commit that introduced the line |
 |---|---|---|
 | The PR route — both close-outs run `gh pr merge --merge` | Every branch commit, plus a merge commit | **The merge commit.** Diffed against its first parent it carries the code and the line together |
-| `done.sh`'s local route — a `git merge --squash` | One squash commit | **The squash commit**, which carries both |
+| `done.cjs`'s local route — a `git merge --squash` | One squash commit | **The squash commit**, which carries both |
 
 ⛔ **`--first-parent -m` is not optional on the PR route.** Without it the walk reaches the branch
 commit that added the line — the close-out's docs commit, which touches only `docs/` — and every
@@ -304,7 +304,7 @@ pointer to resolve.
 
 ## `REFUSED=` vocabulary
 
-A record breaking a hard ban is caller error in the same sense a bad mode is: `delivered.sh write` exits
+A record breaking a hard ban is caller error in the same sense a bad mode is: `delivered.cjs write` exits
 **2** and prints `REFUSED=<name>`. The names are the machine-readable contract — a consumer branches on
 them, so they are listed here rather than left implicit in the script.
 
@@ -349,7 +349,7 @@ here.**
 
 ## Exit codes
 
-`delivered.sh` follows the script family's three-code doctrine, with one deliberate departure.
+`delivered.cjs` follows the script family's three-code doctrine, with one deliberate departure.
 
 | Exit | Means |
 |---|---|

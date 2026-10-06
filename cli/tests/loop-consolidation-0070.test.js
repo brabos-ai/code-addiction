@@ -278,10 +278,10 @@ describe('0070 L1 — build-side unit', () => {
     expect(Object.keys(contracts.contracts ?? contracts)).toEqual(['add-qa-setup']);
   });
 
-  it('L1.6 (F3) the qa-pipeline manifest key literal appears exactly once in qa-preflight.sh', () => {
-    const src = read(path.join(SCRIPTS, 'qa-preflight.sh'));
+  it('L1.6 (F3) the qa-pipeline manifest key literal appears exactly once in qa-preflight.cjs', () => {
+    const src = read(path.join(SCRIPTS, 'qa-preflight.cjs'));
     expect(countOf(src, 'qa-pipeline')).toBe(1);
-    expect(src).toMatch(/^QA_FEATURE_KEY="qa-pipeline"$/m);
+    expect(src).toMatch(/^const QA_FEATURE_KEY = 'qa-pipeline';$/m);
   });
 
   it('L1.7 (F5) add--ecosystem feature table reads tdd-pipeline in the built provider copy', () => {

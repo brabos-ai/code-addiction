@@ -12,7 +12,7 @@
 - mention: /add-new
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
-- script: migrate-context-files.sh
+- script: migrate-context-files.cjs
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
@@ -587,7 +587,7 @@ Read skill `{{skill:add--agents-md-style/SKILL.md}}` BEFORE anything else in thi
 
 ### STEP add-wiki.run-migration Run the Migration (coordinator)
 
-Run the skill's **Migration** — `bash .codeadd/scripts/migrate-context-files.sh` at the project root.
+Run the skill's **Migration** — `node .codeadd/scripts/migrate-context-files.cjs` at the project root.
 Keep every `MIGRATED:`, `LEGACY_LOCAL:` and `CONTEXT_MIGRATION:` line for the STEP add-wiki.report report.
 
 ```
@@ -597,61 +597,27 @@ IF THE MIGRATION HAS NOT RUN OR EXITED NON-ZERO:
   ✅ DO: Report the script's error and STOP — a leftover CLAUDE.md hides AGENTS.md from Claude Code
 ```
 
-### STEP add-wiki.resolve-shell-policy Resolve the Shell Policy Block (coordinator)
+### STEP add-wiki.resolve-shell-policy Resolve the Runtime Policy Block (coordinator)
 
-**Detect OS and Git Bash path:**
-
-```bash
-uname -s
-```
-
-- If output is `Linux` or `Darwin` → no shell block. Tell STEP add-wiki.dispatch-updater `SHELL_BLOCK: none`
-- If output contains `MINGW`, `CYGWIN`, or `MSYS` (Git Bash on Windows) OR env `OS=Windows_NT` is set → detect Git Bash path:
-
-```bash
-where bash 2>/dev/null || which bash 2>/dev/null
-```
-
-Common fallback paths to check if detection fails (in order):
-1. `C:/Program Files/Git/bin/bash.exe`
-2. `C:/Program Files (x86)/Git/bin/bash.exe`
-3. `%LOCALAPPDATA%/Programs/Git/bin/bash.exe`
-
-**The policy names BOTH shell forms, because the reader's shell is not known here.** `&` is
-PowerShell's call operator. An engine whose shell tool is already bash (OpenCode, Git Bash, MSYS)
-reads `& "..." -lc "..."` as a syntax error, and every script call fails. PowerShell hosts still need
-the `&` form to reach Git Bash instead of WSL.
+**The runtime policy is the same on every platform, so there is nothing to detect.** The shipped
+entries are native Node CommonJS and run under Node (>=22.19.0); no Bash, WSL or Git Bash is
+required on Windows, macOS or Linux. Hand STEP add-wiki.dispatch-updater the block below verbatim —
+there is no OS probe and no `SHELL_BLOCK: none`.
 
 ```
-IF WRITING THE SHELL POLICY:
-  ⛔ DO NOT: Write only the `& "<bash.exe>" -lc` form
-  ✅ DO: Write the bash-direct form and the PowerShell form, each labelled with its shell
+IF WRITING THE RUNTIME POLICY:
+  ⛔ DO NOT: Tell the reader to reach Git Bash, WSL or PowerShell for a shipped entry
+  ✅ DO: Point at `node .codeadd/scripts/<entry>.cjs` as the one invocation form
 ```
 
-**If Windows + path detected**, the block handed to STEP add-wiki.dispatch-updater is:
+**The block handed to STEP add-wiki.dispatch-updater is:**
 
 ```
 [//]: # (codeadd-shell:start)
 
-## Shell policy (Windows)
-Always execute commands via Git Bash. Pick the form for the shell your tool runs:
-- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
-- Shell is PowerShell: `& "[DETECTED_PATH]" -lc "<command>"`
-Do not use WSL bash (`bash ...` from PowerShell) directly.
-
-[//]: # (codeadd-shell:end)
-```
-
-**If Windows + path NOT detected**, the block handed to STEP add-wiki.dispatch-updater is the generic one:
-
-```
-[//]: # (codeadd-shell:start)
-
-## Shell policy (Windows)
-Always execute commands via Git Bash. Pick the form for the shell your tool runs:
-- Shell is already bash (Git Bash, MSYS, OpenCode): run the command as is, e.g. `bash .codeadd/scripts/status.sh`
-- Shell is PowerShell: locate bash.exe first with `where bash`, then `& "[PATH_TO_BASH]" -lc "<command>"`
-Do not use WSL bash (`bash ...` from PowerShell) directly.
+## Runtime policy
+Run shipped framework entries with Node (>=22.19.0), e.g. `node .codeadd/scripts/status.cjs`.
+No Bash, WSL or Git Bash is required; the entries are native CommonJS.
 
 [//]: # (codeadd-shell:end)
 ```
@@ -664,7 +630,7 @@ stack one copy per run; replace-or-append on its markers keeps exactly one.
 **DISPATCH AGENT:**
 - **Capability:** read-write (must update AGENTS.md)
 - **Complexity:** standard
-- **Prompt:** (append the resolved shell block from STEP add-wiki.resolve-shell-policy, or `SHELL_BLOCK: none`)
+- **Prompt:** (append the runtime policy block from STEP add-wiki.resolve-shell-policy)
 
 ```
 ## ROLE
@@ -730,11 +696,10 @@ Describe the action, the mechanism or the state directly. Never put a figure of 
 
 [//]: # (codeadd-style:end)
 
-6. **Shell policy managed block** — only when the coordinator appended a block below. Find
-   markers `[//]: # (codeadd-shell:start)` / `[//]: # (codeadd-shell:end)`. If present, REPLACE
-   the block between them. If absent, APPEND it with a blank-line separator, after the Writing
-   Style block. Copy it exactly as appended. On `SHELL_BLOCK: none`, leave any existing
-   codeadd-shell block untouched — another developer on Windows may rely on it.
+6. **Runtime policy managed block** — find markers `[//]: # (codeadd-shell:start)` /
+   `[//]: # (codeadd-shell:end)`. If present, REPLACE the block between them. If absent, APPEND
+   it with a blank-line separator, after the Writing Style block. Copy it exactly as appended. A
+   legacy Git Bash "Shell policy" block carrying these same markers is REPLACED by it.
 
 ## CONSTRAINTS (from add--agents-md-style skill)
 Target: 80-150 lines total.
@@ -761,7 +726,7 @@ Return summary:
 - TOTAL_LINES: [count]
 - SECTIONS_UPDATED: [list]
 - WRITING_STYLE_BLOCK: [WRITTEN/REPLACED]
-- SHELL_POLICY_BLOCK: [WRITTEN/REPLACED/SKIPPED]
+- RUNTIME_POLICY_BLOCK: [WRITTEN/REPLACED]
 ```
 
 - **Output:** Update `AGENTS.md`
@@ -788,7 +753,7 @@ IF A CHECK BELOW FAILS:
       makes Claude Code ignore AGENTS.md, and a leftover GEMINI.md overrides it in Antigravity
 - [ ] `[//]: # (codeadd-wiki:start)` and `[//]: # (codeadd-wiki:end)` present in AGENTS.md
 - [ ] `[//]: # (codeadd-style:start)` and `[//]: # (codeadd-style:end)` present in AGENTS.md
-- [ ] On Windows only: `[//]: # (codeadd-shell:start)` and `[//]: # (codeadd-shell:end)` present in AGENTS.md
+- [ ] `[//]: # (codeadd-shell:start)` and `[//]: # (codeadd-shell:end)` present in AGENTS.md
 - [ ] each pair appears exactly once
 
 ---

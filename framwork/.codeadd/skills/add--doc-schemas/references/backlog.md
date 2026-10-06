@@ -5,7 +5,7 @@ document an agent authors, with frontmatter, depth floors and a Decision Log. Th
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
 its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
 (`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files. Local operations need Node >= 18; publication also needs Git.
+and write both files. Local operations need Node >= 22.19.0; publication also needs Git.
 Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
@@ -210,7 +210,7 @@ they are entitled to make, so the two directions differ:
   splitting surrogate pairs. The projection is presentation only: nothing is rewritten, and the board
   export and the board API keep the complete records.
 - **Output is `KEY=VALUE` metadata, then payload lines.** A line starting with `{` is a ticket; anything
-  else is a key; `--ids` emits one id per line instead. This is the same shape `delivered.sh` emits, so
+  else is a key; `--ids` emits one id per line instead. This is the same shape `delivered.cjs` emits, so
   one consumer parses both.
 
 | Key | On | Means |
@@ -231,7 +231,7 @@ Each is testable, and each has a `REFUSED=` name below.
 
 1. **`id` is generated, never supplied.** A caller that sends one is refused. The id comes from the shared
    counter, and letting a caller pick one is how two tickets end up sharing a number.
-2. **`created_at` and `updated_at` are generated, never supplied.** Same reason `log-jsonl.sh` generates
+2. **`created_at` and `updated_at` are generated, never supplied.** Same reason `log-jsonl.cjs` generates
    its own timestamp: a caller-supplied time is a time nobody can trust.
 3. **`status` must be defined in `docs/backlog.definitions.json`.** On writes only — see the table above.
 4. **An id already on the board is never added twice.** One line per ticket, always.
@@ -272,7 +272,7 @@ consumer branch once.
 ## Exit codes
 
 The backlog follows the script family's three-code doctrine, with the same single departure
-`delivered.sh` makes — and it is the backlog Node core that owns it, through every entry: the local
+`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the local
 `backlog-cli.cjs` and the publication `backlog-commit.cjs`.
 
 | Exit | Means |

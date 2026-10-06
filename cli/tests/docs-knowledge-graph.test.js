@@ -253,7 +253,7 @@ describe('F5 — templates/related.md is gone', () => {
       for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) walk(full);
-        else if (entry.name.endsWith('.md') || entry.name.endsWith('.sh')) {
+        else if (entry.name.endsWith('.md') || entry.name.endsWith('.sh') || entry.name.endsWith('.cjs')) {
           if (read(full).includes('templates/related.md')) hits.push(path.relative(ROOT, full));
         }
       }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { doctor } from '../src/doctor.js';
+import { doctor, checkNode } from '../src/doctor.js';
 
 let tmpDir;
 let originalExit;
@@ -24,6 +24,14 @@ afterEach(() => {
 });
 
 describe('doctor internal functions', () => {
+  it('checks the exact common Node floor, including its minor and patch versions', () => {
+    for (const version of ['v18.20.8', 'v20.19.0', 'v22.18.0', 'v22.19.0-rc.1']) {
+      expect(checkNode(version).ok, version).toBe(false);
+    }
+    for (const version of ['v22.19.0', 'v22.19.1', 'v22.20.0', 'v24.0.0']) {
+      expect(checkNode(version).ok, version).toBe(true);
+    }
+  });
   it('handles .add with only subdirectories', async () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(addDir);

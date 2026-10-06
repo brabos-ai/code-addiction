@@ -1,30 +1,45 @@
 #!/usr/bin/env node
 /**
- * run-tests.js — run a test suite on whichever runner this platform can use.
+ * run-tests.js — run a test suite on the native Node runtime.
  *
  * Usage:
- *   node scripts/run-tests.js vitest [filter…]   the cli vitest suite (npm test at the root)
- *   node scripts/run-tests.js bats   [file…]     the bats suite (npm run test:scripts)
- *   node scripts/run-tests.js all                both, vitest first (npm run test:all)
+ *   node scripts/run-tests.js vitest [filter…]    the cli vitest suite (npm test)
+ *   node scripts/run-tests.js scripts [file…]     the root native script tests (npm run test:scripts)
+ *   node scripts/run-tests.js all                 both, vitest first (npm run test:all)
+ *
+ *   `bats` is a legacy alias for `scripts`. It runs the same node:test suite and
+ *   never executes Bats, which is no longer a dependency.
  *
  * Environment:
- *   CODEADD_TESTS_RUNNER=native|docker   force a runner, overriding the platform
- *   CODEADD_TESTS_JOBS=<n>               bats parallel jobs, on both runners (default 4)
+ *   CODEADD_TESTS_RUNNER=native|docker   force a runner; the default is native
+ *                                        on every platform, Windows included.
  *
  * Exit codes: the suite's own, forwarded unchanged; for `all`, the first
- * non-zero of the two. 2 when Windows has no reachable Docker daemon, when the
- * image cannot be built, when the tree cannot be packed or unpacked, when the
- * container's cli dependencies are missing, or on a usage error — each a
- * refusal to run rather than a test result.
+ * non-zero of the two. 2 when the optional Docker transport cannot build its
+ * image, cannot pack the tree, finds the container's cli dependencies missing,
+ * or on a usage error — each a refusal to run rather than a test result.
  *
- * Why this exists: both suites spend their time creating processes — bats forks
- * constantly, and a dozen vitest files spawn node — and process creation under
- * Windows costs far more than on Linux. The same 386 bats tests take about 69
- * minutes there and about a minute on CI, and the Windows run has disagreed
- * with CI (qa-preflight.bats fails there and nowhere else). A Linux container
- * fixes both at once, for both suites.
+ * Why this exists: the root scripts suite used to run under Bats, which forks a
+ * process per case; on Windows that cost about 69 minutes for 386 cases, so the
+ * old runner defaulted to a Linux container there and refused to run without
+ * one. The suite is now Node's own built-in test runner over
+ * scripts/tests/*.test.cjs, so it needs no Bats, no GNU parallel and no
+ * container on any platform. Native is the default everywhere; Docker is an
+ * explicit opt-in only (CODEADD_TESTS_RUNNER=docker) for reproducing a Linux
+ * run, since a Windows checkout's native bindings do not load on Linux.
  *
- * Three things the container does not take from the host, each for a reason:
+ * Isolation: every run works on a COPY, never the checkout it started from.
+ * The cli suite's globalSetup rebuilds framwork/ output and its sidecars, and a
+ * run must never rewrite the developer's tree. The copy is a temp directory
+ * removed on exit (native) or a tarball extracted in a throwaway container
+ * (docker). Both set CODEADD_TESTS_COPY=1, the marker
+ * cli/tests/helpers/global-setup.js refuses to run without outside CI. The
+ * native scripts suite builds its own temp repositories, but it also reads the
+ * checkout (migration acceptance, the runner's own specs) and inherits the same
+ * copy so a stray write cannot reach the real sidecars.
+ *
+ * Three things the optional container does not take from the host, each for a
+ * reason:
  *
  *   The checkout itself is COPIED in, as a tarball extracted onto the
  *   container's filesystem, never bind-mounted. Docker Desktop's Windows bind
@@ -37,26 +52,14 @@
  *   `.git` is bind-mounted, because git reads a handful of files. A worktree's
  *   `.git` names a host path the container cannot follow, so it is remapped.
  *
- * Images left by the bats-only runner this one replaced are tagged
- * `codeadd-bats:<hash>`. Nothing builds or removes them any more, so a machine
- * that ran it keeps them until pruned by hand: list them with
- * `docker image ls codeadd-bats`, remove them with `docker image rm <id>`.
- *
- * The native runner works on a copy too, in a temp directory removed on exit.
- * The suite's globalSetup rebuilds framwork/ output and its sidecars, and a run
- * must never rewrite the checkout it was started from. Both runners set
- * CODEADD_TESTS_COPY=1, and cli/tests/helpers/global-setup.js refuses to run
- * without it outside CI — so a bare `npx vitest` in cli/ stops instead of
- * writing the real tree.
- *
  * Architecture:
- *   parseArgs      → the suite, then the arguments that follow it
- *   resolveRunner  → override, then platform, then whether the daemon answered
- *   imageTag       → a hash of the Dockerfile and the two cli package files
- *   worktreeGit    → maps a git worktree's host-path `.git` into the container
- *   buildCommands  → the spawn specs for a suite on a runner
+ *   parseArgs       → the suite, then the arguments that follow it
+ *   canonicalSuite  → `bats` folds into `scripts`
+ *   resolveRunner   → override, then native everywhere
+ *   buildCommands   → the spawn specs for a suite on a runner
+ *   scriptsArgv / scriptsArgs → node --test flags, then the test paths or the default glob
  *   combineExitCodes / exitCodeFrom → never coerce a failure to 0
- *   main           → probe, announce, ensure the image, pack, run, forward
+ *   main            → announce, isolate, run, forward
  */
 
 const fs = require('fs');
@@ -71,10 +74,19 @@ const CLI_PACKAGE = path.join(REPO_ROOT, 'cli', 'package.json');
 const CLI_LOCK = path.join(REPO_ROOT, 'cli', 'package-lock.json');
 
 const IMAGE_PREFIX = 'codeadd-tests';
-const DEFAULT_JOBS = 4;
-const SUITES = ['vitest', 'bats', 'all'];
 
-const BATS_GLOB = 'framwork/.codeadd/scripts/tests/*.bats';
+/** `scripts` is canonical; `bats` is the documented legacy alias for it. */
+const SCRIPTS_SUITE = 'scripts';
+const LEGACY_SUITE = 'bats';
+const SUITES = ['vitest', SCRIPTS_SUITE, LEGACY_SUITE, 'all'];
+
+/**
+ * The files the native scripts suite runs. A glob rather than a directory:
+ * Node's test runner takes a directory as a module path on this Node, and a
+ * glob is what it expands into test files. Named once so both runners point at
+ * the same set.
+ */
+const SCRIPTS_TEST_GLOB = 'scripts/tests/*.test.cjs';
 
 /** Where the image installs the cli dependencies. The tree copy never overwrites it. */
 const CONTAINER_MODULES = '/code/cli/node_modules';
@@ -84,10 +96,11 @@ const CONTAINER_TREE = '/src/tree.tar';
 
 /**
  * What the tarball leaves out. `.git` is mounted instead; cli/node_modules
- * comes from the image; worktrees are other checkouts entirely. The root
- * node_modules IS packed — it carries the pinned bats the suite runs.
+ * comes from the image; worktrees are other checkouts entirely; and no
+ * node_modules is packed — the image carries vitest's Linux deps, and the
+ * built-ins-only scripts suite needs none.
  */
-const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './cli/node_modules', './web/node_modules', './board/node_modules', './board/dist'];
+const TREE_EXCLUDES = ['./.git', './.worktrees', './.claude/worktrees', './node_modules', './cli/node_modules', './web/node_modules', './board/node_modules', './board/dist'];
 
 /**
  * What the native copy leaves out. Unlike the container it KEEPS `.git` and
@@ -98,29 +111,18 @@ const NATIVE_COPY_EXCLUDES = ['.worktrees', '.claude/worktrees', 'web/node_modul
 /** Set on every run that works on a copy. Its twin lives in cli/tests/helpers/global-setup.js. */
 const COPY_MARKER = 'CODEADD_TESTS_COPY';
 
-/**
- * Named here rather than assembled at the call site, because it is asserted.
- * Windows without Docker must not fall back to the native path: that path is
- * both the slow one and the one with the false qa-preflight failure, so a
- * silent fallback would read as a hang and then report a failure that is not
- * real.
- */
-const DOCKER_MISSING_MESSAGE = [
-  'The Docker daemon did not answer, and the test suites on Windows without it are slow and disagree with CI.',
-  'Refusing to run rather than appearing to hang.',
-  '',
-  '  Start Docker Desktop, or',
-  '  set CODEADD_TESTS_RUNNER=native to run the slow native path anyway, or',
-  '  push the branch and read the verdict from CI, which owns it regardless.',
-].join('\n');
+const USAGE = 'usage: node scripts/run-tests.js <vitest|scripts|bats|all> [args…]';
 
-const USAGE = 'usage: node scripts/run-tests.js <vitest|bats|all> [args…]';
+/** `bats` is the legacy spelling of the scripts suite; everything else is itself. */
+function canonicalSuite(suite) {
+  return suite === LEGACY_SUITE ? SCRIPTS_SUITE : suite;
+}
 
 /** The suite, then whatever follows it. Throws on a missing or unknown suite. */
 function parseArgs(argv) {
   const [suite, ...extra] = argv;
   if (!SUITES.includes(suite)) throw new Error(USAGE);
-  return { suite, extra };
+  return { suite: canonicalSuite(suite), extra };
 }
 
 /**
@@ -136,16 +138,12 @@ function imageTag({ dockerfile, pkg, lock }) {
   return `${IMAGE_PREFIX}:${hash.digest('hex').slice(0, 12)}`;
 }
 
-/** A positive integer from the environment, or the default. */
-function jobsFrom(env) {
-  const raw = env.CODEADD_TESTS_JOBS;
-  if (raw === undefined) return DEFAULT_JOBS;
-  const n = Number.parseInt(raw, 10);
-  return Number.isInteger(n) && n > 0 ? n : DEFAULT_JOBS;
-}
-
-/** Override first, then platform, then whether the daemon answered. */
-function resolveRunner({ platform, env, dockerAvailable }) {
+/**
+ * Override first, then native. Native is the default on every platform,
+ * Windows included, so no daemon probe decides a normal run. The optional
+ * `docker` transport is reachable only by asking for it.
+ */
+function resolveRunner({ platform, env }) {
   const forced = env.CODEADD_TESTS_RUNNER;
   if (forced === 'native') {
     return { runner: 'native', reason: 'CODEADD_TESTS_RUNNER=native overrode the platform' };
@@ -156,29 +154,12 @@ function resolveRunner({ platform, env, dockerAvailable }) {
   if (forced !== undefined) {
     throw new Error(`CODEADD_TESTS_RUNNER must be "native" or "docker", got "${forced}"`);
   }
-
-  if (platform !== 'win32') {
-    return { runner: 'native', reason: `${platform} runs the suites natively` };
-  }
-  if (dockerAvailable) {
-    return { runner: 'docker', reason: 'Windows, and the Docker daemon answered' };
-  }
-  return { runner: 'unavailable', reason: 'Windows, and the Docker daemon did not answer' };
-}
-
-/**
- * bats refuses the parallelize flags below --jobs 2 ("The flag
- * --no-parallelize-across-files requires at least --jobs 2"), and refuses -j
- * at all without GNU parallel. One job, or no parallel, gets the plain form.
- */
-function batsArgs({ jobs, parallelAvailable, extra }) {
-  const target = extra.length > 0 ? extra.join(' ') : BATS_GLOB;
-  const parallel = jobs > 1 && parallelAvailable ? `-j ${jobs} --no-parallelize-within-files ` : '';
-  return `${parallel}${target}`;
-}
-
-function vitestArgs(extra) {
-  return extra.length > 0 ? ` ${extra.join(' ')}` : '';
+  return {
+    runner: 'native',
+    reason: platform === 'win32'
+      ? 'Windows runs the suites natively; Docker is not required'
+      : `${platform} runs the suites natively`,
+  };
 }
 
 /**
@@ -231,40 +212,88 @@ function gitMountArgs({ repoRoot, gitMount }) {
   return ['-v', `${toDockerPath(repoRoot)}/.git:/code/.git:ro`];
 }
 
+/** The vitest filter fragment, or empty. Kept byte-for-byte with CI's command. */
+function vitestArgs(extra) {
+  return extra.length > 0 ? ` ${extra.join(' ')}` : '';
+}
+
 /**
- * The spawn specs for one suite on one runner. The two runners genuinely need
- * different shapes and collapsing them into one string does not survive Windows.
+ * The native scripts suite's selection. Node's test runner wants its own flags
+ * BEFORE positional paths, so `--test-name-pattern=…` is forwarded ahead of the
+ * selection and any file argument replaces the default glob. With no argument,
+ * every scripts/tests/*.test.cjs runs.
  *
- * The native branch goes through a shell with the whole command as one string,
- * because that is exactly what npm does with a `scripts` entry — the glob
- * expands the way CI expands it. `all` natively is two specs, run in turn.
+ * Two shapes, one rule: `scriptsArgv` is the native argv (its program is
+ * process.execPath), and `scriptsArgs` is the flags-and-target string the
+ * container's `sh -c` composes after `node --test`. The selection is named
+ * once so the two runners cannot point at different files.
+ */
+function scriptsSelection(extra) {
+  const flags = [];
+  const paths = [];
+  const valuedOptions = new Set(['--test-name-pattern', '--test-skip-pattern', '--test-concurrency', '--test-timeout', '--test-reporter', '--test-reporter-destination', '--test-shard', '--test-isolation', '--test-coverage-exclude', '--test-coverage-include']);
+  for (let i = 0; i < extra.length; i += 1) {
+    const arg = extra[i];
+    if (!arg.startsWith('-')) { paths.push(arg); continue; }
+    flags.push(arg);
+    if (valuedOptions.has(arg)) {
+      if (i + 1 >= extra.length) throw new Error(`${arg} requires a value`);
+      flags.push(extra[++i]);
+    }
+  }
+  return { flags, target: paths.length > 0 ? paths : [SCRIPTS_TEST_GLOB] };
+}
+
+function scriptsArgv(extra) {
+  const { flags, target } = scriptsSelection(extra);
+  return ['--test', ...flags, ...target];
+}
+
+function scriptsArgs(extra) {
+  const { flags, target } = scriptsSelection(extra);
+  return [...flags, ...target].map((arg) => /^[a-zA-Z0-9_./*:=+-]+$/.test(arg)
+    ? arg : `'${arg.replace(/'/g, `'"'"'`)}'`).join(' ');
+}
+
+/**
+ * The spawn specs for one suite on one runner.
+ *
+ * Native: the vitest spec is an npm shell command — npm needs the shell — while
+ * the scripts spec is process.execPath plus a `--test …` argv with shell:false,
+ * so no shell parses a test path. `all` natively is the two specs, run in turn.
  *
  * The container branch must NOT go through the outer shell. On Windows that
  * shell is cmd.exe, which does not understand the quoting around the inner
- * `bash -c` command and splits it mid-string. Passing argv directly hands the
+ * `sh -c` command and splits it mid-string. Passing argv directly hands the
  * inner command to docker as one element. `all` in the container is one start
- * running both suites, with the exit codes combined in bash.
+ * running both suites, with the exit codes combined in POSIX sh.
  */
-function buildCommands({
-  suite, runner, repoRoot, tag, jobs, parallelAvailable = true, extra = [], treeTar = '', gitMount = null, platform,
-}) {
-  if (suite === 'all' && extra.length > 0) {
-    throw new Error('`all` takes no arguments — run `vitest` or `bats` alone to filter');
+function buildCommands({ suite, runner, repoRoot, tag, extra = [], treeTar = '', gitMount = null, platform }) {
+  const canonical = canonicalSuite(suite);
+
+  if (canonical === 'all' && extra.length > 0) {
+    throw new Error('`all` takes no arguments — run `vitest` or `scripts` alone to filter');
   }
 
   if (runner === 'native') {
-    // Native Windows is the override's path, never the default. There the
-    // parallel project still times out under load (measured: 2 of 1577 at
-    // 5000ms), so it keeps the serial run it always had. It also runs on a copy
-    // in %TEMP%, where first reads are slower than in a checkout (measured: the
-    // tree fixture's first root() 1.5s from C:\github, 7.9s from %TEMP%, same
-    // bytes), so two files' first tests pass 5000ms — hence the longer timeout.
+    // Native Windows keeps the serial vitest run it always had: the parallel
+    // project still times out under load there, and the copy's first reads are
+    // slower than a checkout's, so the timeout is longer too.
     const windowsFlags = platform === 'win32' ? ['--no-file-parallelism', '--testTimeout=30000'] : [];
     const vitestFlags = [...windowsFlags, ...extra];
     const vitest = vitestFlags.length > 0 ? `npm --prefix cli test --${vitestArgs(vitestFlags)}` : 'npm --prefix cli test';
-    const bats = `npx bats ${batsArgs({ jobs, parallelAvailable, extra })}`;
-    const pick = { vitest: [vitest], bats: [bats], all: [vitest, bats] }[suite];
-    return pick.map((command) => ({ file: command, args: [], shell: true, display: command }));
+    // npm is reached through the shell because npm is a shell command; the
+    // scripts suite is not. Its argv goes to process.execPath directly, so a
+    // path with a space or a metacharacter stays one argument.
+    const vitestSpec = { file: vitest, args: [], shell: true, display: vitest };
+    const argv = scriptsArgv(extra);
+    const scriptsSpec = {
+      file: process.execPath,
+      args: argv,
+      shell: false,
+      display: `node ${argv.join(' ')}`,
+    };
+    return { vitest: [vitestSpec], scripts: [scriptsSpec], all: [vitestSpec, scriptsSpec] }[canonical];
   }
 
   // --no-same-owner: extracted as root, tar would otherwise keep the host's
@@ -276,25 +305,16 @@ function buildCommands({
     'test -x cli/node_modules/.bin/vitest || ' +
     `{ echo "The image has no cli dependencies at ${CONTAINER_MODULES}; rebuild it." >&2; exit 2; }`;
   const vitest = `(cd cli && ./node_modules/.bin/vitest run${vitestArgs(extra)})`;
-  // The container always has GNU parallel, so the host's answer does not apply.
-  // The .bin and libexec entries now carry their exec bits again (see the
-  // restore step in the unpack line), so the shim's own execution path —
-  // the one its shebang and PATH bootstrap select — is what runs.
-  const bats = `./node_modules/.bin/bats ${batsArgs({ jobs, parallelAvailable: true, extra })}`;
+  // The scripts suite is built-ins only, so the container's own node runs it
+  // directly; no Bats, no GNU parallel, no extra packages.
+  const scripts = `node --test ${scriptsArgs(extra)}`;
 
   const run = {
     vitest: `${check}; ${vitest}`,
-    bats,
-    all: `${check}; ${vitest}; v=$?; ${bats}; b=$?; if [ $v -ne 0 ]; then exit $v; fi; exit $b`,
-  }[suite];
-  // The packed tree comes from a Windows checkout, where exec bits do not
-  // survive tar: bats' bootstrap needs its own libexec helpers executable,
-  // and a bash-run shim re-execs them anyway. Restore the exec bits for
-  // bats' own tree inside the throwaway container copy — the host tree is
-  // never touched, and a chmod restricted to bats' directories cannot reach
-  // the checkout's files.
-  const restore = 'chmod -R u+x node_modules/bats node_modules/.bin 2>/dev/null || true;';
-  const inner = `${unpack} || exit 2; ${restore} ${run}`;
+    scripts,
+    all: `${check}; ${vitest}; v=$?; ${scripts}; s=$?; if [ $v -ne 0 ]; then exit $v; fi; exit $s`,
+  }[canonical];
+  const inner = `${unpack} || exit 2; ${run}`;
 
   const args = [
     'run', '--rm',
@@ -307,7 +327,7 @@ function buildCommands({
     '-e', `${COPY_MARKER}=1`,
     '-w', '/code',
     tag,
-    'bash', '-c', inner,
+    'sh', '-c', inner,
   ];
   return [{ file: 'docker', args, shell: false, display: `docker ${args.join(' ')}` }];
 }
@@ -348,18 +368,6 @@ function exitCodeFrom(result) {
 /** The first non-zero exit, so `all` fails when either suite failed. */
 function combineExitCodes(codes) {
   return codes.find((c) => c !== 0) ?? 0;
-}
-
-/** Does the daemon answer? `docker version` asks the server; `--version` does not. */
-function probeDocker() {
-  const probe = spawnSync('docker', ['version', '--format', '{{.Server.Version}}'], { stdio: 'ignore' });
-  return !probe.error && probe.status === 0;
-}
-
-/** Is GNU parallel on this host? bats -j refuses to run without it. */
-function probeParallel() {
-  const probe = spawnSync('parallel', ['--version'], { stdio: 'ignore', shell: process.platform === 'win32' });
-  return !probe.error && probe.status === 0;
 }
 
 /**
@@ -412,21 +420,12 @@ function main() {
   let reason;
   try {
     ({ suite, extra } = parseArgs(process.argv.slice(2)));
-    // Probe only where the answer is consulted. An explicit override decides on
-    // its own, so probing under one spends a daemon round-trip for nothing.
-    const needsProbe = platform === 'win32' && env.CODEADD_TESTS_RUNNER === undefined;
-    ({ runner, reason } = resolveRunner({
-      platform,
-      env,
-      dockerAvailable: needsProbe ? probeDocker() : false,
-    }));
+    ({ runner, reason } = resolveRunner({ platform, env }));
   } catch (err) {
     // Misuse, not a failing suite. Exit 1 would mean "the tests failed" under
     // this file's own exit-code contract.
     fail(err.message);
   }
-
-  if (runner === 'unavailable') fail(DOCKER_MISSING_MESSAGE);
 
   process.stdout.write(`${announcement({ suite, runner, reason })}\n`);
 
@@ -443,8 +442,7 @@ function main() {
     const dir = scratch;
     process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
     cwd = path.join(scratch, 'tree');
-    process.stdout.write(`Copying the checkout to ${cwd} — the run never writes the real tree.
-`);
+    process.stdout.write(`Copying the checkout to ${cwd} — the run never writes the real tree.\n`);
     try {
       copyCheckout(REPO_ROOT, cwd);
     } catch (err) {
@@ -462,7 +460,7 @@ function main() {
 
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-tests-run-'));
     // Removed on every exit, fail() included — a failed pack would otherwise
-    // leave a ~28 MB tarball behind on each attempt.
+    // leave a large tarball behind on each attempt.
     const dir = scratch;
     process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
     treeTar = path.join(scratch, 'tree.tar');
@@ -481,16 +479,10 @@ function main() {
     }
   }
 
-  const needsParallel = runner === 'native' && suite !== 'vitest';
-  const parallelAvailable = needsParallel ? probeParallel() : true;
-  if (needsParallel && !parallelAvailable) {
-    process.stdout.write('GNU parallel not found on this host — bats runs serially.\n');
-  }
-
   let specs;
   try {
     specs = buildCommands({
-      suite, runner, repoRoot: REPO_ROOT, tag, jobs: jobsFrom(env), parallelAvailable, extra, treeTar, gitMount, platform,
+      suite, runner, repoRoot: REPO_ROOT, tag, extra, treeTar, gitMount, platform,
     });
   } catch (err) {
     fail(err.message);
@@ -511,21 +503,24 @@ function main() {
 
 module.exports = {
   IMAGE_PREFIX,
-  DEFAULT_JOBS,
+  SCRIPTS_SUITE,
+  LEGACY_SUITE,
   SUITES,
-  BATS_GLOB,
+  SCRIPTS_TEST_GLOB,
   CONTAINER_MODULES,
   CONTAINER_TREE,
   TREE_EXCLUDES,
   NATIVE_COPY_EXCLUDES,
   COPY_MARKER,
-  DOCKER_MISSING_MESSAGE,
   parseArgs,
+  canonicalSuite,
   imageTag,
-  jobsFrom,
   resolveRunner,
   worktreeGit,
   buildCommands,
+  scriptsArgs,
+  scriptsArgv,
+  scriptsSelection,
   nativeCopyFilter,
   copyCheckout,
   tarArgs,

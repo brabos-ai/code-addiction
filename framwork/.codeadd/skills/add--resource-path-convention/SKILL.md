@@ -26,7 +26,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 ## When NOT to Use
 
-- Referencing scripts (`.codeadd/scripts/*.sh` and `.codeadd/scripts/*.cjs` are always correct — fixed path)
+- Referencing scripts (`.codeadd/scripts/*.cjs` is always correct — fixed path)
 - Referencing project files outside the framework (`docs/`, `src/`, etc.)
 - Writing code in `build.js` or `cli/` (these operate on the build/install pipeline, not agent runtime)
 
@@ -69,11 +69,11 @@ Everything the directory ships is reached by the literal path: `.codeadd/scripts
 
 ### Scripts (no variable needed)
 
-Shell and Node entries are both reached by the literal path — the binaries stay the same for every provider and for every install:
+Node entries are reached by the literal path — the entries stay the same for every provider and for every install:
 
 ```
-bash .codeadd/scripts/status.sh
-bash .codeadd/scripts/done.sh
+node .codeadd/scripts/status.cjs
+node .codeadd/scripts/done.cjs
 node .codeadd/scripts/backlog-cli.cjs
 node .codeadd/scripts/backlog-commit.cjs
 ```
@@ -112,7 +112,7 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 ```markdown
 ## STEP 1: Load Context
 1. Read {{cmd:add-plan}} — PRIMARY reference
-2. Run: bash .codeadd/scripts/status.sh
+2. Run: node .codeadd/scripts/status.cjs
 3. Read {{skill:add--backend-development/SKILL.md}}
 4. For components, Grep {{skill:add--ux-design/shadcn-docs.md}}
 ```
@@ -123,7 +123,7 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 ## STEP 1: Load Context
 Read .codeadd/commands/add-plan.md          ← BROKEN: doesn't exist after install
 cat .codeadd/skills/backend-development/SKILL.md  ← BROKEN: wrong path
-bash .codeadd/scripts/status.sh             ← CORRECT: scripts are at .codeadd/
+node .codeadd/scripts/status.cjs             ← CORRECT: scripts are at .codeadd/
 ```
 
 ## Validation Checklist

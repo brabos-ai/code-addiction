@@ -70,7 +70,7 @@ For `/add-diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 For `/add-review` — the **feature-level aggregate** written at
 `docs/features/<feature-id>/review-NNN.md`, flat at the feature-directory root.
 It is one of two verdicts `/add-done` STEP 4.0 can gate on — the other is
-`/add-build`'s `Final review:` ledger line. `converge-gates.sh` reads the
+`/add-build`'s `Final review:` ledger line. `converge-gates.cjs` reads the
 **highest-numbered** review only when no line written after it exists
 (`REVIEW_SOURCE=review`); otherwise the build's line decides.
 
@@ -78,13 +78,13 @@ Distinct from `qa-validation`, which stays per scope under
 `_tests/run-NNN/`. Both are written every run: one review round produces ONE
 `review-NNN.md` covering every in-scope subfeature, plus one
 `qa-validation-NNN.md` per scope. The aggregate never replaces the per-scope
-reports — `qa-evidence.sh validate` / `working-baseline` / `previous` and
+reports — `qa-evidence.cjs validate` / `working-baseline` / `previous` and
 `/add-done` all bind to those.
 
 - **ID:** `<feature-id>-review-NNN` — a **per-feature sequence**, starting `001`, allocated as the highest existing `review-NNN.md` in the feature directory plus one. Per feature, NOT per scope: a round produces one consolidated document, so mirroring `qa-validation`'s per-scope sequences would leave "the highest" undefined across independent sequences and force `/add-done` into a loop. See `{{skill:add--id-convention/SKILL.md}}`.
 - **Frontmatter:** `id: <feature-id>-review-NNN`, `type: review`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]` (mirrors the field `qa-validation` already carries — every in-scope `SFxx` this round covers; on a simple feature the value is the feature scope, `[feature]`). ⛔ **Mandatory in every review document, including one written with `qa-pipeline` disabled** — `/add-review` resolves it in its ungated bootstrap step, never in a QA step, precisely so this field is always available, `branch`, `status: open | finalized`. `status` starts `open` and is set to `finalized` by `/add-build` exactly once, when it has appended its resolution annex.
 - **Sections:** TOC · Quality Gate Report · Spec Compliance Audit · Code Review Summary · Product Validation · QA Judgement · Fix Routing · Resolution Annex. **`## TOC` is required** — 7 H2 sections, so the universal >3-H2 TOC rule applies.
-- **Mandatory line:** `> **QA baseline:** <value>` immediately under the date/branch header. Emit `none` when no working run exists; NEVER omit it. `/add-done` BLOCKS on its absence and never infers a baseline. **Format:** `<value>` is `none`, or one or more `<scope>:<run>` entries — `scope` is `feature` or `SFxx`, `run` is `run-NNN` — with multiple entries separated exactly as `qa-evidence.sh` accepts (comma-joined, e.g. `feature:run-001,SF02:run-003`). `qa-evidence.sh` is the sole authority for this shape: `<value>` is its stdout, verbatim, never authored, reformatted, or hand-assembled.
+- **Mandatory line:** `> **QA baseline:** <value>` immediately under the date/branch header. Emit `none` when no working run exists; NEVER omit it. `/add-done` BLOCKS on its absence and never infers a baseline. **Format:** `<value>` is `none`, or one or more `<scope>:<run>` entries — `scope` is `feature` or `SFxx`, `run` is `run-NNN` — with multiple entries separated exactly as `qa-evidence.cjs` accepts (comma-joined, e.g. `feature:run-001,SF02:run-003`). `qa-evidence.cjs` is the sole authority for this shape: `<value>` is its stdout, verbatim, never authored, reformatted, or hand-assembled.
 - **Depth floor:**
   - **Quality Gate Report** — one row per gate (Build, Spec Compliance, Code Review Score, Product Validation, Validation Gates, QA Judgement) plus a bold `**Overall**` row. `Overall = PASSED` only when every gate is PASSED or SKIPPED. `/add-done` parses the `| **Overall** |` row, so its literal shape is load-bearing.
   - **QA Judgement** — per-scope roll-up: scope, run-NNN, severity counts, and a relative link to that scope's `qa-validation-NNN.md`. **Two ⊘ values, two diagnoses, and neither blocks:** `⊘ FEATURE OFF` when `qa-pipeline` is disabled, so `/add-review` carried no QA steps at all — remedy `codeadd features enable qa-pipeline`, then `/add-qa-setup`; `⊘ NOT SET UP` when the steps ran and stopped at the receipt gate — remedy `/add-qa-setup` alone. Writing the first as the second sends the reader to a command that cannot fix it.

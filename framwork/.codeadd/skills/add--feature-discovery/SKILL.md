@@ -11,8 +11,8 @@ description: Use when analyzing codebase for a specific feature - creates/update
 - mention: add--architecture-discovery
 - mention: add--code-review
 - mention: add--investigation
-- script: init.sh
-- script: status.sh
+- script: init.cjs
+- script: status.cjs
 -->
 
 Skill for technical codebase analysis focused on a specific feature. Persists analysis in `discovery.md` for reuse across sessions.
@@ -63,7 +63,7 @@ cat docs/features/[FEATURE_ID]/discovery.md
 **Cache:** IF `past-features.md` exists AND `metadata.updated` = today → reuse, skip Phase 1.5.
 
 **Required input:**
-- `RECENT_CHANGELOGS` (output of `init.sh` or `status.sh`)
+- `RECENT_CHANGELOGS` (output of `init.cjs` or `status.cjs`)
 - `about.md` of the current feature
 
 **Process:**

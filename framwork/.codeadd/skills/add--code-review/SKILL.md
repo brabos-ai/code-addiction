@@ -16,7 +16,7 @@ description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Arch
 - mention: add--feature-specification
 - mention: /add-plan
 - command: /add-build
-- script: status.sh
+- script: status.cjs
 -->
 
 Skill for validating implemented code against project standards.
@@ -249,7 +249,7 @@ Weights and status (lookup):
 
 ### Phase 1: Load Context & Create Todos
 
-1. `bash .codeadd/scripts/status.sh`
+1. `node .codeadd/scripts/status.cjs`
 2. Read reference skills (backend, database, frontend, security)
 3. Read `AGENTS.md`
 4. Identify ALL changed files
@@ -291,7 +291,7 @@ Generate the review report at `docs/features/${featureId}/review-NNN.md` (next n
 
 - Create TodoWrite BEFORE starting review and update it during each phase
 - Load reference skills BEFORE review
-- Run `status.sh` FIRST
+- Run `status.cjs` FIRST
 - Apply routed fixes when dispatched by `/add-build`
 - Verify build
 - Document before/after
