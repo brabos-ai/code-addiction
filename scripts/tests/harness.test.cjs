@@ -144,3 +144,30 @@ test('the case map is internally consistent about suites and cases', () => {
     }
   }
 });
+
+test('every changed case is observed and every skip names why', () => {
+  // JSON-schema-level guard over the per-case disposition refinement (F27). A
+  // case may leave `transfer` only when it records what changed, and a case
+  // marked `skipped` must say why — so a substitution or a platform skip can
+  // never be recorded as an unexplained default.
+  const map = h.loadCaseMap();
+  const dispositions = new Set(['transfer', 'substituted', 'retired']);
+  for (const s of map.scripts) {
+    for (const c of s.cases) {
+      assert.ok(dispositions.has(c.disposition), `${c.id} disposition is unknown: ${c.disposition}`);
+      if (c.disposition !== 'transfer') {
+        assert.ok(
+          typeof c.observation === 'string' && c.observation.trim() !== '',
+          `${c.id} is ${c.disposition} but carries no observation`,
+        );
+      }
+      if (c.skipped !== undefined) {
+        assert.equal(c.skipped, true, `${c.id} skipped marker is not true`);
+        assert.ok(
+          typeof c.observation === 'string' && c.observation.trim() !== '',
+          `${c.id} is skipped but names no reason`,
+        );
+      }
+    }
+  }
+});
