@@ -148,16 +148,18 @@ test('hotfix-gates#004 — diagnosis-baseline distinguishes symlinks executables
   } catch {
     return t.skip('native symlinks unavailable');
   }
-  const unusual = path.join(r.repo, 'odd\tname\n.txt');
+  const unusualName = process.platform === 'win32' ? 'odd name ü.txt' : 'odd\tname\n.txt';
+  const unusual = path.join(r.repo, unusualName);
   h.write(unusual, 'odd\n');
 
   const res = h.runScript('hotfix-gates', ['diagnosis-baseline'], { cwd: r.repo });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /deleted\t100644\t-\t6f6c642e747874/);
   assert.match(res.output, /staged\t100644\t[^\n]*\t6e65772e747874/);
-  assert.match(res.output, /untracked\t100755\t[^\n]*\t65786563757461626c652e7368/);
+  const executableMode = fs.statSync(path.join(r.repo, 'executable.sh')).mode & 0o111 ? '100755' : '100644';
+  assert.match(res.output, new RegExp(`untracked\\t${executableMode}\\t[^\\n]*\\t65786563757461626c652e7368`));
   assert.match(res.output, /untracked\t120000\t[^\n]*\t6c696e6b2e747874/);
-  assert.match(res.output, /\t6f6464096e616d650a2e747874/);
+  assert.ok(res.output.includes('\t' + Buffer.from(unusualName).toString('hex')));
 });
 
 // ─── hotfix-gates#005..#006 — diagnosis-check ────────────────────────────────

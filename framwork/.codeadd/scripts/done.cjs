@@ -197,7 +197,8 @@ function physicalGitPath(flag) {
   const raw = res.stdout.trim();
   if (raw === '') return '';
   try {
-    return fs.realpathSync(path.resolve(CWD, raw));
+    const resolved = fs.realpathSync.native(path.resolve(CWD, raw));
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
   } catch {
     return '';
   }
