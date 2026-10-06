@@ -218,7 +218,9 @@ test('honors the legacy /tmp release-notes path as an adapter', () => {
   try {
     cleanupNotes(version);
     writeNotes(version, 'LEGACY-NOTES-MARKER\n\nlegacy adapter\n', { legacy: true });
-    assert.equal(fs.existsSync(notesPath(version)), false, 'the portable path stays absent');
+    if (path.resolve(os.tmpdir()) !== path.resolve('/tmp')) {
+      assert.equal(fs.existsSync(notesPath(version)), false, 'the distinct portable path stays absent');
+    }
     writeVersion(r.repo, version);
     const res = runTag(r.repo);
     assert.equal(res.status, 0, h.stripAnsi(res.output));

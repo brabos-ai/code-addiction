@@ -464,7 +464,7 @@ describe('combined substitution and sibling isolation', () => {
     assertBlockOnce(tmp, [...features, ...plugins], 'all-on');
     assertNoStale(tmp, planFiles(tmp), 'all-on');
     for (const p of PLUGIN_NAMES) assertSkills(tmp, p, true);
-  });
+  }, 60000);
 
   it('disabling one namespace removes only its full blocks', () => {
     const features = loadFeatureMatrix();

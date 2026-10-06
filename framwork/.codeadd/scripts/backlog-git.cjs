@@ -143,14 +143,14 @@ function currentBranch(root) {
 
 /** `worktree list --porcelain`, parsed. */
 function listWorktrees(root) {
-  const listing = run(['worktree', 'list', '--porcelain'], root, { allowFailure: true });
+  const listing = run(['worktree', 'list', '--porcelain', '-z'], root, { allowFailure: true });
   if (listing.status !== 0) return [];
   const trees = [];
   let tree = {};
   const flush = () => {
     if (Object.keys(tree).length) { trees.push(tree); tree = {}; }
   };
-  for (const line of (listing.stdout || '').split('\n')) {
+  for (const line of (listing.stdout || '').split('\0')) {
     const sep = line.indexOf(' ');
     const key = sep === -1 ? line : line.slice(0, sep);
     const value = sep === -1 ? '' : line.slice(sep + 1);
@@ -167,9 +167,14 @@ function listWorktrees(root) {
 
 /** Our fixed capture worktree's registration, or null when absent. */
 function findOurWorktree(root) {
-  const abs = path.resolve(path.join(root, WORKTREE));
+  const canonical = (file) => {
+    let resolved;
+    try { resolved = fs.realpathSync.native(file); } catch { resolved = path.resolve(file); }
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  const abs = canonical(path.join(root, WORKTREE));
   for (const tree of listWorktrees(root)) {
-    if (path.resolve(tree.worktree) === abs) return tree;
+    if (canonical(tree.worktree) === abs) return tree;
   }
   return null;
 }

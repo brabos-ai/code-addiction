@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 const tempBase = () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-pub-'));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-pub-')));
   ROOTS.push(dir);
   return dir;
 };
