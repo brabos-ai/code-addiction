@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 /**
  * Plan 2026-09-19T122048 — optional review, build final review.
  * Validation Matrix, levels L2 (text contract), L3 (build prompt) and L4
- * (wording sweep). L1 lives in framwork/.codeadd/scripts/tests/converge-gates.bats.
+ * (wording sweep). L1 lives in the native scripts/tests/converge-gates.test.cjs.
  *
  * Written RED against the pre-plan tree: /add-done blocks on a missing review,
  * /add-build hands every automatic delivery to /add-review, and nothing in the

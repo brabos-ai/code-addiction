@@ -18,9 +18,9 @@ import { FEATURES } from '../src/features.js';
  * It is the home the plan's Ecosystem Impact table names for L2, L3 and L4's
  * assertions. Two things are deliberately NOT here:
  *
- *   - L1 lives in `framwork/.codeadd/scripts/tests/delivered.bats`. The script
- *     contract is bash, and bats is where every other script in this framework
- *     is proven.
+ *   - L1 lives in the native `scripts/tests/delivered.test.cjs`. The script
+ *     contract is native Node, and the native suite is where every other
+ *     script in this framework is proven.
  *   - L4.1-L4.5 (toggle states, shared-anchor non-collision, partial disable,
  *     order independence, full round-trip) are covered by
  *     `injection-exclusivity.integration.test.js` and
@@ -48,7 +48,7 @@ const CONTRACTS = () => JSON.parse(read(CODEADD, 'contracts.json'));
 
 const REFERENCE = path.join(CODEADD, 'skills', 'add--doc-schemas', 'references', 'delivery-index.md');
 const SCRIPT = path.join(CODEADD, 'scripts', 'delivered.cjs');
-const BATS = path.join(CODEADD, 'scripts', 'tests', 'delivered.bats');
+const NATIVE_TEST = path.join(ROOT, 'scripts', 'tests', 'delivered.test.cjs');
 const FRAGMENT = path.join(CODEADD, 'fragments', 'docs-pruning', 'add-done.md');
 
 const cmd = (name) => read(CODEADD, 'commands', `${name}.md`);
@@ -416,7 +416,7 @@ describe('L5.7 — every F-block landed', () => {
     ['F1  reference', () => exists(REFERENCE)],
     ['F2  skill registration', () => usesBlock(skill('add--doc-schemas')).includes('delivery-index.md')],
     ['F3  delivered.cjs', () => exists(SCRIPT)],
-    ['F4  delivered.bats', () => exists(BATS)],
+    ['F4  delivered native suite', () => exists(NATIVE_TEST)],
     ['F5  add-done STEP 6 write', () => cmd('add-done').includes('delivered.cjs write')],
     // Scoped to the STEP 7 slice. An unscoped /STEP 7[\s\S]*find/ matches the
     // word "find" anywhere below STEP 7 and is green before F6 lands.

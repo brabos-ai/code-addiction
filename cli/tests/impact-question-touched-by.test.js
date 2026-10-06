@@ -9,9 +9,9 @@ import { run } from '../../mcp/engine.mjs';
  * Plan 2026-09-14T145149 — the impact question: which deliveries touched this
  * file.
  *
- * Validation Matrix levels L2 and L3. L1 lives in
- * `framwork/.codeadd/scripts/tests/delivered.bats`, because the contract it
- * proves is bash.
+ * Validation Matrix levels L2 and L3. L1 lives in the native
+ * `scripts/tests/delivered.test.cjs`, because the contract it
+ * proves is the native delivery reader.
  *
  * RED FIRST for the assertions that carry the change; each was confirmed
  * failing before F1 landed. Assertions that pass today are labelled GUARD at

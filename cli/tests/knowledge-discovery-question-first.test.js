@@ -7,9 +7,9 @@ import { ACTIONS } from '../../mcp/engine.mjs';
  * Plan 2026-09-14T102848 — the product layer's knowledge discovery answers the
  * question it was asked.
  *
- * Validation Matrix levels L2 and L3. L1 lives in
- * `framwork/.codeadd/scripts/tests/delivered.bats`, because the contract it
- * proves is bash.
+ * Validation Matrix levels L2 and L3. L1 lives in the native
+ * `scripts/tests/delivered.test.cjs`, because the contract it
+ * proves is the native delivery reader.
  *
  * RED FIRST for the assertions that carry the change. Every one of those was
  * authored and confirmed FAILING against the tree before F1 landed.

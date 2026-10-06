@@ -32,7 +32,7 @@ const P = {
   featurePrBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'feature-pr.bats'),
   ecosystem: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--ecosystem', 'SKILL.md'),
   convergeGates: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'converge-gates.cjs'),
-  convergeBats: path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'tests', 'converge-gates.bats'),
+  convergeTest: path.join(ROOT, 'scripts', 'tests', 'converge-gates.test.cjs'),
   done: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add-done.md'),
   planToReady: path.join(ROOT, 'framwork', '.codeadd', 'commands', 'add.plan-to-ready.md'),
   commit: path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--commit', 'SKILL.md'),
@@ -68,7 +68,7 @@ const CALLERS = ['newCmd', 'plan'];
 // gate-count prose moved into add-build.md's Checkpoint Sequence, which
 // already carries a false-positive "four gates below" phrase of its own
 // (see L2.7) and so cannot join this list without re-triggering that guard.
-const GATE_SWEEP = ['convergeGates', 'convergeBats', 'commit', 'ecosystem'];
+const GATE_SWEEP = ['convergeGates', 'convergeTest', 'commit', 'ecosystem'];
 // add-done is swept by F3, not F2: its parse list and its gate-count sentence
 // are what STEP 4.3 reads, and a block that names a sub-step it does not create
 // leaves a pointer resolving to nothing.
@@ -148,7 +148,7 @@ describe('L1 — the deletion (F1)', () => {
 
 describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
   // The behavioural half of L2 — what the gate RETURNS on each tree shape —
-  // lives in framwork/.codeadd/scripts/tests/converge-gates.bats. A script's
+  // lives in the native scripts/tests/converge-gates.test.cjs. A script's
   // behaviour is testable where the script runs; only its prose is testable
   // here.
 
@@ -189,9 +189,9 @@ describe('L2 — GATE_LEDGER, the content sweep (F2, F3)', () => {
     expect(read(P.build)).toContain(
       'Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 all held:',
     );
-    const bats = read(P.convergeBats);
-    expect(bats).toContain('| Spec Compliance | ✅ PASSED | 4/4 items compliant |');
-    expect(bats).toContain('| Product Validation | ✅ PASSED | RF: 4/4, RN: 2/2 |');
+    const native = read(P.convergeTest);
+    expect(native).toContain('| Spec Compliance | ✅ PASSED | 4/4 items compliant |');
+    expect(native).toContain('| Product Validation | ✅ PASSED | RF: 4/4, RN: 2/2 |');
   });
 
   it('L2.8: both git log --grep=GATES_OK passages survive', () => {

@@ -44,9 +44,7 @@ const SIDECARS = new Set([
 
 const ALLOWED = {
   'framwork/.codeadd/scripts/migrate-context-files.cjs': 'the migration itself — it names every legacy file it folds in',
-  'framwork/.codeadd/scripts/tests/migrate-context-files.bats': 'the migration suite — its fixtures are legacy files',
   'framwork/.codeadd/scripts/init.cjs': 'emits LEGACY_CONTEXT, so it tests for each legacy file',
-  'framwork/.codeadd/scripts/tests/init.bats': 'the LEGACY_CONTEXT fixtures',
   'scripts/tests/init.test.cjs': 'the native port of the init suite — its fixtures are legacy files',
   'scripts/tests/migrate-context-files.test.cjs': 'the native port of the migration suite — its fixtures are legacy files',
   'scripts/tests/native-script-cases.json': 'the migration case map — it enumerates the old Bats cases, whose fixtures name the legacy files',
