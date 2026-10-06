@@ -12,7 +12,7 @@ Two layers with distinct purposes.
 
 Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
 `commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
-`scripts/*.sh` plus the shipped CommonJS backlog entries at `scripts/*.cjs`.
+`scripts/*.cjs` — the native runtime, entry points and shared cores alike.
 
 The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
 `/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an
@@ -180,7 +180,7 @@ Key files:
 | `scripts/run-tests.js` | Backs `npm test`, `test:scripts` and `test:all` — runs the suites natively, or in a Linux container on Windows |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
-| `framwork/.codeadd/scripts/*` | Shipped verbatim (.sh shells and the shipped CommonJS backlog `.cjs` entries). Each documents its own usage and exit codes in its header |
+| `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
 
@@ -189,7 +189,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 | Sidecar | Carries | Read by |
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
-| `contracts.json` | The `shape` of every `## Materializes` block | `status.sh` |
+| `contracts.json` | The `shape` of every `## Materializes` block | `status.cjs` |
 | `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/`, the composable layer included — fragments declare what they dispatch, and a plugin's bundled skills, the shipped templates and a node per feature and per plugin are all in it | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
@@ -238,7 +238,7 @@ A command that materializes state into a user's project declares a `## Materiali
 | Receipt schema | `add--doc-schemas/references/receipt.md` |
 | Receipt in user project | `docs/qa/qa-setup.md` |
 | Comparison procedure | `add--setup-contract` skill |
-| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.sh` |
+| Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 
 Current consumer: `add-qa-setup` only. `add-wiki` keeps its own git-based `.meta.json` staleness — the two coexist deliberately.
 
@@ -282,5 +282,5 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | Doc schemas, voice, output length | `add--doc-schemas` |
 | How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
 | Setup-contract comparison | `add--setup-contract` |
-| A script's contract and exit codes | that script's own header, plus its `.bats` suite |
+| A script's contract and exit codes | that script's own header, plus its native `scripts/tests/<name>.test.cjs` suite |
 | Injection anchor internals | `cli/src/injection-core.js` |

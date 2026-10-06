@@ -66,6 +66,8 @@ const GROUPS = {
     .filter((n) => fs.existsSync(path.join(d, 'skills', n, 'SKILL.md'))),
   agents: (d) => filesWith(path.join(d, 'agents'), '-agent.md').map((f) => f.slice(0, -9)),
   scripts: (d) => [
+    // The `.sh` glob is backward-compat only: the shipped runtime is native
+    // `.cjs` now and no `.sh` remains, but one would still be listed if added.
     ...filesWith(path.join(d, 'scripts'), '.sh'),
     ...filesWith(path.join(d, 'scripts'), '.cjs'),
   ],

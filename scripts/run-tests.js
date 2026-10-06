@@ -57,7 +57,7 @@
  *   canonicalSuite  → `bats` folds into `scripts`
  *   resolveRunner   → override, then native everywhere
  *   buildCommands   → the spawn specs for a suite on a runner
- *   scriptsArgs     → node --test flags, then the test paths or the default glob
+ *   scriptsArgv / scriptsArgs → node --test flags, then the test paths or the default glob
  *   combineExitCodes / exitCodeFrom → never coerce a failure to 0
  *   main            → announce, isolate, run, forward
  */
@@ -218,22 +218,38 @@ function vitestArgs(extra) {
 }
 
 /**
- * The native scripts suite's arguments. Node's test runner wants its own flags
+ * The native scripts suite's selection. Node's test runner wants its own flags
  * BEFORE positional paths, so `--test-name-pattern=…` is forwarded ahead of the
  * selection and any file argument replaces the default glob. With no argument,
  * every scripts/tests/*.test.cjs runs.
+ *
+ * Two shapes, one rule: `scriptsArgv` is the native argv (its program is
+ * process.execPath), and `scriptsArgs` is the flags-and-target string the
+ * container's `bash -c` composes after `node --test`. The selection is named
+ * once so the two runners cannot point at different files.
  */
-function scriptsArgs(extra) {
+function scriptsSelection(extra) {
   const flags = extra.filter((a) => a.startsWith('-'));
   const paths = extra.filter((a) => !a.startsWith('-'));
-  const target = paths.length > 0 ? paths.join(' ') : SCRIPTS_TEST_GLOB;
-  return [flags.join(' '), target].filter(Boolean).join(' ');
+  return { flags, target: paths.length > 0 ? paths : [SCRIPTS_TEST_GLOB] };
+}
+
+function scriptsArgv(extra) {
+  const { flags, target } = scriptsSelection(extra);
+  return ['--test', ...flags, ...target];
+}
+
+function scriptsArgs(extra) {
+  const { flags, target } = scriptsSelection(extra);
+  return [...flags, ...target].join(' ');
 }
 
 /**
- * The spawn specs for one suite on one runner. The native branch goes through a
- * shell with the whole command as one string, because that is exactly what npm
- * does with a `scripts` entry. `all` natively is two specs, run in turn.
+ * The spawn specs for one suite on one runner.
+ *
+ * Native: the vitest spec is an npm shell command — npm needs the shell — while
+ * the scripts spec is process.execPath plus a `--test …` argv with shell:false,
+ * so no shell parses a test path. `all` natively is the two specs, run in turn.
  *
  * The container branch must NOT go through the outer shell. On Windows that
  * shell is cmd.exe, which does not understand the quoting around the inner
@@ -255,9 +271,18 @@ function buildCommands({ suite, runner, repoRoot, tag, extra = [], treeTar = '',
     const windowsFlags = platform === 'win32' ? ['--no-file-parallelism', '--testTimeout=30000'] : [];
     const vitestFlags = [...windowsFlags, ...extra];
     const vitest = vitestFlags.length > 0 ? `npm --prefix cli test --${vitestArgs(vitestFlags)}` : 'npm --prefix cli test';
-    const scripts = `node --test ${scriptsArgs(extra)}`;
-    const pick = { vitest: [vitest], scripts: [scripts], all: [vitest, scripts] }[canonical];
-    return pick.map((command) => ({ file: command, args: [], shell: true, display: command }));
+    // npm is reached through the shell because npm is a shell command; the
+    // scripts suite is not. Its argv goes to process.execPath directly, so a
+    // path with a space or a metacharacter stays one argument.
+    const vitestSpec = { file: vitest, args: [], shell: true, display: vitest };
+    const argv = scriptsArgv(extra);
+    const scriptsSpec = {
+      file: process.execPath,
+      args: argv,
+      shell: false,
+      display: `node ${argv.join(' ')}`,
+    };
+    return { vitest: [vitestSpec], scripts: [scriptsSpec], all: [vitestSpec, scriptsSpec] }[canonical];
   }
 
   // --no-same-owner: extracted as root, tar would otherwise keep the host's
@@ -483,6 +508,8 @@ module.exports = {
   worktreeGit,
   buildCommands,
   scriptsArgs,
+  scriptsArgv,
+  scriptsSelection,
   nativeCopyFilter,
   copyCheckout,
   tarArgs,

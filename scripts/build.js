@@ -625,7 +625,7 @@ function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
   if (decl.contract !== resourceName) {
     throw new Error(
       `Contract block in ${resourceName} declares contract: ${decl.contract}. ` +
-        `The sidecar is keyed by this value and both status.sh and add-setup-contract ` +
+        `The sidecar is keyed by this value and both status.cjs and add-setup-contract ` +
         `look it up by command name — a mismatch keys the contract under a name nothing ` +
         `ever finds, leaving every project's staleness check silently blind.`,
     );
@@ -823,7 +823,7 @@ function usesTargetId(kind, target) {
   if (kind === 'mention' || kind === 'handoff') {
     // Reuses sigils the framework's prose already uses, so a mention is written
     // the way the thing is written where it was mentioned:
-    //   @reviewer-agent -> agent   /add.plan -> command   *.sh -> script
+    //   @reviewer-agent -> agent   /add.plan -> command   *.cjs -> script
     //   anything else   -> skill (much the commonest case)
     if (target.startsWith('@')) return `agent/${target.slice(1)}`;
     if (target.startsWith('/')) return `command/${target.slice(1)}`;
@@ -1447,7 +1447,7 @@ function checkArtefactGraph(graph, { readSource, productRoot = readSource ? null
   //    an internal command.
   //
   // The reverse direction stays open on purpose. `/add-framework--done` names
-  // `delivered.sh` because a cross-layer `uses:` target resolves inside the
+  // `delivered.cjs` because a cross-layer `uses:` target resolves inside the
   // declaring artefact's own layer and would dangle, leaving the prose mention
   // as the only way to write it.
   // 4. It does not read `proseOf()`. That helper answers "what did the author
@@ -1751,12 +1751,17 @@ const LINTABLE_EXTENSIONS = new Set([
 // never a lint rule.
 const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
 
-// Exact allowlist for non-script shipped exceptions. The native runtime is
-// admitted by the RULE below, not by path — the six legacy backlog modules
-// qualify on their own merits — so this set names only files that cannot pass
-// that rule but must still ship. It is empty today; adding to it is the last
-// resort, never the first, because each entry is an unanalysed hole.
-const SHIPPED_SOURCE_ALLOWLIST = new Set([]);
+// Exact allowlist for shipped exceptions the built-ins-only RULE below cannot
+// admit. The native runtime is admitted by the rule, not by path — the backlog
+// modules qualify on their own merits — so this set names only files that must
+// ship yet cannot pass that rule. Each entry is an unanalysed hole, so adding
+// one is the last resort, never the first; the rationale is recorded inline.
+const SHIPPED_SOURCE_ALLOWLIST = new Set([
+  // Probes the PROJECT's optional @playwright/test through require.resolve and
+  // createRequire, so its specifier is dynamic by nature — built-ins-only
+  // cannot admit it, yet QA setup requires the probe. The only entry.
+  'framwork/.codeadd/scripts/qa-preflight.cjs',
+]);
 
 // What a native shipped `.cjs` may require: a `node:` builtin, or a `./`
 // sibling `.cjs` in the SAME directory. Anything else — a bare package name, a
@@ -1780,15 +1785,24 @@ function isBuiltinSpecifier(spec) {
 
 /**
  * Every static module specifier in a CommonJS source, plus whether any was
- * written in a form this guard cannot verify (a dynamic `require(expr)` or
- * `import(expr)`). An unverifiable specifier is an offender: the point is that
- * the closure be provable statically.
+ * written in a form this guard cannot verify. Three forms are unverifiable: a
+ * dynamic `require(expr)` or `import(expr)`, and an indirect require — a
+ * require factory invoked on a computed value, `createRequire(…)(expr)`, whose
+ * specifier never appears as the argument of a `require(` call. An unverifiable
+ * specifier is an offender: the point is that the closure be provable
+ * statically.
  */
 function moduleSpecifiers(source) {
   const specs = [];
   let unverifiable = false;
   const literal = (arg) => {
     const m = /^(['"])([^'"]+)\1$/.exec(arg.trim());
+    return m ? m[2] : null;
+  };
+  // The first argument as a leading literal, ignoring any options object after
+  // it — `require.resolve('@scope/pkg', { paths: […] })` still names a specifier.
+  const leadingLiteral = (arg) => {
+    const m = /^\s*(['"])([^'"]+)\1/.exec(arg);
     return m ? m[2] : null;
   };
   for (const re of [/\brequire\s*\(([^)]*)\)/g, /\bimport\s*\(([^)]*)\)/g]) {
@@ -1799,6 +1813,25 @@ function moduleSpecifiers(source) {
       else specs.push(spec);
     }
   }
+  // `require.resolve(<spec>…)` names a specifier the `require(` scan never sees,
+  // because `.resolve` sits between the name and the paren. The capture stops at
+  // the first `)` — enough to read the leading literal, and a non-literal there
+  // is unverifiable rather than silently ignored.
+  {
+    const re = /\brequire\s*\.\s*resolve\s*\(([^)]*)/g;
+    let m;
+    while ((m = re.exec(source))) {
+      const spec = leadingLiteral(m[1]);
+      if (spec === null) unverifiable = true;
+      else specs.push(spec);
+    }
+  }
+  // A require factory called on a value — `createRequire(…)(expr)`. The nested
+  // call is the marker, and the whole file is unverifiable: the outer
+  // invocation's specifier is invisible to the `require(` scan. An ALIASED
+  // factory (`const r = createRequire(…); r('pkg')`) is beyond a static scan;
+  // the closure admits no such indirection in the files it ships.
+  if (/\bcreateRequire\s*\([^)]*\)\s*\(/.test(source)) unverifiable = true;
   // Static ESM form only: anchored to an import/export statement so the word
   // "from" inside ordinary prose or a string cannot be read as a specifier.
   for (const re of [/^\s*import\s+[^;\n]*?from\s*(['"])([^'"]+)\1/gm, /^\s*export\s+[^;\n]*?from\s*(['"])([^'"]+)\1/gm]) {
@@ -1874,8 +1907,9 @@ function assertNoLintableSources(map, codeaddDir = CODEADD_DIR) {
   throw new Error(
     `Shipped tree carries linter-visible source file(s):\n${list}\n\n` +
       `These install into the consumer's repository and break their lint/format run.\n` +
-      `Delete the file, write the logic as a shell script under .codeadd/scripts/, ` +
-      `or ship it as a built-ins-only .cjs directly under .codeadd/scripts/.`,
+      `Delete the file, or ship it as a built-ins-only .cjs directly under ` +
+      `.codeadd/scripts/ (the rule above). A probe that legitimately needs an ` +
+      `external specifier goes in SHIPPED_SOURCE_ALLOWLIST with a rationale — the last resort.`,
   );
 }
 
@@ -2393,7 +2427,7 @@ function main() {
   CONTRACTS = {};
 
   // Clear the sidecar BEFORE building. A gate firing mid-build aborts before
-  // writeContracts(), and a leftover file from an earlier run would let status.sh
+  // writeContracts(), and a leftover file from an earlier run would let status.cjs
   // read a stale `version` and report a behind project as current — the exact
   // outcome I8 exists to prevent.
   // Driven by SIDECARS so a new one is cleared without a second edit here.
