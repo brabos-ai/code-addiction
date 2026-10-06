@@ -372,7 +372,7 @@ describe('L3 the command and skill texts that held the duty', () => {
 
   it('L3.1 the close-out CI gate runs, commits AND pushes, before the clean-tree check', () => {
     const done = read('workbench', 'skills', 'add-framework--done', 'SKILL.md');
-    const list = sub(done, "CI's four commands");
+    const list = sub(done, "CI's required checks");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
     expect(item1).toContain('scripts/inventory.js');
@@ -455,7 +455,7 @@ describe('L3 the command and skill texts that held the duty', () => {
 
   it('L3.10 add-framework--done says its sync is the net, not the first writer', () => {
     const done = read('workbench', 'skills', 'add-framework--done', 'SKILL.md');
-    const list = sub(done, "CI's four commands");
+    const list = sub(done, "CI's required checks");
     const item1 = list.slice(list.indexOf('\n1. '), list.indexOf('\n2. '));
 
     // Still runs, still commits, still pushes — but the normal outcome is now

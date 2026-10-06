@@ -14,15 +14,15 @@
  *
  * The build itself writes framwork/ output, the sidecars and cli/src/mcp, so it
  * must never run on a developer's checkout. Root `npm test` runs the suite on a
- * copy (scripts/run-tests.js — a container on Windows, a temp directory
- * elsewhere) and marks it; CI's machine is thrown away after the job. Anywhere
- * else, setup refuses before writing anything.
+ * authorized isolated worker (scripts/run-tests.js); explicitly opted-in CI
+ * has its own disposable checkout. Setup refuses before writing anything else.
  */
 
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import testContext from '../../../scripts/test-context.cjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
@@ -57,13 +57,8 @@ export const COPY_MARKER = 'CODEADD_TESTS_COPY';
 
 /** Why setup must not run here, or null when it may. */
 export function refusal(env) {
-  if (env.CI || env[COPY_MARKER]) return null;
-  return [
-    'Refusing to run: this is the real checkout, and the suite rebuilds framwork/ output, its sidecars and cli/src/mcp.',
-    '',
-    '  Run `npm test` at the repository root — it runs on a copy and removes it afterwards.',
-    '  One file: `npm test -- tests/<name>.test.js`.',
-  ].join('\n');
+  const why = testContext.refusal({ env, selection: env.CODEADD_TESTS_SELECTION, leaf: 'cli' });
+  return why ? `Refusing unauthorized CLI setup: ${why}. Run npm test at the root, or npm run test:cli -- tests/<name>.test.js for one file.` : null;
 }
 
 export default function setup() {

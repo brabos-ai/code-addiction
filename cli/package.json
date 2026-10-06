@@ -23,10 +23,10 @@
     "node": ">=22.19.0"
   },
   "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:package": "node tests/package-smoke.mjs"
+    "test": "node ../scripts/run-tests.js cli",
+    "test:watch": "node ../scripts/run-tests.js cli --watch",
+    "test:coverage": "node ../scripts/run-tests.js cli --coverage",
+    "test:package": "node ../scripts/run-tests.js package"
   },
   "dependencies": {
     "@clack/prompts": "^1.1.0",

@@ -76,31 +76,17 @@ jobs:
       - name: Negative control — Bash is rejected
         run: node scripts/no-bash-guard.js --probe
 
-      # Root `npm test` runs the cli vitest suite through scripts/run-tests.js:
-      # native, on a copy of the checkout, with the copy marker global-setup
-      # requires. The install, update, relocation and board-runtime proofs live
-      # in that suite (install.e2e, updater, installer, migrations,
-      # board-runtime, board-phase-writes).
-      - name: CLI suite (npm test)
+      # Explicitly authorized disposable Linux CI worker: CLI, scripts and package
+      # smoke share the canonical framework selection. Generic CI alone never opts in.
+      - name: Framework suite (CLI, scripts, package)
         env:
-          CODEADD_TESTS_RUNNER: native
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: framework
         run: node scripts/no-bash-guard.js --run "npm test"
 
-      # The root native script suite: Node's own test runner over
-      # scripts/tests/*.test.cjs, through the same isolated native runner.
-      - name: Scripts suite (npm run test:scripts)
-        env:
-          CODEADD_TESTS_RUNNER: native
-        run: node scripts/no-bash-guard.js --run "npm run test:scripts"
-
-      # GATE: pack the CLI and execute the npm-generated bin. Proves the
-      # installed/relocated runtime closure independent of the vitest run.
-      - name: Package smoke test
-        run: npm --prefix cli run test:package
-
   # The board app (board/). Its server imports the generated Node core at
-  # board/runtime/, which the package's pretest/prebuild/pretest:e2e hooks
-  # produce from framwork/.codeadd/scripts/ before anything runs — so this job
+  # board/runtime/, which the authorized worker prepares from product scripts,
+  # so this job
   # checks out the whole tree rather than a standalone closure. The e2e suite
   # serves the BUILT app through server.mjs at three viewports, so it runs
   # after the build. Web/board stay on the floor, one browser platform: the
@@ -125,6 +111,9 @@ jobs:
         run: npm ci
 
       - name: Typecheck and unit tests
+        env:
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: board
         run: npm test
 
       - name: Build
@@ -134,4 +123,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests (360, 768, 1080)
+        env:
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: board-e2e
         run: npm run test:e2e

@@ -2,6 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 import { writeFixture } from './e2e/fixture';
 import fs from 'node:fs';
 import { join } from 'node:path';
+import testContext from '../scripts/test-context.cjs';
+
+// Refuse before fixtures are written or any test server starts.
+testContext.authorize({ selection: process.env.CODEADD_TESTS_SELECTION, leaf: 'board-e2e' });
 
 // The e2e suite runs the BUILT app through server.mjs over a fixture project,
 // so what it proves is what `npm run board` serves. The fixture is written when
@@ -40,7 +44,7 @@ export default defineConfig({
   testMatch: '*.spec.ts',
   outputDir: './test-results/runs',
   fullyParallel: true,
-  reporter: [['list']],
+  reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   metadata: {
     layersURL: `http://127.0.0.1:${LAYERS_PORT}`,
   },
