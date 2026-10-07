@@ -437,6 +437,26 @@ describe('applyDesiredState — refusals', () => {
   });
 });
 
+describe('round trip (L3.2)', () => {
+  it('add opencode then remove it returns the installation to where it started', async () => {
+    seed(['claude'], { plugins: true, features: { 'qa-pipeline': true } });
+    const before = manifest();
+    const claudeBefore = Object.fromEntries(Object.entries(snapshot()).filter(([k]) => k.startsWith('.claude/')));
+
+    await providers(dir, ['add', 'opencode'], 'project');
+    expect(read('opencode.json')).toContain('codeadd-docs');
+    await providers(dir, ['remove', 'opencode', '--force'], 'project');
+
+    const after = manifest();
+    expect(after.providers).toEqual(before.providers);
+    expect(after.features).toEqual(before.features);
+    expect(after.plugins).toEqual(before.plugins);
+    expect(Object.fromEntries(Object.entries(snapshot()).filter(([k]) => k.startsWith('.claude/')))).toEqual(claudeBefore);
+    expect(fs.existsSync(abs('.opencode'))).toBe(false);
+    expect(JSON.parse(read('opencode.json')).mcp?.['codeadd-docs']).toBeUndefined();
+  });
+});
+
 describe('import order (L3.4)', () => {
   // installer.js imports modify.js and updater.js, and both import it back. The
   // cycle is safe only while every import is used at call time, never at load.

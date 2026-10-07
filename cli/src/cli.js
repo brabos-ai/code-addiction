@@ -10,6 +10,7 @@ import { validate } from './validator.js';
 import { config } from './config.js';
 import { features } from './features.js';
 import { plugins } from './plugins.js';
+import { providers, modify } from './modify.js';
 import { migrate } from './migrations.js';
 import { mcp } from './mcp.js';
 import { promptUninstallScope } from './prompt.js';
@@ -98,6 +99,10 @@ Commands:
   plugins list                 List external-tool plugins and their state
   plugins enable <name>        Enable a plugin (validate tool, inject + activate skills)
   plugins disable <name>       Disable a plugin (remove injections + skills)
+  providers list               List providers and which are installed
+  providers add <name>         Add a provider, keeping features and plugins
+  providers remove <name>      Remove a provider (asks first; --force skips)
+  modify                       Edit providers, features and plugins in one screen
   mcp --corpus=<name>          Serve the knowledge graph over MCP stdio (docs | artefacts)
   mcp --corpus=<name> --action=<verb>
                                Answer one verb and exit, for a provider with no MCP configured
@@ -107,7 +112,7 @@ Commands:
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates
 
-  (--global / --user installs into your home dir instead of the project; applies to install/update/uninstall/doctor/validate/config/features/plugins)
+  (--global / --user installs into your home dir instead of the project; applies to install/update/uninstall/doctor/validate/config/features/plugins/providers/modify)
 
 Examples:
   npx codeadd install
@@ -121,6 +126,10 @@ Examples:
   npx codeadd uninstall
   npx codeadd uninstall --force
   npx codeadd uninstall --global
+  npx codeadd providers list
+  npx codeadd providers add cursor
+  npx codeadd providers remove codex --force
+  npx codeadd modify
   npx codeadd doctor
   npx codeadd validate
   npx codeadd validate --repair
@@ -185,6 +194,10 @@ export async function runCli(argv) {
       await features(targetDir, args, scope);
     } else if (subcommand === 'plugins') {
       await plugins(targetDir, args, scope);
+    } else if (subcommand === 'providers') {
+      await providers(targetDir, args, scope);
+    } else if (subcommand === 'modify') {
+      await modify(targetDir, args, scope);
     } else if (subcommand === 'migrate') {
       // Reachable even when `update` would early-return on an already-current
       // project — which is the only way such a project can be repaired.
