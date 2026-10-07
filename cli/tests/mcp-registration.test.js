@@ -9,6 +9,7 @@ import {
   registrationLine,
   registerProvider,
   writeMcpRegistration,
+  unregisterProvider,
 } from '../src/mcp-registration.js';
 import { PROVIDERS, resolveSelected } from '../src/providers.js';
 
@@ -283,5 +284,92 @@ describe('F16 — the migration report reads correctly for an additive migration
     for (const rel of ['src/updater.js', 'src/migrations.js']) {
       expect(code(rel), rel).toMatch(/Migration: \$\{change\}/);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// unregisterProvider — the mirror of registerProvider, for provider removal (L1.2)
+// ---------------------------------------------------------------------------
+describe('unregisterProvider (L1.2)', () => {
+  const write = (rel, content) => {
+    const file = path.join(cwd, rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content, 'utf8');
+  };
+  const raw = (rel) => fs.readFileSync(path.join(cwd, rel), 'utf8');
+
+  it('mcpServers: removes only codeadd-docs and keeps the other server and every other field', () => {
+    write('.mcp.json', JSON.stringify({ name: 'mine', mcpServers: { other: { command: 'x' } } }, null, 2));
+    registerProvider(cwd, 'claude', '1.0.0');
+    expect(readJson('.mcp.json').mcpServers[SERVER_NAME]).toBeDefined();
+
+    const result = unregisterProvider(cwd, 'claude');
+
+    expect(result.status).toBe('removed');
+    expect(readJson('.mcp.json')).toEqual({ name: 'mine', mcpServers: { other: { command: 'x' } } });
+  });
+
+  it('mcp.servers (zcode): removes only codeadd-docs, keeps siblings under mcp', () => {
+    write('.zcode/config.json', JSON.stringify({ mcp: { flag: true, servers: { other: { command: 'y' } } }, theme: 'dark' }));
+    registerProvider(cwd, 'zcode', '1.0.0');
+
+    const result = unregisterProvider(cwd, 'zcode');
+
+    expect(result.status).toBe('removed');
+    expect(readJson('.zcode/config.json')).toEqual({
+      mcp: { flag: true, servers: { other: { command: 'y' } } },
+      theme: 'dark',
+    });
+  });
+
+  it('opencode: removes only codeadd-docs from mcp, keeps the other server and fields', () => {
+    write('opencode.json', JSON.stringify({ $schema: 'https://opencode.ai/config.json', mcp: { other: { type: 'local' } } }));
+    registerProvider(cwd, 'opencode', '1.0.0');
+
+    const result = unregisterProvider(cwd, 'opencode');
+
+    expect(result.status).toBe('removed');
+    expect(readJson('opencode.json')).toEqual({
+      $schema: 'https://opencode.ai/config.json',
+      mcp: { other: { type: 'local' } },
+    });
+  });
+
+  it('toml (codex): prints a manual line and leaves the file untouched', () => {
+    const toml = '[mcp_servers.codeadd-docs]\ncommand = "npx"\n';
+    write('.codex/config.toml', toml);
+
+    const result = unregisterProvider(cwd, 'codex');
+
+    expect(result.status).toBe('print');
+    expect(result.file).toBe('.codex/config.toml');
+    expect(result.line).toContain(SERVER_NAME);
+    expect(raw('.codex/config.toml')).toBe(toml);
+  });
+
+  it('a provider absent from MCP_CONFIG prints rather than throwing', () => {
+    expect(unregisterProvider(cwd, 'nope').status).toBe('print');
+  });
+
+  it('unparseable JSON: reports unreadable and leaves the file byte-identical', () => {
+    write('.mcp.json', '{ not json');
+
+    const result = unregisterProvider(cwd, 'claude');
+
+    expect(result.status).toBe('unreadable');
+    expect(raw('.mcp.json')).toBe('{ not json');
+  });
+
+  it('no codeadd entry: reports absent and does not rewrite the file', () => {
+    const original = '{"mcpServers":{"other":{"command":"x"}}}';
+    write('.mcp.json', original);
+
+    expect(unregisterProvider(cwd, 'claude').status).toBe('absent');
+    expect(raw('.mcp.json')).toBe(original);
+  });
+
+  it('no config file at all: reports absent and creates nothing', () => {
+    expect(unregisterProvider(cwd, 'claude').status).toBe('absent');
+    expect(fs.existsSync(path.join(cwd, '.mcp.json'))).toBe(false);
   });
 });
