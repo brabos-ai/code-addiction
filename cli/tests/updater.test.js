@@ -20,6 +20,9 @@ vi.mock('../src/github.js', () => ({
 vi.mock('../src/prompt.js', () => ({
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('@clack/prompts', () => ({

@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   promptConfirm: vi.fn(),
   promptFeatures: vi.fn(),
   promptGitignore: vi.fn(),
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
@@ -30,6 +33,9 @@ vi.mock('../src/prompt.js', () => ({
   promptConfirm: mocks.promptConfirm,
   promptFeatures: mocks.promptFeatures,
   promptGitignore: mocks.promptGitignore,
+  promptExistingInstall: mocks.promptExistingInstall,
+  promptModify: mocks.promptModify,
+  promptApplyDiff: mocks.promptApplyDiff,
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -79,6 +85,11 @@ beforeEach(() => {
   mocks.promptScope.mockResolvedValue('project');
   mocks.promptConfirm.mockResolvedValue(undefined);
   mocks.promptGitignore.mockResolvedValue(true);
+  // Over an existing installation `install` now opens a menu. The tests below that
+  // install twice are about what a REINSTALL does, so they answer it that way; with
+  // no manifest the menu is never reached.
+  mocks.promptExistingInstall.mockReset();
+  mocks.promptExistingInstall.mockResolvedValue('reinstall');
 });
 
 afterEach(() => {
