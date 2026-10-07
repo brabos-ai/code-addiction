@@ -4,9 +4,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptScope, promptConfirm, promptGitignore } from './prompt.js';
+import { promptProviders, promptScope, promptConfirm, promptGitignore, promptExistingInstall } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-import { applyEnabledFeatures, FEATURES } from './features.js';
+import { applyEnabledFeatures, getFeatureStates, FEATURES } from './features.js';
+// modify.js and updater.js import this module back. Both are function-only
+// imports, used at call time, so the cycle is safe in either load order.
+import { modify } from './modify.js';
+import { update } from './updater.js';
 import { applyEnabledPluginsDetailed } from './plugins.js';
 import { resolveSelected } from './providers.js';
 import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from './release-copy.js';
@@ -164,6 +168,22 @@ function dirExists(dir) {
 }
 
 /**
+ * What the install menu shows about the installation already in `targetDir`.
+ * @param {string} targetDir
+ * @param {object} manifest
+ * @returns {{version: string, scope: string, providers: string[], features: string[], plugins: string[]}}
+ */
+function describeInstall(targetDir, manifest) {
+  return {
+    version: manifest.version ?? 'unknown',
+    scope: manifest.scope ?? 'project',
+    providers: manifest.providers ?? [],
+    features: getFeatureStates(targetDir).filter((f) => f.enabled).map((f) => f.name),
+    plugins: Object.entries(manifest.plugins ?? {}).filter(([, s]) => s?.enabled).map(([name]) => name),
+  };
+}
+
+/**
  * Main install flow.
  * @param {string} cwd
  * @param {{version?: string, channel?: string, global?: boolean}} [options]
@@ -174,6 +194,32 @@ export async function install(cwd, options = {}) {
   // --global forces global scope; otherwise prompt (defaults to project).
   const scope = options.global ? 'global' : await promptScope();
   const targetDir = scope === 'global' ? os.homedir() : cwd;
+
+  // An installation is already here: show it and ask, BEFORE anything is resolved
+  // or written. A reinstall resets features and plugins and deletes the files of any
+  // provider not re-ticked, so it is one choice among four rather than the only road.
+  const existing = readManifest(targetDir);
+  if (existing) {
+    const choice = await promptExistingInstall(describeInstall(targetDir, existing));
+    // The manifest's scope is authoritative for Modify and Update, as `update()` already treats it.
+    const installScope = existing.scope ?? scope;
+    if (choice === 'cancel') {
+      outro('Cancelled. Nothing was changed.');
+      return;
+    }
+    if (choice === 'modify') {
+      if (options.version || options.channel) {
+        log.info('--version and --channel are ignored by Modify: it never changes the installed version. Use Update for that.');
+      }
+      await modify(targetDir, [], installScope);
+      return;
+    }
+    if (choice === 'update') {
+      await update(targetDir, { version: options.version, channel: options.channel }, installScope);
+      return;
+    }
+    // 'reinstall' continues into today's flow, behind its own overwrite confirmation.
+  }
 
   const channel = options.channel || 'stable';
 

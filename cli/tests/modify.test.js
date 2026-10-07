@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -432,6 +434,30 @@ describe('applyDesiredState — refusals', () => {
 
     expect(snapshot()).toEqual(before);
     expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+});
+
+describe('import order (L3.4)', () => {
+  // installer.js imports modify.js and updater.js, and both import it back. The
+  // cycle is safe only while every import is used at call time, never at load.
+  const srcDir = path.resolve(__dirname, '../src');
+
+  it.each([
+    ['installer.js', 'install'],
+    ['modify.js', 'applyDesiredState'],
+    ['updater.js', 'update'],
+  ])('a fresh process importing %s first loads it and exposes %s', (file, exported) => {
+    const url = pathToFileURL(path.join(srcDir, file)).href;
+    const script =
+      `const m = await import(${JSON.stringify(url)});` +
+      `if (typeof m.${exported} !== 'function') { console.error('missing ${exported}'); process.exit(3); }`;
+
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
+      encoding: 'utf8',
+      env: { ...process.env, NODE_OPTIONS: '' },
+    });
+
+    expect(result.status, result.stderr).toBe(0);
   });
 });
 
