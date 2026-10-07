@@ -588,6 +588,11 @@ applied, and the next-step commands.
 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the
 full basename always works.
 
+**A plain relative path resolves the same way.** Before the match, strip any directory part and a
+trailing `.md` from the argument, then run the substring match above on what is left. A bare slug has
+neither, so it passes through unchanged. This is what lets the continuation line a closing prints
+(`/add-framework--build docs/plans/<basename>.md`) resolve on arrival instead of falling into "No match".
+
 - **Exactly one match** → that is the plan.
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
 - **No match** → list `docs/plans/` and STOP.
