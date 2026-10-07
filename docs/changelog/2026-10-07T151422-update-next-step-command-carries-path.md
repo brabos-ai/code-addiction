@@ -23,4 +23,4 @@ The closings printed `[idea]` and `[slug]` placeholders, and the build printed n
 
 `node scripts/build.js` exits 0 with no warning, before and after. `node scripts/build-workbench.js` exits 0. `framwork/` is untouched.
 
-The new test file was written RED first (15 failing, 13 passing) and ends at 28 of 28. The official runner could not run on this machine (GNU `tar` in Git Bash reads `C:` as a host), so the file ran through a small stand-in; the full CLI suite is left to CI. Ticket 0024B's last check — a printed path resolved on disk — is the operator running `/add-framework--done docs/plans/<plan>.md` by hand after this build.
+The new test file was written RED first (15 failing, 13 passing) and ends at 28 of 28. The official runner could not run on this machine (GNU `tar` in Git Bash reads `C:` as a host), so the file ran through a small stand-in. The full CLI suite ran in CI on PR #111 and passed, together with the board job (after a rerun: the first board run hung on the Playwright install). Ticket 0024B's last check — a printed path resolved on disk — is the operator running `/add-framework--done docs/plans/<plan>.md` by hand after this build.
