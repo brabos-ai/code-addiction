@@ -16,6 +16,12 @@ Owns the LAST thing a command says. Not what it wrote to disk — that belongs t
 the document. This is the message the user actually reads, and for most runs it is the only part of
 the work they will ever see.
 
+```
+IF THE COMMAND IS NOT AT ITS CLOSING STEP:
+  ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
+  ✅ DO: Load it at the closing step, where the report is written
+```
+
 **Load this at the closing step, not at STEP 1.** A shape carried through fifteen steps is a shape
 the agent no longer has when it matters. This skill is small on purpose so a late load costs nothing.
 
