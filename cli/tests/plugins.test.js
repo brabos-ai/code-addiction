@@ -8,8 +8,11 @@ import {
   enablePlugin,
   disablePlugin,
   applyEnabledPlugins,
+  applyEnabledPluginsDetailed,
+  removePluginSkillsFor,
   getPluginStates,
 } from '../src/plugins.js';
+import { resolveSelected } from '../src/providers.js';
 import { captureBaselines } from '../src/injection-core.js';
 
 /**
@@ -403,6 +406,120 @@ describe('plugins', () => {
     it('returns 0 when no manifest', () => {
       writeCatalog(catDir, {});
       expect(applyEnabledPlugins(path.join(cwd, 'empty'))).toBe(0);
+    });
+  });
+
+  describe('applyEnabledPluginsDetailed (L1.4)', () => {
+    const enableInManifest = (name) => {
+      const mp = path.join(cwd, '.codeadd', 'manifest.json');
+      const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
+      m.plugins = { [name]: { enabled: true } };
+      fs.writeFileSync(mp, JSON.stringify(m, null, 2));
+    };
+
+    it('lists an enabled plugin whose detect probe fails in notDetected, and keeps it enabled', () => {
+      writeCatalog(catDir, {
+        gx: { type: 'mcp', description: 'g', detect: 'false', injects: ['add-new'], skills: [] },
+      });
+      scaffoldProject(cwd, { providers: ['claude'], pluginName: 'gx', sectionsByCommand: { 'add-new': ['explore'] }, skills: [] });
+      enableInManifest('gx');
+
+      const result = applyEnabledPluginsDetailed(cwd);
+
+      expect(result.notDetected).toEqual(['gx']);
+      expect(result.modified).toBe(0);
+      const manifest = JSON.parse(fs.readFileSync(path.join(cwd, '.codeadd', 'manifest.json'), 'utf8'));
+      expect(manifest.plugins.gx).toEqual({ enabled: true });
+    });
+
+    it('reports a detected plugin as applied, with nothing in notDetected', () => {
+      writeCatalog(catDir, {
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: ['add-new'], skills: [] },
+      });
+      scaffoldProject(cwd, { providers: ['claude'], pluginName: 'gx', sectionsByCommand: { 'add-new': ['explore'] }, skills: [] });
+      enableInManifest('gx');
+
+      expect(applyEnabledPluginsDetailed(cwd)).toEqual({ modified: 1, notDetected: [] });
+    });
+
+    it('returns an empty result when there is no manifest', () => {
+      writeCatalog(catDir, {});
+      expect(applyEnabledPluginsDetailed(path.join(cwd, 'empty'))).toEqual({ modified: 0, notDetected: [] });
+    });
+
+    it('applyEnabledPlugins still returns a number', () => {
+      writeCatalog(catDir, {
+        gx: { type: 'mcp', description: 'g', detect: 'false', injects: [], skills: [] },
+      });
+      scaffoldProject(cwd, { providers: ['claude'], pluginName: 'gx', sectionsByCommand: {}, skills: [] });
+      enableInManifest('gx');
+
+      expect(typeof applyEnabledPlugins(cwd)).toBe('number');
+    });
+  });
+
+  describe('removePluginSkillsFor (L1.3)', () => {
+    const setup = (providers) => {
+      writeCatalog(catDir, {
+        gx: { type: 'mcp', description: 'g', detect: 'node -e "process.exit(0)"', injects: [], skills: ['gx-skill'] },
+      });
+      scaffoldProject(cwd, { providers, pluginName: 'gx', sectionsByCommand: {}, skills: ['gx-skill'] });
+      const mp = path.join(cwd, '.codeadd', 'manifest.json');
+      const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
+      m.plugins = { gx: { enabled: true } };
+      fs.writeFileSync(mp, JSON.stringify(m, null, 2));
+      for (const p of resolveSelected(providers)) {
+        const dir = path.join(cwd, p.dest, p.skillsSubdir, 'gx-skill');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, 'SKILL.md'), 'skill');
+      }
+    };
+    const skillAt = (rel) => fs.existsSync(path.join(cwd, rel, 'gx-skill', 'SKILL.md'));
+
+    it('removing codex with zcode remaining keeps the shared .agents/skills copy', () => {
+      setup(['claude', 'codex', 'zcode']);
+
+      removePluginSkillsFor(cwd, resolveSelected(['codex']), resolveSelected(['claude', 'zcode']));
+
+      expect(skillAt('.agents/skills')).toBe(true);
+      expect(skillAt('.claude/skills')).toBe(true);
+    });
+
+    it('removing zcode with codex remaining keeps the shared .agents/skills copy', () => {
+      setup(['claude', 'codex', 'zcode']);
+
+      removePluginSkillsFor(cwd, resolveSelected(['zcode']), resolveSelected(['claude', 'codex']));
+
+      expect(skillAt('.agents/skills')).toBe(true);
+    });
+
+    it('removing cursor deletes only its own skills copy', () => {
+      setup(['claude', 'cursor']);
+
+      const removed = removePluginSkillsFor(cwd, resolveSelected(['cursor']), resolveSelected(['claude']));
+
+      expect(removed).toBe(1);
+      expect(skillAt('.cursor/skills')).toBe(false);
+      expect(skillAt('.claude/skills')).toBe(true);
+    });
+
+    it('removing the only owner of .agents/skills deletes it', () => {
+      setup(['claude', 'codex']);
+
+      removePluginSkillsFor(cwd, resolveSelected(['codex']), resolveSelected(['claude']));
+
+      expect(skillAt('.agents/skills')).toBe(false);
+    });
+
+    it('touches nothing for a plugin that is not enabled', () => {
+      setup(['claude', 'cursor']);
+      const mp = path.join(cwd, '.codeadd', 'manifest.json');
+      const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
+      m.plugins = { gx: { enabled: false } };
+      fs.writeFileSync(mp, JSON.stringify(m, null, 2));
+
+      expect(removePluginSkillsFor(cwd, resolveSelected(['cursor']), resolveSelected(['claude']))).toBe(0);
+      expect(skillAt('.cursor/skills')).toBe(true);
     });
   });
 

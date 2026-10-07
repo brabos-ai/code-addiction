@@ -199,22 +199,82 @@ export function disablePlugin(cwd, pluginName) {
 }
 
 /**
+ * Delete the activated skills of every enabled plugin from the providers being
+ * removed — and only from those.
+ *
+ * Plugin skills sit outside the manifest `files`, so the obsolete-file prune
+ * never reaches them. `deactivateSkills` is not the tool: it acts on every
+ * installed provider, which is right for `plugins disable` and wrong here.
+ *
+ * A removed provider's skills directory is skipped when a remaining provider
+ * resolves to the same one — codex and zcode both use `.agents/skills`, and
+ * deleting it for one breaks the other.
+ *
+ * @param {string} cwd
+ * @param {{dest: string, skillsSubdir: string|null}[]} removedProviders    resolveSelected() entries
+ * @param {{dest: string, skillsSubdir: string|null}[]} remainingProviders  resolveSelected() entries
+ * @returns {number} skill dirs removed
+ */
+export function removePluginSkillsFor(cwd, removedProviders, remainingProviders) {
+  const manifest = readManifest(cwd);
+  if (!manifest) return 0;
+
+  const skillsRoot = (p) => path.join(p.dest, p.skillsSubdir);
+  const kept = new Set(remainingProviders.filter((p) => p.skillsSubdir).map(skillsRoot));
+  const targets = removedProviders.filter((p) => p.skillsSubdir && !kept.has(skillsRoot(p)));
+
+  const catalog = loadCatalog();
+  let removed = 0;
+  for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
+    if (!state?.enabled) continue;
+    for (const skill of catalog[name]?.skills ?? []) {
+      for (const provider of targets) {
+        const destDir = path.join(cwd, skillsRoot(provider), skill);
+        if (fs.existsSync(destDir)) {
+          fs.rmSync(destDir, { recursive: true, force: true });
+          removed++;
+        }
+      }
+    }
+  }
+  return removed;
+}
+
+/**
+ * Re-apply enabled plugins after install/update, and say which ones it could
+ * not apply.
+ *
+ * A plugin whose external tool is not detected stays enabled in the manifest
+ * and lands in `notDetected`. The tool may be absent in CI/headless, so this
+ * does not fail — but it no longer skips in silence either.
+ *
+ * @param {string} cwd
+ * @returns {{ modified: number, notDetected: string[] }}
+ */
+export function applyEnabledPluginsDetailed(cwd) {
+  const manifest = readManifest(cwd);
+  if (!manifest) return { modified: 0, notDetected: [] };
+  let modified = 0;
+  const notDetected = [];
+  for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
+    if (state?.enabled) {
+      const result = enablePlugin(cwd, name);
+      if (result.ok) modified += result.modified;
+      else if (result.reason === 'not-detected') notDetected.push(name);
+    }
+  }
+  return { modified, notDetected };
+}
+
+/**
  * Re-apply enabled plugins after install/update (parallel to applyEnabledFeatures).
- * Skips validation failures silently — the tool may not be present in CI/headless.
+ * Thin wrapper over `applyEnabledPluginsDetailed` for callers that only want the
+ * count; use the detailed form when the not-detected plugins must be reported.
  * @param {string} cwd
  * @returns {number} total command files modified
  */
 export function applyEnabledPlugins(cwd) {
-  const manifest = readManifest(cwd);
-  if (!manifest) return 0;
-  let total = 0;
-  for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
-    if (state?.enabled) {
-      const result = enablePlugin(cwd, name);
-      if (result.ok) total += result.modified;
-    }
-  }
-  return total;
+  return applyEnabledPluginsDetailed(cwd).modified;
 }
 
 /**
