@@ -642,6 +642,46 @@ describe('codeadd providers (L2.5)', () => {
     expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
   });
 
+  describe('an installed provider this CLI does not know (gemini)', () => {
+    const seedWithGemini = () => {
+      seed(['claude']);
+      fs.mkdirSync(abs('.gemini'), { recursive: true });
+      fs.writeFileSync(abs('.gemini/settings.json'), '{"g":1}');
+      const m = manifest();
+      m.providers = ['claude', 'gemini'];
+      m.files.push('.gemini/settings.json');
+      fs.writeFileSync(abs('.codeadd/manifest.json'), JSON.stringify(m, null, 2));
+    };
+
+    it('add cursor works and leaves the gemini files and entry alone', async () => {
+      seedWithGemini();
+
+      await providers(dir, ['add', 'cursor'], 'project');
+
+      expect(manifest().providers).toEqual(['claude', 'gemini', 'cursor']);
+      expect(read('.gemini/settings.json')).toBe('{"g":1}');
+      expect(manifest().files).toContain('.gemini/settings.json');
+      expect(fs.existsSync(abs('.cursor/commands/add-new.md'))).toBe(true);
+    });
+
+    it('remove gemini drops it from the manifest, deletes no file and says so', async () => {
+      seedWithGemini();
+
+      await providers(dir, ['remove', 'gemini'], 'project');
+
+      expect(manifest().providers).toEqual(['claude']);
+      expect(read('.gemini/settings.json')).toBe('{"g":1}');
+      expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+      expect(log.info).toHaveBeenCalledWith(expect.stringMatching(/no files were deleted/));
+    });
+
+    it('add of a provider nobody knows is still refused', async () => {
+      seedWithGemini();
+
+      await expect(providers(dir, ['add', 'nope'], 'project')).rejects.toThrow(/Unknown provider "nope"/);
+    });
+  });
+
   it('add of a provider with no global destination fails in a global install, and writes nothing', async () => {
     seed(['claude'], { scope: 'global' });
     const before = snapshot();

@@ -107,8 +107,10 @@ export function diffState(manifest, desired) {
  * Refuse a request that cannot be applied, BEFORE anything is touched. Returns
  * `desired` with feature names resolved to their canonical keys.
  */
-function validate(desired, scope) {
-  for (const key of desired.providers ?? []) {
+function validate(desired, scope, installed = []) {
+  // Only providers being ADDED are checked: one the CLI no longer knows (an old
+  // install's `gemini`) may stay installed or be removed, but never be added.
+  for (const key of (desired.providers ?? []).filter((k) => !installed.includes(k))) {
     if (!PROVIDERS[key]) {
       throw new Error(`Unknown provider "${key}". Available: ${Object.keys(PROVIDERS).join(', ')}`);
     }
@@ -209,7 +211,14 @@ async function applyAdd(targetDir, manifest, scope, wanted, diff) {
     );
   }
 
-  const written = copyRelease(new AdmZip(buffer), targetDir, wantedEntries, { skipPreserved: true });
+  const copied = copyRelease(new AdmZip(buffer), targetDir, wantedEntries, { skipPreserved: true });
+  // Files of an installed provider this CLI does not know are neither rewritten nor
+  // pruned, and stay tracked: they sit outside `.codeadd/` and every known provider root.
+  const knownRoots = resolveSelected(Object.keys(PROVIDERS), scope).flatMap(ownedRoots);
+  const foreign = (manifest.files ?? []).filter(
+    (f) => !f.startsWith('.codeadd/') && !knownRoots.some((r) => f === r || f.startsWith(`${r}/`)),
+  );
+  const written = [...copied, ...foreign.filter((f) => !copied.includes(f))];
   fixLineEndings(path.join(targetDir, '.codeadd', 'scripts'));
   const pruned = pruneObsolete(targetDir, manifest.files ?? [], written);
   if (pruned > 0) log.success(`Removed ${pruned} obsolete file(s).`);
@@ -299,10 +308,10 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   if (!manifest) throw new Error('No ADD installation found. Run `npx codeadd install` first.');
   const scope = manifest.scope ?? 'project';
 
-  const checked = validate(desired, scope);
+  const installed = manifest.providers ?? [];
+  const checked = validate(desired, scope, installed);
   // Installed providers keep their manifest order; new ones follow in the order asked.
   // A prompt hands back its own display order, which must not reshuffle the manifest.
-  const installed = manifest.providers ?? [];
   const asked = checked.providers ?? installed;
   const wanted = {
     ...checked,
@@ -398,7 +407,8 @@ export async function providers(cwd, args, scope = 'project') {
 
   const name = args[1];
   if (!name || name.startsWith('--')) throw new Error(`Usage: codeadd providers ${action} <name>`);
-  if (!PROVIDERS[name]) {
+  // Only an ADD needs a known provider: an installed one the CLI no longer knows can still be removed.
+  if (!PROVIDERS[name] && !(action === 'remove' && installed.includes(name))) {
     throw new Error(`Unknown provider "${name}". Available: ${Object.keys(PROVIDERS).join(', ')}`);
   }
 
@@ -417,6 +427,13 @@ export async function providers(cwd, args, scope = 'project') {
 
   if (!installed.includes(name)) throw new Error(`Provider "${name}" is not installed.`);
   intro('ADD CLI - Providers remove');
+  if (!PROVIDERS[name]) {
+    // No known roots, so nothing can be deleted: the entry just leaves the manifest.
+    saveManifest(cwd, { ...manifest, providers: installed.filter((key) => key !== name) });
+    log.info(`"${name}" is not a provider this CLI knows: it was dropped from the manifest and no files were deleted.`);
+    outro(`Provider "${name}" removed from the manifest.`);
+    return;
+  }
   await applyDesiredState(cwd, { providers: installed.filter((key) => key !== name) }, { force: args.includes('--force') });
   outro(`Provider "${name}" removed.`);
 }
