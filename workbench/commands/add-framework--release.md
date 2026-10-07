@@ -27,6 +27,8 @@ STEP 8: Completion             → report the release in the shared shape
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 IF gh CLI missing or unauthenticated:
   ⛔ DO NOT USE: Bash for git merge, git tag, git push
   ✅ DO: Show install/auth instructions and STOP

@@ -47,6 +47,8 @@ STEP 7: Completion            → [HARD STOP] the report in the shape, then meta
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 ALWAYS — THIS SKILL DOES NOT EXECUTE:
   ⛔ DO NOT USE: Write outside docs/plans/

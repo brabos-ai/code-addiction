@@ -102,3 +102,30 @@ test('add-final-report owns the emission rule and points at the reference withou
   assert.match(position, /`json`/);
   assert.match(position, /`next_step`/);
 });
+
+// Derived from disk, so a future add-framework--* artefact fails here until it carries the line.
+function stageArtefacts() {
+  const out = [];
+  for (const d of fs.readdirSync(path.join(root, 'workbench', 'skills'))) if (d.startsWith('add-framework--')) out.push(`workbench/skills/${d}/SKILL.md`);
+  for (const f of fs.readdirSync(path.join(root, 'workbench', 'commands'))) if (f.startsWith('add-framework--') && f.endsWith('.md')) out.push(`workbench/commands/${f}`);
+  return out;
+}
+
+test('every add-framework--* artefact carries the stop-rule line right after its prohibitions marker', () => {
+  const files = stageArtefacts();
+  assert.ok(files.length > 0);
+  for (const name of ['brainstorm', 'plan', 'build', 'done', 'backlog', 'release', 'sync']) {
+    assert.ok(files.some(f => f.includes(`add-framework--${name}`)), `missing ${name}`);
+  }
+  for (const f of files) {
+    const lines = read(f).split('\n');
+    const at = lines.findIndex(l => l.trim() === '**⛔ ABSOLUTE PROHIBITIONS:**');
+    assert.notEqual(at, -1, `${f}: no ABSOLUTE PROHIBITIONS marker`);
+    const next = lines.slice(at + 1).find(l => l.trim() !== '');
+    assert.equal(next, STOP_RULE, f);
+  }
+});
+
+test('no add-framework--* artefact restates the field table', () => {
+  for (const f of stageArtefacts()) assert.doesNotMatch(read(f), /^\| `(needs_approval|next_step)` \|/m, f);
+});

@@ -50,6 +50,8 @@ STEP 10: Completion           → summary + EVERY ruling made
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 IF PLAN / CONTEXT NOT LOADED (STEP 1 incomplete):
   ⛔ DO NOT USE: Write or Edit anywhere

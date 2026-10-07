@@ -37,6 +37,8 @@ STEP 5: Report                  → operation, ticket, route, sha
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 ALWAYS — THE SCRIPTS OWN THE BOARD:
   ⛔ DO NOT USE: Write or Edit on docs/backlog.jsonl or docs/backlog.definitions.json

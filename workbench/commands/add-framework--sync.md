@@ -33,6 +33,8 @@ STEP 6: Final Report              → files modified, [MANUAL] items, log iterat
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 IF CHANGE PAYLOAD NOT BUILT (STEP 1 not complete):
   ⛔ DO NOT USE: Write on any documentation file

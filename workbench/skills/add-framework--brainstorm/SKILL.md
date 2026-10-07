@@ -67,6 +67,8 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP 7.3:
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 IF USER ASKS OPEN-ENDED QUESTION DURING STEP 4:
   ⛔ DO NOT MOVE TO STEP 5 (document generation)
