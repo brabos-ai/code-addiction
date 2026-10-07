@@ -8,27 +8,17 @@ import { promptProviders, promptScope, promptConfirm, promptGitignore } from './
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
 import { applyEnabledPlugins } from './plugins.js';
-import { resolveSelected, agentDest } from './providers.js';
+import { resolveSelected } from './providers.js';
+import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { readManifest, captureBaselines } from './injection-core.js';
 import { allMigrationIds } from './migrations.js';
 
-/**
- * Paths that survive an overwrite. This is the single definition of "never
- * delete this" for BOTH install and update — updater.js imports it rather than
- * keeping a copy, because two definitions will diverge and the one that
- * diverges deletes someone's session history.
- */
-export const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/, /(^|\/)\.codeadd\/baselines\//];
-
-/**
- * @param {string} relPath  path relative to the install root
- * @returns {boolean}
- */
-export function shouldPreserve(relPath) {
-  return PRESERVE_PATTERNS.some((p) => p.test(relPath));
-}
+// The single definition of "never delete this" lives in release-copy.js, next to
+// the copy and prune passes that apply it. Re-exported so importers of this
+// module (updater.js, the tests) do not change.
+export { PRESERVE_PATTERNS, shouldPreserve };
 
 /**
  * Force LF line endings on all .sh files under a directory.
@@ -174,41 +164,6 @@ function dirExists(dir) {
 }
 
 /**
- * Copy entries from zip that match a source prefix to a destination directory.
- * The release asset zip uses `framwork/` prefix (e.g. "framwork/.claude/commands/add.md").
- * Returns array of relative paths (from cwd) of files copied.
- *
- * @param {AdmZip} zip
- * @param {string} srcPrefix path inside zip (e.g. "framwork/.codeadd")
- * @param {string} destDir   absolute destination directory
- * @param {string} cwd       project root
- * @returns {string[]}
- */
-function copyFromZip(zip, srcPrefix, destDir, cwd) {
-  const copied = [];
-  const prefix = `${srcPrefix}/`;
-
-  for (const entry of zip.getEntries()) {
-    if (!entry.entryName.startsWith(prefix)) continue;
-    if (entry.isDirectory) continue;
-
-    const relativeToDest = entry.entryName.slice(prefix.length);
-    if (!relativeToDest) continue;
-
-    const destFile = path.join(destDir, relativeToDest);
-    const destFileDir = path.dirname(destFile);
-
-    fs.mkdirSync(destFileDir, { recursive: true });
-    fs.writeFileSync(destFile, entry.getData());
-
-    const relFromCwd = path.relative(cwd, destFile).replace(/\\/g, '/');
-    copied.push(relFromCwd);
-  }
-
-  return copied;
-}
-
-/**
  * Main install flow.
  * @param {string} cwd
  * @param {{version?: string, channel?: string, global?: boolean}} [options]
@@ -267,23 +222,9 @@ export async function install(cwd, options = {}) {
   s.start('Installing...');
   const zip = new AdmZip(zipBuffer);
 
-  const allFiles = [];
-
-  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, targetDir);
-  allFiles.push(...coreFiles);
-
-  for (const p of providers) {
-    const destDir = path.join(targetDir, p.dest);
-    const pFiles = copyFromZip(zip, p.src, destDir, targetDir);
-    allFiles.push(...pFiles);
-
-    // A provider whose agents live outside its main root (Codex: skills under
-    // .agents/, agents under .codex/agents/) needs a second copy pass.
-    if (p.agentsSrc) {
-      const agentDir = path.join(targetDir, agentDest(p));
-      allFiles.push(...copyFromZip(zip, p.agentsSrc, agentDir, targetDir));
-    }
-  }
+  // Install copies everything: a reinstall overwrites even the preserved paths'
+  // release counterparts. Update is the one that passes skipPreserved.
+  const allFiles = copyRelease(zip, targetDir, providers, { skipPreserved: false });
 
   s.stop(`Installed ${allFiles.length} files.`);
 
@@ -298,20 +239,7 @@ export async function install(cwd, options = {}) {
   // Mirror of the update-path prune (updater.js): anything the prior install
   // wrote that this one did not is obsolete. Same shared preservation rules.
   if (priorManifest) {
-    const written = new Set(allFiles);
-    let removed = 0;
-    for (const old of priorManifest.files ?? []) {
-      if (written.has(old) || shouldPreserve(old)) continue;
-      try {
-        const full = path.join(targetDir, old);
-        if (fs.existsSync(full)) {
-          fs.unlinkSync(full);
-          removed++;
-        }
-      } catch {
-        // A file we cannot remove is not worth failing an install over.
-      }
-    }
+    const removed = pruneObsolete(targetDir, priorManifest.files ?? [], allFiles);
     if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
   }
 
