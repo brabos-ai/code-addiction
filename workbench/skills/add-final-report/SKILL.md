@@ -7,6 +7,8 @@ description: "Use at a command's closing step, in the internal layer — the sev
 
 <!-- uses:
 - mention: add-framework--build
+- mention: add-framework--plan
+- mention: add-framework--done
 - mention: add-build-ledger
 -->
 
@@ -91,7 +93,53 @@ does not get skipped because the seven blocks are done.
 
 Plain facts are different: they belong inside block 2 or block 4, wherever they already fit.
 
-Metadata is last: paths, commit ranges, verdicts, next-step commands.
+Metadata is last: paths, commit ranges, verdicts, and the next-step command — which is printed as
+**The Continuation Line**, below.
+
+## The Continuation Line
+
+**The next-step command is one paste-ready line carrying the path of the file this closing just
+wrote.** This section owns the rule. Brainstorm, plan and build each point here from their closing
+step; none of them restates it.
+
+**Format:** `/<command> <relative path>` — the plain path from the repository root, with no `@` in
+front of it. The next stage reads the path as a literal argument and resolves it exactly as it
+resolves a slug.
+
+```
+IF A CHAT CLOSING IS ABOUT TO PRINT A CONTINUATION LINE:
+  ⛔ DO NOT: Rebuild the path from a slug or a timestamp — print the path of the file the step wrote
+  ⛔ DO NOT: Print the line before checking that the file is on disk
+  ✅ DO: Run `test -f` on that path, and print the line only when it exists
+```
+
+**A missing file means no line, not a stop.** There is nothing to continue with, so the closing prints
+its report without one.
+
+**The check binds a chat closing only.** A document's own `## Next Steps` names its own path without
+`test -f`, because that file is still being composed when the line is written.
+
+**Spelling follows the provider's `slashCommands` capability** in `workbench/provider-map.json`:
+
+| `slashCommands` | Provider | Line |
+|---|---|---|
+| `true` | claude, opencode | `/<name> <relative path>` |
+| `false` | codex, which loads a command as a skill by its name | `<name> <relative path>` |
+
+The path is identical in all three.
+
+**Position:** it is the **last line of the metadata**, and so the last line of the closing. Other
+command lines — for example `/add-framework--plan <relative path>` to revise a plan — may come before
+it and use the same plain-path form.
+
+**Plan set:** one line per plan that has F-blocks, in set order.
+
+**Automatic delivery:** the same line is printed before the next stage is loaded. The stage then runs;
+the line is still printed.
+
+**Who never prints one:** a closing that wrote no file the next stage reads — backlog, release, sync,
+done, a direct build and a brainstorm spike. `/add-framework--done` is the terminal stage, and the
+build prints its line but never loads it.
 
 ## How It Reads
 
