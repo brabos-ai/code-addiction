@@ -2,30 +2,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { resolveSelected, agentDest } from './providers.js';
+import { resolveSelected } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
-import { fixLineEndings, writeManifest, resolveInstallSource, shouldPreserve, reportMcpRegistration } from './installer.js';
+import { fixLineEndings, writeManifest, resolveInstallSource, reportMcpRegistration, reportNotDetectedPlugins } from './installer.js';
+import { copyRelease, pruneObsolete } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
 import { captureBaselines } from './injection-core.js';
-import { applyEnabledPlugins } from './plugins.js';
+import { applyEnabledPluginsDetailed, LEGACY_PLUGIN_SKILLS } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-
-/**
- * Copy entries from zip that match a source prefix to a destination directory,
- * skipping files matching PRESERVE_PATTERNS.
- * The release asset zip uses `framwork/` prefix (e.g. "framwork/.claude/commands/add.md").
- *
- * @param {AdmZip} zip
- * @param {string} srcPrefix
- * @param {string} destDir
- * @param {string} cwd
- * @returns {string[]}
- */
-const LEGACY_PLUGIN_SKILLS = {
-  gitnexus: ['add-gitnexus'],
-};
 
 function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
   for (const [plugin, state] of Object.entries(previousPlugins)) {
@@ -37,32 +23,6 @@ function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
       }
     }
   }
-}
-
-function copyFromZip(zip, srcPrefix, destDir, cwd) {
-  const copied = [];
-  const prefix = `${srcPrefix}/`;
-
-  for (const entry of zip.getEntries()) {
-    if (!entry.entryName.startsWith(prefix)) continue;
-    if (entry.isDirectory) continue;
-
-    const relativeToDest = entry.entryName.slice(prefix.length);
-    if (!relativeToDest) continue;
-
-    if (shouldPreserve(relativeToDest)) continue;
-
-    const destFile = path.join(destDir, relativeToDest);
-    const destFileDir = path.dirname(destFile);
-
-    fs.mkdirSync(destFileDir, { recursive: true });
-    fs.writeFileSync(destFile, entry.getData());
-
-    const relFromCwd = path.relative(cwd, destFile).replace(/\\/g, '/');
-    copied.push(relFromCwd);
-  }
-
-  return copied;
 }
 
 /**
@@ -133,45 +93,16 @@ export async function update(cwd, options = {}, scope = 'project') {
   s.start('Updating...');
   const zip = new AdmZip(zipBuffer);
 
-  const allFiles = [];
   const addDir = path.join(cwd, '.codeadd');
 
-  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, cwd);
-  allFiles.push(...coreFiles);
-
   const providers = resolveSelected(providerKeys, installScope);
-  for (const p of providers) {
-    const destDir = path.join(cwd, p.dest);
-    const pFiles = copyFromZip(zip, p.src, destDir, cwd);
-    allFiles.push(...pFiles);
-
-    // A provider whose agents live outside its main root (Codex: skills under
-    // .agents/, agents under .codex/agents/) needs a second copy pass.
-    if (p.agentsSrc) {
-      const agentDir = path.join(cwd, agentDest(p));
-      allFiles.push(...copyFromZip(zip, p.agentsSrc, agentDir, cwd));
-    }
-  }
+  // Update leaves PRESERVE_PATTERNS matches alone; install does not.
+  const allFiles = copyRelease(zip, cwd, providers, { skipPreserved: true });
 
   s.stop(`Updated ${allFiles.length} files.`);
 
   // Remove files that existed in the previous installation but are no longer in the new version
-  const oldFiles = new Set(manifest.files ?? []);
-  const newFiles = new Set(allFiles);
-  let removed = 0;
-  for (const old of oldFiles) {
-    if (!newFiles.has(old) && !shouldPreserve(old)) {
-      const full = path.join(cwd, old);
-      try {
-        if (fs.existsSync(full)) {
-          fs.unlinkSync(full);
-          removed++;
-        }
-      } catch {
-        // ignore removal errors
-      }
-    }
-  }
+  const removed = pruneObsolete(cwd, manifest.files ?? [], allFiles);
   if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
 
   fixLineEndings(path.join(addDir, 'scripts'));
@@ -226,10 +157,11 @@ export async function update(cwd, options = {}, scope = 'project') {
   removeLegacyPluginSkills(cwd, providers, previousPlugins);
 
   // Re-apply enabled plugins (mirrors installer; marker-free files need re-injection post-update)
-  const pluginsApplied = applyEnabledPlugins(cwd);
-  if (pluginsApplied > 0) {
-    log.success(`Re-applied ${pluginsApplied} plugin injection(s).`);
+  const plugins = applyEnabledPluginsDetailed(cwd);
+  if (plugins.modified > 0) {
+    log.success(`Re-applied ${plugins.modified} plugin injection(s).`);
   }
+  reportNotDetectedPlugins(plugins.notDetected);
 
   // Sync .gitignore block if opted-in during install (project scope only — never gitignore the home dir)
   if (installScope === 'project' && manifest.gitignore === true) {

@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   promptConfirm: vi.fn(),
   promptFeatures: vi.fn(),
   promptGitignore: vi.fn(),
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
@@ -30,6 +33,9 @@ vi.mock('../src/prompt.js', () => ({
   promptConfirm: mocks.promptConfirm,
   promptFeatures: mocks.promptFeatures,
   promptGitignore: mocks.promptGitignore,
+  promptExistingInstall: mocks.promptExistingInstall,
+  promptModify: mocks.promptModify,
+  promptApplyDiff: mocks.promptApplyDiff,
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -39,6 +45,7 @@ vi.mock('@clack/prompts', () => ({
   log: { success: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
+import { log } from '@clack/prompts';
 import { install } from '../src/installer.js';
 
 /**
@@ -79,6 +86,11 @@ beforeEach(() => {
   mocks.promptScope.mockResolvedValue('project');
   mocks.promptConfirm.mockResolvedValue(undefined);
   mocks.promptGitignore.mockResolvedValue(true);
+  // Over an existing installation `install` now opens a menu. The tests below that
+  // install twice are about what a REINSTALL does, so they answer it that way; with
+  // no manifest the menu is never reached.
+  mocks.promptExistingInstall.mockReset();
+  mocks.promptExistingInstall.mockResolvedValue('reinstall');
 });
 
 afterEach(() => {
@@ -892,5 +904,145 @@ describe('F23 — the installed native runtime closure (L6)', () => {
         expect(builtins.has(spec) || spec.startsWith('.'), `${name} requires "${spec}"`).toBe(true);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// `install` over an existing installation opens a menu instead of resetting (L2.6)
+// ---------------------------------------------------------------------------
+describe('install over an existing installation (L2.6)', () => {
+  const manifestPath = () => path.join(tmpDir, '.codeadd', 'manifest.json');
+  const readManifest = () => JSON.parse(fs.readFileSync(manifestPath(), 'utf8'));
+
+  /** Every file under the project, mapped to its bytes. */
+  function snapshot() {
+    const out = {};
+    const walk = (d) => {
+      for (const ent of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, ent.name);
+        if (ent.isDirectory()) walk(full);
+        else out[path.relative(tmpDir, full)] = fs.readFileSync(full, 'utf8');
+      }
+    };
+    walk(tmpDir);
+    return out;
+  }
+
+  /** A first install, with a non-default feature turned on so a reset is visible. */
+  async function installOnce() {
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+    await install(tmpDir);
+    const manifest = readManifest();
+    manifest.features['qa-pipeline'] = true;
+    manifest.plugins = { demo: { enabled: true } };
+    fs.writeFileSync(manifestPath(), JSON.stringify(manifest, null, 2));
+    vi.clearAllMocks();
+    mocks.promptExistingInstall.mockReset();
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+    mocks.promptConfirm.mockResolvedValue(undefined);
+  }
+
+  it('never opens the menu when there is no manifest', async () => {
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildInstallZip());
+
+    await install(tmpDir);
+
+    expect(mocks.promptExistingInstall).not.toHaveBeenCalled();
+  });
+
+  it('shows the menu with the installed state, before resolving any release', async () => {
+    await installOnce();
+    mocks.promptExistingInstall.mockResolvedValue('cancel');
+
+    await install(tmpDir);
+
+    expect(mocks.promptExistingInstall).toHaveBeenCalledTimes(1);
+    const state = mocks.promptExistingInstall.mock.calls[0][0];
+    expect(state).toMatchObject({ version: '1.2.3', scope: 'project', providers: ['codex'] });
+    expect(state.features).toContain('qa-pipeline');
+    expect(state.plugins).toEqual(['demo']);
+    expect(mocks.getLatestTag).not.toHaveBeenCalled();
+  });
+
+  it('cancel leaves every file and the manifest byte-equal and downloads nothing', async () => {
+    await installOnce();
+    const before = snapshot();
+    mocks.promptExistingInstall.mockResolvedValue('cancel');
+
+    await install(tmpDir);
+
+    expect(snapshot()).toEqual(before);
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+    expect(mocks.promptProviders).not.toHaveBeenCalled();
+  });
+
+  it('modify keeps features and plugins and asks none of the reinstall questions', async () => {
+    await installOnce();
+    mocks.promptExistingInstall.mockResolvedValue('modify');
+    mocks.promptModify.mockResolvedValue({ providers: ['codex'], features: { 'qa-pipeline': true }, plugins: {} });
+    mocks.promptApplyDiff.mockResolvedValue(true);
+
+    await install(tmpDir);
+
+    expect(mocks.promptModify).toHaveBeenCalledTimes(1);
+    expect(mocks.promptProviders).not.toHaveBeenCalled();
+    expect(mocks.promptScope).toHaveBeenCalledTimes(1); // scope is still resolved first
+    const manifest = readManifest();
+    expect(manifest.features['qa-pipeline']).toBe(true);
+    expect(manifest.plugins).toEqual({ demo: { enabled: true } });
+  });
+
+  it('modify ignores --version and --channel and says so', async () => {
+    await installOnce();
+    mocks.promptExistingInstall.mockResolvedValue('modify');
+    mocks.promptModify.mockResolvedValue({ providers: ['codex'], features: {}, plugins: {} });
+    mocks.promptApplyDiff.mockResolvedValue(false);
+
+    await install(tmpDir, { version: 'v9.9.9', channel: 'beta' });
+
+    expect(log.info).toHaveBeenCalledWith(expect.stringMatching(/--version.*--channel.*ignored|ignored.*--version/));
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+
+  it('update runs the update flow with the flags and keeps features and plugins', async () => {
+    await installOnce();
+    mocks.promptExistingInstall.mockResolvedValue('update');
+
+    await install(tmpDir, { version: 'v2.0.0' });
+
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v2.0.0');
+    const manifest = readManifest();
+    expect(manifest.version).toBe('2.0.0');
+    expect(manifest.features['qa-pipeline']).toBe(true);
+    expect(manifest.plugins).toEqual({ demo: { enabled: true } });
+    expect(mocks.promptProviders).not.toHaveBeenCalled();
+  });
+
+  it('reinstall, after the overwrite confirmation, reproduces today\'s reset', async () => {
+    await installOnce();
+    mocks.promptExistingInstall.mockResolvedValue('reinstall');
+    mocks.promptProviders.mockResolvedValue(['codex']);
+
+    await install(tmpDir);
+
+    expect(mocks.promptConfirm).toHaveBeenCalledWith(expect.stringMatching(/already exists/));
+    expect(mocks.promptProviders).toHaveBeenCalledTimes(1);
+    const manifest = readManifest();
+    expect(manifest.features['qa-pipeline']).toBe(false);
+    expect(manifest.plugins).toEqual({});
+  });
+
+  it('reinstall declined at the overwrite confirmation writes nothing', async () => {
+    await installOnce();
+    const before = snapshot();
+    mocks.promptExistingInstall.mockResolvedValue('reinstall');
+    mocks.promptConfirm.mockRejectedValue(new Error('USER_CANCEL'));
+
+    await expect(install(tmpDir)).rejects.toThrow('USER_CANCEL');
+
+    expect(snapshot()).toEqual(before);
   });
 });
