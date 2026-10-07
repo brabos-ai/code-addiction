@@ -279,6 +279,45 @@ describe('applyDesiredState — add a provider (L2.1, L2.2, L2.9, L2.11)', () =>
   });
 });
 
+describe('applyDesiredState — v1 injection sidecar', () => {
+  const makeV1 = () => fs.writeFileSync(abs('.codeadd/injection-points.json'), JSON.stringify({ version: 1 }));
+
+  it('refuses an add, downloads nothing and leaves the tree unchanged', async () => {
+    seed(['claude'], { plugins: true });
+    makeV1();
+    const before = snapshot();
+
+    await expect(applyDesiredState(dir, { providers: ['claude', 'cursor'] })).rejects.toThrow(
+      'Adding a provider needs v2 injection data. Run `codeadd update` first.',
+    );
+
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('refuses an add when the sidecar is missing', async () => {
+    seed(['claude']);
+    fs.rmSync(abs('.codeadd/injection-points.json'));
+    const before = snapshot();
+
+    await expect(applyDesiredState(dir, { providers: ['claude', 'cursor'] })).rejects.toThrow(/v2 injection data/);
+
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('still removes a provider', async () => {
+    seed(['claude', 'cursor']);
+    makeV1();
+
+    await applyDesiredState(dir, { providers: ['claude'] }, { force: true });
+
+    expect(manifest().providers).toEqual(['claude']);
+    expect(fs.existsSync(abs('.cursor'))).toBe(false);
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+});
+
 describe('applyDesiredState — remove providers (L2.3, L2.7, L2.12)', () => {
   it('L2.3 removes codex without a download, keeping the .agents tree zcode still owns', async () => {
     seed(['claude', 'codex', 'zcode'], { gitignore: true });

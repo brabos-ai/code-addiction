@@ -6,7 +6,7 @@ import { PROVIDERS, resolveSelected, exclusiveFiles, ownedRoots, globalCapable }
 import { copyRelease, pruneObsolete, shouldPreserve } from './release-copy.js';
 import { downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, reportMcpRegistration, reportNotDetectedPlugins } from './installer.js';
-import { readManifest, saveManifest, captureBaselines } from './injection-core.js';
+import { readManifest, saveManifest, captureBaselines, loadInjectionSidecar } from './injection-core.js';
 import {
   FEATURES,
   resolveFeatureName,
@@ -191,6 +191,12 @@ async function applyAdd(targetDir, manifest, scope, wanted, diff) {
   const wantedEntries = resolveSelected(wanted.providers, scope);
   const removedEntries = resolveSelected(diff.providers.remove, scope);
   const addedEntries = resolveSelected(diff.providers.add, scope);
+
+  // Refuse BEFORE the download: on a v1 sidecar the re-apply below is a no-op and the
+  // recopy would strip every feature and plugin injection from the providers.
+  if (loadInjectionSidecar(targetDir)?.version !== 2) {
+    throw new Error('Adding a provider needs v2 injection data. Run `codeadd update` first.');
+  }
 
   // Download FIRST. A tag that no longer downloads must leave every file as it was.
   let buffer;
