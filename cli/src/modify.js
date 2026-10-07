@@ -48,8 +48,11 @@ import { promptConfirm, promptModify, promptApplyDiff } from './prompt.js';
 
 const BASELINE_ROOT = '.codeadd/baselines';
 
-/** Manifest fields `writeManifest` sets itself; every other field travels through an add verbatim. */
-const SET_BY_WRITE = new Set(['version', 'releaseTag', 'installedAt', 'providers', 'files', 'hashes', 'baselineHashes']);
+/**
+ * Manifest fields `writeManifest` sets itself; every other field travels through an add verbatim.
+ * `installedAt` is deliberately NOT here: it means the first install and an add keeps it.
+ */
+const SET_BY_WRITE = new Set(['version', 'releaseTag', 'providers', 'files', 'hashes', 'baselineHashes']);
 
 function currentFeature(manifest, name) {
   const states = normalizeFeatureStates(manifest.features ?? {}).states;
@@ -228,7 +231,7 @@ async function applyAdd(targetDir, manifest, scope, wanted, diff) {
   pruneRemovedRoots(targetDir, removedEntries, wantedEntries);
 
   // Everything the manifest carried that writeManifest does not set itself travels
-  // through verbatim; `baselineHashes` is rebuilt by captureBaselines just below.
+  // through verbatim; `baselineHashes` is rebuilt by captureBaselines just below and `installedAt` is kept.
   const carried = Object.fromEntries(Object.entries(manifest).filter(([key]) => !SET_BY_WRITE.has(key)));
   writeManifest(targetDir, manifest.version, wanted.providers, written, manifest.releaseTag ?? tag, carried);
 

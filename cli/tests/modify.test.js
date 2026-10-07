@@ -237,6 +237,17 @@ describe('applyDesiredState — add a provider (L2.1, L2.2, L2.9, L2.11)', () =>
     expect(read('.gitignore')).toContain('.cursor/');
   });
 
+  it('keeps installedAt: it means the first install', async () => {
+    seed(['claude']);
+    const m = manifest();
+    m.installedAt = '2020-01-01T00:00:00.000Z';
+    fs.writeFileSync(abs('.codeadd/manifest.json'), JSON.stringify(m, null, 2));
+
+    await applyDesiredState(dir, { providers: ['claude', 'cursor'] });
+
+    expect(manifest().installedAt).toBe('2020-01-01T00:00:00.000Z');
+  });
+
   it('L2.9 names a plugin whose tool is not detected and keeps it enabled', async () => {
     seed(['claude'], { plugins: true });
     writeCatalog('false');
