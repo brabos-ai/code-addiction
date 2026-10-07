@@ -577,7 +577,8 @@ report is emitted before any metadata, and the self-check all live there. Load i
 command's last step.
 
 The metadata that follows the report is the plan path, its status, the review verdict, the fixes
-applied, and the next-step commands.
+applied, and the next-step commands — printed as `add-final-report`'s **The Continuation Line**, which
+owns their form.
 
 ---
 
@@ -587,6 +588,11 @@ applied, and the next-step commands.
 `docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*` and `--ledger` companions. A
 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the
 full basename always works.
+
+**A plain relative path resolves the same way.** Before the match, strip any directory part and a
+trailing `.md` from the argument, then run the substring match above on what is left. A bare slug has
+neither, so it passes through unchanged. This is what lets the continuation line a closing prints
+(`/add-framework--build docs/plans/<basename>.md`) resolve on arrival instead of falling into "No match".
 
 - **Exactly one match** → that is the plan.
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**

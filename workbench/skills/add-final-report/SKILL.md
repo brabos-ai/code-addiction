@@ -7,6 +7,8 @@ description: "Use at a command's closing step, in the internal layer — the sev
 
 <!-- uses:
 - mention: add-framework--build
+- mention: add-framework--plan
+- mention: add-framework--done
 - mention: add-build-ledger
 -->
 
@@ -14,8 +16,14 @@ Owns the LAST thing a command says. Not what it wrote to disk — that belongs t
 the document. This is the message the user actually reads, and for most runs it is the only part of
 the work they will ever see.
 
-**Load this at the closing step, not at STEP 1.** A shape carried through fifteen steps is a shape
-the agent no longer has when it matters. This skill is small on purpose so a late load costs nothing.
+```
+IF THE COMMAND IS NOT AT ITS CLOSING STEP:
+  ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
+  ✅ DO: Load this at the closing step, where the report is written
+```
+
+A shape carried through fifteen steps is a shape the agent no longer has when it matters. This skill
+is small on purpose so a late load costs nothing.
 
 ## When to Use
 
@@ -91,7 +99,53 @@ does not get skipped because the seven blocks are done.
 
 Plain facts are different: they belong inside block 2 or block 4, wherever they already fit.
 
-Metadata is last: paths, commit ranges, verdicts, next-step commands.
+Metadata is last: paths, commit ranges, verdicts, and the next-step command — which is printed as
+**The Continuation Line**, below.
+
+## The Continuation Line
+
+**The next-step command is one paste-ready line carrying the path of the file the next stage
+reads — one this closing just wrote, or the plan it resolved.** This section owns the rule. Brainstorm, plan and build each point here from their closing
+step; none of them restates it.
+
+**Format:** `/<command> <relative path>` — the plain path from the repository root, with no `@` in
+front of it. The next stage receives the path as a literal argument, and its own Operation Mode
+decides how it is routed.
+
+```
+IF A CHAT CLOSING IS ABOUT TO PRINT A CONTINUATION LINE:
+  ⛔ DO NOT: Rebuild the path from a slug or a timestamp — print the path of the file the step wrote
+             or resolved
+  ⛔ DO NOT: Print the line before checking that the file is on disk
+  ✅ DO: Run `test -f` on that path, and print the line only when it exists
+```
+
+**A missing file means no line, not a stop.** There is nothing to continue with, so the closing prints
+its report without one.
+
+**The check binds a chat closing only.** A document's own `## Next Steps` names its own path without
+`test -f`, because that file is still being composed when the line is written.
+
+**Spelling follows the provider's `slashCommands` capability** in `workbench/provider-map.json`:
+
+| `slashCommands` | Provider | Line |
+|---|---|---|
+| `true` | claude, opencode | `/<name> <relative path>` |
+| `false` | codex, which loads a command as a skill by its name | `<name> <relative path>` |
+
+The path is identical in all three.
+
+**Position:** it is the **last line of the metadata**, and so the last line of the closing. Other
+command lines — for example `/add-framework--plan <relative path>` to revise a plan — may come before
+it and use the same plain-path form.
+
+**Plan set:** one line per plan that has F-blocks, in set order.
+
+**Automatic delivery:** the same line is printed before the next stage is loaded.
+
+**Who never prints one:** a closing that wrote no file the next stage reads — backlog, release, sync,
+done, a direct build and a brainstorm spike. `/add-framework--done` is the terminal stage, and the
+build prints its line but never loads it.
 
 ## How It Reads
 
@@ -186,13 +240,6 @@ the last two has to read past it first.
 
 ## Rules
 
-ALWAYS:
-- Emit the report before any path, verdict or next-step command
-- Write the Deleted row even when it reads "none"
-- Name the host and the step for every integration point
-- Print a command's own mandatory artefact whole, after the seven blocks
-
 NEVER:
-- Load this skill at the start of a command — it is needed at the end
 - Trade a mandatory fact for the shape
 - Merge this skill with its product sibling
