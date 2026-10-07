@@ -260,6 +260,14 @@ describe('applyDesiredState — add a provider (L2.1, L2.2, L2.9, L2.11)', () =>
     expect(manifest().features['qa-pipeline']).toBe(true);
   });
 
+  it('keeps the manifest order of the providers that were already installed', async () => {
+    seed(['claude', 'cursor']);
+
+    await applyDesiredState(dir, { providers: ['opencode', 'cursor', 'claude'] });
+
+    expect(manifest().providers).toEqual(['claude', 'cursor', 'opencode']);
+  });
+
   it('L2.8 a failed download leaves every file and the manifest as they were', async () => {
     seed(['claude'], { plugins: true });
     const before = snapshot();
@@ -305,6 +313,36 @@ describe('applyDesiredState — remove providers (L2.3, L2.7, L2.12)', () => {
     expect(baselines()).toEqual(keptBefore);
     expect(read('.gitignore')).not.toContain('.codex/');
     expect(read('.gitignore')).toContain('.zcode/');
+  });
+
+  it('a preserved file of the removed provider stays on disk but is no longer listed in the manifest', async () => {
+    seed(['claude', 'cursor']);
+    fs.writeFileSync(abs('.cursor/settings.local.json'), '{"mine":true}');
+    const m = manifest();
+    m.files.push('.cursor/settings.local.json');
+    m.hashes['.cursor/settings.local.json'] = 'abc';
+    fs.writeFileSync(abs('.codeadd/manifest.json'), JSON.stringify(m, null, 2));
+
+    await applyDesiredState(dir, { providers: ['claude'] }, { force: true });
+
+    expect(read('.cursor/settings.local.json')).toBe('{"mine":true}');
+    expect(manifest().files.some((f) => f.startsWith('.cursor/'))).toBe(false);
+    expect(Object.keys(manifest().hashes).some((f) => f.startsWith('.cursor/'))).toBe(false);
+  });
+
+  it('a file that could not be deleted stays listed in the manifest', async () => {
+    seed(['claude', 'cursor']);
+    // A non-empty directory listed as a file: rmSync without recursive refuses it.
+    fs.mkdirSync(abs('.cursor/stuck'), { recursive: true });
+    fs.writeFileSync(abs('.cursor/stuck/child'), 'x');
+    const m = manifest();
+    m.files.push('.cursor/stuck');
+    fs.writeFileSync(abs('.codeadd/manifest.json'), JSON.stringify(m, null, 2));
+
+    await applyDesiredState(dir, { providers: ['claude'] }, { force: true });
+
+    expect(fs.existsSync(abs('.cursor/stuck/child'))).toBe(true);
+    expect(manifest().files).toContain('.cursor/stuck');
   });
 
   it('L2.3 writes no .gitignore when the install did not opt in', async () => {
@@ -511,6 +549,19 @@ describe('codeadd providers (L2.5)', () => {
     expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v1.0.0');
     expect(manifest().providers).toEqual(['claude', 'cursor']);
     expect(count(read('.cursor/commands/add-new.md'), 'GX-CONTENT')).toBe(1);
+  });
+
+  it('add warns, before it writes, that provider files are re-copied and local edits overwritten', async () => {
+    seed(['claude']);
+    let warnedBeforeDownload = false;
+    mocks.downloadReleaseAsset.mockImplementation(async () => {
+      warnedBeforeDownload = log.info.mock.calls.some((c) => /overwritten/.test(c[0]));
+      return releaseZip().toBuffer();
+    });
+
+    await providers(dir, ['add', 'cursor'], 'project');
+
+    expect(warnedBeforeDownload).toBe(true);
   });
 
   it('add of a provider already installed says there is nothing to change and downloads nothing', async () => {

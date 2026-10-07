@@ -48,6 +48,9 @@ import { promptConfirm, promptModify, promptApplyDiff } from './prompt.js';
 
 const BASELINE_ROOT = '.codeadd/baselines';
 
+/** Manifest fields `writeManifest` sets itself; every other field travels through an add verbatim. */
+const SET_BY_WRITE = new Set(['version', 'releaseTag', 'installedAt', 'providers', 'files', 'hashes', 'baselineHashes']);
+
 function currentFeature(manifest, name) {
   const states = normalizeFeatureStates(manifest.features ?? {}).states;
   return states[name] ?? FEATURES[name]?.default ?? false;
@@ -211,7 +214,6 @@ async function applyAdd(targetDir, manifest, scope, wanted, diff) {
 
   // Everything the manifest carried that writeManifest does not set itself travels
   // through verbatim; `baselineHashes` is rebuilt by captureBaselines just below.
-  const SET_BY_WRITE = new Set(['version', 'releaseTag', 'installedAt', 'providers', 'files', 'hashes', 'baselineHashes']);
   const carried = Object.fromEntries(Object.entries(manifest).filter(([key]) => !SET_BY_WRITE.has(key)));
   writeManifest(targetDir, manifest.version, wanted.providers, written, manifest.releaseTag ?? tag, carried);
 
@@ -245,14 +247,20 @@ function applyRemove(targetDir, manifest, scope, wanted, diff) {
   const files = manifest.files ?? [];
   // exclusiveFiles reads the manifest list, so nothing outside it is ever deleted;
   // shouldPreserve is the one definition of "never delete this" on top of that.
-  const doomed = new Set(exclusiveFiles(files, removedEntries, remainingEntries).filter((f) => !shouldPreserve(f)));
-  for (const file of doomed) {
+  const owned = exclusiveFiles(files, removedEntries, remainingEntries);
+  for (const file of owned.filter((f) => !shouldPreserve(f))) {
     try {
       fs.rmSync(path.join(targetDir, file), { force: true });
     } catch {
       // A file that cannot be removed is not worth failing the change over.
     }
   }
+  // What leaves the manifest: everything the removed provider owned, EXCEPT a file
+  // that is still on disk only because it could not be deleted — that one stays
+  // tracked. A preserved file stays on disk but is no longer ours to track.
+  const doomed = new Set(
+    owned.filter((f) => shouldPreserve(f) || !fs.existsSync(path.join(targetDir, f))),
+  );
 
   removePluginSkillsFor(targetDir, removedEntries, remainingEntries);
   removeBaselineDirs(targetDir, diff.providers.remove);
@@ -286,7 +294,14 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   const scope = manifest.scope ?? 'project';
 
   const checked = validate(desired, scope);
-  const wanted = { ...checked, providers: checked.providers ?? manifest.providers ?? [] };
+  // Installed providers keep their manifest order; new ones follow in the order asked.
+  // A prompt hands back its own display order, which must not reshuffle the manifest.
+  const installed = manifest.providers ?? [];
+  const asked = checked.providers ?? installed;
+  const wanted = {
+    ...checked,
+    providers: [...installed.filter((key) => asked.includes(key)), ...asked.filter((key) => !installed.includes(key))],
+  };
   const diff = diffState(manifest, wanted);
   if (diff.isEmpty) {
     log.info('Nothing to change.');
@@ -387,6 +402,8 @@ export async function providers(cwd, args, scope = 'project') {
       return;
     }
     intro('ADD CLI - Providers add');
+    // Said BEFORE anything is written: an add re-copies every provider from the installed release.
+    log.info('Adding a provider re-copies every provider from the installed release; local edits to provider files are overwritten.');
     await applyDesiredState(cwd, { providers: [...installed, name] });
     outro(`Provider "${name}" added.`);
     return;

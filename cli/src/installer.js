@@ -361,7 +361,9 @@ export async function install(cwd, options = {}) {
  * Say which enabled plugins could not be applied because their tool is not
  * detected.
  *
- * Shared by install, update and modify so all three use one wording. A plugin
+ * Shared by install, update and modify so all three use one wording. (Install
+ * calls it too, but a reinstall resets `plugins` to `{}` first, so today it has
+ * nothing to report there; the call keeps the wording in one place.) A plugin
  * in this list stays enabled in the manifest; the line says it did not reach
  * ANY provider, not just a new one, because a recopy erases its old injections
  * too.
