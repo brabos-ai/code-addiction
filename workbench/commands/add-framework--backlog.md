@@ -6,14 +6,14 @@
 -->
 
 <!--
-`backlog.sh`, `backlog-commit.sh`, the native `.cjs` entries and
+The native backlog `.cjs` entries and
 `add--doc-schemas/references/backlog.md` are PRODUCT nodes, named in prose
 below on purpose and deliberately NOT declared: `uses:` targets resolve
 inside the declaring artefact's own layer (scripts/build.js), so a
-`- script: backlog.sh` from here would resolve to
-`internal/script/backlog.sh`, which does not exist. This repository is those
+`- script: backlog-cli.cjs` from here would resolve to
+`internal/script/backlog-cli.cjs`, which does not exist. This repository is those
 scripts' source, so it calls them by their repository path — the same way
-add-framework--done calls delivered.sh.
+add-framework--done calls delivered.cjs.
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -84,14 +84,17 @@ Run, from the repository root:
 node framwork/.codeadd/scripts/backlog-cli.cjs list --all
 ```
 
-Its output is `KEY=VALUE` lines, then one ticket per line starting with `{`. Line order is the
-priority: the first ticket is the highest. `add--doc-schemas/references/backlog.md` owns the fields
-and the keys.
+Its output is `KEY=VALUE` metadata, then a seven-field summary per ticket (`id, status, title, tldr,
+theme, labels, updated_at`). Line order is the priority: the first ticket is the highest.
+`add--doc-schemas/references/backlog.md` owns the fields, the keys and the projections.
 
 - `BACKLOG_PRESENT=no` → the board does not exist yet. That is a result, not an error: the first add
   creates it. Say so in STEP 5.
 - `DAMAGED_LINE=<n>` or `UNDEFINED_STATUS=<name>` → carry each into STEP 5's report. Neither stops
   the run.
+
+**The summary is the board view, and nothing else.** It carries no `notes`, `paths`, `done_when` or
+`work_id` — STEP 2 resolves the target from it, and any field beyond the seven comes from `get`.
 
 ---
 
@@ -112,13 +115,15 @@ Classify the request as exactly one of:
 history; `remove` erases it. Use `remove` only when the user says the ticket should never have
 existed.
 
-**Resolve the target the way the user addressed it:**
+**Resolve the target the way the user addressed it, and always over all statuses — never through the
+open filter of `list`:**
 
-- By id — `0003B`.
-- By an old number — `o 1.2`. Tickets migrated from the markdown board carry
-  `Formerly item N.M of docs/backlog/index.md.` as their first note; match that note exactly.
-- By subject — `aquele item do review adversarial`. The match must be unambiguous against the titles,
-  tldrs and notes. `node framwork/.codeadd/scripts/backlog-cli.cjs search <terms>` narrows it.
+- By id — `0003B`: run the exact detail read, `node framwork/.codeadd/scripts/backlog-cli.cjs get 0003B`.
+  Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board.
+- By an old number — `o 1.2`: `search "Formerly item 1.2"` over all statuses, `get` each candidate, and
+  select only the one whose note matches exactly — never a `tldr` preview.
+- By subject — `aquele item do review adversarial`: `search <terms>` runs on title, tldr and notes over
+  **every status**; it also answers an exact id.
 
 ```
 IF THE TEXT NAMES A TICKET THAT DOES NOT EXIST:
@@ -199,9 +204,8 @@ node framwork/.codeadd/scripts/backlog-commit.cjs <mode> [<id>] [<position>] --r
 | close | `{"status":"done"}` or `{"status":"dropped"}` |
 | move, remove | no record file |
 
-`bash framwork/.codeadd/scripts/backlog-commit.sh <mode> [<id>] < record.json` remains a marked
-compatibility path — stdin is still a supported record channel through the bash wrapper — but the
-native recipe is the file, read in the caller's cwd BEFORE any routing, allocation or persistence,
+The Node entry also supports stdin when `--record-file` is absent. Agents use the file,
+read in the caller's cwd BEFORE any routing, allocation or persistence,
 so a read failure (`ERROR=record-read-failed`, exit 1) happens while nothing else has.
 
 **The entry picks the route itself.** On `main` it commits directly; on any other branch it writes

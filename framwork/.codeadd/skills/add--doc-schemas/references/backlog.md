@@ -5,8 +5,8 @@ document an agent authors, with frontmatter, depth floors and a Decision Log. Th
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
 its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
 (`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files; `backlog.sh` and `backlog-commit.sh` are the bash compatibility wrappers that guard
-node and delegate to them. Backlog operations need Node >= 18 and Git — no bash, no WSL.
+and write both files. Local operations need Node >= 22.19.0; publication also needs Git.
+Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
 of those apply to files a script owns.
@@ -18,7 +18,7 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 
 | File | Holds | Written by | Hand-edited? |
 |---|---|---|---|
-| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through `backlog.sh`/`backlog-cli.cjs` | never in normal operation |
+| `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through the canonical core | never in normal operation |
 | `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
 Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
@@ -184,7 +184,7 @@ they are entitled to make, so the two directions differ:
 | Direction | An undefined status |
 |---|---|
 | **write** — `add`, `update` | Refused: exit 2, `REFUSED=unknown-status`, the board unchanged |
-| **read** — `list`, `search` | Reported as `UNDEFINED_STATUS=<name>`, exit 0, every ticket still returned |
+| **read** — `list`, `search`, `get` | Reported as `UNDEFINED_STATUS=<name>`, exit 0, every ticket still returned |
 
 ## Reading rules
 
@@ -197,10 +197,21 @@ they are entitled to make, so the two directions differ:
   consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is
   why `id` is written first and is never omitted.
 - **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
+  `--full` restores the raw rows; `--ids` emits just the identities, filter and order preserved.
 - **`search` matches `title`, `tldr` and `notes`**, and returns in board order — priority order survives
-  the filter.
-- **Output is `KEY=VALUE` lines, then raw JSONL entries.** A line starting with `{` is a ticket; anything
-  else is a key. This is the same shape `delivered.sh` emits, so one consumer parses both.
+  the filter. **It answers all statuses** (so a target in flight is never hidden), also matches an
+  exact ticket id case-insensitively, and takes only one literal query plus an optional `--full`.
+- **`get <id>` is the detail read.** An exact, case-sensitive lookup with no status filter that returns
+  the raw row: notes, paths, `done_when` and `work_id` come from `get`, never from a summary. Exit 0 with
+  `TICKETS_RETURNED=0` on an unknown id or absent board — a result, not a refusal; `get` with no id is
+  `ERROR=missing-id`, exit 2.
+- **`list` and `search` print a seven-field summary.** Exactly `id, status, title, tldr, theme, labels,
+  updated_at`, in that order; the `tldr` is a preview cut at 120 code points (`…` when cut), without
+  splitting surrogate pairs. The projection is presentation only: nothing is rewritten, and the board
+  export and the board API keep the complete records.
+- **Output is `KEY=VALUE` metadata, then payload lines.** A line starting with `{` is a ticket; anything
+  else is a key; `--ids` emits one id per line instead. This is the same shape `delivered.cjs` emits, so
+  one consumer parses both.
 
 | Key | On | Means |
 |---|---|---|
@@ -210,6 +221,8 @@ they are entitled to make, so the two directions differ:
 | `DAMAGED_LINES` | every read | How many lines failed to parse |
 | `DAMAGED_LINE` | per damaged line | Its 1-based line number |
 | `UNDEFINED_STATUS` | per such status | A status in use that the definitions no longer define |
+| `READ_VIEW` | every read | `summary`, `full` or `ids` — which projection the payload carries |
+| `STATUS_COUNTS` | every read | One JSON object counting the whole board before any filter, statuses in first-occurrence order |
 | `TICKET_ID` | every write | The id written, allocated or targeted |
 
 ## Hard bans
@@ -218,20 +231,21 @@ Each is testable, and each has a `REFUSED=` name below.
 
 1. **`id` is generated, never supplied.** A caller that sends one is refused. The id comes from the shared
    counter, and letting a caller pick one is how two tickets end up sharing a number.
-2. **`created_at` and `updated_at` are generated, never supplied.** Same reason `log-jsonl.sh` generates
+2. **`created_at` and `updated_at` are generated, never supplied.** Same reason `log-jsonl.cjs` generates
    its own timestamp: a caller-supplied time is a time nobody can trust.
 3. **`status` must be defined in `docs/backlog.definitions.json`.** On writes only — see the table above.
 4. **An id already on the board is never added twice.** One line per ticket, always.
 5. **`title`, `tldr` and `done_when` are required and non-empty.** A ticket without a runnable check is the
    entry that is worthless in three weeks, which is the failure this whole file exists to prevent.
-6. **stdin must be exactly one JSON object** for `add`, `update` and `comment`.
+6. **The record must be exactly one JSON object** for `add`, `update` and `comment`.
+   Agents pass `--record-file <path>`; the Node entries also accept stdin when that option is absent.
 7. **An id named by `update`, `comment`, `move` or `remove` must be on the board.** Including the anchor of
    `move --after`.
 
-Two further promises are structural rather than submittable, so they carry no `REFUSED=` name: **the script
-never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**. Neither is
-something a caller can ask for, so neither can be refused — they are properties of the script, asserted by
-`backlog.bats`.
+Two further promises are structural rather than submittable, so they carry no `REFUSED=` name:
+**the local CLI never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**.
+The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
+`backlog.bats` proves definitions preservation.
 
 ## `REFUSED=` vocabulary
 
@@ -244,7 +258,7 @@ two cannot drift.
 
 | `REFUSED=` | Ban | The caller did this |
 |---|---|---|
-| `invalid-json` | 6 | stdin was not one parseable JSON object |
+| `invalid-json` | 6 | the record was not one parseable JSON object |
 | `missing-field` | 5 | `title`, `tldr` or `done_when` is absent or empty |
 | `reserved-field` | 1, 2 | the record carried `id`, `created_at` or `updated_at` |
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
@@ -258,14 +272,14 @@ consumer branch once.
 ## Exit codes
 
 The backlog follows the script family's three-code doctrine, with the same single departure
-`delivered.sh` makes — and it is the backlog Node core that owns it, through every entry: the local
-`backlog-cli.cjs`, the publication `backlog-commit.cjs`, and the bash wrapper that delegates to either.
+`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the local
+`backlog-cli.cjs` and the publication `backlog-commit.cjs`.
 
 | Exit | Means |
 |---|---|
 | `0` | A probe result, whatever it says. `list` and `search` always exit 0, **including on an absent board** |
 | `1` | **The filesystem refused a write.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie |
-| `2` | Caller error — a bad mode, bad arguments, a hard ban (`REFUSED=<name>`), or an unmet hard dependency (`ERROR=node-missing`) |
+| `2` | Caller error — a bad mode, bad arguments or a hard ban (`REFUSED=<name>`) |
 
-**The two exit-2 causes are distinguishable by output, never by code.** A fourth exit code would be one the
-rest of the script family does not have; the reason belongs in the output.
+**Exit-2 causes are distinguished by output, not by code.** If Node itself is unavailable, the host
+reports the launch failure; the Node entries cannot emit a runtime-missing diagnostic before startup.

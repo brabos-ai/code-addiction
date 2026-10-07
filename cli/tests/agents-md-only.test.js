@@ -43,10 +43,11 @@ const SIDECARS = new Set([
 ]);
 
 const ALLOWED = {
-  'framwork/.codeadd/scripts/migrate-context-files.sh': 'the migration itself — it names every legacy file it folds in',
-  'framwork/.codeadd/scripts/tests/migrate-context-files.bats': 'the migration suite — its fixtures are legacy files',
-  'framwork/.codeadd/scripts/init.sh': 'emits LEGACY_CONTEXT, so it tests for each legacy file',
-  'framwork/.codeadd/scripts/tests/init.bats': 'the LEGACY_CONTEXT fixtures',
+  'framwork/.codeadd/scripts/migrate-context-files.cjs': 'the migration itself — it names every legacy file it folds in',
+  'framwork/.codeadd/scripts/init.cjs': 'emits LEGACY_CONTEXT, so it tests for each legacy file',
+  'scripts/tests/init.test.cjs': 'the native port of the init suite — its fixtures are legacy files',
+  'scripts/tests/migrate-context-files.test.cjs': 'the native port of the migration suite — its fixtures are legacy files',
+  'scripts/tests/native-script-cases.json': 'the migration case map — it enumerates the old Bats cases, whose fixtures name the legacy files',
   'framwork/.codeadd/skills/add--agents-md-style/SKILL.md': 'owns the Migration section and explains why a legacy file hides AGENTS.md',
   'framwork/.codeadd/commands/add-wiki.md': 'STEP 6.1 runs the migration and STEP 7 checks no legacy file is left',
   'framwork/.codeadd/skills/add--health-check/documentation-analyzer.md': 'finding DOC-008 flags a leftover legacy file',

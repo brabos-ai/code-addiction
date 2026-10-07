@@ -5,17 +5,15 @@
   "type": "module",
   "description": "Read-only activity board over docs/backlog.jsonl. Built by `npm run setup`; served by server.mjs.",
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.19.0"
   },
   "scripts": {
     "dev": "vite",
     "preboard": "node ../scripts/build-board-runtime.js",
     "prebuild": "node ../scripts/build-board-runtime.js",
-    "pretest:e2e": "node ../scripts/build-board-runtime.js",
     "build": "tsc -b && vite build",
-    "pretest": "node ../scripts/build-board-runtime.js",
-    "test": "tsc -b --noEmit && vitest run",
-    "test:e2e": "playwright test"
+    "test": "node ../scripts/run-tests.js board",
+    "test:e2e": "node ../scripts/run-tests.js board-e2e"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

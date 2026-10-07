@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--doc-schemas/references/review.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -18,8 +19,8 @@
 - command: /add-new
 - command: /add-plan
 - command: /add-wiki
-- script: hotfix-gates.sh
-- script: status.sh
+- script: hotfix-gates.cjs
+- script: status.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -38,7 +39,7 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-diagnose.context (sch
 
 **STEPS IN ORDER:**
 ```
-STEP add-diagnose.context: Load context          → status.sh + add--ecosystem
+STEP add-diagnose.context: Load context          → status.cjs + add--ecosystem
 STEP add-diagnose.capture: Capture & reformulate → internal only, no stop
 STEP add-diagnose.investigate: Load investigation    → add--investigation skill, apply Phase 0
 STEP add-diagnose.dispatch: Two-phase agent dispatch → A.1 ∥ A.2 (parallel) → B (sequential)
@@ -56,12 +57,12 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 
 | Checkpoint | Condition | Forbidden | Allowed |
 |---|---|---|---|
-| **STEP add-diagnose.context** | Context not loaded | Grep, Read code files, dispatch agents | Run status.sh + load add--ecosystem |
+| **STEP add-diagnose.context** | Context not loaded | Grep, Read code files, dispatch agents | Run status.cjs + load add--ecosystem |
 | **STEP add-diagnose.investigate** | Skill not loaded | Begin investigation, suggest route | Read add--investigation skill |
 | **STEP add-diagnose.dispatch** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP add-diagnose.dispatch** | A outputs incomplete | Proceed to STEP add-diagnose.analyze, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
 | **STEP add-diagnose.analyze** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
-| **READ-ONLY** | Always | Edit files, Bash (except status.sh and hotfix-gates.sh), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
+| **READ-ONLY** | Always | Edit files, Bash (except status.cjs and hotfix-gates.cjs), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
 | **STEP add-diagnose.persist** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
 | **STEP add-diagnose.validate** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
 | **STEP add-diagnose.complete** | Always | Report before STEP add-diagnose.complete, or skip it on a no-action route | Emit the report in the shape, on every route |
@@ -70,10 +71,10 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 
 ## STEP add-diagnose.context: Load Context
 
-### STEP add-diagnose.run-status-sh Run status.sh
+### STEP add-diagnose.run-status-sh Run status.cjs
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 Parse: BRANCH, FEATURE, WIKI + WIKI_STALE_COUNT (used in STEP add-diagnose.context), RECENT_CHANGELOGS.
@@ -234,7 +235,7 @@ Use the Command Next-Steps Routing table from {{skill:add--ecosystem/SKILL.md}} 
 Run:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline
+node .codeadd/scripts/hotfix-gates.cjs diagnosis-baseline
 ```
 
 Store `DIAGNOSED_BRANCH`, `DIAGNOSED_COMMIT`, and the `BASELINE_BEGIN` / `BASELINE_END` block. This is the working-tree state the investigation used. Do not recapture after the user answers. The script is read-only.
@@ -313,9 +314,9 @@ the next command at STEP add-diagnose.carry-these-step puts metadata in front of
 
 STEP add-diagnose.complete states:
 - Report path (if persisted)
-- Recommended next command (from ecosystem map routing)
-- When the accepted route is hotfix: the copy-ready command `/add-hotfix @docs/diagnose/<file>.md`. Print it only for an accepted hotfix route. Never invoke `/add-hotfix`
-- Reminder: `add-diagnose` is READ-ONLY; user executes the next command when ready
+- The accepted route, named in prose from the `add--ecosystem` routing
+- When the accepted route is hotfix: that `/add-hotfix` is the next activity. ⛔ Do NOT print its full invocation here — STEP add-diagnose.handoff puts it behind the offer, where `add--delivery-mode` requires it. Never invoke `/add-hotfix`
+- Reminder: `add-diagnose` is READ-ONLY; the user runs the next command when ready
 
 ---
 
@@ -342,7 +343,36 @@ STEP add-diagnose.persist persisted a document. Fill `What was delivered` with t
 `How it works` with the causal chain — what fails, where, and why the evidence points there rather
 than at the runner-up hypothesis.
 
-Then, after the seven blocks, state the recommended command and that this command never runs it. Print `/add-hotfix @docs/diagnose/<file>.md` only when the accepted route is hotfix. Never invoke it.
+Then, after the seven blocks, state the accepted route and that this command never runs the command it names.
+
+### STEP add-diagnose.handoff Offer the continuation
+
+**This command is READ-ONLY and advisory.** The next activity exists only when the accepted route is
+one an agent can pick up. Print the hotfix invocation only for an accepted hotfix route, and never
+invoke it.
+
+| Accepted route | Next activity |
+|---|---|
+| `hotfix` | `/add-hotfix @docs/diagnose/<file>.md` — it consumes the `## Hotfix Handoff` this report appended |
+| `feature` | `/add-new` — a functional gap becomes a feature |
+| `extend` | `/add-new` or `/add-plan`, per the route's own scope |
+| `no-action` | none — the diagnosis was the deliverable |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the first three rows. A
+`no-action` diagnosis ends normally with no offer.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` | The causal chain and the `## Hotfix Handoff` the next command reads |
+| `docs/features/<id>/about.md` | What the feature created for this gap is for, on the `feature` and `extend` routes |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the accepted route takes next |
 
 ---
 
@@ -365,5 +395,5 @@ NEVER:
 - Modify code — READ-ONLY boundary, applies throughout
 - Accept "something is weird" as a symptom (STEP add-diagnose.capture) — push for an observable predicate (WHEN/THEN/BUT)
 - Persist a rejected diagnosis (STEP add-diagnose.persist)
-- Invoke `/add-hotfix` from this command — print the copy-ready path only
+- Invoke `/add-hotfix` from this command — reserve its copy-ready invocation for the accepted continuation response
 - Guess past the 3-failure stop rule (STEP add-diagnose.analyze) — return to framing instead

@@ -1,6 +1,9 @@
 {
   "name": "codeadd",
   "private": true,
+  "engines": {
+    "node": ">=22.19.0"
+  },
   "scripts": {
     "setup": "node scripts/build-workbench.js && npm run build:board",
     "build": "node scripts/build.js",
@@ -8,17 +11,16 @@
     "build:board": "npm --prefix board ci && npm --prefix board run build",
     "preboard": "node scripts/build-board-runtime.js",
     "board": "node board/server.mjs --layers",
-    "test": "node scripts/run-tests.js vitest",
+    "test": "node scripts/run-tests.js framework",
+    "test:framework": "node scripts/run-tests.js framework",
+    "test:cli": "node scripts/run-tests.js cli",
     "test:all": "node scripts/run-tests.js all",
-    "test:scripts": "node scripts/run-tests.js bats",
-    "test:board": "npm --prefix board test",
-    "release": "bash scripts/release.sh",
+    "test:scripts": "node scripts/run-tests.js scripts",
+    "test:package": "node scripts/run-tests.js package",
+    "test:board": "node scripts/run-tests.js board",
+    "test:board:e2e": "node scripts/run-tests.js board-e2e",
+    "release": "node scripts/release.cjs",
     "publish": "cd cli && npm publish",
     "login": "npm login"
-  },
-  "devDependencies": {
-    "bats": "^1.13.0",
-    "bats-assert": "^2.2.4",
-    "bats-support": "^0.3.0"
   }
 }

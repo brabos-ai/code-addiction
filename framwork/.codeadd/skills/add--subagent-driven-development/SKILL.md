@@ -21,11 +21,11 @@ description: Use when executing implementation plans via dispatched subagents wi
 - agent: fix-agent
 - agent: frontend-agent
 - agent: reviewer-agent
-- script: build-ledger.sh
-- script: hotfix-gates.sh
-- script: review-package.sh
-- script: status.sh
-- script: task-brief.sh
+- script: build-ledger.cjs
+- script: hotfix-gates.cjs
+- script: review-package.cjs
+- script: status.cjs
+- script: task-brief.cjs
 - skill: add--subagent-driven-development/references/persistent-logging-and-tasks.md
 - mention: /add-review
 - mention: add--architecture-discovery
@@ -128,7 +128,7 @@ packages — lives in `${FEATURE_DIR}/_build/`, which ignores itself and never r
 **Append with the script, never by hand:**
 
 ```bash
-bash .codeadd/scripts/build-ledger.sh "${FEATURE_DIR}/build-ledger.md" "T01: complete (commits a1b2c3d..a1b2c3d, review clean)"
+node .codeadd/scripts/build-ledger.cjs "${FEATURE_DIR}/build-ledger.md" "T01: complete (commits a1b2c3d..a1b2c3d, review clean)"
 ```
 
 It creates the file with its identity header when absent and appends otherwise, printing `LEDGER=`,
@@ -195,7 +195,7 @@ Two kinds of row, and both are required:
    `Files` cover its `Produces`, its `Deps` cover the tasks its `Consumes` names).
 
 **The output is a table, not a verdict.** Writing "the scan is clean" without the rows is not a scan that
-ran — it is a claim that one did. Append the rows to the ledger with `build-ledger.sh`, one line each.
+ran — it is a claim that one did. Append the rows to the ledger with `build-ledger.cjs`, one line each.
 
 **Every conflict is ruled on before Task 1 is dispatched**, with the `Ruling:` recorded beside its row.
 A conflict carried into execution becomes two subagents building against two different names, discovered
@@ -211,7 +211,7 @@ resident in context and are re-read on every turn for the rest of the session.
 **Before the dispatch:**
 
 ```bash
-bash .codeadd/scripts/task-brief.sh "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
+node .codeadd/scripts/task-brief.cjs "${TASKS_FILE}" T02 "${FEATURE_DIR}/_build" "${KNOWN_FAILURES}"
 ```
 
 It writes one task's full block — description plus all six sub-bullets — into its own file and prints
@@ -229,7 +229,7 @@ looking for a clean baseline by clearing that tree.
 
 | Field | Content |
 |---|---|
-| `BRIEF` | the path `task-brief.sh` printed — the agent reads it |
+| `BRIEF` | the path `task-brief.cjs` printed — the agent reads it |
 | `REPORT_FILE` | the path in `_build/` where the agent writes its full report |
 | `INTERFACES` | the exact `Produces` signatures from earlier tasks that this task `Consumes` — the brief cannot know them |
 | `GLOBAL CONSTRAINTS` | the plan's `## Global Constraints` block, **copied verbatim** |
@@ -250,7 +250,7 @@ All subagent prompts include these fields, in order:
 
 - **ROLE** — `You are the [AREA] [agent type] for task [N].`
 - **TASK_DOCUMENTS** — file paths the subagent must read first (source of truth).
-- **BRIEF** — path to the task brief written by `task-brief.sh`.
+- **BRIEF** — path to the task brief written by `task-brief.cjs`.
 - **REPORT_FILE** — path where the subagent writes its full report.
 - **INTERFACES** — signatures produced by earlier tasks that this task consumes.
 - **GLOBAL CONSTRAINTS** — the plan's block, verbatim.
@@ -309,7 +309,7 @@ not before the task where the conflict bites.
 Before dispatching ANY subagent:
 
 1. **Assemble TASK_DOCUMENTS** — list all doc paths the subagent needs (epic-aware)
-2. **Write the brief** — `task-brief.sh` for this task id
+2. **Write the brief** — `task-brief.cjs` for this task id
 3. **Identify Reference Files** — find similar files in codebase via Glob/Grep
 4. **Compose Skills** — determine mandatory + additional skills for this area
 5. **Collect INTERFACES** — the `Produces` signatures this task `Consumes`
@@ -322,7 +322,7 @@ Dispatch `@${AREA}-agent` (see Named Agent Mapping) with a prompt that fills eve
 
 ```
 ## MANDATORY: Load Context (FIRST STEP)
-1. Run: bash .codeadd/scripts/status.sh
+1. Run: node .codeadd/scripts/status.cjs
 2. Read ALL files listed in TASK_DOCUMENTS above
 3. Read the file at BRIEF
 4. Read your area's skill file (see SKILLS section)
@@ -350,7 +350,7 @@ Write your full report to REPORT_FILE. Return inline ONLY:
 ### 5. Review Subagent's Work
 
 **The review runs on the WORKING TREE, before the commit — not on a diff.** Nothing is committed at this
-point, so `BASE..HEAD` is still empty and `review-package.sh` would refuse the range with exit 2. The
+point, so `BASE..HEAD` is still empty and `review-package.cjs` would refuse the range with exit 2. The
 package belongs to the **re-review** in step 7, after a fix batch has been committed.
 
 Dispatch `@reviewer-agent` with `MODE: task`, the `FILES_CREATED` / `FILES_MODIFIED` lists from the
@@ -425,7 +425,7 @@ itself; the implementer never sees either.
 **One commit per unit of work, and the unit is what the dispatch covered.** When several areas run in
 parallel, each area's commit stages **that area's files by path** — never `git add -A`, which would sweep a
 sibling area's work into the first commit and leave the second with an empty range that
-`review-package.sh` then refuses.
+`review-package.cjs` then refuses.
 
 ### 7. Fix Loop, Escalation and the Scoped Re-Review
 
@@ -458,8 +458,8 @@ context with implementation detail it then carries into every later dispatch.
 
 **Every fix round is re-reviewed.** Two scoped package forms are valid. A committed feature fix uses a
 **commit-range package**: record `FIX_BASE`, then run
-`bash .codeadd/scripts/review-package.sh FIX_BASE HEAD "${FEATURE_DIR}/_build"`. An uncommitted hotfix
-correction uses the **correction-only snapshot package** emitted by `hotfix-gates.sh diff-wave` from a
+`node .codeadd/scripts/review-package.cjs FIX_BASE HEAD "${FEATURE_DIR}/_build"`. An uncommitted hotfix
+correction uses the **correction-only snapshot package** emitted by `hotfix-gates.cjs diff-wave` from a
 snapshot captured immediately before that wave. Dispatch `@reviewer-agent` with `MODE: re-review` and
 the one package the caller owns. In that mode the reviewer verdicts **each open finding** `ADDRESSED`
 or `NOT ADDRESSED` and flags new breakage **in the scoped fix package only**. Out-of-scope observations
@@ -566,14 +566,14 @@ Pre-flight scan
 Task 1 — Hook installation script
   BASE recorded → brief written → dispatch implementer
   Validator + build pass → commit → ledger: T01: complete (commits …, review clean)
-  review-package.sh → dispatch reviewer MODE: task → Score 9/10, no issues
+  review-package.cjs → dispatch reviewer MODE: task → Score 9/10, no issues
 
 Task 2 — Recovery modes
   BASE recorded → brief written → dispatch implementer
   Validator + build pass → commit
   Dispatch reviewer MODE: task → Important: missing progress reporting
   Dispatch @fix-agent (round 1/3) → progress every 100 items → commit
-  review-package.sh FIX_BASE HEAD _build → reviewer MODE: re-review → ADDRESSED
+  review-package.cjs FIX_BASE HEAD _build → reviewer MODE: re-review → ADDRESSED
   ledger: T02: fix round 1/3 (…), then T02: complete (…)
 
 Compliance Gate
@@ -624,10 +624,10 @@ Coordinator must confirm before reporting completion:
 - **Coordinator Compliance Gate** — cross-reference spec vs implementation before completion
 
 **Reference scripts:**
-- `bash .codeadd/scripts/status.sh` — get feature context
-- `bash .codeadd/scripts/build-ledger.sh` — append one ledger line
-- `bash .codeadd/scripts/task-brief.sh` — extract one task's block to its own file
-- `bash .codeadd/scripts/review-package.sh` — write the scoped diff for a range
+- `node .codeadd/scripts/status.cjs` — get feature context
+- `node .codeadd/scripts/build-ledger.cjs` — append one ledger line
+- `node .codeadd/scripts/task-brief.cjs` — extract one task's block to its own file
+- `node .codeadd/scripts/review-package.cjs` — write the scoped diff for a range
 
 **Skills to compose:**
 - Backend: `{{skill:add--backend-development/SKILL.md}}`

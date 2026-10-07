@@ -232,7 +232,7 @@ describe('setup contract (0061)', () => {
     expect(smoke).toBeGreaterThan(migration);
     expect(src).toContain('# ADD QA evidence - managed by add-qa-setup');
     expect(src).not.toMatch(/^!final\/$/m);
-    expect(src).toContain('.codeadd/scripts/qa-evidence.sh ensure-ignore');
+    expect(src).toContain('.codeadd/scripts/qa-evidence.cjs ensure-ignore');
   });
 
   it('no-screens deferral still writes and validates the receipt', () => {

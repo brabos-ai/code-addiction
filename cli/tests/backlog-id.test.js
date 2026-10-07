@@ -2,13 +2,12 @@
  * backlog-id.test.js — the native global allocator (L2).
  *
  * Every fixture the plan lists, run three ways: the native calculate(), and
- * BOTH shell calculators of the pre-cutover chain (next-id.sh and status.sh
- * next-id) for every readable fixture. The agreement is the characterization
- * the plan requires before the wrapper cutover, and it is also why the
- * raw-text anchor chosen matches what the shells actually grep — their own
- * header comment's claim about work_id substrings was probed false (a row
- * whose work_id is the max yields base+1, not base+43), so the parity here
- * is against BEHAVIOR, documented in the module header.
+ * BOTH native public entries of the cutover chain (`next-id.cjs` and
+ * `status.cjs next-id`) for every readable fixture. The agreement is the
+ * Node-to-Node characterization the plan requires now that `next-id.sh` and
+ * `status.sh` are retired — one allocator, two public adapters. The raw-text
+ * anchor chosen matches what the shells grepped, documented in the module
+ * header, so the parity here is against BEHAVIOR.
  *
  * RED-first: this module did not exist; the ledger records today's native-add
  * and file-entry failures before it landed.
@@ -25,8 +24,8 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(__dirname, '..', '..');
 const idc = require(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-id.cjs'));
 
-const NEXT_ID_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'next-id.sh');
-const STATUS_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'status.sh');
+const NEXT_ID = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'next-id.cjs');
+const STATUS = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'status.cjs');
 
 const ROOTS = [];
 
@@ -69,16 +68,16 @@ const ticketRow = (fields = {}) => JSON.stringify({
   work_id: fields.work_id ?? null,
 });
 
-/** The two shell calculators, in the fixture root. Unconditional — no skip
+/** The two native public entries, in the fixture root. Unconditional — no skip
  *  path exists; a fixture that cannot be compared stops the suite. */
-const shellNextId = (scriptPath, args, cwd) =>
-  execFileSync('bash', [scriptPath, ...args], { encoding: 'utf8', cwd }).trim();
+const nodeNextId = (entry, args, cwd) =>
+  execFileSync(process.execPath, [entry, ...args], { encoding: 'utf8', cwd }).trim();
 
-/** One fixture, one letter: native and both shells must agree, or it stops. */
+/** One fixture, one letter: the core and both native entries must agree. */
 const expectAllThree = (root, letter, id) => {
   expect(idc.calculate(root, letter)).toEqual({ ok: true, id });
-  expect(shellNextId(NEXT_ID_SH, [letter], root)).toBe(id);
-  expect(shellNextId(STATUS_SH, ['next-id', letter], root)).toBe(id);
+  expect(nodeNextId(NEXT_ID, [letter], root)).toBe(id);
+  expect(nodeNextId(STATUS, ['next-id', letter], root)).toBe(id);
 };
 
 describe('L2 — calculate: absent and empty sources', () => {
@@ -184,17 +183,17 @@ describe('L2 — calculate: the exact raw-text anchor, and its neighbors', () =>
 });
 
 describe('L2 — calculate: exhaustion and unreadable sources', () => {
-  it('9999 refuses explicitly; the shells would emit the five-digit id the wrapper filters', () => {
+  it('9999 is refused by backlog but preserves the next-id/status overflow contract', () => {
     const root = fixture('id-max-');
     featureDir(root, '9999F-mid');
     backlogRow(root, ticketRow({ id: '9999B' }));
     const native = idc.calculate(root, 'B');
     expect(native).toEqual({ ok: false, reason: 'id-exhausted' });
-    // The old calculators overflow: next-id.sh and status.sh print five
-    // digits, and the wrapper's `^[0-9]{4}B$` filter is what refused the
-    // chain. The native refusal preserves that effective rejection.
-    expect(shellNextId(NEXT_ID_SH, ['B'], root)).toBe('10000B');
-    expect(shellNextId(STATUS_SH, ['next-id', 'B'], root)).toBe('10000B');
+    // Public next-id/status adapters retain the shell's five-digit output;
+    // backlog allocation retains its separate four-digit refusal.
+    for (const entry of [[NEXT_ID, ['B']], [STATUS, ['next-id', 'B']]]) {
+      expect(nodeNextId(entry[0], entry[1], root)).toBe('10000B');
+    }
   });
 
   it('9998 inside the four-digit space still allocates — exactly 9999', () => {

@@ -17,8 +17,8 @@
 - command: /add-build
 - command: /add-plan
 - command: /add-wiki
-- script: init.sh
-- script: status.sh
+- script: init.cjs
+- script: status.cjs
 -->
 
 > **REF:** `AGENTS.md` for architecture patterns
@@ -96,7 +96,7 @@ file is never read a second time.
 **READ-ONLY GUARANTEE:**
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
-- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.sh (NO git writes — branch is created later by /add-build)
+- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO git writes — branch is created later by /add-build)
 <!-- slot:board.ticket-board-write fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-board-write -->
 <!-- /feature:board:ticket-board-write -->
@@ -126,14 +126,14 @@ often as it is a one-line change, and the word list cannot tell those apart.
 
 ## STEP add-new.allocate: Init + Allocate ID + Create Structure (NEW FEATURES ONLY)
 
-**Execute init + allocate ID (`status.sh next-id F`):**
+**Execute init + allocate ID (`status.cjs next-id F`):**
 
 ```bash
-bash .codeadd/scripts/init.sh
-bash .codeadd/scripts/status.sh next-id F
+node .codeadd/scripts/init.cjs
+node .codeadd/scripts/status.cjs next-id F
 ```
 
-**If `init.sh` printed a `LEGACY_CONTEXT:` line**, tell the user which files it lists and that
+**If `init.cjs` printed a `LEGACY_CONTEXT:` line**, tell the user which files it lists and that
 `/add-wiki update` folds them into AGENTS.md — while one of them is left, Claude Code ignores
 AGENTS.md. This is a notice: continue the STEP whatever the answer.
 
@@ -441,17 +441,38 @@ user, not with what the document contains.
 <!-- /feature:board:ticket-shaped -->
 <!-- /slot:board.ticket-shaped -->
 
-Then, after the seven blocks, summarize the created artifacts and suggest the next command based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`’s own UX step when the feature touches UI), `/add-build` for implementation.
+Then, after the seven blocks, summarize the created artifacts. Name the next activity in ordinary prose based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`'s own UX step when the feature touches UI), `/add-build` for implementation. ⛔ Do not print its full invocation here — `STEP add-new.handoff` puts that behind the offer.
 
 **Stop kind — confirming.** The report describes work the brainstorm's approval already covered.
 
 | `delivery:` | Do |
 |---|---|
-| `confirm`, or absent | Print the report and the suggestion, and STOP. The user runs the next command |
+| `confirm`, or absent | Offer the continuation under `chat-continuation-eligibility-v1`, then STOP |
 | `automatic` | Print the report and the line `(delivering automatically — continuing to /add-plan.)`, then follow {{cmd:add-plan}} with this feature's id, from its first step, as `add--delivery-mode` describes |
 
 ⛔ **On `automatic` the next command is always `/add-plan`, never `/add-build`.** The plan is where the
 objective reaches the reviewer and where an epic's consistency check runs.
+
+### STEP add-new.handoff Offer the continuation — `confirm`
+
+**On `confirm`, finish the report, then its metadata, and only then ask ONCE whether the user wants
+instructions for continuing in a fresh context.** Then stop and wait.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents; `automatic` never reaches it.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/features/${FEATURE_ID}/about.md` | What this feature is for, and what "done" means |
+| `docs/features/${FEATURE_ID}/discovery.md` | What the codebase already has, and the prior art to build on |
+| {{skill:add--feature-specification/SKILL.md}} | How to write the spec, when the plan needs one refined |
+
+**`automatic` never reaches this step.** It has already handed off, and `add--delivery-mode` owns
+that path end to end.
 
 ---
 

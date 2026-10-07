@@ -57,13 +57,18 @@ describe('the sidecar guard', () => {
 describe('the real-checkout refusal', () => {
   it('refuses on a developer checkout, naming the command that runs on a copy', () => {
     const why = refusal({});
-    expect(why).toMatch(/real checkout/);
+    expect(why).toMatch(/Unauthorized|Refusing/);
     expect(why).toContain('npm test');
   });
 
-  it('runs on a copy the runner marked, and on CI', () => {
-    expect(refusal({ [COPY_MARKER]: '1' })).toBeNull();
-    expect(refusal({ CI: 'true' })).toBeNull();
+  it('generic copy and CI flags do not authorize mutation', () => {
+    expect(refusal({ [COPY_MARKER]: '1' })).not.toBeNull();
+    expect(refusal({ CI: 'true' })).not.toBeNull();
+  });
+
+  it('accepts valid active CLI leaf and rejects an unrelated or mismatched leaf', () => {
+    expect(refusal(process.env)).toBeNull();
+    expect(refusal({ ...process.env, CODEADD_TESTS_LEAF: 'package' })).not.toBeNull();
   });
 
   it('setup checks the refusal before it spawns the build', () => {

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 /**
  * Plan 2026-09-19T122048 — optional review, build final review.
  * Validation Matrix, levels L2 (text contract), L3 (build prompt) and L4
- * (wording sweep). L1 lives in framwork/.codeadd/scripts/tests/converge-gates.bats.
+ * (wording sweep). L1 lives in the native scripts/tests/converge-gates.test.cjs.
  *
  * Written RED against the pre-plan tree: /add-done blocks on a missing review,
  * /add-build hands every automatic delivery to /add-review, and nothing in the
@@ -51,7 +51,15 @@ function mdFiles(dir, out = []) {
 }
 
 // 1609 on main at 34731b0. Slot wrappers around the 15 injection markers added the rest.
-const BUILD_LINE_BUDGET = 1626; // slot wrappers; STEP id rename did not add lines
+// An absolute cap, not a trend: the guard is "no unexamined growth in the build
+// prompt", so every delivery that legitimately adds to add-build.md raises this
+// by its own measured delta and says which plan did it.
+// 1626 was set by plan 2026-09-19T122048 (the two-round review loop came out and
+// nothing went in). 1657 is plan 2026-10-04T185331, which added the
+// chat-continuation handoff contract — +31, of which 10 were removed again after
+// the accept/decline block was pulled back to its owner in add--final-report
+// instead of being copied into five commands.
+const BUILD_LINE_BUDGET = 1657;
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {

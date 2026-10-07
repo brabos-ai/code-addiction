@@ -243,14 +243,16 @@ If a JSON example genuinely helps (e.g., showing the shape of an output document
 
 ---
 
-## Bash Blocks: Intent Over Script
+## Command Blocks: Intent Over Script
 
-**DO NOT prescribe bash commands for operations the LLM already knows.** `git branch --show-current`, `cat file | grep`, `git checkout && git merge` — these waste tokens stating the obvious.
+**DO NOT prescribe command blocks for operations the LLM already knows.** `git branch --show-current`, reading a file, checking out and merging a branch — these waste tokens stating the obvious.
 
-**Use explicit bash ONLY when:**
+**Use explicit native commands ONLY when:**
 - A past error proved the LLM gets it wrong without guidance (e.g., `git fetch --tags` before listing tags)
-- The exact command matters and is non-obvious (e.g., specific flags, pipe chains)
-- The command has side effects that must be precise (e.g., `sed` with exact regex)
+- The exact command matters and is non-obvious (e.g., specific Git or Node flags)
+- The command has side effects that must be precise (e.g., a native framework entry's mutation arguments)
+
+Distributed framework scripts use `node .codeadd/scripts/<name>.cjs`; repository tooling uses its source path under `scripts/`. Write portable argv-based recipes; do not require Bash, POSIX pipelines or shell-specific variable assignment for framework operations.
 
 ```
 ❌ BAD (obvious):
@@ -363,7 +365,7 @@ NEVER: Run node scripts/build.js — pipeline's job
 Every command that modifies code MUST log iteration before user notification. Iteration tracking enables pattern discovery across runs — without it, the same mistakes repeat because there's no history to learn from.
 
 ```bash
-bash .codeadd/scripts/log-iteration.sh "type" "slug" "what" "files"
+node .codeadd/scripts/log-iteration.cjs "type" "slug" "what" "files"
 ```
 
 **Types:** fix, enhance, refactor, add, remove, config

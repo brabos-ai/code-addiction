@@ -586,10 +586,16 @@ export const CORPORA = {
     nodeRule: '<layer>/<kind>/<name>',
     edgeSources: ['the <!-- uses: --> block, six kinds'],
     index: 'framwork/.codeadd/artefact-graph.json',
-    // The delivery index reader, for the `history` verb. The path differs per
-    // corpus because this repository keeps the shipped scripts under
-    // `framwork/.codeadd/` while a user's project has them at `.codeadd/`.
-    deliveredScript: 'framwork/.codeadd/scripts/delivered.sh',
+    // The native delivery reader, for `history` and `touched_by`. It is a
+    // shipped `.cjs` LOADED through `createRequire`, never spawned, so there is
+    // no interpreter to find. Both homes are listed because this repository
+    // keeps the shipped tree under `framwork/.codeadd/` while an installed
+    // project has it at `.codeadd/`; repository first here, because the
+    // artefacts corpus only ever exists in the repository.
+    delivered: [
+      'framwork/.codeadd/scripts/delivered.cjs',
+      '.codeadd/scripts/delivered.cjs',
+    ],
     // Written by `node scripts/build.js`, never by `reindex`.
     generated: true,
     load: loadArtefactCorpus,
@@ -602,7 +608,13 @@ export const CORPORA = {
     nodeRule: 'the `id:` value, declared in frontmatter on every kind including a page',
     edgeSources: ['## Relations', '{{doc:ID}}', 'related:', 'superseded_by', 'sources globs'],
     index: '.codeadd/docs-index.json',
-    deliveredScript: '.codeadd/scripts/delivered.sh',
+    // Installed first: the docs corpus is what a user's project serves, and
+    // there the reader sits at `.codeadd/scripts/`. The repository path is the
+    // fallback for this repository's own docs corpus and its fixtures.
+    delivered: [
+      '.codeadd/scripts/delivered.cjs',
+      'framwork/.codeadd/scripts/delivered.cjs',
+    ],
     generated: false,
     load: loadDocsCorpus,
   },

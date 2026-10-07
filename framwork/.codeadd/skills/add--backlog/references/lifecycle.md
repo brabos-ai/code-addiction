@@ -63,18 +63,20 @@ every later command reads `ticket:` from `about.md` and never from the intent fi
 
 ## Reading One Ticket
 
-The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
-agent parsing: run the read, scan the raw lines for `"id":"<the ticket id>"`, keep the one line
-and nothing else.
+A declared ticket id is answered by `get`: an exact, case-sensitive read of the raw row, with no
+status filter and one argument.
 
 ```bash
-node .codeadd/scripts/backlog-cli.cjs list --all
+node .codeadd/scripts/backlog-cli.cjs get <ticket id>
 ```
 
-**This is stable, not a workaround.** The record format writes `id` first on every line and never omits it,
-precisely so a ticket stays recoverable from its raw text — the agent's own line scan is the exact
-match, and no shell pipeline of grep or cut belongs in a native recipe. No matching line means the
-id is not on the board.
+Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
+the id. No matching row means the id is not on the board.
+
+**A subject, not an id**, is resolved by `search`, which runs on every status and now also answers an
+exact id — never by scanning a `list --all` for the matching line. `list` (and `search`) print a
+seven-field summary by default and `--full` restores the raw rows; the summary is for choosing a
+candidate, and the detail is `get`.
 
 ---
 
@@ -90,9 +92,8 @@ node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <recor
 
 **The file is read in the caller's cwd BEFORE any git routing, allocation or persistence**, so the
 record's bytes are captured before the entry chooses a worktree — and a failed read exits 1 with
-`ERROR=record-read-failed` while nothing at all has happened on disk. stdin remains a
-compatibility path (`bash .codeadd/scripts/backlog-commit.sh update <id> < record.json`); the
-native recipe is the file.
+`ERROR=record-read-failed` while nothing at all has happened on disk. The Node entry also
+accepts stdin when `--record-file` is absent; agents use the file recipe above.
 
 **The entry writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
 anywhere else it writes through a detached, locked worktree of its own, so the ticket reaches the base
@@ -146,7 +147,7 @@ move a ticket backwards, so only the entry write needs the phase check.
 | `add-new` | `shaped` | its completion, before the report — once the validation gate passed | `status` |
 | `add-plan` | `planning` | STEP add-plan.load-docs, where it reads the ticket | `status` |
 | `add-plan` | `planned` | its completion, before the report — the plan is written and reviewed | `status` |
-| `add-build` | `doing` and `work_id` | right after `build-setup.sh` returns | `status`, `work_id` |
+| `add-build` | `doing` and `work_id` | right after `build-setup.cjs` returns | `status`, `work_id` |
 | `add-build` | `in-review` | its completion report, reading the `Publish:` outcome it recorded — **only** `pr-opened` or `pr-updated` | `status` |
 | `add-done` | `done` | after the merge | `status` |
 | `add-hotfix` | `doing` and `work_id` | once its branch is confirmed | `status`, `work_id` |
@@ -228,7 +229,7 @@ is what makes the second pass write nothing** once the first subfeature's build 
 
 ### `add-build` — `doing` and `work_id` in one write, then `in-review`
 
-**`doing`, immediately after `build-setup.sh` returns**, and not before: until then the run can still stop on
+**`doing`, immediately after `build-setup.cjs` returns**, and not before: until then the run can still stop on
 a dirty tree or a bad `branch:`, and a ticket marked `doing` for a build that never started is a lie the
 board cannot correct by itself.
 
@@ -271,7 +272,7 @@ by the same literal pattern `add-brainstorm` uses.
 | What | Where |
 |---|---|
 | Resolve the ticket id | at the start, from the invocation |
-| `doing` and `work_id` = the hotfix id, one write | once its branch is confirmed — the hotfix equivalent of `build-setup.sh` returning |
+| `doing` and `work_id` = the hotfix id, one write | once its branch is confirmed — the hotfix equivalent of `build-setup.cjs` returning |
 | `ticket: <id>` into the hotfix `about.md` | the step that writes that file, **before** it is fingerprinted — nothing may change after |
 | `done` | `add-done`, which reads `ticket:` from that `about.md` |
 

@@ -192,14 +192,14 @@ documents cite plans by number. **Only `-PLAN--` with a timestamp is written for
 
 <!--
 Modelled on the product procedure, add--backlog/references/lifecycle.md, and
-kept to the same rules. `backlog.sh`, `backlog-commit.sh`, the native
-`.cjs` entries and `add-doc-schemas/references/backlog.md` are PRODUCT
+kept to the same rules. The native backlog `.cjs` entries and
+`add-doc-schemas/references/backlog.md` are PRODUCT
 nodes, named in prose on purpose and deliberately NOT declared under
 `uses:`: targets resolve inside the declaring artefact's own layer
 (scripts/build.js), so a `- script:` entry here would resolve to a
 nonexistent internal/script/ node and fail the graph gate. This
 repository is those scripts' source and calls them by repository path, as
-add-framework--done calls delivered.sh.
+add-framework--done calls delivered.cjs.
 
 The seven statuses and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
@@ -256,13 +256,18 @@ a product hotfix makes.
 
 ### Reading one ticket
 
-The list output is JSONL plus `KEY=VALUE` metadata, and the match is by exact ticket id using
-agent parsing: run the read, scan the raw lines for `"id":"<id>"`, keep the one line and nothing
-else. No matching line means the id is not on the board: report it and continue with no ticket.
+A declared id is answered by the exact detail read: `get <id>` — exact, case-sensitive, no filter,
+returning the raw row. Run it BEFORE the phase guard and the `work_id` read: `status` and `work_id`
+both come from the detail, never from a summary. No match (`TICKETS_RETURNED=0`, exit 0) means the id
+is not on the board: report it and continue with no ticket.
 
 ```bash
-node framwork/.codeadd/scripts/backlog-cli.cjs list --all
+node framwork/.codeadd/scripts/backlog-cli.cjs get <id>
 ```
+
+A subject, not an id, is resolved with `search`, which runs over every status and also answers an
+exact id; a `list --all` summary remains the board view for choosing, never the source of ticket
+detail.
 
 ### The two rules that decide whether a write happens
 
@@ -297,8 +302,7 @@ writes first (`docs/.tmp-ticket.json` is the usual scratch name, cleaned up in t
 | any status | record `{"status":"<status>"}` |
 | `doing` (build) | record `{"status":"doing","work_id":"<plan basename>"}` |
 
-`bash framwork/.codeadd/scripts/backlog-commit.sh update <id> < record.json` remains a marked
-compatibility path for shell sessions; the native recipe is the file.
+The Node entry also supports stdin when `--record-file` is absent; agents use the file recipe.
 
 **`work_id` is the plan basename** — the internal work's identity in the ledger, the delivery index and
 `docs/deliveries/`. A ticket already `doing` under a **different** `work_id` is written over, exactly as the
@@ -438,7 +442,7 @@ instead of committing one half of a working change and waiting.
 
 ```
 - **F1** [internal] — `workbench/commands/foo.md`: ...
-- **F2** [product]  — `framwork/.codeadd/scripts/bar.sh`: ...
+- **F2** [product]  — `framwork/.codeadd/scripts/bar.cjs`: ...
 ```
 
 | Tag | Means | Paths |
@@ -465,8 +469,8 @@ sidecar key, a frontmatter field, an injection anchor name — whatever one F-bl
 later one reads.
 
 ```
-- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.sh`: adds a sixth delivery gate.
-  - **Produces:** `converge-gates.sh` emits `GATE6=pass|fail|skip`
+- **F3** [product] — `framwork/.codeadd/scripts/converge-gates.cjs`: adds a sixth delivery gate.
+  - **Produces:** `converge-gates.cjs` emits `GATE6=pass|fail|skip`
 - **F7** [product] — `framwork/.codeadd/commands/add-done.md`: STEP 4 reads the new gate.
   - **Consumes:** `GATE6` (F3)
 ```

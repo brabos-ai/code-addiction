@@ -14,18 +14,17 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add--tasks-checklist
 - skill: add--token-efficiency
 - mention: add--commit
-- mention: delivered.sh
+- mention: delivered.cjs
 - command: /add-audit
 - command: /add-done
 - command: /add-hotfix
 - command: /add-new
 - command: /add-plan
 - command: /add-pull-request
-- script: build-setup.sh
-- script: status.sh
+- script: build-setup.cjs
+- script: status.cjs
 - skill: add--doc-schemas/references/backlog.md
 - skill: add--doc-schemas/references/delivery-index.md
-- mention: backlog.sh
 - mention: backlog-cli.cjs
 - mention: backlog-commit.cjs
 - skill: add--doc-schemas/references/fix.md
@@ -150,7 +149,7 @@ Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `B
 ### ID Allocation
 
 **`{{skill:add--id-convention/SKILL.md}}` is the owner of the `[NNNN][L]` shape, the counter, and the
-allocation command.** Load it before allocating, allocate through `status.sh next-id <LETTER>` (or, for
+allocation command.** Load it before allocating, allocate through `status.cjs next-id <LETTER>` (or, for
 a backlog ticket, through the native `backlog-cli.cjs add` itself), and never hand-roll an id — one
 manual grep here and the manual copy could hand out a number second, under an old allocator that stays
 open instead of the shipped one. Never reuse an ID even if the doc is deleted.
@@ -181,7 +180,7 @@ related: [F0042, PRD0009, H0013]
 - Always bump `updated:` on any edit.
 - Optionally set `by:` to signal the editor.
 - Never change `id:` once allocated. If the doc fundamentally changes type, create a new doc with a new ID.
-- Never change `branch:` once set — `/add-new` decides it; `build-setup.sh` executes it.
+- Never change `branch:` once set — `/add-new` decides it; `build-setup.cjs` executes it.
 - Never edit `related:` to hide a broken link.
 
 ## Relations & Observations
@@ -306,8 +305,8 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | File | Describes | Read it when |
 |------|-----------|--------------|
-| `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.sh` |
-| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog.sh`, `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the six-module family |
+| `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.cjs` |
+| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the six-module family |
 
 ## Validation Gate Block
 

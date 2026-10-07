@@ -93,8 +93,7 @@ describe('board — L7.3: off by default means no command mentions the backlog',
         if (!fs.existsSync(file)) continue;
         const body = fs.readFileSync(file, 'utf8');
         for (const needle of [
-          'add--backlog', 'backlog-commit.sh', 'backlog-commit.cjs',
-          'backlog-cli.cjs', 'backlog.sh', 'ticket:',
+          'add--backlog', 'backlog-commit.cjs', 'backlog-cli.cjs', 'ticket:',
         ]) {
           if (body.includes(needle)) offenders.push(`${prov}/${name}: ${needle}`);
         }

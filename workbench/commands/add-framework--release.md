@@ -50,7 +50,7 @@ IF merge to production failed (stable only):
   ✅ DO: Show merge error and STOP
 
 IF release type = stable AND current branch is not production:
-  ⛔ DO NOT: Run `./scripts/create-release-tag.sh`
+  ⛔ DO NOT: Run `node scripts/create-release-tag.cjs`
   ✅ DO: Checkout `production` (merged in STEP 5) first — the script tags the CHECKED-OUT branch
 
 IF preview not approved:
@@ -126,7 +126,7 @@ Bump `cli/package.json` AND `cli/package-lock.json` in a single operation:
 cd cli && npm version [NEXT_VERSION without v prefix] --no-git-tag-version
 ```
 
-CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on the old version. `cli/tests/package-smoke.mjs` compares both fields and hard-fails the pipeline (`FAIL: package-lock.json version X != package.json version Y`) — after the tag is already pushed. `./scripts/create-release-tag.sh` re-checks the same sync before tagging (STEP 7) — a backstop, not a substitute for this step. `--no-git-tag-version` stops npm from creating its own commit and tag.
+CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on the old version. `cli/tests/package-smoke.mjs` compares both fields and hard-fails the pipeline (`FAIL: package-lock.json version X != package.json version Y`) — after the tag is already pushed. `node scripts/create-release-tag.cjs` re-checks the same sync before tagging (STEP 7) — a backstop, not a substitute for this step. `--no-git-tag-version` stops npm from creating its own commit and tag.
 
 ### Verify before committing
 
@@ -223,7 +223,7 @@ Show release preview (tag, type, from branch, changelog). Ask: "Create this rele
 
 ## STEP 7: Push Tag
 
-Save the approved release notes to `/tmp/release-notes-v[VERSION].md`.
+Save the approved release notes to `<os.tmpdir()>/release-notes-v[VERSION].md` (on POSIX that is `/tmp/release-notes-v[VERSION].md`; the legacy absolute `/tmp` path is still honored as an adapter when the portable file is absent).
 
 ### Tag source branch
 
@@ -240,7 +240,7 @@ After the tag is pushed, checkout `main` to restore the working branch.
 
 Run:
 ```bash
-./scripts/create-release-tag.sh
+node scripts/create-release-tag.cjs
 ```
 
 The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, hard-fails while `cli/package-lock.json` is out of sync (the v0.8.0 lesson: the CI smoke gate fires only after the tag is pushed), fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
@@ -297,7 +297,7 @@ ALWAYS:
 NEVER:
 - Tag a stable release from `main` — the tag must point at the production merge
 - Hand-edit the version field in `cli/package.json` — leaves `package-lock.json` stale
-- Create or push the tag with `git tag` — use `./scripts/create-release-tag.sh`
+- Create or push the tag with `git tag` — use `node scripts/create-release-tag.cjs`
 - Run `node scripts/build.js` — pipeline's job
 - Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.)
 - Merge to production for beta releases — beta tags come from main

@@ -222,3 +222,141 @@ describe('executeBacklog', () => {
     expect(DEFAULT_DEFS.statuses).toHaveLength(9);
   });
 });
+
+describe('executeBacklog — get, id-equality search, statusCounts (F1)', () => {
+  let root;
+
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-core-get-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  const ticketJson = (id, over = {}) => JSON.stringify({
+    id,
+    title: `t-${id}`,
+    theme: '',
+    labels: [],
+    tldr: `tldr-${id}`,
+    notes: [],
+    done_when: 'when',
+    paths: [],
+    grounded: false,
+    status: 'open',
+    created_at: '2026-09-20T00:00:00Z',
+    updated_at: '2026-09-20T00:00:00Z',
+    comments: [],
+    feature: null,
+    work_id: null,
+    ...over,
+  });
+
+  const seed = (lines) => {
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'backlog.jsonl'), lines.join('\n') + '\n');
+  };
+
+  it('get returns exactly the raw row of the id, never tickets that only mention it', () => {
+    seed([
+      ticketJson('0001B'),
+      ticketJson('0002B', { notes: ['mentions 0001B in its notes'] }),
+    ]);
+    const boardBefore = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+
+    const result = executeBacklog({ root, mode: 'get', targetId: '0001B' });
+    expect(result.ok).toBe(true);
+    expect(result.read).toBe(true);
+    expect(result.returned).toBe(1);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toContain('tldr-0001B');
+    expect(result.tickets[0].id).toBe('0001B');
+
+    // The board is untouched: get is a read.
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(boardBefore);
+  });
+
+  it('get of an id that is not on the board is a successful read with zero results', () => {
+    seed([ticketJson('0001B')]);
+    const result = executeBacklog({ root, mode: 'get', targetId: '0404B' });
+    expect(result.ok).toBe(true);
+    expect(result.read).toBe(true);
+    expect(result.returned).toBe(0);
+    expect(result.rows).toHaveLength(0);
+  });
+
+  it('get on an absent board is a successful read with zero results and no file created', () => {
+    const readResult = executeBacklog({ root, mode: 'get', targetId: '0001B' });
+    expect(readResult.ok).toBe(true);
+    expect(readResult.returned).toBe(0);
+    expect(readResult.rows).toHaveLength(0);
+    expect(fs.existsSync(path.join(root, 'docs', 'backlog.jsonl'))).toBe(false);
+    expect(fs.existsSync(path.join(root, 'docs', 'backlog.definitions.json'))).toBe(false);
+  });
+
+  it('get has no status filter — done and doing tickets are reachable', () => {
+    seed([
+      ticketJson('0001B', { status: 'done' }),
+      ticketJson('0002B', { status: 'doing' }),
+    ]);
+    for (const [id, status] of [['0001B', 'done'], ['0002B', 'doing']]) {
+      const result = executeBacklog({ root, mode: 'get', targetId: id });
+      expect(result.returned).toBe(1);
+      expect(result.tickets[0].status).toBe(status);
+    }
+  });
+
+  it('search matches an exact id case-insensitively, and only exactly', () => {
+    seed([ticketJson('0001B', { title: 'cache the provider map', tldr: 'stop re-reading it' })]);
+    expect(executeBacklog({ root, mode: 'search', query: '0001b' }).returned).toBe(1);
+    expect(executeBacklog({ root, mode: 'search', query: '0001B' }).returned).toBe(1);
+    // A substring of the id matches no textual field either.
+    expect(executeBacklog({ root, mode: 'search', query: '001B' }).returned).toBe(0);
+  });
+
+  it('statusCounts counts the whole board before the filter, in first-occurrence order', () => {
+    seed([
+      ticketJson('0001B', { status: 'open' }),
+      ticketJson('0002B', { status: 'done' }),
+      ticketJson('0003B', { status: 'open' }),
+    ]);
+    const result = executeBacklog({ root, mode: 'list', filter: 'done' });
+    expect(result.ok).toBe(true);
+    expect(result.returned).toBe(1);
+    expect(result.statusCounts).toEqual([['open', 2], ['done', 1]]);
+  });
+
+  it('statusCounts carries numeric and custom status names in first-occurrence order', () => {
+    seed([
+      ticketJson('0001B', { status: '10' }),
+      ticketJson('0002B', { status: '2' }),
+      ticketJson('0003B', { status: '10' }),
+    ]);
+    const result = executeBacklog({ root, mode: 'list', filter: '*' });
+    expect(result.statusCounts).toEqual([['10', 2], ['2', 1]]);
+  });
+
+  it('statusCounts counts a string status the definitions no longer define, and never a damaged line', () => {
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'docs', 'backlog.jsonl'),
+      [
+        ticketJson('0001B', { status: 'retired' }),
+        '{"id":"0002B","title":"truncated', // damaged — must not be counted
+        ticketJson('0003B', { status: 'open' }),
+      ].join('\n') + '\n',
+    );
+    const result = executeBacklog({ root, mode: 'list', filter: '*' });
+    expect(result.ok).toBe(true);
+    expect(result.damaged).toEqual([2]);
+    expect(result.undefinedStatuses).toContain('retired');
+    expect(result.statusCounts).toEqual([['retired', 1], ['open', 1]]);
+  });
+
+  it('get with zero hits still carries statusCounts', () => {
+    seed([ticketJson('0001B')]);
+    const result = executeBacklog({ root, mode: 'get', targetId: '0404B' });
+    expect(result.statusCounts).toEqual([['open', 1]]);
+  });
+});

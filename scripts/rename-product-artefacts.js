@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 
 const sha = (data) => crypto.createHash('sha256').update(data).digest('hex');
 const posix = (name) => name.split(path.sep).join('/');
-const extensions = new Set(['.md', '.json', '.js', '.sh', '.astro', '.svg', '.yml', '.yaml', '.toml']);
+const extensions = new Set(['.md', '.json', '.js', '.cjs', '.mjs', '.sh', '.astro', '.svg', '.yml', '.yaml', '.toml']);
 
 function options(argv) {
   const [mode, ...rest] = argv;

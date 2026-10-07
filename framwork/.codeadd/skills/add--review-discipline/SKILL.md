@@ -20,10 +20,10 @@ description: "Use when a command dispatches a reviewer or a cold reader over a d
 - command: /add-plan
 - mention: add--code-review
 - mention: add--delivery-mode
-- mention: converge-gates.sh
-- mention: qa-evidence.sh
-- script: review-package.sh
-- script: build-ledger.sh
+- mention: converge-gates.cjs
+- mention: qa-evidence.cjs
+- script: review-package.cjs
+- script: build-ledger.cjs
 -->
 
 <!--
@@ -163,13 +163,13 @@ document buys a longer list, never a better document.
 
 **`/add-build` runs this once per delivery unit — the feature, or one epic subfeature — after its last
 area and before `## Loop End`.** It is what makes `/add-review` optional at close-out: the verdict it
-writes is the one `converge-gates.sh` reads when no newer review exists.
+writes is the one `converge-gates.cjs` reads when no newer review exists.
 
-1. **Package the whole unit** with `review-package.sh`. `BASE` is the commit the unit's first area started from — the ledger's
+1. **Package the whole unit** with `review-package.cjs`. `BASE` is the commit the unit's first area started from — the ledger's
    first `complete` line for the unit names it.
 
    ```bash
-   bash .codeadd/scripts/review-package.sh "${BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
+   node .codeadd/scripts/review-package.cjs "${BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
    ```
 
    Exit 2 means an empty range: nothing was built, so there is nothing to review. Record
@@ -187,7 +187,7 @@ writes is the one `converge-gates.sh` reads when no newer review exists.
 5. **Sort what is still open.**
    - Not Critical → one `Ruling:` ledger line each; the delivery continues.
    - **Critical — a `blocker` — is never turned into a `Ruling:`.** It stops the delivery.
-6. **Write the verdict**, through `build-ledger.sh`, exactly one of:
+6. **Write the verdict**, through `build-ledger.cjs`, exactly one of:
 
    ```
    Final review: passed (after review-NNN)
@@ -215,7 +215,7 @@ IF A FINDING IS STILL CRITICAL AFTER THE FIX WAVE:
 ```
 
 **Why a ledger line and not a review document:** `review-NNN.md` belongs to `/add-review` alone. The
-line is a ledger event, and `converge-gates.sh` reads it deterministically — see Where a Verdict May
+line is a ledger event, and `converge-gates.cjs` reads it deterministically — see Where a Verdict May
 Reach Disk.
 
 ## What the Caller Owes the Report
@@ -248,10 +248,10 @@ Apply it and continue.
 **Two files and one ledger line, and only because a deterministic script consumes them.**
 
 `review-NNN.md` and `qa-validation-NNN.md` are written on purpose, and so is the build's
-`Final review:` line in `build-ledger.md`, which `converge-gates.sh` reads as gate 1's verdict when
+`Final review:` line in `build-ledger.md`, which `converge-gates.cjs` reads as gate 1's verdict when
 no newer review exists.
-`qa-evidence.sh` promotes immutable run snapshots keyed to their report numbers,
-and `converge-gates.sh` reads the review's `| **Overall** |` row and its
+`qa-evidence.cjs` promotes immutable run snapshots keyed to their report numbers,
+and `converge-gates.cjs` reads the review's `| **Overall** |` row and its
 `> **QA baseline:**` line. Neither is a stored opinion a human must find; both
 are inputs to a script that produces the same answer from the same bytes.
 

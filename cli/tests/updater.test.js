@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -120,6 +121,41 @@ describe('update command', () => {
     expect(fs.existsSync(orphanPath)).toBe(false);
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
     expect(manifest.files).not.toContain('.codeadd/scripts/old-script.sh');
+  });
+
+  it.each([true, false])('native backlog update retires only tracked wrappers (tracked=%s)', async (tracked) => {
+    const wrappers = ['backlog.sh', 'backlog-commit.sh'];
+    const canonical = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs'];
+    const scripts = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+    const installed = path.join(tmpDir, '.codeadd', 'scripts');
+    fs.mkdirSync(installed, { recursive: true });
+    for (const name of wrappers) fs.writeFileSync(path.join(installed, name), '# old or manual entry\n');
+    writeManifestFile(tmpDir, {
+      version: '1.0.0', source: 'release', providers: [],
+      files: tracked ? wrappers.map((n) => `.codeadd/scripts/${n}`) : [],
+    });
+    const zip = new AdmZip(buildZip());
+    for (const name of canonical) zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(scripts, name)));
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
+
+    await update(tmpDir);
+
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    for (const name of wrappers) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(!tracked);
+      expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
+      if (!tracked) expect(fs.readFileSync(path.join(installed, name), 'utf8')).toBe('# old or manual entry\n');
+    }
+    for (const name of canonical) expect(fs.readFileSync(path.join(installed, name))).toEqual(fs.readFileSync(path.join(scripts, name)));
+    const result = execFileSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'],
+      { cwd: tmpDir, encoding: 'utf8' });
+    expect(result).toContain('BACKLOG_PRESENT=no');
+    fs.writeFileSync(path.join(tmpDir, 'ticket.json'), JSON.stringify({ title: 'after update', tldr: 't', done_when: 't' }));
+    const publication = execFileSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', 'ticket.json'],
+      { cwd: tmpDir, encoding: 'utf8', input: '' });
+    expect(publication).toContain('PERSISTED=yes');
   });
 
   it('preserves history and .local.json files even if listed in old manifest', async () => {
@@ -441,5 +477,63 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
     await update(tmpDir);
 
     expect(readManifest(tmpDir).version).toBe('2.0.0');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F23 — the update path retires the migrated shell runtime (L6)
+//
+// install.e2e proves the fresh and reinstall boundaries. This is the `update`
+// command's own half: the SAME manifest diff that prunes any obsolete file must
+// remove the old managed shells while leaving a manual file that no manifest
+// ever listed. The new release is the real shipped `.cjs` closure, so a shell
+// surviving here would be a migration defect, not a fixture accident.
+// ---------------------------------------------------------------------------
+
+const SHIPPED_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+const NATIVE_NAMES = fs.readdirSync(SHIPPED_DIR).filter((n) => n.endsWith('.cjs')).sort();
+
+function buildNativeZip() {
+  const zip = new AdmZip();
+  zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+  for (const name of NATIVE_NAMES) {
+    zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(SHIPPED_DIR, name)));
+  }
+  return zip.toBuffer();
+}
+
+describe('F23 — update retires the migrated shell runtime (L6)', () => {
+  it('removes manifest-owned shells, keeps a manual file, and installs the native closure', async () => {
+    const installed = path.join(tmpDir, '.codeadd', 'scripts');
+    fs.mkdirSync(installed, { recursive: true });
+
+    const managed = ['status.sh', 'delivered.sh', 'qa-evidence.sh'];
+    for (const name of managed) fs.writeFileSync(path.join(installed, name), '# old shell\n');
+    const manual = path.join(installed, 'local-helper.sh');
+    fs.writeFileSync(manual, '# manual\n');
+
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: managed.map((n) => `.codeadd/scripts/${n}`),
+    });
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildNativeZip());
+
+    await update(tmpDir);
+
+    for (const name of managed) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(false);
+    }
+    // Never in the manifest, so never in a diff: the user's file survives.
+    expect(fs.readFileSync(manual, 'utf8')).toBe('# manual\n');
+    for (const name of NATIVE_NAMES) {
+      expect(fs.existsSync(path.join(installed, name)), name).toBe(true);
+    }
+    const manifest = readManifest(tmpDir);
+    for (const name of managed) expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
   });
 });

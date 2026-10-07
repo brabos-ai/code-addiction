@@ -3,7 +3,7 @@
 - mention: /add-diagnose
 - mention: /add-hotfix
 - mention: /add-new
-- mention: done.sh
+- mention: done.cjs
 -->
 
 <!-- section:prune -->
@@ -12,7 +12,7 @@
 
 Delete the feature-directory files that **no command reads after the merge**. Their purpose expired when the branch did: `discovery.md` is an explicitly-cached pre-build analysis, `tasks.md` is a build checklist, `epic.md` is convergence state, and `review-NNN.md` is a gate record whose gate has passed.
 
-Deletions stay in the working tree. `done.sh --merge` (STEP add-done.merge) commits them with everything else STEP add-done.document produced.
+Deletions stay in the working tree. `done.cjs --merge` (STEP add-done.merge) commits them with everything else STEP add-done.document produced.
 
 **Delete exactly these, and nothing else:**
 
@@ -65,6 +65,6 @@ That works **because** of the first refusal above — nothing untracked is ever 
 
 "No command reads it after the merge" speaks for commands, not for people. A human doing archaeology on a shipped feature years later may well want a `discovery.md` or a `review-NNN.md`, and no command speaks for them. That is accepted rather than solved: git retains every pruned file, and this feature is off by default. A project that values manual archaeology over a tidy tree leaves `docs-pruning` disabled.
 
-⛔ DO NOT USE: Bash for git add/commit/push here. `done.sh --merge` remains the sole git owner.
+⛔ DO NOT USE: Bash for git add/commit/push here. `done.cjs --merge` remains the sole git owner.
 
 <!-- /section:prune -->

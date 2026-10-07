@@ -8,6 +8,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 <!-- uses:
 - skill: add--dev-environment-setup
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--qa
 - skill: add--qa-migration
@@ -17,9 +18,9 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - agent: qa-agent
 - command: /add-build
 - command: /add-review
-- script: qa-evidence.sh
-- script: qa-preflight.sh
-- script: status.sh
+- script: qa-evidence.cjs
+- script: qa-preflight.cjs
+- script: status.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -43,7 +44,7 @@ Load {{skill:add--doc-schemas/SKILL.md}} + its `references/receipt.md` before ST
 
 **STEPS IN ORDER:**
 ```
-STEP add-qa-setup.context: Load context             → status.sh + add--dev-environment-setup + flags + receipt classification
+STEP add-qa-setup.context: Load context             → status.cjs + add--dev-environment-setup + flags + receipt classification
 STEP add-qa-setup.feature-gate: Feature gate             → qa-pipeline opt-in: probe state → CONFIRM → enable → VERIFY the fragment landed
 STEP add-qa-setup.diagnose: Diagnose + verify        → OS/pkg/node; FUNCTIONALLY invoke runner + chromium + MCP (no install yet)
 STEP add-qa-setup.install: Install prerequisites    → runner (mandatory) + chromium + MCP (optional) → CONFIRM → execute → functionally verify
@@ -92,7 +93,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:18fcea81286fbf09
+shape: sha256:2326519b34fdd1fe
 paths:
   - path: docs/qa/config.json
     owner: setup
@@ -163,7 +164,7 @@ description: Use when authoring E2E specs (/add-build) or judging QA (/add-revie
 - **Screenshots:** `<screenshot API>` → `_tests/run-NNN/screenshots/<screen>.<state>.<viewport>.png` (one file per screen × state × viewport; `<state>` from the spec's `capture states`, `default` when single-state)
 - **Computed styles:** `_tests/run-NNN/computed-styles/<screen>.<viewport>.json` (minified; one file per screen × viewport, capturing the resolved values for each `## Design Contract` dimension verified by computed style)
 - **a11y:** <axe-core wiring, e.g. @axe-core/playwright>
-- **Evidence lifecycle:** allocate with `.codeadd/scripts/qa-evidence.sh next`; new runs write only to `_tests/run-NNN/`. `/add-done` alone promotes the reviewed baseline to immutable `_tests/final/run-NNN/`.
+- **Evidence lifecycle:** allocate with `.codeadd/scripts/qa-evidence.cjs next`; new runs write only to `_tests/run-NNN/`. `/add-done` alone promotes the reviewed baseline to immutable `_tests/final/run-NNN/`.
 
 ## Managed App Lifecycle
 Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this procedure:
@@ -180,9 +181,9 @@ Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this pro
 
 ## STEP add-qa-setup.context: Load Context
 
-### STEP add-qa-setup.run-status Run status.sh
+### STEP add-qa-setup.run-status Run status.cjs
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 Parse: PROJECT_DOCS, package manager hints, features under `docs/features/`.
 
@@ -206,7 +207,7 @@ Outcome sets `SETUP_STATE` for the rest of the run:
 - `CURRENT` — recorded `setup-shape` equals the shipped sidecar `shape`. Drift check only (unless `--upgrade`).
 - `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `config.json`, regenerate `qa-project`, create-if-absent empty `screens.json`).
 
-Phase A rows 8–9 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.sh a` are **work-to-do in this command**, never a stop. The QA preflight `qa-pipeline` injects into `{{cmd:add-review}}` interprets the same rows as `block`.
+Phase A rows 8–9 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.cjs a` are **work-to-do in this command**, never a stop. The QA preflight `qa-pipeline` injects into `{{cmd:add-review}}` interprets the same rows as `block`.
 
 ⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
 
@@ -220,7 +221,7 @@ Running this command is unambiguous QA intent, and everything it installs is ine
 
 ### STEP add-qa-setup.probe-feature Probe the feature state
 ```bash
-bash .codeadd/scripts/qa-preflight.sh a
+node .codeadd/scripts/qa-preflight.cjs a
 ```
 Read `QA_FEATURE_STATE` — the RAW manifest value. Resolve `unset` / `no-manifest` by the feature's default: `qa-pipeline` defaults to **disabled**. (The manifest lives at `{{addpath:manifest.json}}`; never probe the raw `features` field alone — a project that never toggled a feature has no `features` key at all.)
 
@@ -241,7 +242,7 @@ After a confirmed enable, probe the installed plan command ({{cmd:add-plan}}) fo
 
 ## STEP add-qa-setup.diagnose: Diagnose + Functionally Verify (silent — no installs)
 
-Detect the environment, then **functionally verify** each prerequisite — invoke it trivially, do not stop at "present in package.json." For the deterministic rows (config presence, runner, chromium, `qa-project` skill), reuse the shared probe: `bash .codeadd/scripts/qa-preflight.sh a` — do not re-derive what it already reports. A prerequisite counts as present ONLY if its trivial invocation works:
+Detect the environment, then **functionally verify** each prerequisite — invoke it trivially, do not stop at "present in package.json." For the deterministic rows (config presence, runner, chromium, `qa-project` skill), reuse the shared probe: `node .codeadd/scripts/qa-preflight.cjs a` — do not re-derive what it already reports. A prerequisite counts as present ONLY if its trivial invocation works:
 
 - OS + package manager + node/npx availability (per `add--dev-environment-setup`).
 - **`@playwright/test` runner** — resolvable AND runnable: a trivial `npx playwright --version` / spec-list invocation succeeds (not just listed in devDependencies).
@@ -343,7 +344,7 @@ A missing or pre-schema `design.md` is a planning gap. Remedy: re-run `{{cmd:add
 
 Target: root `.gitignore` (shared, co-owned state; never receipt-hashed).
 
-Execute `bash .codeadd/scripts/qa-evidence.sh ensure-ignore "."`. The deterministic operation materializes the exact block declared in `## Materializes` → `.gitignore`, keeps it separate from the installer-owned block, preserves unrelated lines, normalizes duplicates, and is byte-idempotent.
+Execute `node .codeadd/scripts/qa-evidence.cjs ensure-ignore "."`. The deterministic operation materializes the exact block declared in `## Materializes` → `.gitignore`, keeps it separate from the installer-owned block, preserves unrelated lines, normalizes duplicates, and is byte-idempotent.
 
 The pattern intentionally ignores only working `docs/features/**/_tests/run-*/` directories. Do NOT add a `!final/` exception: `_tests/final/run-NNN/` does not match the working-run pattern and remains trackable.
 
@@ -461,9 +462,36 @@ Then, after the seven blocks, tell the user, in order:
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
-8. Run the audit: `/add-review <feature-id> [SFxx]` — its QA sections judge the rendered result.
+8. The audit is the next activity: `/add-review` on the feature, scoped to the SFxx subfeature when one exists. Its QA sections judge the rendered result. Name it here; `STEP add-qa-setup.offer` puts the full invocation behind the offer.
 
 `/add-qa-setup` does NOT modify application code, and does NOT merge the migration branch.
+
+### STEP add-qa-setup.offer Offer the continuation
+
+**Item 8 above is a real next activity whenever the audit can run.** Where it cannot — no feature
+yet, no `screens.json`, an unavailable MCP server — the remaining steps are the user's own manual
+work and there is nothing to continue into.
+
+| State | Next activity |
+|---|---|
+| Feature exists and the audit can run | `/add-review` on the feature, scoped to the SFxx subfeature when one exists — its QA sections validate the rendered result (UX + functional) |
+| No feature or no `screens.json` yet | none — build the feature first |
+| Migration branch awaiting review | none — that is a human review of an open PR |
+
+Finish the ordered hand-off list, then its metadata, then ask ONCE for instructions only on the first
+row.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/qa/qa-setup.md` | The receipt whose shape hash decides whether setup is current |
+| `${FEATURE_DIR}/about.md` | The feature the audit judges |
+| {{skill:add--qa/SKILL.md}} | What the audit's QA sections measure |
 
 ---
 

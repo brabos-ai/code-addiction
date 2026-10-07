@@ -11,15 +11,22 @@ permissions:
   contents: read
 
 jobs:
-  test-cli:
-    runs-on: ubuntu-latest
+  # One job: Ubuntu and Node 22.19.0. macOS and Windows queued without
+  # changing the verdict this repo waits on, so they are not in the matrix.
+  # Node 24 stays commented until that LTS is wanted in the gate.
+  #
+  # The job keeps the historical `test-scripts` id so the test that slices the
+  # workflow (cli/tests/run-tests.test.js L3.2) keeps pointing at the right job.
+  test-scripts:
+    name: native suites (${{ matrix.os }}, Node ${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22]
-    defaults:
-      run:
-        working-directory: cli
+        os: [ubuntu-latest]
+        # Quoted, so YAML reads it as a version and not as a number.
+        # node-version: ['24']
+        node-version: ['22.19.0']
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -29,13 +36,20 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: cli/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            cli/package-lock.json
 
-      - name: Install dependencies
+      # Root first: the runner and the builds are built-ins-only, but the pin
+      # keeps the root tree consistent with its lock on every host.
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install CLI dependencies
+        working-directory: cli
         run: npm ci
 
       - name: Build framework provider files
-        working-directory: .
         run: node scripts/build.js
 
       # The workbench layer — the framework's own pipeline — has its own source
@@ -44,52 +58,39 @@ jobs:
       # own; this step is what runs it against the real tree, stale-output prune
       # included.
       - name: Build workbench provider files
-        working-directory: .
         run: node scripts/build-workbench.js
 
-      # Plain vitest inside cli/, which runs the two projects in
-      # cli/vitest.config.js: every file in parallel, then the subprocess
-      # spawners serially. Root `npm test` goes through scripts/run-tests.js,
-      # which is native here anyway; calling vitest directly keeps this job
-      # independent of the runner.
-      - name: Run tests
-        run: npm test
+      # The framework/test boundary rejects Bash on every host, hosted or local.
+      # Bash is shadowed and Node subprocess calls are instrumented — Git and npm use `sh`/`cmd`, and the native
+      # harness spawns process.execPath with `shell: false` — so transport is
+      # preserved while a fallback to Bash fails loudly instead of passing on a
+      # runner that happens to ship it. `--run` prefixes PATH for the child
+      # only, so the runner's own step shell is never shadowed.
+      - name: Install the Bash rejector
+        run: node scripts/no-bash-guard.js
 
-      - name: Run package smoke test
-        run: npm run test:package
+      # NEGATIVE CONTROL: attempt Bash through the platform shell and require a
+      # non-zero result. This is what turns "we did not use Bash" from an
+      # assumption about the runner image into an assertion. A shell:false
+      # negative control also verifies the Node subprocess preload on Windows.
+      - name: Negative control — Bash is rejected
+        run: node scripts/no-bash-guard.js --probe
 
-  test-scripts:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install root dependencies
-        run: npm ci
-
-      # bats -j needs GNU parallel. It is on the runner image today; install it
-      # only if that ever stops being true, rather than fail with a bats error.
-      - name: Ensure GNU parallel
-        run: command -v parallel || (sudo apt-get update && sudo apt-get install -y parallel)
-
-      - name: Run script test suite (bats)
+      # Explicitly authorized disposable Linux CI worker: CLI, scripts and package
+      # smoke share the canonical framework selection. Generic CI alone never opts in.
+      - name: Framework suite (CLI, scripts, package)
         env:
-          CODEADD_TESTS_JOBS: 4
-        run: npm run test:scripts
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: framework
+        run: node scripts/no-bash-guard.js --run "npm test"
 
   # The board app (board/). Its server imports the generated Node core at
-  # board/runtime/, which the package's pretest/prebuild/pretest:e2e hooks
-  # produce from framwork/.codeadd/scripts/ before anything runs — so this job
+  # board/runtime/, which the authorized worker prepares from product scripts,
+  # so this job
   # checks out the whole tree rather than a standalone closure. The e2e suite
   # serves the BUILT app through server.mjs at three viewports, so it runs
-  # after the build.
+  # after the build. Web/board stay on the floor, one browser platform: the
+  # native six-job matrix above is what needs the cross-platform expansion.
   board:
     runs-on: ubuntu-latest
     defaults:
@@ -102,7 +103,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.19.0'
           cache: npm
           cache-dependency-path: board/package-lock.json
 
@@ -110,6 +111,9 @@ jobs:
         run: npm ci
 
       - name: Typecheck and unit tests
+        env:
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: board
         run: npm test
 
       - name: Build
@@ -119,4 +123,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests (360, 768, 1080)
+        env:
+          CODEADD_TESTS_CONTEXT: github-actions
+          CODEADD_TESTS_SELECTION: board-e2e
         run: npm run test:e2e

@@ -24,7 +24,6 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
 const CLI_PATH = path.join(SCRIPTS, 'backlog-cli.cjs');
-const WRAPPER_PATH = path.join(SCRIPTS, 'backlog.sh');
 
 // The shipped backlog modules that are LOCAL-ONLY: allocation, core and
 // storage runs with Node built-ins alone and must carry no process start in
@@ -146,22 +145,11 @@ describe('backlog-cli — allocation: legacy metadata, native, exhaustion', () =
     expect(run(['list', '--all'], { cwd: root })).not.toMatch(/"id":"[0-9]{5}/);
   });
 
-  it('the old wrapper+CLI chain refuses at 9999 the same way the native entry does', () => {
-    // Characterization of the effective old behavior before the F4 cutover:
-    // the wrapper's allocator would emit 10000B, its own `^[0-9]{4}B$` filter
-    // refuses it, and the chain exits 1 with the allocation error.
+  it('allocation exhaustion has the same result through stdin and record-file', () => {
     seeded(root, '9999B');
     const rec = path.join(root, 'rec.json');
     fs.writeFileSync(rec, RECORD);
-    let status = 0; let stdout = '';
-    try {
-      execFileSync('bash', [WRAPPER_PATH, 'add'], {
-        encoding: 'utf8', cwd: root, input: RECORD,
-      });
-      status = 0;
-    } catch (e) {
-      status = e.status; stdout = e.stdout;
-    }
+    const { status, stdout } = fail(['add'], { cwd: root, input: RECORD });
     const native = fail(['add', '--record-file', 'rec.json'], { cwd: root });
     expect(native.status).toBe(status);
     expect(status).toBe(1);
@@ -365,6 +353,271 @@ describe('backlog-cli — an open stdin pipe is never read by the paths that mus
     seeded(root, ['0001B', '0002B']);
     const { code } = await mustExitWithoutStdin(['move', '0002B', '--top']);
     expect(code).toBe(0);
+  });
+});
+
+describe('backlog-cli — the get mode (F1)', () => {
+  let root;
+  beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-get-')); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
+
+  it('get prints the full raw row: notes, paths and done_when included', () => {
+    seeded(root, '0001B');
+    const result = run(['get', '0001B'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=1');
+    expect(result).toContain('"notes":[]');
+    expect(result).toContain('"done_when":"t"');
+    expect(result).toContain('"paths":[]');
+  });
+
+  it('get with a missing id is ERROR=missing-id, exit 2', () => {
+    const r = fail(['get'], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=missing-id');
+  });
+
+  it('get of an unknown id is a successful read with zero results, exit 0', () => {
+    seeded(root, '0001B');
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const result = run(['get', '0404B'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(result).not.toContain('REFUSED=');
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
+  it('get on an absent board is a successful read and creates nothing', () => {
+    const result = run(['get', '0001B'], { cwd: root });
+    expect(result).toContain('BACKLOG_PRESENT=no');
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(fs.existsSync(path.join(root, 'docs'))).toBe(false);
+  });
+
+  it('get rejects surplus arguments with ERROR=bad-argument, exit 2', () => {
+    seeded(root, '0001B');
+    const r = fail(['get', '0001B', 'extra'], { cwd: root });
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=bad-argument');
+  });
+
+  it('an option-looking get target keeps its literal meaning', () => {
+    seeded(root, '0001B');
+    const result = run(['get', '--record-file'], { cwd: root });
+    expect(result).toContain('TICKETS_RETURNED=0');
+    expect(result).not.toContain('ERROR=');
+  });
+
+  it('get never reads stdin, though stdin stays open forever', async () => {
+    seeded(root, '0001B');
+    let out = '';
+    let settled = false;
+    await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, [CLI_PATH, 'get', '0001B'], { cwd: root, stdio: ['pipe', 'pipe', 'pipe'] });
+      child.stdout.on('data', (d) => { out += d.toString(); });
+      const guard = setTimeout(() => { child.kill(); reject(new Error('still alive — it consumed stdin')); }, 3000);
+      child.on('exit', (code) => { clearTimeout(guard); settled = true; resolve({ code, out }); });
+    });
+    expect(settled).toBe(true);
+    expect(out).toContain('TICKETS_RETURNED=1');
+  });
+
+  it('get allocates nothing: the definitions file is never seeded by a read', () => {
+    seeded(root, '0001B');
+    run(['get', '0001B'], { cwd: root });
+    expect(fs.existsSync(path.join(root, 'docs', 'backlog.definitions.json'))).toBe(false);
+  });
+});
+
+describe('backlog-cli — summary projection and the read flag grammar (F2)', () => {
+  let root;
+  beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-f2-')); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
+
+  const writeBoard = (lines) => {
+    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'docs', 'backlog.jsonl'), lines.join('\n') + '\n');
+  };
+  const fullRow = (id, over = {}) => JSON.stringify({
+    id,
+    title: `t-${id}`,
+    theme: '',
+    labels: [],
+    tldr: `tldr-${id}`,
+    notes: ['note body', 'another'],
+    done_when: 'when',
+    paths: ['src/a.js'],
+    grounded: false,
+    status: 'open',
+    created_at: '2026-09-20T00:00:00Z',
+    updated_at: '2026-10-01T12:34:56Z',
+    comments: [{ content: 'commented' }],
+    feature: '0042F',
+    work_id: 'PLAN-1',
+    ...over,
+  });
+  const payloadRows = (out) => out.split('\n').filter((l) => l.startsWith('{'));
+
+  it('list emits the seven-field summary as its default, keys in the confirmed order', () => {
+    writeBoard([fullRow('0001B')]);
+    const out = run(['list', '--all'], { cwd: root });
+    const rows = payloadRows(out);
+    expect(rows).toHaveLength(1);
+    const parsed = JSON.parse(rows[0]);
+    expect(Object.keys(parsed)).toEqual(['id', 'status', 'title', 'tldr', 'theme', 'labels', 'updated_at']);
+  });
+
+  it('the summary carries no body fields and the nothing is persisted', () => {
+    writeBoard([fullRow('0001B')]);
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const out = run(['list', '--all'], { cwd: root });
+    expect(out).not.toContain('"notes"');
+    expect(out).not.toContain('"done_when"');
+    expect(out).not.toContain('"paths"');
+    expect(out).not.toContain('"work_id"');
+    expect(out).not.toContain('"created_at"');
+    expect(out).toContain('"updated_at":"2026-10-01"');
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
+  it('--full returns the raw rows byte-equivalent to the file lines, with READ_VIEW=full', () => {
+    writeBoard([fullRow('0001B'), fullRow('0002B', { status: 'done' })]);
+    const fileLines = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8').trim().split('\n');
+    const out = run(['list', '--all', '--full'], { cwd: root });
+    expect(out).toContain('READ_VIEW=full');
+    expect(payloadRows(out)).toEqual(fileLines);
+  });
+
+  it('--ids emits one id per line after the metadata, in board order, with READ_VIEW=ids', () => {
+    writeBoard([fullRow('0001B', { status: 'done' }), fullRow('0002B')]);
+    const out = run(['list', '--ids'], { cwd: root });
+    // default open filter: 0002B only
+    expect(out).toContain('READ_VIEW=ids');
+    const payload = out.split('\n').filter((l) => l && !l.includes('=') && !l.startsWith('{'));
+    expect(payload).toEqual(['0002B']);
+  });
+
+  it('the tldr preview cuts at 120 code points including the ellipsis, never a surrogate pair', () => {
+    const long = 'x'.repeat(119) + '😀' + 'y'.repeat(40); // 119 + 1 + 40 = 160 code points
+    writeBoard([fullRow('0001B', { tldr: long })]);
+    const out = run(['list', '--all'], { cwd: root });
+    const tldr = JSON.parse(payloadRows(out)[0]).tldr;
+    const cps = [...tldr];
+    expect(cps.length).toBeLessThanOrEqual(120);
+    expect(tldr).not.toContain('y'.repeat(10));
+    expect(cps[119]).toBe('…');
+  });
+
+  it('a 120-code-point tldr is not truncated; 121 is; search still matches beyond the cut', () => {
+    const at120 = 'x'.repeat(120);
+    const at121 = 'x'.repeat(121);
+    const beyond = 's'.repeat(125) + 'marker';
+    writeBoard([
+      fullRow('0001B', { tldr: at120 }),
+      fullRow('0002B', { tldr: at121 }),
+      fullRow('0003B', { tldr: beyond }),
+    ]);
+    const out = run(['list', '--all'], { cwd: root });
+    const tl = payloadRows(out).map((l) => JSON.parse(l).tldr);
+    expect(tl[0]).toBe(at120);
+    expect(tl[1]).not.toBe(at121);
+    expect([...tl[1]]).toHaveLength(120);
+    // match beyond position 120 survives: search reads the original text.
+    const found = run(['search', 'marker'], { cwd: root });
+    expect(found).toContain('TICKETS_RETURNED=1');
+    expect(JSON.parse(payloadRows(found)[0]).id).toBe('0003B');
+  });
+
+  it('projection normalizations never crash and never rewrite the board', () => {
+    writeBoard([
+      JSON.stringify({ id: '0001B', title: 42, status: 'open', tldr: null, theme: undefined, labels: 'no', updated_at: 'not a date', notes: [] }),
+      JSON.stringify({ id: '0002B', status: 'open', title: 'no dates at all', tldr: 't' }),
+      fullRow('0003B'),
+    ]);
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const out = run(['list', '--all'], { cwd: root });
+    const rows = payloadRows(out).map((l) => JSON.parse(l));
+    expect(rows[0]).toEqual({ id: '0001B', status: 'open', title: '', tldr: '', theme: '', labels: [], updated_at: null });
+    expect(rows[1]).toEqual({ id: '0002B', status: 'open', title: 'no dates at all', tldr: 't', theme: '', labels: [], updated_at: null });
+    expect(rows[2].updated_at).toBe('2026-10-01');
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
+  it('invalid calendar dates become null while leap dates and offset dates keep their original date', () => {
+    const dates = ['2026-02-30T12:34:56Z', '2026-02-29T12:34:56Z', '2026-04-31T12:34:56Z', '2024-02-29T12:34:56Z', '2026-10-01T00:30:00+02:00'];
+    writeBoard(dates.map((updated_at, i) => fullRow(`000${i + 1}B`, { updated_at })));
+    const before = fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8');
+    const rows = payloadRows(run(['list', '--all'], { cwd: root })).map(JSON.parse);
+    expect(rows.map((row) => row.updated_at)).toEqual([null, null, null, '2024-02-29', '2026-10-01']);
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+  });
+
+  it('metadata: READ_VIEW accompanies all reads and STATUS_COUNTS is the whole board, in first-occurrence text order', () => {
+    writeBoard([
+      fullRow('0001B', { status: 'open' }),
+      fullRow('0002B', { status: '10' }),
+      fullRow('0003B', { status: '2' }),
+      fullRow('0004B', { status: '10' }),
+    ]);
+    for (const [args, view] of [
+      [['list', '--all'], 'summary'],
+      [['list', '--all', '--full'], 'full'],
+      [['list', '--ids'], 'ids'],
+      [['search', 'nothing-here'], 'summary'],
+      [['search', 'nothing-here', '--full'], 'full'],
+      [['get', '0001B'], 'full'],
+    ]) {
+      const out = run(args, { cwd: root });
+      expect(out).toContain(`READ_VIEW=${view}`);
+      expect(out).toContain('STATUS_COUNTS={"open":1,"10":2,"2":1}');
+    }
+    // A filtered list still counts the whole board.
+    const filtered = run(['list', '--status', 'done'], { cwd: root });
+    expect(filtered).toContain('TICKETS_RETURNED=0');
+    expect(filtered).toContain('STATUS_COUNTS={"open":1,"10":2,"2":1}');
+    // An absent board counts nothing and presents the empty object.
+    const emptyRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-cli-f2-empty-'));
+    try {
+      const empty = run(['list', '--all'], { cwd: emptyRoot });
+      expect(empty).toContain('STATUS_COUNTS={}');
+      expect(empty).toContain('READ_VIEW=summary');
+    } finally {
+      fs.rmSync(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('the list flag grammar: one filter plus one projection, in any order, nothing else', () => {
+    writeBoard([fullRow('0001B')]);
+    // Valid orders.
+    expect(run(['list', '--full', '--all'], { cwd: root })).toContain('READ_VIEW=full');
+    expect(run(['list', '--ids', '--status', 'open'], { cwd: root })).toContain('READ_VIEW=ids');
+    expect(run(['list', '--status', 'open', '--full'], { cwd: root })).toContain('READ_VIEW=full');
+    // Conflicts and repeats are caller errors.
+    const r1 = fail(['list', '--all', '--status', 'open'], { cwd: root });
+    expect(r1.stdout).toContain('ERROR=bad-argument');
+    expect(r1.status).toBe(2);
+    expect(fail(['list', '--full', '--ids'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['list', '--all', '--all'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['list', '--full', '--full'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    // Unknown options and surplus literals are caller errors.
+    expect(fail(['list', '--spectacular'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['list', '0001B'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['list', '--record-file', 'x.json'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    // --status without a value keeps its original name.
+    expect(fail(['list', '--status'], { cwd: root }).stdout).toContain('ERROR=missing-status');
+    expect(fail(['list', '--status', ''], { cwd: root }).stdout).toContain('ERROR=missing-status');
+    // get accepts no projection flags.
+    expect(fail(['get', '0001B', '--full'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+  });
+
+  it('the search grammar: the first argument stays a literal query; only --full may follow', () => {
+    writeBoard([fullRow('0001B', { tldr: 'first words' })]);
+    // An option-looking first argument is a literal query.
+    expect(run(['search', '--all'], { cwd: root })).toContain('TICKETS_RETURNED=0');
+    expect(run(['search', '--all'], { cwd: root })).toContain('READ_VIEW=summary');
+    // Only --full may follow the query.
+    expect(run(['search', 'first words', '--full'], { cwd: root })).toContain('READ_VIEW=full');
+    expect(fail(['search', 'first words', '--ids'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['search', 'first words', '--record-file', 'x'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
+    expect(fail(['search', 'a', 'b'], { cwd: root }).stdout).toContain('ERROR=bad-argument');
   });
 });
 

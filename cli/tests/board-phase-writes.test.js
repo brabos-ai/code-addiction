@@ -193,6 +193,9 @@ describe('L5 sweeps — the native recipes carry no shell pipeline', () => {
       }
       expect(src, rel).toContain('--record-file');
       expect(src, rel).toContain('backlog-cli.cjs');
+      // The exact detail read: a declared id is answered by `get`, and this
+      // block migrates with the lifecycle recipe in the same delivery.
+      expect(src, rel).toMatch(/backlog-cli\.cjs get|get <id|get [A-Za-z<]/);
     }
   });
 
@@ -217,9 +220,11 @@ describe('L5 sweeps — the native recipes carry no shell pipeline', () => {
     expect(l).toContain('`work_id` stop');
   });
 
-  it('the read recipe relies on agent parsing of the exact id — no grep pipe survived', () => {
+  it('the read recipe answers a declared id with get — no line scan, no grep pipe survived', () => {
     const s = lifecycle();
     expect(s).not.toMatch(/\| grep/);
-    expect(s).toContain('"id":"<the ticket id>"');
+    expect(s).toContain('get <ticket id>');
+    // The exact read is named in the read section, not only in passing.
+    expect(s).toContain('backlog-cli.cjs get');
   });
 });

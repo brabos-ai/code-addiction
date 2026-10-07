@@ -7,7 +7,7 @@ description: Use for incremental project-wiki updates — loaded by /add-wiki up
 
 <!-- uses:
 - command: /add-wiki
-- script: done.sh
+- script: done.cjs
 -->
 
 ## Overview
@@ -40,7 +40,7 @@ Nothing relevant changed and the wiki is accurate → edit nothing, report "wiki
 ### STEP 2 — EVIDENCE (trigger-specific)
 
 **add-done trigger:**
-- `CHANGED_FILES` from `done.sh` (the branch diff, already computed in STEP 1 of add-done)
+- `CHANGED_FILES` from `done.cjs` (the branch diff, already computed in STEP 1 of add-done)
 - Feature context: `about.md` / changelog just written in add-done STEP 4.5 — grounds impact in stated intent, not just file names
 
 **`/add-wiki update` trigger — tiered chain:**

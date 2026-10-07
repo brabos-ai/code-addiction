@@ -140,7 +140,8 @@ Reach for this when a new provider's own layout would otherwise duplicate an exi
 validation checklist. Subdocs go in `references/`, never flat.
 
 **Script** — header block naming usage, dependencies and exit codes; then detection, execution,
-structured output. The header is the script's contract and its `.bats` suite pins it.
+structured output. The header is the script's contract and its native suite
+(`scripts/tests/<name>.test.cjs`) pins it.
 
 **CLI module** — one concern per module, owning its registry, its state helpers and its
 `export async function <name>(cwd, args, scope)` entry. Follow `cli/src/features.js` and
@@ -187,20 +188,16 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN THROUGH `npm test`:
   ✅ DO: Run it and read the result
 ```
 
-**Root `npm test` goes through `scripts/run-tests.js`.** On Windows it runs the suite inside a Linux
-container, and everywhere else — CI included — it runs it natively. On Windows with no Docker daemon
-it exits 2, a refusal to run, and the shell-script section below says what to do with that; the same
-applies here.
-
-**Both runners work on a copy of the checkout, never on the checkout itself.** The suite rebuilds
-`framwork/` output, the sidecars and `cli/src/mcp`, and a developer's tree must come out of a run
-unchanged. The native copy lives in the OS temp directory and is removed on exit.
+**Root `npm test` goes through `scripts/run-tests.js`.** It selects the framework gate: CLI,
+scripts and package smoke. `npm run test:all` adds board typecheck/unit and built-app E2E.
+The runner owns execution, dependencies and isolation; use ordinary npm commands and read its
+result. Its header owns transport mechanics. Generated output and sidecars must leave the
+developer's checkout unchanged.
 
 ```
 IF YOU WANT ONE FILE:
-  ⛔ DO NOT: Run `npx vitest` inside cli/ — outside CI the global setup refuses, because that is the
-             real checkout
-  ✅ DO: `npm test -- tests/<name>.test.js` at the root
+  ⛔ DO NOT: Bypass the dispatcher with a direct test tool
+  ✅ DO: `npm run test:cli -- tests/<name>.test.js` at the root
 ```
 
 **The suite runs in two projects, and a green run is proof.** Every file that does not spawn a
@@ -223,7 +220,7 @@ every test reading it afterwards, in whatever order the workers run.
 IF ANY TEST FAILS:
   ⛔ DO NOT: Attribute it to flakiness without evidence
   ⛔ DO NOT: Report the raw failure count as this block's result
-  ✅ DO: Re-run that file alone (`npm test -- <name>`), baseline against a clean tree, report the delta
+  ✅ DO: Re-run that file alone (`npm run test:cli -- <name>`), baseline against a clean tree, report the delta
 ```
 
 **If stdout carries `Debugger listening on ws://…`**, an editor injected `NODE_OPTIONS`. Clear it
@@ -240,16 +237,10 @@ count.
 IF YOU NEED A CLEAN-TREE BASELINE FOR THE SUITE:
   ⛔ DO NOT USE: Bash for git stash, git checkout, git reset, git clean or git restore
   ✅ DO: git worktree add <tmp> HEAD --detach, run the suite in <tmp>, then git worktree remove <tmp>
-  ✅ DO: Before running bats in <tmp>, COPY the root node_modules into it — cp -r, never a junction
 ```
 
-⛔ **A fresh worktree has no `node_modules`, and a junction to the checkout's does not fix it.** The
-container runner packs the tree without following a junction, so bats exits **127** with
-`./node_modules/.bin/bats: No such file or directory` — and a grep over that output finds nothing,
-which reads exactly like a clean pass. The root `node_modules` is ~546 KB (bats, bats-assert,
-bats-support); copy it. vitest does not need it — it uses the `cli/node_modules` built into the image.
-To take a junction out of a worktree, `cmd //c rmdir <path>` removes the link alone; `rm -rf` through a
-junction can empty the checkout it points at.
+**A fresh worktree uses the same npm commands.** The runner owns dependency preparation;
+do not copy or link another checkout's dependencies to manufacture evidence.
 
 `git stash` empties the tree you are standing in. Your own edits come back with `git stash pop`, but
 any sibling agent running against that same tree loses its uncommitted work for as long as the stash
@@ -264,9 +255,9 @@ file", which is the right tool when you are attributing one failure to one file.
 a RED-first matrix, write each assertion and CONFIRM IT FAILS before the implementation — a test
 authored after the fix proves nothing.
 
-### Shell scripts — the bats suite runs before the block closes
+### Native scripts — the scripts suite runs before the block closes
 
-An F-block touching `framwork/.codeadd/scripts/*.sh` does not close until the suite has been run and
+An F-block touching `framwork/.codeadd/scripts/*.cjs` does not close until the suite has been run and
 read:
 
 ```bash
@@ -274,40 +265,39 @@ npm run test:scripts
 ```
 
 ```
-IF THE BLOCK CHANGED A .sh FILE AND THE SUITE HAS NOT BEEN RUN:
+IF THE BLOCK CHANGED A .cjs FILE AND THE SUITE HAS NOT BEEN RUN:
   ⛔ DO NOT: Report the F-block complete
   ⛔ DO NOT: Append its `complete` line to the ledger
   ✅ DO: Run it and read the result
 ```
 
-**This gate was unenforceable until recently, and that is why it did not exist.** The suite was far
-too slow to run on Windows and reported a `qa-preflight.bats` failure that appeared on no other
-machine. A gate nobody can afford to satisfy is a gate everybody rules their way past.
+**This gate was unenforceable until recently, and that is why it did not exist.** The suite used to
+run under Bats, which forked a process per case; on Windows it was slow enough that nobody paid it.
+A gate nobody can afford to satisfy is a gate everybody rules their way past.
 
-**Run the suite the change can reach, one file at a time, through the container:**
-`node scripts/run-tests.js bats framwork/.codeadd/scripts/tests/<name>.bats`. It returns in seconds; the full
-`test:scripts` takes the better part of an hour. **That scoped run is what closes the block** when the
-change reaches only those files — a `.sh` whose own `.bats` is the only suite that calls it. When the
-change reaches a script other suites exercise, run each of those files too, or the whole suite.
-
-```
-IF RUNNING BATS ON WINDOWS:
-  ⛔ DO NOT USE: Bash for `npx bats` — the native path is far slower than the container, and it is
-                 not the gate
-  ✅ DO: node scripts/run-tests.js bats <file> — then read its EXIT and count the `ok` lines;
-         an empty grep is not a pass
-```
-
-**The gate binds only where a runner resolves, and `npm run test:scripts` owns that decision.** It
-runs the suite directly off Windows and inside a Linux container on it. On Windows with no Docker
-daemon it exits 2 — a refusal to run, never a test result.
+**Run the suite the change can reach, one file at a time:**
+`node scripts/run-tests.js scripts scripts/tests/<name>.test.cjs`. It returns in seconds; the full
+`test:scripts` runs every `scripts/tests/*.test.cjs`. **That scoped run is what closes the block**
+when the change reaches only that entry — a `.cjs` whose own `.test.cjs` is the only suite that calls
+it. When the change reaches a script other suites exercise, run each of those files too, or the whole
+suite.
 
 ```
-IF `npm run test:scripts` EXITED 2 BECAUSE NO RUNNER RESOLVED:
+IF THE SCOPED RUN REPORTS A FAILURE:
+  ⛔ DO NOT USE: Bash for a fork-per-case runner — none is needed; Node's own test runner is the route
+  ✅ DO: node scripts/run-tests.js scripts <file> — then read its EXIT and count the `# pass`/`# fail`
+         lines; an empty grep is not a pass
+```
+
+**`npm run test:scripts` owns the runner decision.** Read the dispatcher's diagnostics to distinguish
+assertion failures from refusal or unavailable preparation. An unavailable run is not passing evidence.
+
+```
+IF `npm run test:scripts` EXITED 2 BECAUSE THE RUNNER REFUSED:
   ⛔ DO NOT: Report the gate passed
-  ⛔ DO NOT: Force the slow native path to manufacture a local verdict
-  ✅ DO: Record a ruling in `add-build-ledger`'s three-part form — the gate was not run, why no
-         runner resolved, and what it costs if the suite would have failed — then close the block
+  ⛔ DO NOT: Force a hand-picked path to manufacture a local verdict
+  ✅ DO: Record a ruling in `add-build-ledger`'s three-part form — the gate was not run, why the
+         runner refused, and what it costs if the suite would have failed — then close the block
 ```
 
 **The verdict then belongs to CI, which owns it regardless.** `/add-framework--done` reads the CI run
@@ -323,7 +313,7 @@ changes nothing about that.
 |--------|---------|
 | "I'll edit the provider file directly, it's faster" | build.js overwrites it. Edit `.codeadd/` |
 | "The suite is flaky, this failure is noise" | Baseline against a clean tree, report the delta |
-| "I ran vitest natively on Windows, it is the same run" | It is not. Outside the container the parallel projects time out under load on Windows; the `CODEADD_TESTS_RUNNER=native` override avoids that by running serially, and is slow. `npm test` through the container is the gate |
+| "I ran the tool directly, it is the same gate" | Use the supported npm command; the dispatcher owns isolation and execution policy. Direct tools can mutate state before the gate protects it |
 | "It's a small artefact, registration can wait" | Unregistered ships to nobody and fails the gate |
 | "That test asserts the old rule, delete it" | Update it, and comment why |
 
@@ -332,7 +322,7 @@ changes nothing about that.
 ALWAYS:
 - Edit `framwork/.codeadd/`, never a generated provider directory
 - Register a new command, skill or agent in `provider-map.json`
-- Run the cli suite serially after any registry change
+- Run `npm test` after any registry change
 
 NEVER:
 - Register a `cli/` artefact in `provider-map.json`

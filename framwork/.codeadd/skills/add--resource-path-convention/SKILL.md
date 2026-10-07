@@ -7,12 +7,10 @@ description: Use when writing commands or skills that reference other commands, 
 
 <!-- uses:
 - command: /add-wiki
-- script: backlog.sh
 - script: backlog-cli.cjs
 - script: backlog-commit.cjs
 - script: backlog-id.cjs
 - script: backlog-git.cjs
-- script: backlog-commit.sh
 - script: backlog-core.cjs
 - script: backlog-storage.cjs
 -->
@@ -28,7 +26,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 
 ## When NOT to Use
 
-- Referencing scripts (`.codeadd/scripts/*.sh` and `.codeadd/scripts/*.cjs` are always correct — fixed path)
+- Referencing scripts (`.codeadd/scripts/*.cjs` is always correct — fixed path)
 - Referencing project files outside the framework (`docs/`, `src/`, etc.)
 - Writing code in `build.js` or `cli/` (these operate on the build/install pipeline, not agent runtime)
 
@@ -71,21 +69,22 @@ Everything the directory ships is reached by the literal path: `.codeadd/scripts
 
 ### Scripts (no variable needed)
 
-Shell and Node entries are both reached by the literal path — the binaries stay the same for every provider and for every install:
+Node entries are reached by the literal path — the entries stay the same for every provider and for every install:
 
 ```
-bash .codeadd/scripts/status.sh
-bash .codeadd/scripts/done.sh
+node .codeadd/scripts/status.cjs
+node .codeadd/scripts/done.cjs
 node .codeadd/scripts/backlog-cli.cjs
 node .codeadd/scripts/backlog-commit.cjs
 ```
 
-The shipped backlog entries are Node CommonJS modules: `backlog-cli.cjs` (the seven local modes),
-`backlog-id.cjs` (global id allocation), `backlog-git.cjs` and `backlog-commit.cjs` (publication and
+The shipped backlog entries are Node CommonJS modules: `backlog-cli.cjs` (the seven local modes —
+`list`/`search` print a seven-field summary with `--full`/`--ids` opt-in projections, and `get <id>`
+answers the exact detail read), `backlog-id.cjs` (global id allocation), `backlog-git.cjs` and `backlog-commit.cjs` (publication and
 recovery), plus `backlog-core.cjs` and `backlog-storage.cjs` (the canonical core the board server
-imports directly). `backlog.sh` and `backlog-commit.sh` remain the bash compatibility wrappers —
-thin guards that delegate. Use `node .codeadd/scripts/<entry>.cjs` in a native recipe and keep the
-bash form only as a compatibility reference, marked as such.
+imports directly). Invoke the backlog entries with `node .codeadd/scripts/<entry>.cjs`.
+Use the local CLI for reads and local operations; use the publication entry for writes that
+must reach the base branch.
 
 ### `{{addpath:X}}`
 
@@ -113,7 +112,7 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 ```markdown
 ## STEP 1: Load Context
 1. Read {{cmd:add-plan}} — PRIMARY reference
-2. Run: bash .codeadd/scripts/status.sh
+2. Run: node .codeadd/scripts/status.cjs
 3. Read {{skill:add--backend-development/SKILL.md}}
 4. For components, Grep {{skill:add--ux-design/shadcn-docs.md}}
 ```
@@ -124,7 +123,7 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 ## STEP 1: Load Context
 Read .codeadd/commands/add-plan.md          ← BROKEN: doesn't exist after install
 cat .codeadd/skills/backend-development/SKILL.md  ← BROKEN: wrong path
-bash .codeadd/scripts/status.sh             ← CORRECT: scripts are at .codeadd/
+node .codeadd/scripts/status.cjs             ← CORRECT: scripts are at .codeadd/
 ```
 
 ## Validation Checklist

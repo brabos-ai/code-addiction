@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 const tempBase = () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-pub-'));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'backlog-pub-')));
   ROOTS.push(dir);
   return dir;
 };
@@ -125,7 +125,7 @@ const recordOutside = (space, title, name = 'ticket.json') => {
 };
 
 /** The caller side the run is allowed to carry besides the committed work:
- *  the .worktrees/ convention line in .gitignore, which the old script also
+ *  the .worktrees/ convention line in .gitignore, which `backlog-commit.cjs` also
  *  wrote, and nothing else. */
 const callerResidue = (main) =>
   gitOut(['status', '--porcelain'], main)
@@ -133,7 +133,7 @@ const callerResidue = (main) =>
 
 // ─── Discovery -----------------------------------------------------------
 
-describe('L3 — base discovery mirrors get-main-branch.sh', () => {
+describe('L3 — base discovery mirrors get-main-branch.cjs', () => {
   it('origin/HEAD, then remote main/master, then the LOCAL base branch', () => {
     const withRemote = repo('mirror-remote-', { seed });
     expect(Git.discoverBase(withRemote.main)).toEqual({ ok: true, branch: 'main' });
@@ -831,12 +831,24 @@ describe('L3 — base advance is a verified fast-forward only', () => {
 describe('L3 — the publication entry contract against the wrapper', () => {
   it('a READ mode is refused by name, before any git happens', () => {
     const { main } = repo('read-refusal-', { seed });
-    for (const mode of ['list', 'search']) {
+    for (const mode of ['list', 'search', 'get']) {
       const result = pub(main, [mode]);
       expect(result.status).toBe(2);
       expect(result.stdout).toContain('ERROR=read-mode');
       expect(result.stderr).toContain('USAGE');
     }
+  });
+
+  it('get is refused even with an invalid id or a record-file spelling, before the file is read', () => {
+    const { main } = repo('get-refusal-', { seed });
+    expect(pub(main, ['get', '0001B']).stdout).toContain('ERROR=read-mode');
+    expect(pub(main, ['get']).stdout).toContain('ERROR=read-mode');
+    expect(pub(main, ['get', '--record-file', 'missing.json']).stdout).toContain('ERROR=read-mode');
+    // The record file was never touched: the refusal precedes capture.
+    expect(fs.existsSync(path.join(main, 'missing.json'))).toBe(false);
+    // The repository keeps its head, index, files and refs.
+    expect(gitOut(['rev-parse', 'HEAD'], main)).toBe(gitOut(['rev-parse', 'refs/heads/main'], main));
+    expect(callerResidue(main)).toEqual([]);
   });
 
   it('a no-op write reports COMMITTED=no with the existing HEAD as SHA', () => {

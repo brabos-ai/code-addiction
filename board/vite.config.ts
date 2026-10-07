@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
+import testContext from '../scripts/test-context.cjs';
+
+if (process.env.VITEST) testContext.authorize({ selection: process.env.CODEADD_TESTS_SELECTION, leaf: 'board' });
 
 // The dev server proxies /api to a running `node server.mjs`, so `npm run dev`
 // shows the same data the built app does.

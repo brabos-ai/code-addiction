@@ -34,8 +34,8 @@ places, both on purpose:
      would only produce new opinions.
 
   2. DISK. Nothing here may write a report. The product layer permits exactly
-     two, review-NNN.md and qa-validation-NNN.md, because qa-evidence.sh and
-     converge-gates.sh consume them deterministically. Those are inputs to a
+     two, review-NNN.md and qa-validation-NNN.md, because qa-evidence.cjs and
+     converge-gates.cjs consume them deterministically. Those are inputs to a
      script, not stored opinions a human must find.
 
 DO NOT merge them, and DO NOT add a check that keeps them byte-identical.

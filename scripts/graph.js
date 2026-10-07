@@ -26,8 +26,6 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-// The file's first subprocess ever. See history() for why it is `bash <path>`.
-const { spawnSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const DEFAULT_GRAPH = path.join(ROOT, 'framwork', '.codeadd', 'artefact-graph.json');
@@ -234,10 +232,36 @@ function stats(graph) {
 }
 
 // ---------------------------------------------------------------------------
-// History — the time axis, delegated
+// History — the time axis, read in-process
 // ---------------------------------------------------------------------------
 
-const DELIVERED_SH = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivered.sh');
+/**
+ * The native delivery reader, required directly since F4.
+ *
+ * `history` used to spawn `bash delivered.sh read`: a second process, a shell
+ * and a shebang script stood between the query and the index, and the verb
+ * failed outright wherever bash was absent (native Windows, a stripped CI
+ * image). `delivery-index-core.cjs` is F3's side-effect-free boundary over the
+ * same index, and `delivered.cjs` is its command-line entry — so requiring the
+ * core removes the shell without creating a second reader. There is ONE
+ * implementation of the index format; graph history and the shipped entry
+ * consume it rather than reimplementing it in parallel.
+ *
+ * Kept as a lazy require: a missing core must be REPORTED as an unavailable
+ * answer, never thrown at module load, because graph.js also answers the verbs
+ * that have nothing to do with history. That is the contract the shell
+ * delegation had.
+ */
+const DELIVERY_CORE = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivery-index-core.cjs');
+
+function deliveryIndex(reader = DELIVERY_CORE) {
+  const loaded = require(path.resolve(reader));
+  const core = loaded?.core ?? loaded;
+  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performTouched']) {
+    if (typeof core?.[method] !== 'function') throw new Error(`Native delivery reader lacks ${method}`);
+  }
+  return core;
+}
 
 /** Flags `history` refuses outright. graph.js is query-only, by plan 0077. */
 const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
@@ -245,28 +269,38 @@ const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
 /**
  * When this artefact was delivered, and what it replaced.
  *
- * THE READ IS DELEGATED, NEVER REIMPLEMENTED. `delivered.sh read` owns
- * last-line-wins, corrupt-line tolerance and status ordering. Parsing the JSONL
- * here in JavaScript would be a SECOND implementation of one format — plan
- * 0075's whole subject, recreated inside the design that cites it as the
- * lesson. Inlining the parse looks cleaner and is the likeliest future
- * regression; this comment is the reason it must not happen.
+ * THE READ IS DELEGATED, NEVER REIMPLEMENTED. `delivery-index-core.cjs` owns
+ * last-line-wins, corrupt-line tolerance and status ordering — the same rules
+ * the retired `delivered.sh read` enforced. Parsing the JSONL here in
+ * JavaScript would be a SECOND implementation of one format — plan 0075's
+ * whole subject, recreated inside the design that cites it as the lesson.
+ * Inlining the parse looks cleaner and is the likeliest future regression;
+ * this comment is the reason it must not happen.
  *
  * This verb owns the JOIN and nothing else:
  *   index -> what existed, when it arrived, what it replaced   (time)
  *   graph -> what depends on it today                          (structure)
  *
- * It NEVER writes. There is no `--repair` passthrough: `delivered.sh verify
- * --repair` stays the single writing path.
+ * It NEVER writes. There is no `--repair` passthrough: the native
+ * `delivered.cjs verify --repair` stays the single writing path.
  *
- * A missing `bash` or a missing script is REPORTED, never thrown. The same
- * function runs inside the long-lived MCP server, where a throw kills every
- * later query rather than the one that failed.
+ * A missing reader is REPORTED, never thrown. The same function once ran
+ * inside the long-lived MCP server, where a throw would kill every later query
+ * rather than the one that failed.
+ *
+ * RETIRED BASH OVERRIDES and what replaced them:
+ *   opts.script  was the path to the `delivered.sh` this verb executed. It now
+ *                names a native core module or an entry exporting `core`.
+ *                The selected module supplies the implementation. Default:
+ *                the core path above.
+ *   opts.bash    was the interpreter. Retired with the spawn: the native path
+ *                has no interpreter, so passing it changes nothing.
+ *   opts.cwd     unchanged: the repository whose index is read.
  */
 function history(graph, ref, opts = {}) {
   const node = resolve(graph, ref);
 
-  // `delivered.sh read` matches free text against id, name, words, `node` and
+  // The core matches free text against id, name, words, `node` and
   // items[].what / items[].find — never against items[].at, which --repair
   // rewrites. So the query is the bare name, and it now reaches an entry whose
   // only mention of this artefact is its `node`. The filter below still runs:
@@ -278,58 +312,66 @@ function history(graph, ref, opts = {}) {
     node, name, entries: [], matched: 0, unavailable: { reason, detail },
   });
 
-  // `script`, `cwd` and `bash` default to the real ones and are overridden only
-  // by the suite. Two of the four states this function must handle — the script
-  // absent, the interpreter absent — cannot be reached otherwise, because both
-  // exist in the repo that runs the tests.
-  const script = opts.script ?? DELIVERED_SH;
+  const reader = opts.script ?? DELIVERY_CORE;
   const cwd = opts.cwd ?? ROOT;
-  const bash = opts.bash ?? 'bash';
 
-  if (!fs.existsSync(script)) {
-    return unavailable('script-missing', `${script} does not exist`);
+  if (!fs.existsSync(reader)) {
+    return unavailable('script-missing', `${reader} does not exist`);
   }
 
-  // `--layer` is passed STRAIGHT THROUGH to delivered.sh, never reimplemented
-  // as a filter here. It narrows which entries are read at all, which is what
-  // /add-framework--plan needs when it asks a product-layer question.
-  const args = [script, 'read', name, '--limit', String(opts.limit ?? 50)];
-  if (opts.layer) args.push('--layer', opts.layer);
-
-  // `bash <path>`, never direct execution. Windows is this repo's primary
-  // platform and a shebang file is not executable by process creation there.
-  const res = spawnSync(bash, args, { cwd, encoding: 'utf8', windowsHide: true });
-
-  if (res.error) {
-    // ENOENT here means the interpreter OR the working directory could not be
-    // found, and the two read identically in the error. Naming the cwd is what
-    // separates "this machine has no bash" from "that path does not exist".
-    const reason = res.error.code === 'ENOENT' ? 'bash-missing' : 'spawn-failed';
-    return unavailable(reason, `${res.error.message} (bash=${bash}, cwd=${cwd})`);
+  let core;
+  try {
+    core = deliveryIndex(reader);
+  } catch (e) {
+    return unavailable('read-failed', e.message);
   }
 
-  const stdout = res.stdout || '';
-  if (res.status !== 0) {
-    const key = (stdout + (res.stderr || '')).split('\n').find((l) => l.startsWith('ERROR=')) || '';
-    return unavailable('read-failed', key || `delivered.sh exited ${res.status}`);
+  if (opts.layer && opts.layer !== 'product' && opts.layer !== 'internal') {
+    return unavailable('read-failed', 'read refused: --layer must be product or internal');
+  }
+  const limit = opts.limit ?? 50;
+  if (!Number.isInteger(limit) || limit <= 0) {
+    return unavailable('read-failed', 'read refused: --limit must be a positive whole number');
+  }
+  let rootRes;
+  try { rootRes = core.resolveRoot(cwd); }
+  catch (e) { return unavailable('read-failed', e.message); }
+  if (!rootRes.ok) {
+    // The shell reported this as an `ERROR=` line and exit 2; the core returns
+    // the same fact as a value. Same `read-failed` answer either way.
+    return unavailable('read-failed', `ERROR=${rootRes.error}`);
   }
 
-  // A line starting with `{` is an entry; anything else is a KEY=VALUE probe
-  // result. That split is delivered.sh's documented output contract.
-  const entries = [];
-  const keys = {};
-  for (const line of stdout.split('\n')) {
-    const l = line.trim();
-    if (!l) continue;
-    if (l.startsWith('{')) {
-      // One unparseable line is skipped, never fatal — the same tolerance the
-      // format reference requires of every reader.
-      try { entries.push(JSON.parse(l)); } catch { /* skipped */ }
-    } else {
-      const eq = l.indexOf('=');
-      if (eq > 0) keys[l.slice(0, eq)] = l.slice(eq + 1);
-    }
+  // `--layer` narrows which entries are read at all, which is what
+  // /add-framework--plan needs when it asks a product-layer question. It is
+  // handed to the core, never reimplemented as a post-filter here.
+  let read;
+  try {
+    const ctx = core.createContext({ root: rootRes.root });
+    read = core.performRead(ctx, {
+      query: name,
+      layer: opts.layer || '',
+      limit: opts.limit ?? 50,
+    });
+  } catch (e) {
+    // A reader failure is REPORTED, never thrown — the contract the shell
+    // delegation had. A throw inside a long-lived server would kill every
+    // later query rather than the one that failed.
+    return unavailable('read-failed', e.message);
   }
+
+  // The KEY=VALUE protocol the shell emitted, rebuilt from the core's
+  // structured result. The CLI renders the dead-cap note from MATCHED_DEAD and
+  // RETURNED_DEAD, so those names must survive exactly.
+  const keys = {
+    MATCHED_LIVE: String(read.matchedLive),
+    MATCHED_DEAD: String(read.matchedDead),
+    RETURNED_LIVE: String(read.returnedLive),
+    RETURNED_DEAD: String(read.returnedDead),
+    LIVE_CAP: String(read.liveCap),
+    DEAD_CAP: String(read.deadCap),
+    SKIPPED_LINES: read.skipped.join(','),
+  };
 
   const dependentsOf = (id) => {
     try { return impact(graph, id, { depth: 1 }).length; } catch { return null; }
@@ -339,9 +381,10 @@ function history(graph, ref, opts = {}) {
   //
   // THE SCHEMA PUTS `node` ON THE RECORD. add-doc-schemas/references/
   // delivery-index.md lists it in "The record" table and defines an item as
-  // exactly {what, at, find}, and delivered.sh implements that: a `node` inside
-  // an item is normalised away on write. That is correct, not a defect — do not
-  // "fix" the writer to preserve it. delivered.bats pins both directions.
+  // exactly {what, at, find}, and the core's `serialize` implements that: a
+  // `node` inside an item is normalised away on write. That is correct, not a
+  // defect — do not "fix" the writer to preserve it. The delivered suite pins
+  // both directions.
   //
   // The item level is read anyway for two honest reasons: `read` returns
   // whatever a line carries, and a human may hand-write one (the reference says
@@ -353,10 +396,10 @@ function history(graph, ref, opts = {}) {
   const carriesNode = (e) =>
     e.node === node || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node));
 
-  // Ordering is delivered.sh's contract (live -> changed -> superseded -> gone)
+  // Ordering is the core's contract (live -> changed -> superseded -> gone)
   // and is preserved exactly. Re-sorting here would be a consumer re-ranking
   // one shared structure, which is how two readers come to disagree.
-  const matched = entries.filter(carriesNode).map((e) => {
+  const matched = read.entries.filter(carriesNode).map((e) => {
     const out = {
       ...e,
       items: (Array.isArray(e.items) ? e.items : []).map((it) => (it && it.node
@@ -564,7 +607,7 @@ function main(argv) {
       if (writing.length) {
         console.error(
           `history never writes — ${writing.join(', ')} is not accepted.\n` +
-            'Run `bash framwork/.codeadd/scripts/delivered.sh verify --repair` instead.',
+            'Run `node framwork/.codeadd/scripts/delivered.cjs verify --repair` instead.',
         );
         process.exitCode = 2;
         return;
@@ -576,7 +619,7 @@ function main(argv) {
         }
         if (!r.entries.length) return `no delivery recorded for ${r.node}`;
         // THE DEAD CAP MUST BE ANNOUNCED. This verb passes --limit 50, which
-        // governs delivered.sh's LIVE bucket only; dead entries are capped at 2
+        // governs the core's LIVE bucket only; dead entries are capped at 2
         // and no argument raises it. `history` exists to answer "was this
         // attempted before?", so a cut `gone` or `superseded` entry is the
         // answer it most needs to give — silence here would hide exactly what

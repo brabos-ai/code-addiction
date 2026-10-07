@@ -251,7 +251,8 @@ describe('F8 — every action answers over the wire', () => {
   });
 
   it('touched_by answers the page half over the wire and degrades on the other', async () => {
-    // The work-item half moved to `delivered.sh` and this fixture is a bare tree
+    // The work-item half moved to `delivered.cjs` + `delivery-index-core.cjs` and
+    // this fixture is a bare tree
     // with no script and no history, so it reports why rather than throwing —
     // and still hands back the page half, which never needed either.
     const { frames } = await talk([call(1, 'touched_by', { files: ['src/auth/refresh.ts'] })]);

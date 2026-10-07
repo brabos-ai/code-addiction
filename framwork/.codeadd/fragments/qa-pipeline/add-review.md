@@ -10,8 +10,8 @@
 - command: /add-plan
 - command: /add-build
 - command: /add-done
-- script: qa-preflight.sh
-- script: qa-evidence.sh
+- script: qa-preflight.cjs
+- script: qa-evidence.cjs
 -->
 
 <!--
@@ -43,7 +43,7 @@ touching those pins — not as a drive-by.
 -->
 
 <!-- section:step-list -->
-STEP qa-pipeline.preflight: QA Preflight            → deterministic probes (qa-preflight.sh a + b); self-gates on the add-qa-setup receipt
+STEP qa-pipeline.preflight: QA Preflight            → deterministic probes (qa-preflight.cjs a + b); self-gates on the add-qa-setup receipt
 STEP qa-pipeline.evidence: QA Evidence             → per SCOPE_DIR: run-NNN, run persisted specs, capture; SKIP when judged-tree is unchanged
 STEP qa-pipeline.judge: QA Judgement           → @ux-agent ∥ @qa-agent per SF, merge, write qa-validation-NNN.md
 <!-- /section:step-list -->
@@ -81,7 +81,7 @@ does NOT enable the `qa-pipeline` feature — the split is canonical in
 ### STEP qa-pipeline.phase Phase A — project-level probes
 
 ```bash
-bash .codeadd/scripts/qa-preflight.sh a
+node .codeadd/scripts/qa-preflight.cjs a
 ```
 
 Parse the `KEY=STATUS` lines. `missing` and `broken` are distinct diagnoses
@@ -119,7 +119,7 @@ The absorbed QA loops over the **in-scope `SCOPE_DIR`s** already resolved by
 ⛔ **DO NOT re-derive them here.** STEP add-review.report writes `${REVIEW_SCOPE}` into a
 mandatory frontmatter field from the ungated body, so the scope cannot belong
 to a step that ships conditionally. What this step adds is the reconciliation
-with `qa-evidence.sh`'s per-scope shape, nothing more.
+with `qa-evidence.cjs`'s per-scope shape, nothing more.
 
 SET `DESIGN_FILE` per `SCOPE_DIR` using the `feature-design` **Location** rule in
 `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first,
@@ -128,7 +128,7 @@ feature-level fallback) — the same rule STEP add-review.baseline already appli
 ### STEP qa-pipeline.phase-b Phase B — feature-scoped probes + consolidated diagnosis
 
 ```bash
-bash .codeadd/scripts/qa-preflight.sh b "<FEATURE_DIR>" "<spec glob from the qa-project skill>"
+node .codeadd/scripts/qa-preflight.cjs b "<FEATURE_DIR>" "<spec glob from the qa-project skill>"
 ```
 
 Resolve the spec glob from the generated `qa-project` skill's conventions —
@@ -169,7 +169,7 @@ Evidence capture is the expensive half. Re-run it only when the tree actually
 changed since the evidence was captured.
 
 For each `SCOPE_DIR`, read the previous report's `judged-tree` frontmatter field
-(`qa-evidence.sh previous`). Compare it against `REVIEW_TREE_BEFORE` from STEP add-review.baseline.
+(`qa-evidence.cjs previous`). Compare it against `REVIEW_TREE_BEFORE` from STEP add-review.baseline.
 
 | Condition | Action |
 |-----------|--------|
@@ -183,7 +183,7 @@ For each `SCOPE_DIR`, read the previous report's `judged-tree` frontmatter field
 **Resolve `run-NNN` FIRST — before any evidence is written.**
 
 ```bash
-bash .codeadd/scripts/qa-evidence.sh next "${SCOPE_DIR}"
+node .codeadd/scripts/qa-evidence.cjs next "${SCOPE_DIR}"
 ```
 
 Parse `RUN_ID` / `RUN_NUMBER`. It allocates from the union of working
@@ -193,9 +193,9 @@ path below and the STEP qa-pipeline.judge report; STEP qa-pipeline.judge **consu
 it. The destination is `SCOPE_DIR/_tests/run-NNN/`.
 
 ⛔ NEVER write a new audit under `_tests/final/`, and NEVER invoke
-`qa-evidence.sh promote`. Only `/add-done` promotes a reviewed working run.
+`qa-evidence.cjs promote`. Only `/add-done` promotes a reviewed working run.
 
-Then `bash .codeadd/scripts/qa-evidence.sh previous "${SCOPE_DIR}" "${RUN_ID}"`;
+Then `node .codeadd/scripts/qa-evidence.cjs previous "${SCOPE_DIR}" "${RUN_ID}"`;
 retain `PREVIOUS_REPORT` for the judge dispatch and contract-amendment comparison.
 It resolves the immediate numeric predecessor from working plus final evidence,
 never a deeper history walk.
@@ -324,7 +324,7 @@ resolve.
 Then execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for
 schema `qa-validation`.
 
-**The per-scope report is not replaced by `review-NNN.md`.** `qa-evidence.sh
+**The per-scope report is not replaced by `review-NNN.md`.** `qa-evidence.cjs
 validate`, `working-baseline` and `previous`, and `/add-done`, all depend on
 this exact contract. Both documents are written every run.
 <!-- /section:judge-tail -->

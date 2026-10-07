@@ -56,7 +56,7 @@ migration:
 | `updated` | ISO date of the most recent write, advanced on every run — including a no-op |
 | `related` | YAML list of related doc IDs. `[]` when none |
 | `command` | The command that owns this receipt, e.g. `add-qa-setup`. One receipt per command; never merge two commands into one file |
-| `setup-shape` | The shipped shape hash in force when the recorded state was materialized (`sha256:` + 16 hex). Read by `status.sh` with a frontmatter-bounded grep — it MUST be a bare `sha256:<hex>` on its own line, never quoted, never inline-commented |
+| `setup-shape` | The shipped shape hash in force when the recorded state was materialized (`sha256:` + 16 hex). Read by `status.cjs` with a frontmatter-bounded grep — it MUST be a bare `sha256:<hex>` on its own line, never quoted, never inline-commented |
 | `framework-version` | Informational only. Never compared to compute staleness — a release that did not touch the command must stay silent |
 | `first-run` | ISO date of the first setup run. Never rewritten once set |
 | `last-run` | ISO date of the most recent run, **including a verified-current no-op**. A run that changed nothing still advances this field — a verified-current run is information, not nothing |

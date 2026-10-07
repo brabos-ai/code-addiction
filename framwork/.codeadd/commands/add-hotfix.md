@@ -3,10 +3,12 @@
 <!-- uses:
 - skill: add--doc-schemas
 - skill: add--doc-schemas/references/fix.md
+- skill: add--delivery-mode
 - skill: add--ecosystem
 - skill: add--final-report
 - skill: add--id-convention
 - skill: add--investigation
+- mention: /add-done
 - skill: add--knowledge-discovery
 - skill: add--ux-design
 - skill: add--subagent-driven-development
@@ -19,9 +21,9 @@
 - command: /add-diagnose
 - command: /add-wiki
 - mention: /add-review
-- script: delivered.sh
-- script: hotfix-gates.sh
-- script: status.sh
+- script: delivered.cjs
+- script: hotfix-gates.cjs
+- script: status.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -41,9 +43,9 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-hotfix.context (schem
 
 **STEPS IN ORDER:**
 ```
-STEP add-hotfix.context:  Run status.sh             → FIRST COMMAND; parse optional @docs/diagnose/*.md
+STEP add-hotfix.context:  Run status.cjs             → FIRST COMMAND; parse optional @docs/diagnose/*.md
 STEP add-hotfix.branch-check:  Check branch              → IF main: STOP (step 3 required); validate diagnose report before branch creation
-STEP add-hotfix.allocate:  Allocate ID + branch      → status.sh next-id H, branch, skeleton about.md
+STEP add-hotfix.allocate:  Allocate ID + branch      → status.cjs next-id H, branch, skeleton about.md
 STEP add-hotfix.history:  Discover history (index + parallel agents) → delivery index (--no-verify) → @feature-history-agent ∥ @git-history-agent
 STEP add-hotfix.synthesize:  Synthesize history outputs → Confirm related features; retain blast radius for STEP add-hotfix.review
 STEP add-hotfix.investigate:  Investigate code          → ONLY AFTER steps 1-5
@@ -114,7 +116,7 @@ command stops writing new ones; `codeadd update` harvests the old ones and leave
 ## STEP add-hotfix.context: Run Context Mapper (FIRST COMMAND)
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 **AFTER EXECUTION, CHECK OUTPUT:**
@@ -142,7 +144,7 @@ If `DIAGNOSE_REPORT` is set:
 2. Run:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh diagnosis-check <DIAGNOSE_REPORT>
+node .codeadd/scripts/hotfix-gates.cjs diagnosis-check <DIAGNOSE_REPORT>
 ```
 
 3. Exit 2 or a missing/duplicate handoff field → STOP. Instruct `/add-diagnose` again. Do not parse pre-handoff reports.
@@ -173,7 +175,7 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 ### STEP add-hotfix.allocate-next-hotfix Allocate Next Hotfix ID
 
 ```bash
-bash .codeadd/scripts/status.sh next-id H
+node .codeadd/scripts/status.cjs next-id H
 ```
 
 Output: Next global hotfix ID in the form `[NNNN]H` (e.g., `0001H`). Store for the frontmatter write in STEP add-hotfix.receipt.
@@ -232,10 +234,10 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
          or with `NOT VERIFIED` plus the reason when the graph could not be reached
 ```
 
-Query `delivered.sh` with the bug's keywords and **`--no-verify`**:
+Query `delivered.cjs` with the bug's keywords and **`--no-verify`**:
 
 ```bash
-bash .codeadd/scripts/delivered.sh read "<bug keywords>" --no-verify
+node .codeadd/scripts/delivered.cjs read "<bug keywords>" --no-verify
 ```
 
 **Read `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE` and `RETURNED_DEAD`, not just the entries.** The read cuts in two buckets and the counts are what say whether it cut anything: `MATCHED_LIVE` above `RETURNED_LIVE` means candidates were left out, and a narrower query is the answer.
@@ -454,7 +456,7 @@ Map reviewer severity: `Critical` → `blocker`, `Important` → `major`, `Minor
 If any `blocker` or `major` introduced finding remains:
 
 1. Write the routed paths as path-hex, one per line.
-2. Run `bash .codeadd/scripts/hotfix-gates.sh snapshot-wave <path-hex-file>` and store `SNAPSHOT`.
+2. Run `node .codeadd/scripts/hotfix-gates.cjs snapshot-wave <path-hex-file>` and store `SNAPSHOT`.
 3. **DISPATCH AGENT: @fix-agent** [full-access, standard] with the diagnose report when present, `AREAS`, the full ordered `ROUTED_ROWS`, `ATTEMPT=1`, `MAX_ATTEMPTS=1`, and build errors verbatim. There is no second dispatch.
 4. If `@fix-agent` is unavailable, a generic full-access subagent or the coordinator applies the same whole wave inline.
 
@@ -464,7 +466,7 @@ If any `blocker` or `major` introduced finding remains:
 
 If STEP add-hotfix.one-whole-wave changed files:
 
-1. Run `bash .codeadd/scripts/hotfix-gates.sh diff-wave <SNAPSHOT> <package>`.
+1. Run `node .codeadd/scripts/hotfix-gates.cjs diff-wave <SNAPSHOT> <package>`.
 2. **DISPATCH AGENT: @reviewer-agent** `MODE: re-review` with the open findings and that correction-only snapshot package.
 3. Use the same named/generic/inline fallback as STEP add-hotfix.review.
 
@@ -487,7 +489,7 @@ Any `blocker` or `major` still `open` or `not-addressed` after re-review blocks 
 **BEFORE writing the receipt, append entry to iterations.jsonl:**
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+node .codeadd/scripts/log-jsonl.cjs "docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 **Parameters:**
@@ -525,9 +527,9 @@ On the normal path the set was confirmed in STEP add-hotfix.synthesize. On the r
 
 ### STEP add-hotfix.fingerprint Fingerprint
 
-1. Run `bash .codeadd/scripts/hotfix-gates.sh review-manifest docs/features/[NNNN]H-<slug>/`.
+1. Run `node .codeadd/scripts/hotfix-gates.cjs review-manifest docs/features/[NNNN]H-<slug>/`.
 2. Replace the Reviewed Paths fence with that manifest.
-3. Run `bash .codeadd/scripts/hotfix-gates.sh review-fingerprint docs/features/[NNNN]H-<slug>/`.
+3. Run `node .codeadd/scripts/hotfix-gates.cjs review-fingerprint docs/features/[NNNN]H-<slug>/`.
 4. Replace `sha256:<PENDING>` with the printed `REVIEWED_TREE` value. Replace only that field.
 
 ⛔ No hotfix-owned file changes after this replacement.
@@ -542,7 +544,7 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` on:
 Then run:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh review-validate docs/features/[NNNN]H-<slug>/
+node .codeadd/scripts/hotfix-gates.cjs review-validate docs/features/[NNNN]H-<slug>/
 ```
 
 `HOTFIX_REVIEW` must be `ok`. Any other verdict STOPS.
@@ -569,14 +571,37 @@ files, build status.
 <!-- /feature:board:ticket-report -->
 <!-- /slot:board.ticket-report -->
 
-**Next Phase:** Hotfix ownership ends; merging is handled by ecosystem flow. Reference skill `add--ecosystem` Main Flows section for context-aware routing.
+### STEP add-hotfix.handoff Offer the continuation
+
+**This command stays advisory about what happens next.** It fixed a bug and stopped. It does not
+merge, and it never routes to `/add-review` — the diagnose `@docs/diagnose/<file>.md` handoff and the
+route to `/add-done` are untouched by this step.
+
+| State | Next activity |
+|---|---|
+| Fix built, branch ready | `/add-done` — finalize the branch |
+| Build red | none yet — a red build is a deciding stop of its own |
+
+Finish the report and its metadata, then ask ONCE for instructions on the first row only.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/features/[NNNN]H-<slug>/about.md` | What the hotfix changed, and the root cause it removed |
+| `docs/features/[NNNN]H-<slug>/fix-report.md` | The findings the fix wave resolved |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing a hotfix takes |
 
 ---
 
 ## Rules
 
 **ALWAYS:**
-- Use `status.sh next-id H` to allocate hotfix ID
+- Use `status.cjs next-id H` to allocate hotfix ID
 - Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
 - Load the `hotfix` schema from add--doc-schemas before writing
 - Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code, unless a valid diagnose report already supplied that investigation
@@ -610,8 +635,8 @@ files, build status.
 ```
 # User: "Screenshot validation bugada!"
 
-# STEP add-hotfix.context-2: status.sh → BRANCH:main → STOP
-# STEP add-hotfix.allocate: status.sh next-id H → H0001
+# STEP add-hotfix.context-2: status.cjs → BRANCH:main → STOP
+# STEP add-hotfix.allocate: status.cjs next-id H → H0001
 #   git checkout -b hotfix/0001H-screenshot-delete-error
 #   mkdir docs/features/0001H-screenshot-delete-error/
 # STEP add-hotfix.history: Dispatch @feature-history-agent ∥ @git-history-agent (parallel)

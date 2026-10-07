@@ -26,7 +26,7 @@ Log **only pivots** — when a subagent changes approach during implementation. 
 ### Append Command
 
 ```bash
-bash .codeadd/scripts/log-jsonl.sh "docs/features/${FEATURE_ID}/decisions.jsonl" "<type>" "<agent>" '"decision":"[what]","reason":"[why]"'
+node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "<type>" "<agent>" '"decision":"[what]","reason":"[why]"'
 ```
 
 ### Central File (consolidated by /add-done)

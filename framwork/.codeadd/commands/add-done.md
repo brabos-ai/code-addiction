@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -14,11 +15,11 @@
 - command: /add-hotfix
 - command: /add-review
 - command: /add-wiki
-- script: converge-gates.sh
-- script: delivered.sh
-- script: done.sh
-- script: hotfix-gates.sh
-- script: qa-evidence.sh
+- script: converge-gates.cjs
+- script: delivered.cjs
+- script: done.cjs
+- script: hotfix-gates.cjs
+- script: qa-evidence.cjs
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -31,7 +32,7 @@ Coordinator for branch finalization. Generates the changelog from changeset anal
 
 **STEPS IN ORDER:**
 ```
-STEP add-done.collect: done.sh                 -> RUN FIRST (collect context)
+STEP add-done.collect: done.cjs                 -> RUN FIRST (collect context)
 STEP add-done.detect-branch: Detect BRANCH_TYPE      -> Validate, capture FEATURE_ID, then route on the probe (2.1, 2.2)
 STEP add-done.resolve-dir: Resolve directory       -> From CHANGED_FILES paths
 STEP add-done.validate: Validate delivery       -> Review + epic + requirements + build-ledger (feature only), hotfix receipt gate (hotfix only), then the knowledge record (feature AND hotfix)
@@ -57,12 +58,12 @@ IF BRANCH_TYPE = unknown:
 
 IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
   ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
-  ✅ DO: Report the qa-evidence.sh validation/promotion failure and stop
+  ✅ DO: Report the qa-evidence.cjs validation/promotion failure and stop
 
 ALWAYS:
-  ⛔ DO NOT USE: Bash for git add/commit/push — `done.sh` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (STEP add-done.recovery-route), which runs on `main` where `done.sh` cannot run at all
+  ⛔ DO NOT USE: Bash for git add/commit/push — `done.cjs` owns every LOCAL git write, through `--merge`, `--commit-push` or `--cleanup`. The ONE exception is the Recovery route (STEP add-done.recovery-route), which runs on `main` where `done.cjs` cannot run at all
   ⛔ DO NOT USE: Bash for git branch -m (NEVER rename branches)
   ⛔ DO NOT: Ask user for merge confirmation (merge is automatic after validations)
   ⛔ DO NOT: Suggest renaming branches to fix unknown type errors -- the branch prefix is intentional
@@ -80,7 +81,7 @@ ALWAYS:
 ## STEP add-done.collect: Collect Context (RUN FIRST)
 
 ```bash
-bash .codeadd/scripts/done.sh
+node .codeadd/scripts/done.cjs
 ```
 
 **Parse output fields:**
@@ -115,9 +116,9 @@ All recognized types proceed to STEP add-done.pr-route, which routes, and then t
 
 ### STEP add-done.pr-route Cross the Two Facts, Then Route
 
-`done.sh`'s `ROUTE` block already emitted both. **Read them; compute neither.**
+`done.cjs`'s `ROUTE` block already emitted both. **Read them; compute neither.**
 Two readers of one tree that derive the same fact separately are two readers that
-can disagree, which is the whole reason `converge-gates.sh` exists.
+can disagree, which is the whole reason `converge-gates.cjs` exists.
 
 ```
 IF ROUTING THIS RUN:
@@ -200,7 +201,7 @@ Reached from STEP add-done.pr-route's bottom row. Work reached `main` and left n
 there would make the index quietly wrong about a delivery that shipped — the same
 lie as indexing work that never landed, in the other direction.
 
-This route runs **on `main`**, so `done.sh` cannot be used at all: its context
+This route runs **on `main`**, so `done.cjs` cannot be used at all: its context
 mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
 `main`.
 
@@ -233,12 +234,12 @@ IF THE DIFF NAMES MORE THAN ONE docs/features/[NNNN][L]-*/ DIRECTORY:
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
-  ⛔ DO NOT USE: Bash for delivered.sh write
+  ⛔ DO NOT USE: Bash for delivered.cjs write
   ⛔ DO NOT: Reconstruct the diff from plan.md instead of from git
   ✅ DO: Report it and STOP — an entry derived from a plan records intent, not delivery
 ```
 
-⛔ **Recovery NEVER merges.** It runs `done.sh --merge` on nothing and calls
+⛔ **Recovery NEVER merges.** It runs `done.cjs --merge` on nothing and calls
 `gh pr merge` on nothing: the merge already happened, which is the condition that
 put this run here.
 
@@ -266,7 +267,7 @@ delivery it describes is fine; one that hides how it got there is not.
 **Preflight (FEATURE BRANCHES ONLY) — run once, before STEP add-done.quality-gate-verification–STEP add-done.validate-coverage:**
 
 ```bash
-bash .codeadd/scripts/converge-gates.sh "${DIR}"
+node .codeadd/scripts/converge-gates.cjs "${DIR}"
 ```
 
 **SKIP this call entirely if `BRANCH_TYPE` ≠ `feature`.** Parse `GATE_REVIEW`, `GATE_QA_BASELINE`, `GATE_EPIC`, `GATE_COVERAGE`, `GATE_LEDGER`, `REVIEW_PATH`, `REVIEW_SOURCE`, `QA_FEATURE_STATE`, `BASELINE`, `EPIC_PENDING`, `COVERAGE_UNCOVERED`, `GATE_REVIEW_DETAIL`, `GATE_QA_BASELINE_DETAIL`, `GATE_EPIC_DETAIL`, `GATE_COVERAGE_DETAIL`, and `GATE_LEDGER_DETAIL` from its output. **These fields are the sole source of truth for whether STEP add-done.quality-gate-verification, STEP add-done.validate-epic-md, STEP add-done.validate-coverage and STEP add-done.validate-build-ledger pass.** The script computes FIVE gates; every one of them is read below. DO NOT re-derive a verdict by reading `review-NNN.md`, `epic.md`, `plan.md` or `build-ledger.md` and counting/parsing them yourself — that restates the gate the script exists to own.
@@ -296,40 +297,40 @@ or `skipped`.**
    `BASELINE=none`. No → print `/add-review ${FEATURE_ID}` and STOP.
 6. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: show `GATE_QA_BASELINE_DETAIL` →
    BLOCKED. `missing` means the review carries no `> **QA baseline:**` line; `broken` means
-   `qa-evidence.sh validate` rejected it. Both send the user to `/add-review ${FEATURE_ID}` — never
+   `qa-evidence.cjs validate` rejected it. Both send the user to `/add-review ${FEATURE_ID}` — never
    author, repair, or guess a baseline here.
 7. IF `GATE_QA_BASELINE=ok`: proceed.
 
 ⛔ **Reading `GATE_QA_BASELINE` is MANDATORY.** The preflight emits it and it is the gate whose silent loss let a feature whose evidence no longer matched its review reach the merge. Ignoring a computed gate is worse than never computing it.
 
-**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.sh validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.sh validate` again immediately before `promote`, and that second run remains the one that gates finalization.
+**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.cjs validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.cjs validate` again immediately before `promote`, and that second run remains the one that gates finalization.
 
-`GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` neither `ok` nor `skipped` → **BLOCKED**. Never infer a baseline or compare dates. STEP add-done.promote-qa performs the exact filesystem equality and promotion checks through `qa-evidence.sh`.
+`GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` neither `ok` nor `skipped` → **BLOCKED**. Never infer a baseline or compare dates. STEP add-done.promote-qa performs the exact filesystem equality and promotion checks through `qa-evidence.cjs`.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
-- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show blocked gates and the complete command that clears each one
 
-**NOTE:** Done does NOT re-run product validations. It reads `converge-gates.sh`'s verdict — the build's or the review's — and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
+**NOTE:** Done does NOT re-run product validations. It reads `converge-gates.cjs`'s verdict — the build's or the review's — and lets the deterministic lifecycle script prove its QA baseline still matches the working evidence.
 
 ### STEP add-done.hotfix-review-receipt Hotfix Review Receipt (HOTFIX BRANCHES ONLY)
 
-**SKIP this substep entirely if `BRANCH_TYPE` ≠ `hotfix`.** Feature gates stay on `converge-gates.sh`. Refactor/chore/docs stay ungated here.
+**SKIP this substep entirely if `BRANCH_TYPE` ≠ `hotfix`.** Feature gates stay on `converge-gates.cjs`. Refactor/chore/docs stay ungated here.
 
 The `Closed out` route already stopped at STEP add-done.detect-branch — this gate never reruns after delivery is indexed and merged.
 
-Run `hotfix-gates.sh` against the resolved hotfix directory. **Normal and Resume** — validate the current working tree before any close-out write:
+Run `hotfix-gates.cjs` against the resolved hotfix directory. **Normal and Resume** — validate the current working tree before any close-out write:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}"
+node .codeadd/scripts/hotfix-gates.cjs review-validate "${DIR}"
 ```
 
 **Recovery** — validate the merge commit tree, not today's `main`:
 
 ```bash
-bash .codeadd/scripts/hotfix-gates.sh review-validate "${DIR}" --tree "${PR_MERGE_COMMIT}"
+node .codeadd/scripts/hotfix-gates.cjs review-validate "${DIR}" --tree "${PR_MERGE_COMMIT}"
 ```
 
 Use the merge commit SHA the probe already emitted. Never `HEAD` of current `main`.
@@ -345,7 +346,7 @@ Never send a hotfix to `/add-review`.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
-- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ⛔ DO NOT USE: Write on docs/delivered.jsonl
 - ✅ DO: Show `HOTFIX_REVIEW` and `DETAIL`, then STOP
@@ -373,7 +374,7 @@ Run /add-build to implement the next subfeature.
 
 **IF INCOMPLETE:**
 - ⛔ DO NOT USE: Write to create changelog.md
-- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show pending subfeatures and STOP
 
@@ -405,7 +406,7 @@ Options:
 
 **IF UNCOVERED:**
 - ⛔ DO NOT USE: Write to create changelog.md
-- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show uncovered requirements and STOP
 
@@ -442,7 +443,7 @@ detail names the path it looked for.
 
 **IF BLOCKED:**
 - ⛔ DO NOT USE: Write to create changelog.md
-- ⛔ DO NOT USE: Bash for done.sh --merge
+- ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
 - ✅ DO: Show the unfinished tasks and STOP
 
@@ -451,7 +452,7 @@ IF GATE_LEDGER IS NOT ok:
   ⛔ DO NOT USE: Read on build-ledger.md to count the `complete` lines yourself
   ⛔ DO NOT USE: Read on tasks.md to decide which tasks were owed
   ✅ DO: Print GATE_LEDGER_DETAIL and STOP — re-deriving the verdict restates
-         the gate `converge-gates.sh` exists to own, and the two answers can
+         the gate `converge-gates.cjs` exists to own, and the two answers can
          disagree
 ```
 
@@ -478,7 +479,7 @@ Read `${DIR}/about.md` and check both halves:
 ```
 IF EITHER HALF FAILS:
   ⛔ DO NOT USE: Write to create changelog.md
-  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ⛔ DO NOT: Write the TL;DR or the relation yourself to clear the gate
   ✅ DO: Name which half failed, show the document path, and report BLOCKED
@@ -508,9 +509,9 @@ here would record a relationship nobody can reproduce.
 
 For a feature branch, `QA_BASELINE` from STEP add-done.validate is the only promotion manifest. Run in this exact order:
 
-1. Execute `bash .codeadd/scripts/qa-evidence.sh validate "${DIR}" "${QA_BASELINE}"`.
+1. Execute `node .codeadd/scripts/qa-evidence.cjs validate "${DIR}" "${QA_BASELINE}"`.
 2. Require exact per-scope equality between the review baseline and the current highest working runs. A newer run, missing scope, malformed ID, incomplete source, report-number mismatch, or schema-invalid report blocks finalization.
-3. Execute `bash .codeadd/scripts/qa-evidence.sh promote "${DIR}" "${QA_BASELINE}"` only after validation succeeds.
+3. Execute `node .codeadd/scripts/qa-evidence.cjs promote "${DIR}" "${QA_BASELINE}"` only after validation succeeds.
 4. Parse every `ACTION`, `SCOPE`, `FINAL`, and `FINAL_REPORT` line for STEP add-done.document and STEP add-done.preview.
 5. Set `QA_PROMOTION_STATUS=passed`. `BASELINE=none` with no working runs is a valid no-op.
 
@@ -518,10 +519,10 @@ Promotion copies each complete working run to `_tests/final/run-NNN/` through a 
 
 **IF either script call fails:**
 - ⛔ DO NOT USE: Write to create `changelog.md`
-- ⛔ DO NOT USE: Bash for `done.sh --merge`
+- ⛔ DO NOT USE: Bash for `done.cjs --merge`
 - ✅ DO: Surface the exact script error. For baseline drift, require `/add-review`; for incomplete/conflicting evidence, require correction before retrying `/add-done`
 
-Do NOT stage, commit, push, move, or delete evidence here. **`done.sh` owns every LOCAL git write on both routes** — the PR route calls its `--commit-push` and `--cleanup` modes — and promotion remains retry-safe.
+Do NOT stage, commit, push, move, or delete evidence here. **`done.cjs` owns every LOCAL git write on both routes** — the PR route calls its `--commit-push` and `--cleanup` modes — and promotion remains retry-safe.
 
 ---
 
@@ -584,7 +585,7 @@ missing from it until this step adds it.
 ```
 IF ${DIR}/changelog.md ALREADY EXISTS:
   ⛔ DO NOT: Skip the narrative — a skip leaves the state the FIRST writer produced
-  ⛔ DO NOT USE: Bash for status.sh next-id CHG — the id it already carries is the id
+  ⛔ DO NOT USE: Bash for status.cjs next-id CHG — the id it already carries is the id
   ⛔ DO NOT: Rewrite id:, created:, type: or related:
   ✅ DO: Apply the schema's complement table, part by part, and bump updated:
 ```
@@ -600,7 +601,7 @@ EXECUTE schema `changelog` from `{{skill:add--doc-schemas/SKILL.md}}`.
 **Allocate changelog ID:**
 
 ```bash
-bash .codeadd/scripts/status.sh next-id CHG
+node .codeadd/scripts/status.cjs next-id CHG
 ```
 
 Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[NNNN]F` or `[NNNN]H`. Extractive only.
@@ -621,7 +622,7 @@ Output: `CHG[NNNN]`. Use in frontmatter. `related:` MUST reference the closed `[
 
 **IF discovery.md has no "Identified Patterns" section:** infer patterns from the narrative changelog.
 
-**QA trail (IF STEP add-done.promote-qa emitted any `FINAL_REPORT`, for new AND existing changelogs):** upsert one `## QA Evidence` section citing every promoted per-scope final snapshot — scope, `run-NNN`, permanent `_tests/final/run-NNN/` path, report date, and severity counts. Replace that section on rerun rather than appending a duplicate. Extractive only: consume the metadata emitted by `qa-evidence.sh promote` and preserve open findings as audit history.
+**QA trail (IF STEP add-done.promote-qa emitted any `FINAL_REPORT`, for new AND existing changelogs):** upsert one `## QA Evidence` section citing every promoted per-scope final snapshot — scope, `run-NNN`, permanent `_tests/final/run-NNN/` path, report date, and severity counts. Replace that section on rerun rather than appending a duplicate. Extractive only: consume the metadata emitted by `qa-evidence.cjs promote` and preserve open findings as audit history.
 
 ---
 
@@ -685,15 +686,15 @@ IF 2.1 ROUTED THIS RUN TO **Resume**:
 
 **IF `.codeadd/wiki/index.md` exists:**
 
-Load skill `{{skill:add--wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.sh` (STEP add-done.collect) + the feature context already loaded in this session (about.md from STEP add-done.load-feature-context, the changelog just generated in STEP add-done.complement-changelog).
+Load skill `{{skill:add--wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.cjs` (STEP add-done.collect) + the feature context already loaded in this session (about.md from STEP add-done.load-feature-context, the changelog just generated in STEP add-done.complement-changelog).
 
-Wiki edits stay in the working tree — do NOT commit them here. `done.sh --merge` (STEP add-done.merge) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
+Wiki edits stay in the working tree — do NOT commit them here. `done.cjs --merge` (STEP add-done.merge) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
 
 **ELSE:** Skip silently — no wiki step runs. Add ONE line to the final summary after merge: "Project wiki not found — run /add-wiki to generate the knowledge base."
 
 **NEVER block the close flow on wiki failures.** If the update fails or is inconclusive, note it in the final summary and continue to STEP add-done.preview.
 
-⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.sh --merge` owns the commit.
+⛔ DO NOT USE: Bash for git operations in this substep — wiki edits are plain file edits; `done.cjs --merge` owns the commit.
 
 ---
 
@@ -748,13 +749,13 @@ IF 2.1 ROUTED THIS RUN TO **Resume**:
 ```
 
 
-Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.sh` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.sh --merge` (STEP add-done.merge) commits it with everything else.
+Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.cjs` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.cjs --merge` (STEP add-done.merge) commits it with everything else.
 
 Load `{{skill:add--doc-schemas/references/delivery-index.md}}` for the record shape, the `{what, at, find}` anchor and the hard bans. Do not restate them here; the reference is the contract.
 
 ```
 IF BRANCH_TYPE = docs:
-  ⛔ DO NOT USE: Bash for delivered.sh write
+  ⛔ DO NOT USE: Bash for delivered.cjs write
   ✅ DO: Skip STEP add-done.write-delivery-index entirely, set INDEX_ENTRY=none, continue to STEP add-done.preview
 
 IF THE ENTRY HAS NOT BEEN WRITTEN OR EXPLICITLY SKIPPED:
@@ -773,7 +774,7 @@ IF THE ENTRY HAS NOT BEEN WRITTEN OR EXPLICITLY SKIPPED:
 For hotfix, refactor and chore, run the report-only verify FIRST, then match:
 
 ```bash
-bash .codeadd/scripts/delivered.sh verify
+node .codeadd/scripts/delivered.cjs verify
 ```
 
 Verify first because an item that has already moved carries a stale `at`; a branch touching its *current* location would intersect nothing and silently get no line. Then, for every existing entry, match an item when **the branch's diff touches a hunk containing that item's `find` string** — not merely when it touches the same file — **or** when the branch renames the item's `at` file by path. Both clauses exist, for opposite failure modes: hunk-matching alone misses a pure rename (`R100`, zero hunks), and path-matching alone attributes every change in a shared routes or schema file to every entry with an item in it.
@@ -799,29 +800,29 @@ The last exclusion is the general rule the others are instances of: **if nothing
 **6.8.4 — Write it.** Compose the record and pass it on stdin. The script generates `v` and `ts`; supply everything else. `commits` comes from a read-only `git log --format=%h` over the branch's own commits.
 
 ```bash
-bash .codeadd/scripts/delivered.sh write < "$RECORD_FILE"
+node .codeadd/scripts/delivered.cjs write < "$RECORD_FILE"
 ```
 
 Parse `ENTRY`, `CREATED`, `LINES` and every `LOOSE` line for STEP add-done.preview. Set `INDEX_ENTRY` to the composed record so STEP add-done.preview can render it in full.
 
 ```
-IF delivered.sh EXITS 2 WITH REFUSED=find-absent OR REFUSED=find-over-matched:
+IF delivered.cjs EXITS 2 WITH REFUSED=find-absent OR REFUSED=find-over-matched:
   ⛔ DO NOT: Retry with the same find string
   ⛔ DO NOT: Drop the item to make the write pass
   ✅ DO: Pick a more specific identifier for that item and write again
 
-IF delivered.sh EXITS 2 WITH ANY OTHER REFUSED= VALUE:
-  ⛔ DO NOT USE: Bash for done.sh --merge
+IF delivered.cjs EXITS 2 WITH ANY OTHER REFUSED= VALUE:
+  ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Show the REFUSED value and the record, and stop — the record breaks a hard ban
 
-IF delivered.sh EXITS 1:
-  ⛔ DO NOT USE: Bash for done.sh --merge
+IF delivered.cjs EXITS 1:
+  ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
   ✅ DO: Show the write error and stop — the filesystem refused the entry
 ```
 
-⛔ DO NOT USE: Bash for git add/commit/push in this substep. **`done.sh` owns every LOCAL git write on both routes**, exactly as it does for the changelog and the wiki.
+⛔ DO NOT USE: Bash for git add/commit/push in this substep. **`done.cjs` owns every LOCAL git write on both routes**, exactly as it does for the changelog and the wiki.
 
 <!-- slot:docs-pruning.prune fallback="fallbacks/empty.md" -->
 <!-- feature:docs-pruning:prune -->
@@ -856,7 +857,7 @@ IF RENDERING THE ENTRY:
 **Execute immediately after STEP add-done.preview, on the route STEP add-done.local-route chose.** All three of STEP add-done.local-route's
 outcomes land here, including the one that asks.
 
-⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.sh`'s
+⛔ **This command runs no per-file post-merge check, and that is deliberate.** `done.cjs`'s
 `do_cleanup` — called by both routes below, directly at STEP add-done.pr-merge and through `--merge` at STEP add-done.local-merge — proves the
 merge two ways: a fetch, then `git merge-base --is-ancestor` against the merge commit. Nothing here
 re-opens the merged files to prove they match what was pushed. This project's own internal development
@@ -885,7 +886,7 @@ Merge locally, or open a PR first?
 
 ```
 IF THE USER HAS NOT ANSWERED:
-  ⛔ DO NOT USE: Bash for done.sh --merge
+  ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge
   ⛔ DO NOT: Pick the local route because it is the older default
   ✅ DO: Ask, and WAIT
@@ -902,7 +903,7 @@ Taken when `PR_STATE=open`. The forge owns the merge, so its rules — required
 reviews, required checks, protected branches — are the ones that apply.
 
 ```bash
-bash .codeadd/scripts/done.sh --commit-push
+node .codeadd/scripts/done.cjs --commit-push
 ```
 
 STEP add-done.document's documents land on the branch and CI is re-triggered on the new commit.
@@ -947,7 +948,7 @@ Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the
 same guarantee without holding the session open, with the same deliberate flag.
 
 ```bash
-bash .codeadd/scripts/done.sh --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
+node .codeadd/scripts/done.cjs --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
 ```
 
 The sha is passed because the merge creates a NEW commit on the server, and it
@@ -957,7 +958,7 @@ cleanup prove the merge landed without deriving anything from local refs, which
 
 ```
 IF THE MERGE IS REFUSED:
-  ⛔ DO NOT USE: Bash for done.sh --cleanup
+  ⛔ DO NOT USE: Bash for done.cjs --cleanup
   ⛔ DO NOT: Retry the merge with a different flag to get past the refusal
   ✅ DO: Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` and STOP
 ```
@@ -972,19 +973,19 @@ Taken when STEP add-done.local-route chose it: `PR_STATE` is `none` with a `decl
 `no-gh` record, or `gh` is unavailable.
 
 ```bash
-bash .codeadd/scripts/done.sh --merge
+node .codeadd/scripts/done.cjs --merge
 ```
 
-`done.sh --merge` runs the whole local sequence: commit-push, the push dry-run, the squash, the push to main, then `--cleanup`. Two of its outcomes are NOT success and each has an answer:
+`done.cjs --merge` runs the whole local sequence: commit-push, the push dry-run, the squash, the push to main, then `--cleanup`. Two of its outcomes are NOT success and each has an answer:
 
 | It reports | Meaning | Do |
 |---|---|---|
 | `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add-pull-request}}`, then re-run |
 | `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP add-done.complete and report the branch left behind, naming the check. This is not a failed delivery |
 
-On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add-build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add-build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.sh --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add-build` makes.
+On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add-build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add-build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.cjs --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add-build` makes.
 
-⛔ DO NOT USE Bash for git add/commit/push manually. **`done.sh` owns every
+⛔ DO NOT USE Bash for git add/commit/push manually. **`done.cjs` owns every
 LOCAL git write on both routes** — the PR route calls its `--commit-push` and
 `--cleanup` modes rather than doing that work itself. `gh pr merge` is not a
 local git write: it asks the forge to merge, and touches no ref here. That is
@@ -1003,8 +1004,8 @@ why it is the one call this command makes directly.
 <!-- /feature:board:ticket-carry -->
 <!-- /slot:board.ticket-carry -->
 
-**Resolve the next command here, state it at STEP add-done.complete:**
-READ skill `add--ecosystem` Main Flows section. Based on current context (branch type, epic status), identify the appropriate next step. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
+**Resolve the next activity here, state it at STEP add-done.complete:**
+READ skill `add--ecosystem` Main Flows section. Resolve whether the user stated a next goal for this work FIRST — a merged branch carries none of its own, and branch type alone says only what shipped. Then use the branch type and epic status. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
 
 <!-- slot:gitnexus.graph-reindex fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph-reindex -->
@@ -1026,7 +1027,7 @@ Deleted row is written even when it reads "none".
 Then, after the seven blocks, state:
 
 - The wiki result from STEP add-done.wiki — pages touched, an explicit no-op, or the "wiki not found" suggestion.
-- The delivery index entry that `delivered.sh` wrote, and the changelog path.
+- The delivery index entry that `delivered.cjs` wrote, and the changelog path.
 - **The docs index rebuild from STEP add-done.rebuild-docs-knowledge** — its node and edge counts, and the
   unresolved list when STEP add-done.rebuild-docs-knowledge found one. An unresolved relation points at a
   document that does not exist; it reaches the user here or nowhere.
@@ -1041,8 +1042,44 @@ Then, after the seven blocks, state:
 <!-- feature:board:ticket-report -->
 <!-- /feature:board:ticket-report -->
 <!-- /slot:board.ticket-report -->
-- The next command, from the `add--ecosystem` Main Flows section, chosen for the current branch type
+- The next activity, from the `add--ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
+
+### STEP add-done.handoff Offer the continuation
+
+**Every stop in this command is deciding, and none of them is this one.** The merge already happened
+by the time this runs, so the offer is a question about what comes next — never a substitute for a
+gate, and never a merge consent.
+
+**The FIRST row is the test for whether there is a next activity at all, so it is evaluated first.**
+A merged branch carries no goal of its own; the branch type only says what the delivery *was*. Read
+the rows top-to-bottom and stop at the first match, exactly as `add--ecosystem` Main Flows does.
+
+| State after the merge | Next activity |
+|---|---|
+| **No next goal was stated for this work** | none — the delivery is closed |
+| Feature branch, back on main, next feature stated | `/add-new` — start that feature |
+| Epic, subfeatures still pending, next one stated | `/add-build feature N` — the next subfeature |
+| Hotfix, and the user has said what comes next | `/add-new` — return to feature work |
+
+Finish the report and its metadata, then ask ONCE for instructions only on rows 2 to 4.
+
+⛔ **Never propose a new feature the user did not ask for.** "Back on main" and "was an epic" are
+facts about what shipped, not intentions about what comes next. Reading either as a reason to start
+something is how a close-out launches an epic its user never requested, and it is why row 1 is
+evaluated before all three.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
+| `docs/features/<id>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---
 

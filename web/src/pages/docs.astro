@@ -109,7 +109,7 @@ import "../styles/global.css";
       <!-- INSTALL -->
       <section id="install" class="mb-20">
         <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
-        <p class="text-muted-light mb-6">Requires Node.js 18+. Works on Windows, macOS, and Linux.</p>
+        <p class="text-muted-light mb-6">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended). Works on Windows, macOS and Linux &mdash; no Bash, WSL or Git-Bash needed.</p>
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
           <div><span class="text-muted select-none"># install in your project</span></div>
@@ -130,6 +130,10 @@ import "../styles/global.css";
           <span class="text-foreground">├── .cursor/</span><span class="text-muted ml-6">← Cursor</span><br/>
           <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
         </div>
+
+        <p class="text-muted text-sm mt-4">
+          Framework scripts are Node entries — <code class="font-mono text-xs">node .codeadd/scripts/&lt;entry&gt;.cjs</code> — so no Bash, WSL or Git-Bash is required on any platform.
+        </p>
       </section>
 
       <!-- QUICKSTART -->
@@ -265,7 +269,7 @@ import "../styles/global.css";
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-pull-request</code>
-                <p class="text-muted text-xs mt-0.5">Idempotent PR — creates new PR or appends update section if one is already open. Generates feature changelog on feature branches</p>
+                <p class="text-muted text-xs mt-0.5">Idempotent PR - creates new PR or appends update section if one is already open. Generates feature changelog on feature branches</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm" style="color:#ff4444">/add-hotfix</code>
@@ -543,39 +547,43 @@ import "../styles/global.css";
             { name: "security-audit", desc: "OWASP checklist, RLS, secrets, multi-tenancy" },
             { name: "code-review", desc: "Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID" },
             { name: "feature-discovery", desc: "Discovery process, codebase analysis" },
-            { name: "feature-specification", desc: "Single writer of about.md — reads the brainstorm intent file, extracts closed decisions without asking, and asks only what is still open. Loaded by /add-new and by /add-brainstorm when it continues into authoring." },
-            { name: "architecture-discovery", desc: "Map architecture, detect patterns, stack-context.md" },
+            { name: "feature-specification", desc: "Single writer of about.md - reads the brainstorm intent file, extracts the objective and the closed decisions without asking, and asks only what is still open. Loaded by /add-new." },
+            { name: "architecture-discovery", desc: "Use when documenting project architecture - generates Technical Spec section in AGENTS.md" },
             { name: "delivery-validation", desc: "Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass" },
             { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
             { name: "add--tasks-checklist", desc: "Use when generating, reading, or ticking tasks.md — defines the canonical 5-section schema, tick rules per section, failure marker semantics, 'non-trivial change' rule, and the architect subagent prompt template" },
             { name: "stripe", desc: "Stripe integration, price versioning, grandfathering" },
-            { name: "token-efficiency", desc: "Compression, compact JSON, minimal tokens" },
+            { name: "token-efficiency", desc: "Use when creating commands, skills, or docs - defines generic compression patterns (minified JSON, abbreviations, glob patterns, single breaks). Load before any write where token density matters." },
             { name: "commit", desc: "Smart commit with auto-generated Conventional Commits messages" },
-            { name: "project-scaffolding", desc: "Scaffold Node.js projects (Express, Fastify, NestJS, Bun) — monolith or monorepo" },
+            { name: "project-scaffolding", desc: "Guide Node.js project scaffolding - Starter monolith, Scale monorepo, Starter→Scale migration." },
             { name: "health-check", desc: "Tech health check suite: docs, security, architecture, data analysis" },
             { name: "plan-based-features", desc: "Subscription plan gating — 3-layer PlanFeatures pattern and IPlanService" },
-            { name: "dev-environment-setup", desc: "Detect OS, install missing tools, configure VS Code terminal" },
-            { name: "optimizing-git-workflow", desc: "Complete Git config: colors, aliases, smart defaults, performance" },
-            { name: "backend-architecture", desc: "Backend architecture patterns and workspace conventions" },
-            { name: "frontend-architecture", desc: "Frontend architecture patterns and workspace conventions" },
+            { name: "dev-environment-setup", desc: "Use when Node, git or gh CLI are missing, or Node is older than 22.19.0 - detects OS, diagnoses gaps, installs missing tools." },
+            { name: "optimizing-git-workflow", desc: "Git global cfg setup - colors, performance, merge conflicts, aliases for new machines" },
+            { name: "backend-architecture", desc: "Guides backend architecture decisions - over-engineering, folder structure, slices, layers, feature organization, where code goes." },
+            { name: "frontend-architecture", desc: "Frontend architecture consultant for project structure, folder organization, feature boundaries, and scaling decisions. Framework-aware (React, Vue, Angular). Use when user asks about frontend folder structure, \"components folder is a mess\", \"where should this go\", over-engineering, slices, feature folders, or starting/refactoring a frontend project. Guides decisions only - does not implement (use add--frontend-development) or design UI (use ux-design)." },
             { name: "ecosystem", desc: "ADD ecosystem map and framework overview" },
             { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
-            { name: "resource-path-convention", desc: "Consistent resource path conventions across the project" },
-            { name: "id-convention", desc: "Canonical [NNNN][L] ID and branch naming format expected by next-id.sh, get-branch-metadata.sh, done.sh" },
+            { name: "resource-path-convention", desc: "Use when writing commands or skills that reference other commands, skills, or scripts - ensures paths resolve correctly across all providers after installation" },
+            { name: "id-convention", desc: "Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs or creating branches - canonical [NNNN][L] format that the scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) expect" },
             { name: "skill-creator", desc: "Create and structure new ADD skills" },
-            { name: "agents-md-style", desc: "Use when generating or updating the project's AGENTS.md — migrates any legacy context file into it first, then defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any AGENTS.md write." },
-            { name: "add--tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests — forces a failing test confirmed for the right reason before any production code. Loaded by add-build." },
+            { name: "agents-md-style", desc: "Use when generating or updating the project's AGENTS.md - migrates any legacy context file into it first, then defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any AGENTS.md write." },
+            { name: "add--tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests - forces a failing test confirmed for the right reason before any production code. Loaded by add-build." },
             { name: "add--test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add-plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
-            { name: "add--qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json screen catalog by read-merge-write. Loaded by add-plan's qa-pipeline QA-Spec step." },
-            { name: "add--qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add-review and both judges." },
-            { name: "add--qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over — defines the autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints. Consumed by /add-qa-setup when migration is detected and confirmed." },
-            { name: "add--knowledge-discovery", desc: "Use at the context/discovery step of add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm — consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents." },
-            { name: "add--wiki-maintenance", desc: "Use for incremental project-wiki updates — loaded by /add-wiki update (manual drift) and add-done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
-            { name: "add--setup-contract", desc: "Use when a state-materializing command starts — compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP 1.5 and STEP 12." },
-            { name: "add--feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds — catches docs that pass every review and still make the reader build the wrong thing." },
-            { name: "add--final-report", desc: "Use at a command's closing step — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first." },
-            { name: "add--review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
-            { name: "add--delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, how one command hands off to the next, and where the automatic path ends — the build's publish question." },
+            { name: "add--qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json catalog (design: path only - no expect). Loaded by add-plan's qa-pipeline QA-Spec step." },
+            { name: "add--qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) - the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add-review and both judges." },
+            { name: "add--qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over - defines the autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints. Consumed by /add-qa-setup when migration is detected and confirmed." },
+            { name: "add--knowledge-discovery", desc: "Use at the context/discovery step of add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm - consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents." },
+            { name: "add--wiki-maintenance", desc: "Use for incremental project-wiki updates - loaded by /add-wiki update (manual drift) and add-done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
+            { name: "add--setup-contract", desc: "Use when a state-materializing command starts - compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP 1.5 and STEP 12." },
+            { name: "add--feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds - catches docs that pass every review and still make the reader build the wrong thing." },
+            { name: "add--final-report", desc: "Use at a command's closing step - the seven blocks every finishing command reports in, the optional fresh-context continuation handoff and its two-response contract, the banned phrasings, and the self-check. Load at the last step, not at the first." },
+            { name: "add--review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document - how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
+            { name: "add--delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff - the two delivery modes and where each is carried, which stops wait in each mode, who is offered the optional fresh-context continuation and why, how one command hands off to the next, and where the automatic path ends." },
+            { name: "add--backlog", desc: "Use when something should be done later but not now - record it as a ticket on the project backlog, or read, reprioritise, comment on and close what is already there. Works mid-flow, inside another command's run, without derailing it." },
+            { name: "add--cross-sf-consistency", desc: "Use when judging contract consistency across an epic's subfeature plans - the five-dimension rubric, dedupe rules, and finding routes." },
+            { name: "add--doc-schemas", desc: "Documentation schemas and conventions for ADD projects" },
+            { name: "add--plan-review", desc: "Pre-delivery executability review for freshly generated about.md and plan.md - verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback." },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>

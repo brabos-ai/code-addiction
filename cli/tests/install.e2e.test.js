@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { builtinModules } from 'node:module';
 import AdmZip from 'adm-zip';
+import { loadCorpus, actions } from '../../mcp/engine.mjs';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
@@ -182,31 +184,70 @@ describe('install command e2e', () => {
       return fs.readFileSync(path.join(SCRIPTS_DIR, name));
     }
 
-    /** A release asset carrying the real canonical modules plus the wrapper
-     *  siblings the shell callers reach. */
-    function buildBacklogZip({ core } = {}) {
+    /** Package the real backlog family from disk, so a retirement assertion
+     *  fails if a removed entry is accidentally shipped again. */
+    function buildBacklogZip() {
       const zip = new AdmZip();
       zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
-      for (const name of [...WRAPPERS, ...CANONICAL]) {
+      for (const name of fs.readdirSync(SCRIPTS_DIR).filter((n) => /^backlog(?:-.*)?\.(?:cjs|sh)$/.test(n))) {
         zip.addFile(`framwork/.codeadd/scripts/${name}`, realBytes(name));
       }
       return zip.toBuffer();
     }
 
-    it('lands all six modules and both wrappers in .codeadd/scripts with their bytes intact', async () => {
+    it.each([true, false])('reinstall retires only manifest-owned wrappers (tracked=%s)', async (tracked) => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      // Old installation fixture, independent of retired source files.
+      const manifestPath = path.join(tmpDir, '.codeadd', 'manifest.json');
+      const old = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      for (const name of WRAPPERS) {
+        fs.writeFileSync(path.join(tmpDir, '.codeadd', 'scripts', name), '# user or old installed entry\n');
+        if (tracked) old.files.push(`.codeadd/scripts/${name}`);
+      }
+      fs.writeFileSync(manifestPath, JSON.stringify(old));
+      mocks.getLatestTag.mockResolvedValue('v2.0.0');
+      await install(tmpDir);
+
+      const current = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      for (const name of WRAPPERS) {
+        const file = path.join(tmpDir, '.codeadd', 'scripts', name);
+        expect(fs.existsSync(file), name).toBe(!tracked);
+        expect(current.files).not.toContain(`.codeadd/scripts/${name}`);
+        if (!tracked) expect(fs.readFileSync(file, 'utf8')).toBe('# user or old installed entry\n');
+      }
+      for (const name of CANONICAL) {
+        expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'scripts', name))).toEqual(realBytes(name));
+      }
+      const result = execFileSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'],
+        { cwd: tmpDir, encoding: 'utf8' });
+      expect(result).toContain('BACKLOG_PRESENT=no');
+    });
+
+    it('ships only the six Node modules, preserving their bytes and retiring shell entries', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
 
       await install(tmpDir);
 
-      for (const name of [...CANONICAL, ...WRAPPERS]) {
+      for (const name of CANONICAL) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
         expect(fs.existsSync(installed), `${name} was not installed`).toBe(true);
         // Byte-for-byte for the CJS modules: fixLineEndings normalizes CRLF for
         // .sh only, and these are read by Node directly. A rewrite is a bug.
         expect(fs.readFileSync(installed)).toEqual(realBytes(name));
       }
+      const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+      for (const name of WRAPPERS) {
+        expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', name)), name).toBe(false);
+        expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
+      }
+      const zip = new AdmZip(buildBacklogZip());
+      expect(zip.getEntries().map((e) => e.entryName).filter((n) => /\/backlog[^/]*\.(cjs|sh)$/.test(n)).sort())
+        .toEqual(CANONICAL.map((n) => `framwork/.codeadd/scripts/${n}`).sort());
     });
 
     it('an installed project runs the native LOCAL entry with no source checkout', async () => {
@@ -221,6 +262,43 @@ describe('install command e2e', () => {
       expect(result.status).toBe(0);
       expect(result.stdout).toContain('BACKLOG_PRESENT=no');
       expect(result.stdout).toContain('TICKETS_TOTAL=0');
+      // The summary protocol ships with the entry: READ_VIEW on every read,
+      // get as the exact detail read, --full restoring raw rows.
+      expect(result.stdout).toContain('READ_VIEW=summary');
+      expect(result.stdout).toContain('STATUS_COUNTS={}');
+    });
+
+    it('an installed project reads summary, full and get through the shipped protocol', async () => {
+      mocks.getLatestTag.mockResolvedValue('v1.0.0');
+      mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
+      await install(tmpDir);
+
+      fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'),
+        JSON.stringify({
+          id: '0001B', title: 'installed read', theme: '', labels: [], tldr: 'installed body',
+          notes: ['body note'], done_when: 'works', paths: [], grounded: false, status: 'open',
+          created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z',
+          comments: [], feature: null, work_id: null,
+        }) + '\n');
+
+      const { spawnSync } = await import('node:child_process');
+      const run = (args) => spawnSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', ...args], {
+        cwd: tmpDir, encoding: 'utf8',
+      });
+
+      const summary = run(['list', '--all']);
+      expect(summary.status).toBe(0);
+      expect(summary.stdout).toContain('READ_VIEW=summary');
+      expect(summary.stdout).toContain('"id":"0001B"');
+      expect(summary.stdout).not.toContain('"notes"');
+
+      const got = run(['get', '0001B']);
+      expect(got.status).toBe(0);
+      expect(got.stdout).toContain('"notes":["body note"]');
+
+      const full = run(['list', '--all', '--full']);
+      expect(full.stdout).toContain('"notes":["body note"]');
     });
 
     it('an installed project runs the native PUBLICATION entry — reads refused by name', async () => {
@@ -291,8 +369,7 @@ describe('install command e2e', () => {
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
 
-      // A newer release changes the module bodies — but only the CJS runtime
-      // tips, not the wrappers (their bytes are pinned by the fixture). An
+      // A newer release changes the module bodies. An
       // update that refreshed only part of the runtime would leave the rest
       // on the old contract — the exact half-refreshed runtime the plan's
       // risks table calls out.
@@ -300,14 +377,14 @@ describe('install command e2e', () => {
       const zip2 = new AdmZip();
       zip2.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
       zip2.addFile('framwork/.codeadd/scripts/health.sh', Buffer.from('echo ok\n'));
-      for (const name of [...WRAPPERS, ...CANONICAL]) {
+      for (const name of CANONICAL) {
         zip2.addFile(`framwork/.codeadd/scripts/${name}`, Buffer.from(marker(name)));
       }
       mocks.getLatestTag.mockResolvedValue('v2.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(zip2.toBuffer());
       await (await import('../src/updater.js')).update(tmpDir);
 
-      for (const name of [...CANONICAL, ...WRAPPERS]) {
+      for (const name of CANONICAL) {
         const installed = path.join(tmpDir, '.codeadd', 'scripts', name);
         expect(fs.readFileSync(installed, 'utf8'), `${name} was not refreshed`).toBe(marker(name));
       }
@@ -594,5 +671,226 @@ describe('install-path migration ledger (L2.7, L2.8)', () => {
     await install(tmpDir);
 
     expect(readManifest(tmpDir).migrations).toEqual(['0001-prune-legacy-orphans']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F23 — the installed native runtime closure (L6)
+//
+// The shipped runtime is native `.cjs` all the way down: the 19 entries, their
+// shared cores and the six backlog modules. F20 removed the shells and F21 the
+// root release/tag routes; these cases prove the RELEASE LAYOUT at the install
+// boundary, which unit tests over `installer.js` cannot:
+//
+//   1. a fresh install carries every native entry and core, byte-exact, and no
+//      shell entry at the runtime root — the ZIP is derived from the real
+//      shipped dir's top-level `.cjs`, so a reintroduced `.sh` there would
+//      appear in `installed` and fail. (The `scripts/tests/` transport subtree
+//      is a development asset and belongs to F31, not to this closure.)
+//   2. a manifest-owned update/reinstall retires the old managed shells while
+//      leaving a manual, untracked file alone;
+//   3. a relocated install runs the delivery, status and QA entries where no
+//      source checkout and no development `node_modules` are on the resolution
+//      path;
+//   4. the packaged MCP reader resolves `.codeadd/scripts/delivered.cjs` and
+//      loads `delivery-index-core.cjs` from beside it;
+//   5. every shipped entry requires only Node built-ins and its relative
+//      siblings, so executing it needs no development dependency.
+// ---------------------------------------------------------------------------
+
+const SHIPPED_SCRIPTS_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
+const NATIVE_ENTRIES = fs
+  .readdirSync(SHIPPED_SCRIPTS_DIR)
+  .filter((n) => n.endsWith('.cjs'))
+  .sort();
+
+/** Package the REAL shipped scripts (top-level `.cjs` only) as a release ZIP. */
+function buildNativeZip() {
+  const zip = new AdmZip();
+  zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+  for (const name of NATIVE_ENTRIES) {
+    zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(SHIPPED_SCRIPTS_DIR, name)));
+  }
+  return zip.toBuffer();
+}
+
+const installedScriptsDir = (dir) => path.join(dir, '.codeadd', 'scripts');
+
+describe('F23 — the installed native runtime closure (L6)', () => {
+  beforeEach(() => {
+    mocks.getLatestTag.mockResolvedValue('v1.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildNativeZip());
+  });
+
+  it('a fresh install writes every native entry and core, byte-exact, and no shell entry', async () => {
+    await install(tmpDir);
+
+    const scripts = installedScriptsDir(tmpDir);
+    const installed = fs.readdirSync(scripts).sort();
+    // Exact equality: an extra file — a reintroduced shell entry above all —
+    // fails here without needing a second, weaker negative assertion.
+    expect(installed).toEqual(NATIVE_ENTRIES);
+    expect(installed.filter((n) => n.endsWith('.sh'))).toEqual([]);
+
+    // Both halves of the MCP reader are entries in the closure, never extras.
+    expect(installed).toContain('delivered.cjs');
+    expect(installed).toContain('delivery-index-core.cjs');
+
+    for (const name of NATIVE_ENTRIES) {
+      expect(fs.readFileSync(path.join(scripts, name))).toEqual(
+        fs.readFileSync(path.join(SHIPPED_SCRIPTS_DIR, name)),
+      );
+    }
+
+    // The source the release is built from carries no top-level shell entry;
+    // a reintroduced one would land in the ZIP above and fail `installed`.
+    expect(fs.readdirSync(SHIPPED_SCRIPTS_DIR).filter((n) => n.endsWith('.sh'))).toEqual([]);
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'),
+    );
+    for (const name of NATIVE_ENTRIES) {
+      expect(manifest.files).toContain(`.codeadd/scripts/${name}`);
+    }
+  });
+
+  it.each([true, false])(
+    'a manifest-owned update retires old managed shell entries and keeps untracked files (tracked=%s)',
+    async (tracked) => {
+      await install(tmpDir);
+
+      // The pre-migration installation: the shell runtime sat where the native
+      // entries sit now. Some shells were manifest-owned; one was the user's.
+      const scripts = installedScriptsDir(tmpDir);
+      const managed = ['status.sh', 'delivered.sh', 'qa-evidence.sh'];
+      const manual = path.join(scripts, 'my-local-helper.sh');
+      fs.writeFileSync(manual, '# mine, never in a manifest\n');
+      for (const name of managed) fs.writeFileSync(path.join(scripts, name), '# old shell entry\n');
+
+      const manifestPath = path.join(tmpDir, '.codeadd', 'manifest.json');
+      if (tracked) {
+        const old = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        for (const name of managed) old.files.push(`.codeadd/scripts/${name}`);
+        fs.writeFileSync(manifestPath, JSON.stringify(old));
+      }
+
+      mocks.getLatestTag.mockResolvedValue('v2.0.0');
+      await install(tmpDir); // reinstall over the same project
+
+      for (const name of managed) {
+        // Manifest-owned → pruned; untracked → preserved, byte for byte.
+        expect(fs.existsSync(path.join(scripts, name)), name).toBe(!tracked);
+      }
+      expect(fs.readFileSync(manual, 'utf8')).toBe('# mine, never in a manifest\n');
+
+      const current = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      for (const name of NATIVE_ENTRIES) {
+        expect(current.files).toContain(`.codeadd/scripts/${name}`);
+        expect(fs.existsSync(path.join(scripts, name)), name).toBe(true);
+      }
+    },
+  );
+
+  it('a relocated install runs the delivery, status and QA entries with no source checkout and no dev node_modules', async () => {
+    await install(tmpDir);
+
+    // Move the installed tree somewhere with no repository source above it —
+    // the closure a user's project actually has, at a path the framework never
+    // sees. `git init` gives the entries the repository they document.
+    const relocated = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-relocated-'));
+    fs.cpSync(path.join(tmpDir, '.codeadd'), path.join(relocated, '.codeadd'), { recursive: true });
+    try {
+      execFileSync('git', ['init', '-q', '-b', 'main', '.'], { cwd: relocated });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: relocated });
+      execFileSync('git', ['config', 'user.name', 'test'], { cwd: relocated });
+      execFileSync('git', ['commit', '--allow-empty', '-m', 'seed'], { cwd: relocated });
+
+      // NODE_PATH is emptied and no `node_modules` exists anywhere under the
+      // relocated root. Anything the entries reach must be built-in or relative.
+      const env = { ...process.env, NODE_OPTIONS: '', NODE_PATH: '' };
+      const run = (entry, args = []) =>
+        spawnSync(process.execPath, [path.join('.codeadd', 'scripts', entry), ...args], {
+          cwd: relocated,
+          encoding: 'utf8',
+          env,
+        });
+
+      const delivered = run('delivered.cjs', ['verify']);
+      expect(delivered.status).toBe(0);
+      expect(delivered.stdout).toContain('REPAIRED=0');
+
+      const status = run('status.cjs');
+      expect(status.status).toBe(0);
+      expect(status.stdout).toContain('BRANCH:main');
+
+      const qa = run('qa-preflight.cjs', ['a']);
+      expect(qa.status).toBe(0);
+      expect(qa.stdout).toContain('QA_FEATURE_STATE=');
+
+      expect(fs.existsSync(path.join(relocated, 'node_modules'))).toBe(false);
+    } finally {
+      fs.rmSync(relocated, { recursive: true, force: true });
+    }
+  });
+
+  it('the packaged MCP reader resolves the installed delivered.cjs and loads its core', async () => {
+    await install(tmpDir);
+
+    // A delivery index in the installed project, then a git repository so the
+    // reader's `git rev-parse` root probe succeeds. `src/auth.ts` carries the
+    // marker the index entry verifies against.
+    fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'src', 'auth.ts'), 'const marker = 1;\n');
+    fs.writeFileSync(
+      path.join(tmpDir, 'docs', 'delivered.jsonl'),
+      JSON.stringify({
+        v: 1, ts: '2026-01-01T00:00:00Z', id: 'E1', layer: 'product', by: 'done',
+        status: 'live', name: 'the auth file', words: 'auth', commits: [],
+        origin: 'docs/plans/E1.md',
+        items: [{ what: 'auth', at: 'src/auth.ts', find: 'marker' }],
+      }) + '\n',
+    );
+    execFileSync('git', ['init', '-q', '-b', 'main', '.'], { cwd: tmpDir });
+    execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmpDir });
+    execFileSync('git', ['config', 'user.name', 'test'], { cwd: tmpDir });
+    execFileSync('git', ['commit', '--allow-empty', '-m', 'seed'], { cwd: tmpDir });
+
+    // The docs corpus lists `.codeadd/scripts/delivered.cjs` as its installed
+    // reader; the engine loads `delivery-index-core.cjs` from beside it.
+    const data = loadCorpus('docs', tmpDir);
+    const result = actions.touched_by(data, { files: ['src/auth.ts'] }, { root: tmpDir });
+    expect(result.unavailable).toBeUndefined();
+    expect(result.workItems.map((w) => w.id)).toEqual(['E1']);
+    expect(result.workItems[0].answer).toBe('curated');
+
+    // Contrast: without the install, the same query degrades by name rather
+    // than pretending the reader ran — the resolution is what the install fed.
+    const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-noruntime-'));
+    try {
+      fs.mkdirSync(path.join(bare, 'docs'), { recursive: true });
+      const missing = actions.touched_by(
+        loadCorpus('docs', bare),
+        { files: ['src/auth.ts'] },
+        { root: bare },
+      );
+      expect(missing.unavailable.reason).toBe('script-missing');
+    } finally {
+      fs.rmSync(bare, { recursive: true, force: true });
+    }
+  });
+
+  it('every shipped entry requires only Node built-ins and its relative siblings', async () => {
+    await install(tmpDir);
+
+    const builtins = new Set([...builtinModules, ...builtinModules.map((m) => `node:${m}`)]);
+    const scripts = installedScriptsDir(tmpDir);
+    for (const name of NATIVE_ENTRIES) {
+      const source = fs.readFileSync(path.join(scripts, name), 'utf8');
+      const specs = [...source.matchAll(/\brequire\(\s*['"]([^'"]+)['"]\s*\)/g)].map((m) => m[1]);
+      for (const spec of specs) {
+        expect(builtins.has(spec) || spec.startsWith('.'), `${name} requires "${spec}"`).toBe(true);
+      }
+    }
   });
 });

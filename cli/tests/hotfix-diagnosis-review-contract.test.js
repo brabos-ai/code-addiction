@@ -40,10 +40,10 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(agent).toMatch(/VERDICT: \[n addressed, n open\]/);
   });
 
-  it('persists every accepted diagnose route and prints the hotfix handoff command only for hotfix', () => {
+  it('persists every accepted diagnose route and gates the hotfix handoff command on a hotfix route', () => {
     const cmd = read('commands', 'add-diagnose.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
-    expect(cmd).toContain('bash .codeadd/scripts/hotfix-gates.sh diagnosis-baseline');
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
+    expect(cmd).toContain('node .codeadd/scripts/hotfix-gates.cjs diagnosis-baseline');
     expect(cmd).toMatch(/hotfix\/feature\/extend\/no-action/);
     expect(cmd).toMatch(/rejected diagnosis is not written/i);
     expect(cmd).not.toMatch(/route = no-action \| Write \| Conversational response only/);
@@ -51,11 +51,27 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(cmd).toContain('/add-hotfix @docs/diagnose/');
     expect(cmd).toMatch(/only for an accepted hotfix route|only when the accepted route is hotfix/i);
     expect(cmd).toMatch(/never invoke/i);
+
+    // Adapted by plan 2026-10-04T185331, and this is why. The assertion above
+    // pins that the hotfix invocation appears only for an accepted hotfix route
+    // -- still true, and still required. What changed is WHERE it may appear:
+    // STEP add-diagnose.carry-these-step used to print it before the offer, and
+    // the conformance audit found that contradicting the handoff contract. The
+    // gate is unchanged; the print is gone. So the two facts are checked
+    // separately now, and the negative below is the regression guard.
+    const carry = cmd.slice(
+      cmd.indexOf('STEP add-diagnose.carry-these-step'),
+      cmd.indexOf('STEP add-diagnose.validate'),
+    );
+    expect(carry).not.toContain('/add-hotfix @docs/diagnose/');
+    expect(cmd.slice(cmd.indexOf('STEP add-diagnose.handoff'))).toContain(
+      '/add-hotfix @docs/diagnose/',
+    );
   });
 
   it('hotfix reuses a valid diagnose report and reviews with one correction wave', () => {
     const cmd = read('commands', 'add-hotfix.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
     expect(cmd).toContain('@docs/diagnose/');
     expect(cmd).toContain('diagnosis-check');
     expect(cmd).toMatch(/STEPS 4-6/);
@@ -77,7 +93,7 @@ describe('hotfix diagnosis and review contracts', () => {
 
   it('done gates hotfix receipts and never sends them to add-review', () => {
     const cmd = read('commands', 'add-done.md');
-    expect(cmd).toMatch(/script: hotfix-gates\.sh/);
+    expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
     expect(cmd).toContain('review-validate');
     expect(cmd).toMatch(/BRANCH_TYPE.*=.*hotfix|hotfix branches/i);
     expect(cmd).toContain('--tree');

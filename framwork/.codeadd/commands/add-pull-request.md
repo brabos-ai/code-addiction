@@ -3,8 +3,10 @@
 <!-- uses:
 - skill: add--commit
 - skill: add--doc-schemas
+- skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--id-convention
+- mention: add--ecosystem
 - command: /add-done
 -->
 
@@ -79,7 +81,7 @@ ALWAYS:
   ⛔ DO NOT: Force push
   ⛔ DO NOT: Rebase
   ⛔ DO NOT: Rename branches
-  ⛔ DO NOT USE: Bash for done.sh — `/add-done` owns every git write it makes, and this command never calls it
+  ⛔ DO NOT USE: Bash for done.cjs — `/add-done` owns every git write it makes, and this command never calls it
 ```
 
 ---
@@ -119,7 +121,7 @@ If `BRANCH` is `main` or `master` → STOP (see prohibitions).
 Use `{{skill:add--id-convention/SKILL.md}}` rules. Run:
 
 ```bash
-bash .codeadd/scripts/get-branch-metadata.sh
+node .codeadd/scripts/get-branch-metadata.cjs
 ```
 
 Output captures: `BRANCH_TYPE` (feature | hotfix | other), `FEATURE_ID` (e.g. `0012F`), `FEATURE_DIR` (e.g. `docs/features/0012F-*`).
@@ -154,7 +156,7 @@ Check if `${FEATURE_DIR}/changelog.md` already exists.
 ```
 IF THE CHANGELOG ALREADY EXISTS:
   ⛔ DO NOT: Skip the narrative — a skip leaves the state the first writer produced
-  ⛔ DO NOT USE: Bash for status.sh next-id CHG
+  ⛔ DO NOT USE: Bash for status.cjs next-id CHG
   ⛔ DO NOT: Rewrite id:, created:, type: or related:
   ✅ DO: Apply the schema's complement table and bump updated:
 ```
@@ -166,7 +168,7 @@ through `{{cmd:add-done}}` STEP add-done.complement-changelog, which complements
 ### STEP add-pull-request.allocate-changelog-id Allocate changelog ID
 
 ```bash
-bash .codeadd/scripts/status.sh next-id CHG
+node .codeadd/scripts/status.cjs next-id CHG
 ```
 
 Captures `CHG[NNNN]`. Used in frontmatter `id:`. Frontmatter `related:` references the feature ID (`0012F` or equivalent).
@@ -352,6 +354,32 @@ Then, after the seven blocks, report:
 Post-merge guidance: "After PR is merged on GitHub, run `/add-done` for branch cleanup."
 
 State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+
+### STEP add-pull-request.handoff Offer the continuation
+
+**This command opens a PR and stops. It never merges, and the merge is always the user's.**
+
+| State | Next activity |
+|---|---|
+| PR open, awaiting review | none — a human reviews it; there is no agent activity to continue into |
+| PR merged on GitHub | `/add-done` — cleanup local branch and tags |
+| Scope grew, PR needs updating | `/add-pull-request` — idempotent, appends an update section |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
+A PR waiting on a human reviewer is the no-activity case and ends normally with no offer — offering
+"/add-done" before the merge would send the user into a command whose gates cannot pass yet.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `${FEATURE_DIR}/changelog.md` | What the PR carries, and what the close-out indexes |
+| `docs/delivered.jsonl` | The entry `/add-done` still owes after the merge |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing after a merge |
 
 ---
 

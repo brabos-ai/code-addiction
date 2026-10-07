@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add--doc-schemas
 - skill: add--ecosystem
+- skill: add--delivery-mode
 - skill: add--final-report
 - skill: add--health-check
 - skill: add--investigation
@@ -232,9 +233,34 @@ set. Fill `How it works` with what the audit actually measured
 and how a score was reached. `⚠️ Needs your attention` carries the critical findings, because
 nothing in this run fixes them.
 
-Then, after the seven blocks, present the overall scorecard, issue counts by severity, top 3 priorities, audit-report path, and suggested next steps (review report, create features for critical issues via `/add-new`, re-run audit after fixes).
+Then, after the seven blocks, present the overall scorecard, issue counts by severity, top 3 priorities, and the audit-report path.
 
-**Next Steps:** Reference skill `add--ecosystem` Main Flows for context-aware next command suggestion.
+### STEP add-audit.handoff Offer the continuation
+
+**This command is advisory — it changes no code and fixes nothing.** So the next activity exists only
+when there is a finding to act on.
+
+| Audit result | Next activity |
+|---|---|
+| Critical findings | `/add-new` per critical issue — each becomes a feature |
+| Findings below critical | none — the report is the deliverable |
+| Healthy project | none — there is nothing to continue into |
+
+Finish the report and its metadata, then ask ONCE for instructions only on the first row. A healthy
+audit ends normally with no offer; do not invent a feature to have somewhere to point.
+
+**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
+`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
+`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
+activity and its documents.
+
+**The documents the block points at**, each with the role it plays:
+
+| Document | Role in the next activity |
+|---|---|
+| `docs/audit/${AUDIT_DATE}.md` | The findings and severities the new feature is scoped from |
+| `docs/features/<id>/about.md` | What the feature created for that critical issue is for |
+| {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing a new feature takes next |
 
 ---
 

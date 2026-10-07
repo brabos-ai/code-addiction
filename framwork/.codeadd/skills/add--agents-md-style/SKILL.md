@@ -8,7 +8,7 @@ description: Use when generating or updating the project's AGENTS.md — migrate
 <!-- uses:
 - skill: add--architecture-discovery
 - skill: add--token-efficiency
-- script: migrate-context-files.sh
+- script: migrate-context-files.cjs
 - mention: add--doc-schemas
 - mention: add--skill-creator
 - command: /add-wiki
@@ -39,10 +39,10 @@ lets GEMINI.md override it. Writing AGENTS.md while one of them survives produce
 IF ABOUT TO WRITE AGENTS.md:
   ⛔ DO NOT USE: Write or Edit on AGENTS.md before the migration below has run
   ⛔ DO NOT USE: Write or Edit on CLAUDE.md or GEMINI.md — they are migrated, never updated
-  ✅ DO: Run bash .codeadd/scripts/migrate-context-files.sh at the project root, then write
+  ✅ DO: Run node .codeadd/scripts/migrate-context-files.cjs at the project root, then write
 ```
 
-`migrate-context-files.sh` owns the mechanics and documents them in its header. What the writer does with its output:
+`migrate-context-files.cjs` owns the mechanics and documents them in its header. What the writer does with its output:
 
 | Line | Report to the user |
 |---|---|
@@ -77,7 +77,7 @@ Facts the AI needs in **every session**, not available elsewhere:
 
 ## Format Rules
 
-**Target:** 80-150 lines total. The two managed blocks — Project Knowledge Base (17 lines) and Writing Style (13 lines) — are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else. On Windows the Shell Policy managed block adds 9 more.
+**Target:** 80-150 lines total. The two managed blocks - Project Knowledge Base (17 lines) and Writing Style (13 lines) - are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else. The Runtime policy managed block adds 5 more.
 
 ### JSON = DATA. Markdown = INSTRUCTIONS.
 
@@ -251,13 +251,13 @@ comment.** A variable would resolve per provider and land a wrong path in the us
 file; an artefact name would fail the build's prose relationship gate; an HTML comment
 would be stripped at build.
 
-### Shell Policy (managed block)
+### Runtime Policy (managed block)
 
-Written and owned by `{{cmd:add-wiki}}` STEP add-wiki.agents-md, **on Windows only**, under the same rules as the two
-blocks above: `[//]: # (codeadd-shell:start)` / `[//]: # (codeadd-shell:end)` markers, replace-or-append,
-copied verbatim. Its text — both the bash-direct and the PowerShell form — lives in that STEP, which
-resolves the bash.exe path before writing it. On Linux or macOS the block is neither written nor
-removed: another developer's Windows machine may rely on it.
+Written and owned by `{{cmd:add-wiki}}` STEP add-wiki.agents-md, under the same rules as the two
+blocks above: `[//]: # (codeadd-shell:start)` / `[//]: # (codeadd-shell:end)` markers,
+replace-or-append, copied verbatim. Its text lives in that STEP. The policy is the same on every
+platform — the shipped entries are native Node CommonJS and need Node (>=22.19.0), not Bash, WSL
+or Git Bash — so a legacy Git Bash "Shell policy" block carrying these markers is replaced by it.
 
 It used to be appended to a copy that was rewritten from scratch on every run, which kept one copy.
 AGENTS.md is now written in place, so without markers it would stack one copy per run.
@@ -273,7 +273,7 @@ Before finalizing any generated AGENTS.md:
 - [ ] Validation Gates block present using minified JSON when gates detected; section omitted entirely when none (no empty `{}`); `format` only when non-mutating?
 - [ ] Project Knowledge Base managed block present (`[//]: # (codeadd-wiki:start)` … `[//]: # (codeadd-wiki:end)`), and no legacy unmarked "Implementation Patterns" section remains?
 - [ ] Writing Style managed block present (`[//]: # (codeadd-style:start)` … `[//]: # (codeadd-style:end)`), 14 lines or fewer, carrying no `{{...}}` variable and no framework artefact name?
-- [ ] On Windows, Shell Policy managed block present exactly once (`[//]: # (codeadd-shell:start)` … `[//]: # (codeadd-shell:end)`)?
+- [ ] Runtime Policy managed block present exactly once (`[//]: # (codeadd-shell:start)` … `[//]: # (codeadd-shell:end)`)?
 - [ ] No CLAUDE.md, `.claude/CLAUDE.md` or GEMINI.md left at the project root after the Migration?
 - [ ] No section explaining a single concept in >5 lines?
 - [ ] No anti-patterns: full frontend/backend/database patterns, API route lists, component/directory trees, inline code examples, feature/business-flow docs, security implementation details, domain type/struct docs, worker/job-queue details, version-specific dependency lists?

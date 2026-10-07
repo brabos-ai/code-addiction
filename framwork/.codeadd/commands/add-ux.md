@@ -2,7 +2,7 @@
 
 <!-- uses:
 - skill: add--ux-design
-- script: status.sh
+- script: status.cjs
 -->
 
 Lightweight UX loader. Loads ux-design skill, discovers project design patterns, then applies UX knowledge to the user's free-form instruction.
@@ -28,10 +28,10 @@ STEP add-ux.apply → Apply UX to user instruction
 
 ---
 
-## STEP add-ux.status: Run status.sh
+## STEP add-ux.status: Run status.cjs
 
 ```bash
-bash .codeadd/scripts/status.sh
+node .codeadd/scripts/status.cjs
 ```
 
 Parse output to understand project context (branch, feature, recent changes).
