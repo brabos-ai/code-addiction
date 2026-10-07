@@ -129,7 +129,8 @@ describe('L1.7 -- commands that close without a next stage print no continuation
 });
 
 describe('L1.8 -- plan routes a non-plan path before it resolves the argument', () => {
-  const mode = section(read(PLAN), '## Operation Mode');
+  // Line breaks in the source are wrapping, not content: compare on collapsed whitespace.
+  const mode = section(read(PLAN), '## Operation Mode').replace(/\s+/g, ' ');
 
   it('states the docs/plans/ distinction', () => {
     expect(mode).toMatch(/outside `docs\/plans\/`/);
