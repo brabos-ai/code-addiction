@@ -667,7 +667,7 @@ Then, after the seven blocks and before the metadata, report always:
   happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the
-last line, the next command in the form `add-final-report` owns under **The Continuation Line**:
+last line (before the result block, in `both` mode), the next command in the form `add-final-report` owns under **The Continuation Line**:
 `/add-framework--done <the plan path resolved at STEP 1.1>`. A direct build has no plan to point at,
 so it prints no such line. The line is only printed — this build never loads `/add-framework--done`.
 

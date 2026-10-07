@@ -513,7 +513,7 @@ future tense. `add-plan-authoring` carries that one adjustment and nothing else.
 
 Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands, in the
 form `add-final-report` owns under **The Continuation Line** — `/add-framework--plan docs/plans/<basename>.md`
-to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line. A plan
+to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line (before the result block, in `both` mode). A plan
 set prints one build line per plan that has F-blocks, in set order.
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.

@@ -115,7 +115,7 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 /add-framework--done docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
 /add-framework--done --fix test-transport-tar --ticket 0031B
 
-**The fix track.** Without `--fix`, this skill behaves exactly as written below, including its stop when no plan resolves. With `--fix`, "the plan" in this skill reads "the fix record", there is no ledger, and only the steps that say `--fix` differ. Every step this skill does not mark runs on both tracks unchanged.
+**The fix track.** Without `--fix`, this skill behaves exactly as written below, including its stop when no plan resolves. With `--fix`, "the plan" in this skill reads "the fix record", there is no ledger, and only the steps marked `--fix` or "on the fix track" differ. Every step this skill does not mark runs on both tracks unchanged.
 
 ---
 
@@ -270,7 +270,7 @@ one machine is still one machine.
 
 ⛔ **A REFUSAL to run or unavailable preparation is not an assertion failure or a pass.** Read the runner's diagnostics: exit 2 can identify refusal/preparation/export unavailability, while tool assertion exits are preserved. Report unavailable evidence and its reason in STEP 9; resolve it through CI or a completed supported run. Do not install host dependencies or bypass the dispatcher to manufacture a verdict. An evidence-export failure after green assertions still needs resolution; preserved failed-suite status still reports the assertions that actually ran.
 
-**On the fix track, once item 7 passes, write `## Validation` into the fix record** — the head SHA, the run URL, and each required check with its conclusion; or the local fallback and why. When item 4 created the PR, fill the header's `> **PR:**` line in the same edit. This is the record's second and last move.
+**On the fix track, once item 7 passes and STEP 6 has not yet run, write `## Validation` into the fix record** — the head SHA, the run URL, and each required check with its conclusion; or the local fallback and why. When item 4 created the PR, fill the header's `> **PR:**` line in the same edit. This is the record's second and last move.
 
 **If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
 

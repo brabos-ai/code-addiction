@@ -21,6 +21,7 @@ the work they will ever see.
 IF THE COMMAND IS NOT AT ITS CLOSING STEP:
   ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
   ✅ DO: Load this at the closing step, where the report is written
+  ✅ DO: Load it earlier only at a STOP that ends the run or waits on the user — The Result Block below
 ```
 
 A shape carried through fifteen steps is a shape the agent no longer has when it matters. This skill
@@ -177,8 +178,11 @@ non-zero exit — falls to `prose`: the fall is always toward today's report.
 A mistyped value therefore gives no sign of itself there: the run falls to the next source's mode, or to
 `prose`, in silence.
 
+**In `json` mode the seven blocks, the command-specific facts (rulings, gate matrices) and the self-check below do not apply** — there is no report to
+check. The block is checked against `references/result-block.md` instead.
+
 **Fill every field from facts the run already holds.** `next_step` is the Continuation Line verbatim,
-after its own `test -f` rule, and `null` where the closing prints none. A field the run did not read is
+after its own `test -f` rule, and `null` where the closing prints none; for a plan set, the first line. A field the run did not read is
 `null`, never a guess. `status` is `done` at a normal closing, `stopped` at a gate or hard stop,
 `needs-approval` at a stop that waits on the user, and `failed` for an error the command did not plan
 for.

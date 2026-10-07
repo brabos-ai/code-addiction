@@ -3,7 +3,7 @@
  * Resolves the workbench output mode: how an `add-framework--*` run closes — `prose`, `json` or `both`.
  * Usage: node scripts/output-mode.js [--root <dir>]
  * Output: `OUTPUT_MODE=prose|json|both`, then one `OUTPUT_MODE_WARNING=<source>:<value>` per source
- *   holding an invalid value. Nothing else is printed.
+ *   holding an invalid value; whitespace inside a value prints as `_`. Nothing else is printed.
  * Sources, first valid wins: env `CODEADD_OUTPUT`, then `output.mode` in `<root>/workbench/settings.json`,
  *   then `prose`. `<root>` is the repository this script sits in; `--root` overrides it.
  * Exit: 0 on every resolution — a missing file, a bad value or unparseable JSON all fall toward `prose`.
