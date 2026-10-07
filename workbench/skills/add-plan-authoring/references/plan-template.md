@@ -185,10 +185,11 @@ Gaps a reviewer must actively hunt, because they are the ones this plan is most 
 
 ## Next Steps
 
-/add-framework--build [slug]
+/add-framework--build docs/plans/<this plan's basename>.md
 
 [One command executes every F-block, whichever layer each is tagged. Do NOT route part of the plan to
-a second command.]
+a second command. The line names this plan's own path, unchecked, because the file is still being
+composed; the chat closing's line follows `add-final-report` → The Continuation Line.]
 
 ## Plan Changelog
 

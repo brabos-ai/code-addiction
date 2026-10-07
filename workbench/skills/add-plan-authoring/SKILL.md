@@ -577,7 +577,8 @@ report is emitted before any metadata, and the self-check all live there. Load i
 command's last step.
 
 The metadata that follows the report is the plan path, its status, the review verdict, the fixes
-applied, and the next-step commands.
+applied, and the next-step commands — printed as `add-final-report`'s **The Continuation Line**, which
+owns their form.
 
 ---
 
