@@ -240,13 +240,6 @@ the last two has to read past it first.
 
 ## Rules
 
-ALWAYS:
-- Emit the report before any path, verdict or next-step command
-- Write the Deleted row even when it reads "none"
-- Name the host and the step for every integration point
-- Print a command's own mandatory artefact whole, after the seven blocks
-
 NEVER:
-- Load this skill at the start of a command — it is needed at the end
 - Trade a mandatory fact for the shape
 - Merge this skill with its product sibling
