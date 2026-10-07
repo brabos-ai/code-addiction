@@ -12,6 +12,7 @@
 - Removing a provider downloads nothing. It deletes only the manifest files no remaining provider owns (codex and zcode keep their shared `.agents/` tree in both directions), the removed provider's plugin skills and baselines, and its MCP entry. It never runs `captureBaselines`.
 - An enabled plugin whose tool is not detected is now named in `install` and `update` ("plugin X is enabled but not applied to any provider (tool not detected)"). It stays enabled in the manifest.
 - New modules and helpers: `release-copy.js` (the copy and prune passes `install` and `update` shared, `PRESERVE_PATTERNS` still re-exported from `installer.js`), `ownedRoots` and `exclusiveFiles` in `providers.js`, `unregisterProvider` in `mcp-registration.js`, `applyEnabledPluginsDetailed` and `removePluginSkillsFor` in `plugins.js`, three new prompts in `prompt.js`.
+- Review fixes: `providers add` refuses a v1 injection sidecar before downloading (`codeadd update` first; removals and toggles still work), an installed provider the CLI does not know no longer blocks add or remove, remove also deletes legacy plugin skills such as `add-gitnexus` from the removed provider, and add keeps `installedAt`.
 
 ## Validation
 
