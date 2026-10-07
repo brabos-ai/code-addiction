@@ -151,6 +151,9 @@ empty — the only file it may have touched there is the gitignored `artefact-gr
 a name: `/add-framework--build AGENTS.md "update the pipeline section"`. A bare artefact name works
 the same way for any existing artefact — the path resolves it, and the path decides the layer.
 
+**Telling the two forms apart:** an argument that resolves to a plan under `docs/plans/` is planned
+mode. Any other path or name is the direct form.
+
 To optimize an existing artefact, use the direct form — STEP 2 detects it already exists and presents
 the analysis against `building-commands` before any edit.
 

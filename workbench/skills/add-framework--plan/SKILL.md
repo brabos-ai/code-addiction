@@ -127,11 +127,14 @@ IF THE IDEA IS BAD OR UNNECESSARY:
 |---|---|
 | A bare slug, or a path under `docs/plans/` | Argument Resolution — Continue Mode |
 | A path outside `docs/plans/` | Never Argument Resolution — it is the new-idea input, read from that file |
+| Anything else — not a bare slug, not an existing file | A free-text idea |
 
-For a path outside `docs/plans/`: an **intent file** is read as the intent file at STEP 1.2. A **design
-document** is read as the design, and its intent file is the `<design basename>-intent.md` beside it
-when `test -f` finds one (the architectural pair shares one timestamp). When none is found there is
-no intent file, and STEP 4 runs in full. This rule sits before the resolution on purpose:
+For a path outside `docs/plans/`: a file whose name ends in `-intent.md` is the **intent file**, read at
+STEP 1.2. Any other file under `docs/brainstorming/` is a **design document**, read as the design. Its
+intent file is the `*-intent.md` in the same folder that shares its `YYYY-MM-DDTHHMMSS` prefix — the
+architectural pair, and an umbrella set, share one timestamp even though an umbrella design is named
+`<timestamp>-<slug>-000-umbrella.md` and its intent `<timestamp>-<slug>-intent.md`. When `test -f` finds
+none there is no intent file, and STEP 4 runs in full. This rule sits before the resolution on purpose:
 Argument Resolution strips the directory part, so an intent path sent there would fall into "No match"
 and STOP.
 
@@ -204,7 +207,8 @@ plan at STEP 5. **Then write `planning`** — and at STEP 7, before the report, 
 
 ### 1.3 Dispatch Discovery (SILENT)
 
-IF no idea in the invocation args → skip, go to STEP 2.
+IF no idea in the invocation args → skip, go to STEP 2. A path invocation carries one: the idea is
+what the file at that path says.
 
 **DISPATCH AGENT:** `@framework-discovery-agent`
 - **Capability:** read-only

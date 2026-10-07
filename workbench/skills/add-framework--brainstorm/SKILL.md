@@ -790,10 +790,10 @@ is a recommendation, and keeping it is a new request with its own classification
 
 #### Then route
 
-**Name both files in the handoff**, verbatim, whichever this path wrote. The planning stage reads
-`docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
-a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
-whole set sharing one timestamp.
+**Name the intent file as the command's argument, and the design as a reference**, verbatim, whichever
+this path wrote. The planning stage reads `docs/brainstorming/` and needs to know which file — a
+handoff naming only the idea leaves it matching a topic against a directory of timestamped basenames,
+and in Continue Mode that directory holds a whole set sharing one timestamp.
 
 The command line is the intent file's own path, in the form `add-final-report` owns under
 **The Continuation Line**. Run `test -f` on the intent file written above, and print the line only
@@ -806,7 +806,9 @@ Design: docs/brainstorming/<the file written at 5.3>
 /add-framework--plan docs/brainstorming/<the intent file written above>
 ```
 
-The command is the last line. The `Design:` line stays as a reference; it is not an argument.
+The command is the last line, spelled for the provider as **The Continuation Line** says. The `Design:`
+line stays as a reference; it is not an argument. On an umbrella spec, print 7.4's refinement offer
+just above the stop line, so the command is still the last line.
 
 On `bounded`, there is no design document, so the `Design:` line is omitted and the command line
 stands alone after the stop line.

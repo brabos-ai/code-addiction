@@ -19,11 +19,11 @@ the work they will ever see.
 ```
 IF THE COMMAND IS NOT AT ITS CLOSING STEP:
   ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
-  ✅ DO: Load it at the closing step, where the report is written
+  ✅ DO: Load this at the closing step, where the report is written
 ```
 
-**Load this at the closing step, not at STEP 1.** A shape carried through fifteen steps is a shape
-the agent no longer has when it matters. This skill is small on purpose so a late load costs nothing.
+A shape carried through fifteen steps is a shape the agent no longer has when it matters. This skill
+is small on purpose so a late load costs nothing.
 
 ## When to Use
 
@@ -104,17 +104,18 @@ Metadata is last: paths, commit ranges, verdicts, and the next-step command — 
 
 ## The Continuation Line
 
-**The next-step command is one paste-ready line carrying the path of the file this closing just
-wrote.** This section owns the rule. Brainstorm, plan and build each point here from their closing
+**The next-step command is one paste-ready line carrying the path of the file the next stage
+reads — one this closing just wrote, or the plan it resolved.** This section owns the rule. Brainstorm, plan and build each point here from their closing
 step; none of them restates it.
 
 **Format:** `/<command> <relative path>` — the plain path from the repository root, with no `@` in
-front of it. The next stage reads the path as a literal argument and resolves it exactly as it
-resolves a slug.
+front of it. The next stage receives the path as a literal argument, and its own Operation Mode
+decides how it is routed.
 
 ```
 IF A CHAT CLOSING IS ABOUT TO PRINT A CONTINUATION LINE:
   ⛔ DO NOT: Rebuild the path from a slug or a timestamp — print the path of the file the step wrote
+             or resolved
   ⛔ DO NOT: Print the line before checking that the file is on disk
   ✅ DO: Run `test -f` on that path, and print the line only when it exists
 ```
@@ -140,8 +141,7 @@ it and use the same plain-path form.
 
 **Plan set:** one line per plan that has F-blocks, in set order.
 
-**Automatic delivery:** the same line is printed before the next stage is loaded. The stage then runs;
-the line is still printed.
+**Automatic delivery:** the same line is printed before the next stage is loaded.
 
 **Who never prints one:** a closing that wrote no file the next stage reads — backlog, release, sync,
 done, a direct build and a brainstorm spike. `/add-framework--done` is the terminal stage, and the
