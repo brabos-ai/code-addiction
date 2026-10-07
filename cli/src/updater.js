@@ -4,12 +4,12 @@ import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { resolveSelected } from './providers.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
-import { fixLineEndings, writeManifest, resolveInstallSource, reportMcpRegistration } from './installer.js';
+import { fixLineEndings, writeManifest, resolveInstallSource, reportMcpRegistration, reportNotDetectedPlugins } from './installer.js';
 import { copyRelease, pruneObsolete } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
 import { captureBaselines } from './injection-core.js';
-import { applyEnabledPlugins } from './plugins.js';
+import { applyEnabledPluginsDetailed } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 
@@ -161,10 +161,11 @@ export async function update(cwd, options = {}, scope = 'project') {
   removeLegacyPluginSkills(cwd, providers, previousPlugins);
 
   // Re-apply enabled plugins (mirrors installer; marker-free files need re-injection post-update)
-  const pluginsApplied = applyEnabledPlugins(cwd);
-  if (pluginsApplied > 0) {
-    log.success(`Re-applied ${pluginsApplied} plugin injection(s).`);
+  const plugins = applyEnabledPluginsDetailed(cwd);
+  if (plugins.modified > 0) {
+    log.success(`Re-applied ${plugins.modified} plugin injection(s).`);
   }
+  reportNotDetectedPlugins(plugins.notDetected);
 
   // Sync .gitignore block if opted-in during install (project scope only — never gitignore the home dir)
   if (installScope === 'project' && manifest.gitignore === true) {

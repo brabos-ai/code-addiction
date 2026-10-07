@@ -7,7 +7,7 @@ import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptProviders, promptScope, promptConfirm, promptGitignore } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, FEATURES } from './features.js';
-import { applyEnabledPlugins } from './plugins.js';
+import { applyEnabledPluginsDetailed } from './plugins.js';
 import { resolveSelected } from './providers.js';
 import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
@@ -279,10 +279,11 @@ export async function install(cwd, options = {}) {
   log.info('The tdd-pipeline feature is enabled by default. Run `codeadd features` to adjust.');
 
   // Apply enabled plugins (disabled by default — no-op on fresh install)
-  const pluginsApplied = applyEnabledPlugins(targetDir);
-  if (pluginsApplied > 0) {
-    log.success(`Applied ${pluginsApplied} plugin injection(s).`);
+  const plugins = applyEnabledPluginsDetailed(targetDir);
+  if (plugins.modified > 0) {
+    log.success(`Applied ${plugins.modified} plugin injection(s).`);
   }
+  reportNotDetectedPlugins(plugins.notDetected);
 
   const enabledFeatures = Object.entries(defaultFeatures)
     .filter(([, v]) => v)
@@ -308,6 +309,23 @@ export async function install(cwd, options = {}) {
       `  2. Ask what you want to build\n\n` +
       `Docs: https://github.com/brabos-ai/code-addiction`
   );
+}
+
+/**
+ * Say which enabled plugins could not be applied because their tool is not
+ * detected.
+ *
+ * Shared by install, update and modify so all three use one wording. A plugin
+ * in this list stays enabled in the manifest; the line says it did not reach
+ * ANY provider, not just a new one, because a recopy erases its old injections
+ * too.
+ *
+ * @param {string[]} notDetected  plugin names from applyEnabledPluginsDetailed()
+ */
+export function reportNotDetectedPlugins(notDetected) {
+  for (const name of notDetected) {
+    log.warn(`plugin ${name} is enabled but not applied to any provider (tool not detected)`);
+  }
 }
 
 /**
