@@ -25,6 +25,8 @@ object. A caller finds the block by that fence and rejects any `v` it does not k
 
 ## Status
 
+`add-final-report` points here for these meanings; they are stated once, in this file.
+
 - `done` — the command finished its work.
 - `stopped` — a gate or a hard stop ended the run on purpose.
 - `needs-approval` — the run is waiting on the user.
@@ -35,8 +37,12 @@ object. A caller finds the block by that fence and rejects any `v` it does not k
 - Every key is always present. An absent key and a `null` one must not mean two things to a parser.
 - Use `null` for unknown. Never omit a key, never invent a value.
 - `needs_approval` is `true` exactly when `status` is `needs-approval`.
-- `reason` is non-null when `status` is not `done`. On `done` it is `null` unless the run has a caveat worth one line.
+- `stage` is never empty. `reason` is non-null and non-empty when `status` is not `done`. On `done` it is `null` unless the run has a caveat worth one line.
 - The block holds no other key. A new field is a new `v`.
+
+## Headless callers
+
+The stop-rule line makes the agent run `node scripts/output-mode.js`. A headless caller (`claude -p`) must allow that command, for example `Bash(node scripts/output-mode.js)` in its permissions. When the command is denied, the resolver cannot run and the run falls to `prose`: the caller gets the report and no block. This repository's `.claude/settings.json` carries that allow rule.
 
 ## One example per status
 

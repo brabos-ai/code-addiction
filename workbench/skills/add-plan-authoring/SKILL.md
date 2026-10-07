@@ -614,7 +614,7 @@ neither, so it passes through unchanged. This is what lets the continuation line
 2. `docs/deliveries/*-FIX--<slug>/` on the current branch — tracked, for the same reason.
 3. `docs/plans/*-FIX--<slug>.md` — the local, gitignored record.
 
-One match reuses that `id`, and the local record when source 3 holds it. None anywhere means the caller allocates a timestamp from the clock and writes the record. More than one → ⛔ STOP, print every candidate and ask which; never guess.
+One match reuses that `id`, and the local record when source 3 holds it. A reused record keeps only its `id` and ticket line: the caller rebuilds `## What changed` and the head SHA on every run. None anywhere means the caller allocates a timestamp from the clock and writes the record. More than one → ⛔ STOP, print every candidate and ask which; never guess.
 
 When source 1 or 2 answered and no local record exists — a resume on a fresh clone or in another worktree — the record to read is the tracked `docs/deliveries/<id>/fix.md` on the branch.
 

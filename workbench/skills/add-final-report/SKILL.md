@@ -169,7 +169,7 @@ non-zero exit — falls to `prose`: the fall is always toward today's report.
 
 | Mode | The closing prints |
 |---|---|
-| `prose` | Exactly today's report. No resolver output is shown and nothing else changes |
+| `prose` | Exactly today's report. No resolver output is shown and nothing else changes. A mid-run STOP prints exactly what it printed before this section existed |
 | `json` | Only the fenced block. The seven blocks, the metadata and the Continuation Line are not printed |
 | `both` | Today's report in full, then the fenced block as the last thing printed |
 
@@ -183,9 +183,7 @@ check. The block is checked against `references/result-block.md` instead.
 
 **Fill every field from facts the run already holds.** `next_step` is the Continuation Line verbatim,
 after its own `test -f` rule, and `null` where the closing prints none; for a plan set, the first line. A field the run did not read is
-`null`, never a guess. `status` is `done` at a normal closing, `stopped` at a gate or hard stop,
-`needs-approval` at a stop that waits on the user, and `failed` for an error the command did not plan
-for.
+`null`, never a guess. `status` takes one of four values; `references/result-block.md` states what each means.
 
 ## How It Reads
 

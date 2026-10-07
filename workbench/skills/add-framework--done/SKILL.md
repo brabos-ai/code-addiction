@@ -1,6 +1,6 @@
 ---
 name: add-framework--done
-description: "Use when a delivered branch is ready to close out — gates it on the ledger and CI, writes the delivery-index entry and changelog, archives the plan, merges the PR with --merge and cleans up. Never reached unattended. Last stage of brainstorm → plan → build → done."
+description: "Use when a delivered branch is ready to close out — gates it on the ledger and CI, writes the delivery-index entry and changelog, archives the plan, merges the PR with --merge and cleans up. With --fix, closes a plan-less fix the same way, on a generated record instead of a plan. Never reached unattended. Last stage of brainstorm → plan → build → done."
 ---
 
 # ADD Done — Close-Out
@@ -28,19 +28,19 @@ costs nothing.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Closes out a delivered plan in **either layer**: gates it against CI's required checks, writes the delivery-index entry and the changelog, merges the branch via `gh`, and cleans up.
+Closes out a delivered plan in **either layer** — or, with `--fix`, a plan-less fix: gates it against CI's required checks, writes the delivery-index entry and the changelog, merges the branch via `gh`, and cleans up.
 
 ---
 
 ## ⛔⛔⛔ MANDATORY SEQUENTIAL EXECUTION ⛔⛔⛔
 
 **STEPS IN ORDER:**
-STEP 1: Collect context           → branch, plan, ledger, diff, `gh auth status`
-STEP 2: Gates                     → ledger complete + CI green on THIS sha [HARD STOP]
+STEP 1: Collect context           → branch, plan (the fix record with --fix), ledger, diff, `gh auth status`
+STEP 2: Gates                     → ledger complete (the fix gate with --fix) + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
-STEP 6: Archive, commit and push  → docs/deliveries/<id>/ + entry + changelog, one commit
+STEP 6: Archive, commit and push  → docs/deliveries/<id>/ (fix.md with --fix) + entry + changelog, one commit
 STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --merge (deliberate — STEP 7 says why)
 STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
@@ -133,9 +133,7 @@ Verify the current branch is **not** `main`. If it is → report and STOP: this 
 
 **One exception, and 2.1 is the only thing that grants it:** the recovery path at 2.4 runs on `main`, because the branch it would have run on is already merged and gone.
 
-**Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
-
-When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
+**Check the arguments before resolving anything.** Two refusals, and neither resolves a plan or a record first:
 
 ```
 IF `--fix` AND A `[plan]` ARE BOTH GIVEN:
@@ -144,12 +142,25 @@ IF `--fix` AND A `[plan]` ARE BOTH GIVEN:
   ✅ DO: Report the conflict and STOP
 ```
 
+```
+IF `--ticket` WAS GIVEN WITHOUT `--fix`:
+  ⛔ DO NOT USE: Write on anything
+  ⛔ DO NOT: Ignore the flag — a plan carries its own `> **Ticket:**` line, and a silent ignore hides a typo
+  ✅ DO: Report that `--ticket` belongs to `--fix` and STOP
+```
+
+**Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
+
+When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
+
 **With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
 
-Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution — load it and apply it as written. It owns the three sources, their order and the stop on more than one match. When none answers, write the fix record in two moves. This is the first, and it is generated from facts, never hand-written:
+Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution — load it and apply it as written. It owns the three sources, their order and the stop on more than one match. The record is then written, or refreshed, in two moves. This is the first, and it is generated from facts, never hand-written. **It runs on every normal-path run, including when source 3 returned a local record** — a record left by an earlier run describes the branch as it was then, and archiving it would file a stale account of the delivery. A reused record keeps its `id` and its `> **Ticket:**` line; everything else below is rebuilt, and a `## Validation` it carries is dropped, because it belongs to an older head.
 
-- **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **PR:**` the PR when one exists and `none yet` otherwise, and `> **Ticket:** <id>` only when `--ticket` was passed. Never infer an id.
+- **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **Head:**` the output of `git rev-parse HEAD`, `> **PR:**` the PR when one exists and `none yet` otherwise, and `> **Ticket:** <id>` only when `--ticket` was passed. Never infer an id.
 - **`## What changed`** — the branch's commits from `git log --oneline main..HEAD` and its diff from `git diff --name-status main...HEAD`, with one sentence per commit drawn from its message.
+
+**On the resume path (2.5) the record is the committed one and is not rebuilt** — it was archived at STEP 6.1 and is never edited after.
 
 The second move is `## Validation`, written at 2.3. The record is never edited after STEP 6.1 copies it.
 
@@ -224,7 +235,13 @@ IF `--fix` WAS GIVEN:
   ✅ DO: Run the fix gate below in its place
 ```
 
-**The fix gate (`--fix` only), in place of the ledger gate.** The fix record has a non-empty `## What changed`, and the branch has at least one commit. Either missing → report which and STOP. A fix is what its commits are, so the gate asks only that there is something to close out; CI at 2.3 is its real validation.
+**The fix gate (`--fix` only), in place of the ledger gate.** Three checks, and any one failing → report which and STOP:
+
+- The fix record has a non-empty `## What changed`.
+- The branch has at least one commit.
+- The record's `> **Head:**` SHA **equals** `git rev-parse HEAD`. A non-empty SHA is not enough: a record rebuilt for another head describes other work. **On the resume path (2.5) the record is the archived one and HEAD is the docs commit after it**, so the check there is that `> **Head:**` is an ancestor of HEAD (`git merge-base --is-ancestor`).
+
+A fix is what its commits are, so the gate asks only that there is something to close out, and that the record is about this head; CI at 2.3 is its real validation.
 
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
@@ -270,7 +287,7 @@ one machine is still one machine.
 
 ⛔ **A REFUSAL to run or unavailable preparation is not an assertion failure or a pass.** Read the runner's diagnostics: exit 2 can identify refusal/preparation/export unavailability, while tool assertion exits are preserved. Report unavailable evidence and its reason in STEP 9; resolve it through CI or a completed supported run. Do not install host dependencies or bypass the dispatcher to manufacture a verdict. An evidence-export failure after green assertions still needs resolution; preserved failed-suite status still reports the assertions that actually ran.
 
-**On the fix track, once item 7 passes and STEP 6 has not yet run, write `## Validation` into the fix record** — the head SHA, the run URL, and each required check with its conclusion; or the local fallback and why. When item 4 created the PR, fill the header's `> **PR:**` line in the same edit. This is the record's second and last move.
+**On the fix track, once item 7 passes and STEP 6 has not yet run, write `## Validation` into the fix record** — the head SHA (and set the header's `> **Head:**` to it when item 1 committed a block sync after 1.2), the run URL, and each required check with its conclusion; or the local fallback and why. When item 4 created the PR, fill the header's `> **PR:**` line in the same edit. This is the record's second and last move.
 
 **If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
 

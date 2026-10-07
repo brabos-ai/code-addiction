@@ -85,7 +85,20 @@ test('the reference carries one valid example per status, plus the rules', () =>
   assert.match(ref, /every key is always present/i);
   assert.match(ref, /`null` for unknown/);
   assert.match(ref, /`needs_approval` is `true` exactly when `status` is `needs-approval`/);
-  assert.match(ref, /`reason` is non-null when `status` is not `done`/);
+  assert.match(ref, /`stage` is never empty\. `reason` is non-null and non-empty when `status` is not `done`/);
+});
+
+test('headless callers are told to allow the resolver, and this repository does', () => {
+  assert.match(read(REFERENCE), /## Headless callers[\s\S]*Bash\(node scripts\/output-mode\.js\)[\s\S]*falls to `prose`/);
+  const settings = JSON.parse(read('.claude/settings.json'));
+  assert.ok(settings.permissions.allow.includes('Bash(node scripts/output-mode.js)'));
+});
+
+test('add-final-report states the prose-mode stop and leaves the status meanings to the reference', () => {
+  const skill = read(SKILL);
+  assert.match(skill, /\| `prose` \|[^\n]*A mid-run STOP prints exactly what it printed before/);
+  assert.doesNotMatch(skill, /`stopped` at a gate or hard stop/);
+  assert.match(skill, /`references\/result-block\.md` states what each means/);
 });
 
 test('add-final-report owns the emission rule and points at the reference without copying the table', () => {

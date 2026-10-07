@@ -96,6 +96,35 @@ test('1.2 refuses --fix together with a [plan], resolves the record, and still r
   for (const needle of ['> **Kind:** fix', '> **Branch:**', '> **PR:**', '> **Ticket:** <id>', '## What changed', 'git log --oneline main..HEAD', 'git diff --name-status main...HEAD']) assert.ok(s.includes(needle), needle);
 });
 
+test('both refusals sit before any resolution, and the redirect paragraph follows the two it sets aside', () => {
+  const s = section(read(DONE), '### 1.2', '### 1.3');
+  const at = needle => { const i = s.indexOf(needle); assert.ok(i >= 0, needle); return i; };
+  const resolve = at("**Resolve `[plan]` by");
+  assert.ok(at('IF `--fix` AND A `[plan]` ARE BOTH GIVEN:') < resolve, 'plan refusal after plan resolution');
+  assert.ok(at('IF `--ticket` WAS GIVEN WITHOUT `--fix`:') < resolve, 'ticket refusal after plan resolution');
+  assert.match(s, /IF `--ticket` WAS GIVEN WITHOUT `--fix`:\n  ⛔ DO NOT USE: Write on anything\n[\s\S]*?✅ DO: Report that `--ticket` belongs to `--fix` and STOP/);
+  const between = s.slice(at('When no `[plan]` was given'), at('**With `--fix`, 1.2 resolves'));
+  assert.ok(!between.includes('```'), 'something sits between the two paragraphs and the reference to them');
+  assert.match(s, /The two paragraphs above do not run/);
+});
+
+test('1.2 rebuilds the fix record on every run, reuse included, and stamps the head SHA', () => {
+  const s = section(read(DONE), '### 1.2', '### 1.3');
+  assert.match(s, /It runs on every normal-path run, including when source 3 returned a local record/);
+  assert.match(s, /keeps its `id`/);
+  assert.match(s, /`## Validation` it carries is dropped/);
+  assert.match(s, /`> \*\*Head:\*\*` the output of `git rev-parse HEAD`/);
+  assert.match(s, /On the resume path \(2\.5\) the record is the committed one and is not rebuilt/);
+});
+
+test('--fix is named in the description, the intro and the STEP summary', () => {
+  const done = read(DONE);
+  assert.match(done.split('\n')[2], /With --fix, closes a plan-less fix/);
+  assert.match(section(done, 'Closes out a delivered plan', '---'), /with `--fix`, a plan-less fix/);
+  const steps = section(done, 'STEP 1: Collect context', '**⛔ ABSOLUTE');
+  for (const needle of ['the fix record with --fix', 'the fix gate with --fix', 'fix.md with --fix']) assert.ok(steps.includes(needle), needle);
+});
+
 test('1.3 reads no ledger on the fix track', () => {
   assert.match(section(read(DONE), '### 1.3', '## STEP 2'), /On the fix track there is no ledger: skip that bullet/);
 });
@@ -106,6 +135,9 @@ test('the fix gate replaces 2.2 and 2.3 writes ## Validation', () => {
   assert.match(g, /\*\*The fix gate \(`--fix` only\), in place of the ledger gate\.\*\*/);
   assert.match(g, /non-empty `## What changed`/);
   assert.match(g, /at least one commit/);
+  assert.match(g, /`> \*\*Head:\*\*` SHA \*\*equals\*\* `git rev-parse HEAD`/);
+  assert.match(g, /A non-empty SHA is not enough/);
+  assert.match(g, /ancestor of HEAD/);
   assert.match(g, /IF `--fix` WAS GIVEN:\n  ⛔ DO NOT USE: Read on a ledger/);
   const ci = section(done, '### 2.3', '### 2.4');
   assert.match(ci, /write `## Validation` into the fix record/);
