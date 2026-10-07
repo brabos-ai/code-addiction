@@ -511,6 +511,24 @@ describe('plugins', () => {
       expect(skillAt('.agents/skills')).toBe(false);
     });
 
+    it('removes the legacy add-gitnexus skill from the removed provider only', () => {
+      setup(['claude', 'cursor']);
+      const mp = path.join(cwd, '.codeadd', 'manifest.json');
+      const m = JSON.parse(fs.readFileSync(mp, 'utf8'));
+      m.plugins = { gitnexus: { enabled: true } };
+      fs.writeFileSync(mp, JSON.stringify(m, null, 2));
+      for (const root of ['.cursor/skills', '.claude/skills']) {
+        const legacy = path.join(cwd, root, 'add-gitnexus');
+        fs.mkdirSync(legacy, { recursive: true });
+        fs.writeFileSync(path.join(legacy, 'SKILL.md'), 'old');
+      }
+
+      removePluginSkillsFor(cwd, resolveSelected(['cursor']), resolveSelected(['claude']));
+
+      expect(fs.existsSync(path.join(cwd, '.cursor/skills/add-gitnexus'))).toBe(false);
+      expect(fs.existsSync(path.join(cwd, '.claude/skills/add-gitnexus/SKILL.md'))).toBe(true);
+    });
+
     it('touches nothing for a plugin that is not enabled', () => {
       setup(['claude', 'cursor']);
       const mp = path.join(cwd, '.codeadd', 'manifest.json');

@@ -28,6 +28,11 @@ function reconcilePluginSlots(cwd) {
   return result;
 }
 
+/** Skills older releases copied for a plugin and no catalog entry lists any more. */
+export const LEGACY_PLUGIN_SKILLS = {
+  gitnexus: ['add-gitnexus'],
+};
+
 const CATALOG_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'plugins.json');
 
 /**
@@ -227,7 +232,7 @@ export function removePluginSkillsFor(cwd, removedProviders, remainingProviders)
   let removed = 0;
   for (const [name, state] of Object.entries(manifest.plugins ?? {})) {
     if (!state?.enabled) continue;
-    for (const skill of catalog[name]?.skills ?? []) {
+    for (const skill of [...(catalog[name]?.skills ?? []), ...(LEGACY_PLUGIN_SKILLS[name] ?? [])]) {
       for (const provider of targets) {
         const destDir = path.join(cwd, skillsRoot(provider), skill);
         if (fs.existsSync(destDir)) {

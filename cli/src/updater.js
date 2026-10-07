@@ -9,13 +9,9 @@ import { copyRelease, pruneObsolete } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { applyEnabledFeatures } from './features.js';
 import { captureBaselines } from './injection-core.js';
-import { applyEnabledPluginsDetailed } from './plugins.js';
+import { applyEnabledPluginsDetailed, LEGACY_PLUGIN_SKILLS } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-
-const LEGACY_PLUGIN_SKILLS = {
-  gitnexus: ['add-gitnexus'],
-};
 
 function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
   for (const [plugin, state] of Object.entries(previousPlugins)) {
