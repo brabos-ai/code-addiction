@@ -141,11 +141,11 @@ ANALYSIS  (understand existing codebase)
 - Core: `.codeadd/`
 - Optional providers:
   - Claude Code -> `.claude/`
-  - Codex (OpenAI) -> `.agents/`
+  - Codex (OpenAI) -> `.codex/`
   - Google Antigravity -> `.agent/`
   - Cursor -> `.cursor/`
   - OpenCode -> `.opencode/`
-  - ZCode (Z.ai) -> `.agents/` (skills, shared with Codex; agents go to `.zcode/`)
+  - ZCode (Z.ai) -> `.codex/` (commands/skills, shared with Codex; agents go to `.zcode/`)
 
 Commands and skills install to every provider you select. Subagents install to Claude Code, Cursor, OpenCode, Codex and ZCode (Antigravity is not yet supported for agents).
 
