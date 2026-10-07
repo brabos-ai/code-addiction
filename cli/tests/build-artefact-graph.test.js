@@ -963,7 +963,8 @@ describe('node inventory snapshot', () => {
       // procedure the five pipeline commands share for a ticket they carry.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
       // reference 72 -> 73: add--backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
-      reference: 73,
+      // reference 73 -> 74: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
+      reference: 74,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add-pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1109,14 +1110,15 @@ describe('node inventory snapshot', () => {
     // The exists() formula below covers all six exactly-path-allowlisted
     // modules, so each F-block asserts its own increment and nothing else.
     // (plan 2026-10-04T004044-PLAN--native-node-backlog, F1's three-node L1.)
-    // Data-derived: the 223 non-script nodes are fixed by the registered
+    // 223 -> 224: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
+    // Data-derived: the 224 non-script nodes are fixed by the registered
     // commands/skills/agents/references/templates/fragments/features/plugins,
     // while every file directly under `.codeadd/scripts/` is one script node.
     // Counting that directory instead of naming the native closure means a
     // retirement (F20 removed the 19 shells) or an addition moves this by
     // exactly the on-disk delta, with no hardcoded total to drift.
     const shippedScriptsCount = shippedScripts();
-    expect(nodes).toHaveLength(223 + shippedScriptsCount);
+    expect(nodes).toHaveLength(224 + shippedScriptsCount);
     expect(nodes.filter((n) => n.declares)).toHaveLength(140);
   });
 
