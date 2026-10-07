@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
-import { log } from '@clack/prompts';
+import { intro, outro, log } from '@clack/prompts';
 import { PROVIDERS, resolveSelected, exclusiveFiles, ownedRoots, globalCapable } from './providers.js';
 import { copyRelease, pruneObsolete, shouldPreserve } from './release-copy.js';
 import { downloadReleaseAsset } from './github.js';
@@ -14,6 +14,7 @@ import {
   applyEnabledFeatures,
   enableFeature,
   disableFeature,
+  getFeatureStates,
 } from './features.js';
 import {
   loadCatalog,
@@ -21,10 +22,11 @@ import {
   disablePlugin,
   applyEnabledPluginsDetailed,
   removePluginSkillsFor,
+  getPluginStates,
 } from './plugins.js';
 import { writeMcpRegistration, unregisterProvider } from './mcp-registration.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-import { promptConfirm } from './prompt.js';
+import { promptConfirm, promptModify, promptApplyDiff } from './prompt.js';
 
 /**
  * The core every way of changing an installation goes through.
@@ -325,4 +327,109 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   }
 
   return diff;
+}
+
+// ---------------------------------------------------------------------------
+// The two doors. Both end in applyDesiredState; neither re-implements it.
+// ---------------------------------------------------------------------------
+
+const NO_INSTALL = 'No ADD installation found. Run `npx codeadd install` first.';
+
+function requireManifest(cwd) {
+  const manifest = readManifest(cwd);
+  if (!manifest) throw new Error(NO_INSTALL);
+  return manifest;
+}
+
+/**
+ * CLI entry point for `codeadd providers` — `list`, `add <name>`, `remove <name> [--force]`.
+ * Mirrors the shape of `features` and `plugins`. Scope comes from the manifest;
+ * the parameter is the fallback the other subcommands take too.
+ *
+ * Errors are thrown, not exited on: `runCli` prints them and exits 1, and a
+ * test can read the message without the process going away.
+ *
+ * @param {string} cwd  the scope-resolved install root
+ * @param {string[]} args
+ * @param {'project'|'global'} [scope]
+ */
+export async function providers(cwd, args, scope = 'project') {
+  const action = args[0] ?? 'list';
+  const manifest = requireManifest(cwd);
+  const installScope = manifest.scope ?? scope;
+  const installed = manifest.providers ?? [];
+
+  if (action === 'list') {
+    intro('ADD CLI - Providers');
+    const offered = Object.keys(PROVIDERS).filter((key) => installScope !== 'global' || globalCapable(key));
+    log.message(
+      offered
+        .map((key) => `${installed.includes(key) ? '●' : '○'} ${key} — ${PROVIDERS[key].label}`)
+        .join('\n'),
+    );
+    outro('Change with: codeadd providers add|remove <name>, or codeadd modify');
+    return;
+  }
+
+  if (action !== 'add' && action !== 'remove') {
+    throw new Error(`Unknown action "${action}". Use: list, add, remove`);
+  }
+
+  const name = args[1];
+  if (!name || name.startsWith('--')) throw new Error(`Usage: codeadd providers ${action} <name>`);
+  if (!PROVIDERS[name]) {
+    throw new Error(`Unknown provider "${name}". Available: ${Object.keys(PROVIDERS).join(', ')}`);
+  }
+
+  if (action === 'add') {
+    if (installed.includes(name)) {
+      log.info(`"${name}" is already installed: nothing to change.`);
+      return;
+    }
+    intro('ADD CLI - Providers add');
+    await applyDesiredState(cwd, { providers: [...installed, name] });
+    outro(`Provider "${name}" added.`);
+    return;
+  }
+
+  if (!installed.includes(name)) throw new Error(`Provider "${name}" is not installed.`);
+  intro('ADD CLI - Providers remove');
+  await applyDesiredState(cwd, { providers: installed.filter((key) => key !== name) }, { force: args.includes('--force') });
+  outro(`Provider "${name}" removed.`);
+}
+
+/**
+ * CLI entry point for `codeadd modify` — the interactive editor.
+ *
+ * Asks ONCE: `promptApplyDiff` shows the diff and takes the confirmation, and
+ * the core is then called with `force: true` so a removal is not confirmed a
+ * second time.
+ *
+ * @param {string} cwd  the scope-resolved install root
+ * @param {string[]} args  unused; accepted so the dispatcher can pass it positionally
+ * @param {'project'|'global'} [scope]
+ */
+export async function modify(cwd, args, scope = 'project') {
+  void args;
+  const manifest = requireManifest(cwd);
+  const installScope = manifest.scope ?? scope;
+
+  intro('ADD CLI - Modify');
+  const desired = await promptModify(
+    {
+      providers: manifest.providers ?? [],
+      features: getFeatureStates(cwd),
+      plugins: getPluginStates(cwd),
+    },
+    installScope,
+  );
+
+  const diff = diffState(manifest, desired);
+  if (!(await promptApplyDiff(diff))) {
+    outro('Nothing changed.');
+    return;
+  }
+
+  await applyDesiredState(cwd, desired, { force: true });
+  outro('Installation updated.');
 }

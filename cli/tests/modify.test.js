@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   getLatestPrerelease: vi.fn(),
   downloadReleaseAsset: vi.fn(),
   promptConfirm: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('../src/github.js', () => ({
@@ -22,6 +24,8 @@ vi.mock('../src/prompt.js', () => ({
   promptScope: vi.fn(),
   promptGitignore: vi.fn(),
   promptConfirm: mocks.promptConfirm,
+  promptModify: mocks.promptModify,
+  promptApplyDiff: mocks.promptApplyDiff,
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -32,7 +36,7 @@ vi.mock('@clack/prompts', () => ({
 }));
 
 import { log } from '@clack/prompts';
-import { applyDesiredState, diffState } from '../src/modify.js';
+import { applyDesiredState, diffState, providers, modify } from '../src/modify.js';
 import { writeManifest } from '../src/installer.js';
 import { copyRelease } from '../src/release-copy.js';
 import { resolveSelected } from '../src/providers.js';
@@ -144,6 +148,8 @@ beforeEach(() => {
   mocks.getLatestTag.mockReset();
   mocks.downloadReleaseAsset.mockReset();
   mocks.promptConfirm.mockReset().mockResolvedValue(true);
+  mocks.promptModify.mockReset();
+  mocks.promptApplyDiff.mockReset().mockResolvedValue(true);
   mocks.downloadReleaseAsset.mockImplementation(async () => releaseZip().toBuffer());
   vi.clearAllMocks();
 });
@@ -426,5 +432,144 @@ describe('applyDesiredState — refusals', () => {
 
     expect(snapshot()).toEqual(before);
     expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+});
+
+describe('codeadd providers (L2.5)', () => {
+  it('list shows every provider, marking the installed ones', async () => {
+    seed(['claude', 'cursor']);
+
+    await providers(dir, ['list'], 'project');
+
+    const printed = log.message.mock.calls.map((c) => c[0]).join('\n');
+    expect(printed).toMatch(/● claude/);
+    expect(printed).toMatch(/● cursor/);
+    expect(printed).toMatch(/○ codex/);
+  });
+
+  it('list in global scope leaves out the providers that have no global destination', async () => {
+    seed(['claude'], { scope: 'global' });
+
+    await providers(dir, ['list'], 'global');
+
+    const printed = log.message.mock.calls.map((c) => c[0]).join('\n');
+    expect(printed).toMatch(/● claude/);
+    expect(printed).not.toMatch(/cursor/);
+  });
+
+  it('add installs the provider from the installed release', async () => {
+    seed(['claude'], { plugins: true });
+
+    await providers(dir, ['add', 'cursor'], 'project');
+
+    expect(mocks.downloadReleaseAsset).toHaveBeenCalledWith('v1.0.0');
+    expect(manifest().providers).toEqual(['claude', 'cursor']);
+    expect(count(read('.cursor/commands/add-new.md'), 'GX-CONTENT')).toBe(1);
+  });
+
+  it('add of a provider already installed says there is nothing to change and downloads nothing', async () => {
+    seed(['claude']);
+    const before = snapshot();
+
+    await providers(dir, ['add', 'claude'], 'project');
+
+    expect(log.info).toHaveBeenCalledWith(expect.stringMatching(/nothing to change/i));
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('remove asks for confirmation unless --force', async () => {
+    seed(['claude', 'cursor']);
+    await providers(dir, ['remove', 'cursor'], 'project');
+    expect(mocks.promptConfirm).toHaveBeenCalledTimes(1);
+    expect(manifest().providers).toEqual(['claude']);
+
+    seed(['claude', 'cursor']);
+    mocks.promptConfirm.mockClear();
+    await providers(dir, ['remove', 'cursor', '--force'], 'project');
+    expect(mocks.promptConfirm).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['no installation', ['add', 'cursor'], null, /codeadd install/],
+    ['an unknown provider', ['add', 'nope'], ['claude'], /Unknown provider "nope"/],
+    ['removing a provider that is not installed', ['remove', 'cursor'], ['claude'], /"cursor" is not installed/],
+    ['a missing provider name', ['add'], ['claude'], /Usage: codeadd providers add <name>/],
+    ['an unknown action', ['frobnicate'], ['claude'], /Unknown action "frobnicate"/],
+  ])('refuses %s and writes nothing', async (_label, args, installed, message) => {
+    if (installed) seed(installed);
+    const before = snapshot();
+
+    await expect(providers(dir, args, 'project')).rejects.toThrow(message);
+
+    expect(snapshot()).toEqual(before);
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+
+  it('add of a provider with no global destination fails in a global install, and writes nothing', async () => {
+    seed(['claude'], { scope: 'global' });
+    const before = snapshot();
+
+    await expect(providers(dir, ['add', 'cursor'], 'global')).rejects.toThrow(/cursor/);
+
+    expect(snapshot()).toEqual(before);
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+});
+
+describe('codeadd modify (L2.5, L2.7)', () => {
+  it('refuses when there is no installation', async () => {
+    await expect(modify(dir, [], 'project')).rejects.toThrow(/codeadd install/);
+    expect(fs.existsSync(abs('.codeadd'))).toBe(false);
+  });
+
+  it('shows the diff once, then applies it with no second confirmation when a provider is removed', async () => {
+    seed(['claude', 'cursor']);
+    mocks.promptModify.mockResolvedValue({ providers: ['claude'], features: {}, plugins: {} });
+
+    await modify(dir, [], 'project');
+
+    expect(mocks.promptApplyDiff).toHaveBeenCalledTimes(1);
+    expect(mocks.promptConfirm).not.toHaveBeenCalled();
+    expect(manifest().providers).toEqual(['claude']);
+  });
+
+  it('hands the prompt the current state and the installation scope', async () => {
+    seed(['claude'], { scope: 'global', plugins: true });
+    mocks.promptModify.mockResolvedValue({ providers: ['claude'], features: {}, plugins: {} });
+
+    await modify(dir, [], 'project');
+
+    const [current, scope] = mocks.promptModify.mock.calls[0];
+    expect(scope).toBe('global');
+    expect(current.providers).toEqual(['claude']);
+    expect(current.features.find((f) => f.name === 'tdd-pipeline')).toMatchObject({ enabled: true });
+    expect(current.plugins.find((p) => p.name === 'gx')).toMatchObject({ enabled: true });
+  });
+
+  it('writes nothing when the user declines the diff', async () => {
+    seed(['claude']);
+    const before = snapshot();
+    mocks.promptModify.mockResolvedValue({ providers: ['claude', 'cursor'], features: {}, plugins: {} });
+    mocks.promptApplyDiff.mockResolvedValue(false);
+
+    await modify(dir, [], 'project');
+
+    expect(snapshot()).toEqual(before);
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+
+  it('applies a feature toggle chosen in the prompt', async () => {
+    seed(['claude']);
+    mocks.promptModify.mockResolvedValue({
+      providers: ['claude'],
+      features: { 'tdd-pipeline': true, 'qa-pipeline': true },
+      plugins: {},
+    });
+
+    await modify(dir, [], 'project');
+
+    expect(count(read('.claude/commands/add-new.md'), 'QA-CONTENT')).toBe(1);
+    expect(manifest().features['qa-pipeline']).toBe(true);
   });
 });
