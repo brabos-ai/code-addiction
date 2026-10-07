@@ -12,6 +12,7 @@ const root = path.resolve(__dirname, '..', '..');
 const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 const REFERENCE = 'workbench/skills/add-final-report/references/result-block.md';
 const SKILL = 'workbench/skills/add-final-report/SKILL.md';
+const STOP_RULE = 'On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.';
 
 const block = obj => '```codeadd-result\n' + JSON.stringify(obj, null, 2) + '\n```';
 const base = {
@@ -85,4 +86,19 @@ test('the reference carries one valid example per status, plus the rules', () =>
   assert.match(ref, /`null` for unknown/);
   assert.match(ref, /`needs_approval` is `true` exactly when `status` is `needs-approval`/);
   assert.match(ref, /`reason` is non-null when `status` is not `done`/);
+});
+
+test('add-final-report owns the emission rule and points at the reference without copying the table', () => {
+  const skill = read(SKILL);
+  assert.match(skill, /^## The Result Block$/m);
+  const section = skill.split(/^## The Result Block$/m)[1].split(/^## /m)[0];
+  for (const needle of ['scripts/output-mode.js', 'references/result-block.md', '`prose`', '`json`', '`both`', STOP_RULE]) assert.ok(section.includes(needle), needle);
+  assert.match(section, /falls? to `prose`/);
+  assert.match(section, /never shown|is not shown/);
+  assert.doesNotMatch(skill, /^\| `needs_approval` \|/m);
+  const position = skill.split('**Position:**')[1].split('\n\n')[0];
+  assert.match(position, /`both`/);
+  assert.match(position, /last thing printed/);
+  assert.match(position, /`json`/);
+  assert.match(position, /`next_step`/);
 });
