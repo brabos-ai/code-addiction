@@ -74,3 +74,81 @@ test('add-plan-authoring resolves --fix through the three sources and keeps plan
   assert.match(res, /never resolves as a plan/);
   assert.match(res, /docs\/deliveries\/<id>\/fix\.md/);
 });
+
+// ---- done: the --fix track ------------------------------------------------------------------------
+
+const section = (text, from, to) => { const i = text.indexOf(from); assert.ok(i >= 0, `no ${from}`); const j = to ? text.indexOf(to, i + from.length) : -1; return text.slice(i, j === -1 ? undefined : j); };
+
+test('Operation Mode carries the --fix line, an example and the one reading rule', () => {
+  const done = read(DONE);
+  const op = section(done, '## Operation Mode', '## STEP 1');
+  assert.match(op, /^\/add-framework--done --fix <slug> \[--ticket <id>\]/m);
+  assert.match(op, /^\/add-framework--done --fix \S+ --ticket \d{4}B$/m);
+  assert.match(op, /"the plan" in this skill reads "the fix record"/);
+});
+
+test('1.2 refuses --fix together with a [plan], resolves the record, and still refuses main', () => {
+  const s = section(read(DONE), '### 1.2', '### 1.3');
+  assert.match(s, /IF `--fix` AND A `\[plan\]` ARE BOTH GIVEN:\n  ⛔ DO NOT USE: Write on anything\n[\s\S]*?✅ DO: Report the conflict and STOP/);
+  assert.match(s, /`--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution/);
+  assert.match(s, /derive-from-branch rule does not run/);
+  assert.match(s, /refusal to run on `main` still applies/);
+  for (const needle of ['> **Kind:** fix', '> **Branch:**', '> **PR:**', '> **Ticket:** <id>', '## What changed', 'git log --oneline main..HEAD', 'git diff --name-status main...HEAD']) assert.ok(s.includes(needle), needle);
+});
+
+test('1.3 reads no ledger on the fix track', () => {
+  assert.match(section(read(DONE), '### 1.3', '## STEP 2'), /On the fix track there is no ledger: skip that bullet/);
+});
+
+test('the fix gate replaces 2.2 and 2.3 writes ## Validation', () => {
+  const done = read(DONE);
+  const g = section(done, '### 2.2', '### 2.3');
+  assert.match(g, /\*\*The fix gate \(`--fix` only\), in place of the ledger gate\.\*\*/);
+  assert.match(g, /non-empty `## What changed`/);
+  assert.match(g, /at least one commit/);
+  assert.match(g, /IF `--fix` WAS GIVEN:\n  ⛔ DO NOT USE: Read on a ledger/);
+  const ci = section(done, '### 2.3', '### 2.4');
+  assert.match(ci, /write `## Validation` into the fix record/);
+});
+
+test('2.4 is unavailable on the fix track', () => {
+  const s = section(read(DONE), '### 2.4', '### 2.5');
+  assert.match(s, /2\.4 is unavailable on the fix track/);
+  assert.match(s, /IF `--fix` AND 2\.1 ROUTED TO THE RECOVERY PATH:\n  ⛔ DO NOT USE: Write on docs\/delivered\.jsonl/);
+});
+
+test('2.5 resume reads the record from the archive when no local copy exists', () => {
+  const s = section(read(DONE), '### 2.5', '## STEP 3');
+  assert.match(s, /docs\/deliveries\/<id>\/fix\.md/);
+  assert.match(s, /no local copy exists/);
+});
+
+test('STEP 4 looks up -fix-<slug> and writes verb fix', () => {
+  const s = section(read(DONE), '## STEP 4', '## STEP 5');
+  assert.match(s, /`docs\/changelog\/\*-fix-<slug>\.md`/);
+  assert.match(s, /verb `fix`/);
+});
+
+test('6.1 archives fix.md with its own stop and sets the plan + ledger stop aside', () => {
+  const s = section(read(DONE), '### 6.1', '### 6.2');
+  assert.match(s, /the archive holds `fix\.md`/);
+  assert.match(s, /`cmp`/);
+  assert.match(s, /IF `--fix` AND THE FIX RECORD CANNOT BE READ FROM THIS WORKING TREE:\n  ⛔ DO NOT USE: Bash to run git commit/);
+  assert.match(s, /With `--fix`, the plan \+ ledger stop above does not apply/);
+});
+
+test('STEP 8 reads the ticket from the fix record and removes the local fix record as the one original', () => {
+  const s = section(read(DONE), '## STEP 8', '## STEP 9');
+  assert.match(s, /fix record's `> \*\*Ticket:\*\*` line/);
+  assert.match(s, /third removal's member list is the local fix record/);
+});
+
+test('STEP 9 names the track', () => {
+  assert.match(section(read(DONE), '## STEP 9', '## Rules'), /\*\*The track, when `--fix` was given\*\*/);
+});
+
+test('--merge is still the only merge method', () => {
+  const done = read(DONE);
+  assert.match(done, /gh pr merge --merge/);
+  assert.doesNotMatch(done, /gh pr merge[^\n]*--(squash|rebase)/);
+});

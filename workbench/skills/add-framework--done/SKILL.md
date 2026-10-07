@@ -107,11 +107,15 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 
 /add-framework--done [plan]     → Close out the branch implementing that plan (full basename, unique slug substring, or a plain path)
 /add-framework--done            → Resolve the plan from the branch, or ask
+/add-framework--done --fix <slug> [--ticket <id>]   → Close out a plan-less fix: no plan, no ledger. The fix record is generated from git and CI facts
 
 **Examples:**
 /add-framework--done 2026-09-07T162415-SELF-PLAN--delivery-index-internal
 /add-framework--done delivery-index-internal
 /add-framework--done docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
+/add-framework--done --fix test-transport-tar --ticket 0031B
+
+**The fix track.** Without `--fix`, this skill behaves exactly as written below, including its stop when no plan resolves. With `--fix`, "the plan" in this skill reads "the fix record", there is no ledger, and only the steps that say `--fix` differ. Every step this skill does not mark runs on both tracks unchanged.
 
 ---
 
@@ -133,6 +137,22 @@ Verify the current branch is **not** `main`. If it is → report and STOP: this 
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
 
+```
+IF `--fix` AND A `[plan]` ARE BOTH GIVEN:
+  ⛔ DO NOT USE: Write on anything
+  ⛔ DO NOT: Resolve either one — one run closes one kind of work
+  ✅ DO: Report the conflict and STOP
+```
+
+**With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
+
+Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution — load it and apply it as written. It owns the three sources, their order and the stop on more than one match. When none answers, write the fix record in two moves. This is the first, and it is generated from facts, never hand-written:
+
+- **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **PR:**` the PR when one exists and `none yet` otherwise, and `> **Ticket:** <id>` only when `--ticket` was passed. Never infer an id.
+- **`## What changed`** — the branch's commits from `git log --oneline main..HEAD` and its diff from `git diff --name-status main...HEAD`, with one sentence per commit drawn from its message.
+
+The second move is `## Validation`, written at 2.3. The record is never edited after STEP 6.1 copies it.
+
 ### 1.3 Collect the delivery facts
 
 Collect, and carry forward to STEP 3:
@@ -143,6 +163,8 @@ Collect, and carry forward to STEP 3:
 - **The graph** — `framwork/.codeadd/artefact-graph.json`, for classifying paths at STEP 3.
 
 **Three dots for the diff, two for the log, and neither is a typo.** Three-dot diff is merge-base-relative, which is exactly "what did this branch introduce" — a two-dot diff would also report, reversed, everything `main` gained since the branch point. Two-dot log is "commits on this branch and not on main", which is the question there. A sibling ruling in the product layer replaced a three-dot *pre-check* with two dots; that check asks the opposite question ("does main already have all of this?") and does not transfer here.
+
+**On the fix track there is no ledger: skip that bullet.** The diff, the log and the graph are collected unchanged.
 
 ---
 
@@ -196,6 +218,14 @@ If any block is missing its `complete` line → report which ones and STOP.
 
 **This runs first for a reason: unwritten code breaks no test.** A `/add-framework--build` run that stopped halfway passes all four commands below and would merge and index as fully delivered — the exact lie the index exists to prevent. **It is the only gate here that can catch that, which is why it is the one that stays.** The gate that used to sit beside it asked whether the delivery had been graded; this one asks whether it happened at all, and those are not the same question.
 
+```
+IF `--fix` WAS GIVEN:
+  ⛔ DO NOT USE: Read on a ledger — a fix has none, and the gate above does not run
+  ✅ DO: Run the fix gate below in its place
+```
+
+**The fix gate (`--fix` only), in place of the ledger gate.** The fix record has a non-empty `## What changed`, and the branch has at least one commit. Either missing → report which and STOP. A fix is what its commits are, so the gate asks only that there is something to close out; CI at 2.3 is its real validation.
+
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
 CI runs the framework and board gates, on Ubuntu with Node 22.19.0.
@@ -240,6 +270,8 @@ one machine is still one machine.
 
 ⛔ **A REFUSAL to run or unavailable preparation is not an assertion failure or a pass.** Read the runner's diagnostics: exit 2 can identify refusal/preparation/export unavailability, while tool assertion exits are preserved. Report unavailable evidence and its reason in STEP 9; resolve it through CI or a completed supported run. Do not install host dependencies or bypass the dispatcher to manufacture a verdict. An evidence-export failure after green assertions still needs resolution; preserved failed-suite status still reports the assertions that actually ran.
 
+**On the fix track, once item 7 passes, write `## Validation` into the fix record** — the head SHA, the run URL, and each required check with its conclusion; or the local fallback and why. When item 4 created the PR, fill the header's `> **PR:**` line in the same edit. This is the record's second and last move.
+
 **If CI gains a job, this list follows it.** The whole point is that the gate and the merge cannot disagree about what green means.
 
 ### 2.4 The Recovery Path — merged, never indexed
@@ -280,6 +312,15 @@ without the ledger there is no evidence the plan was finished, only that somethi
 rather than before it.** An entry whose commit sits after the delivery it describes is fine; an entry
 that hides how it got there is not.
 
+**2.4 is unavailable on the fix track.** Recovery runs on `main` after the merge, and a fix with no record and no branch has no evidence beyond the merge itself.
+
+```
+IF `--fix` AND 2.1 ROUTED TO THE RECOVERY PATH:
+  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT: Reconstruct a fix record from the merge commit
+  ✅ DO: Report that the recovery path is unavailable for a fix, and STOP
+```
+
 ### 2.5 The Resume Path — written, pushed, merge refused
 
 Reached only from 2.1's second row. **Every gate above still applies in full**, exactly as they do on
@@ -303,6 +344,8 @@ an `id`; this one reads as two separate deliveries.
 **What is left to do is find out why the merge was refused.** The branch state is correct and nothing
 here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
 9, alongside which STEPs this run skipped.
+
+**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `docs/deliveries/<id>/fix.md` on the branch, for the fix gate at 2.2 and for STEP 8's ticket read. The `id` is the committed entry's.
 
 ---
 
@@ -409,6 +452,8 @@ Write the human narrative record into `docs/changelog/`, in prose, matching the 
 
 ⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `main` for one delivery, each telling part of its story.
 
+**On the fix track, look for `docs/changelog/*-fix-<slug>.md` instead** — there is no plan slug to key on. Normally no build wrote one, so write it here with verb `fix`; the filename and the one-per-delivery rule stay `add-plan-authoring`'s.
+
 The index entry and the changelog are not redundant: one is a machine-readable claim about what exists, the other is the reasoning a future reader needs.
 
 ---
@@ -454,6 +499,17 @@ IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
   ⛔ DO NOT: Assemble a directory holding only the half that was readable
   ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made
 ```
+
+**On the fix track the archive holds `fix.md`** — a byte copy of the fix record at `docs/plans/<id>.md`, proved with `cmp` like every other member — and nothing else is required. `plan.md` and `ledger.md` do not exist for a fix, and their absence is not a defect. There is no design, intent or evidence member to look for.
+
+```
+IF `--fix` AND THE FIX RECORD CANNOT BE READ FROM THIS WORKING TREE:
+  ⛔ DO NOT USE: Bash to run git commit
+  ⛔ DO NOT: Assemble an empty directory
+  ✅ DO: Report that the fix record is missing and STOP
+```
+
+With `--fix`, the plan + ledger stop above does not apply; this one replaces it. The paragraphs below about the design, intent and evidence sources read for a plan and are skipped on the fix track.
 
 The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. **The intent source is the `-intent.md` file that same table names**, resolved the same way. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing neither gets neither member, and that is not a defect.
 
@@ -516,6 +572,8 @@ It runs here because this is the first point every route shares with the deliver
 normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
 before the merge — a ticket reading `done` for work that never landed is a lie a refused merge would
 leave behind. It reads the plan before the third removal below deletes the local copy.
+
+**On the fix track the ticket is read from the fix record's `> **Ticket:**` line**, which exists only when `--ticket` was passed — no line, no write. When no local copy exists, read it from `docs/deliveries/<id>/fix.md`.
 
 ```
 IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
@@ -580,6 +638,8 @@ a skipped cleanup into work nobody asked for, on a branch that is already merged
 
 **No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
 
+**On the fix track the third removal's member list is the local fix record** — `docs/plans/<id>.md` — and nothing else. A fix has no ledger, review companion, design, intent or evidence. The durable copy is `docs/deliveries/<id>/fix.md`, which is never removed.
+
 ### 8.1 When this skill is running inside the worktree it would remove
 
 `git worktree remove` cannot remove the working tree it is being run from. On a worktree build the branch is checked out only inside that worktree, so STEP 1.2's refusal to run on `main` puts this skill there — and the first removal above has nothing it can do.
@@ -632,6 +692,7 @@ Then, after the seven blocks and before the metadata, report always:
 - Whether the run took the recovery path, and why the entry landed after the merge
 - **The ticket, when the plan carried one** — the id, and the `done` write's `SHA`, that it was already
   there, or what did not happen
+- **The track, when `--fix` was given** — name it: `fix`. Say the fix record and the fix gate stood in for the plan and the ledger gate. If STEP 3 refused with `REFUSED=no-items`, say that a fix with no nameable behaviour has no index entry to write, and that this is the cause.
 
 ---
 
