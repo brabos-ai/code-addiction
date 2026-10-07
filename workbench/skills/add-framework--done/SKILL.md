@@ -103,12 +103,13 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 
 ## Operation Mode
 
-/add-framework--done [plan]     → Close out the branch implementing that plan (full basename or unique slug substring)
+/add-framework--done [plan]     → Close out the branch implementing that plan (full basename, unique slug substring, or a plain path)
 /add-framework--done            → Resolve the plan from the branch, or ask
 
 **Examples:**
 /add-framework--done 2026-09-07T162415-SELF-PLAN--delivery-index-internal
 /add-framework--done delivery-index-internal
+/add-framework--done docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
 
 ---
 

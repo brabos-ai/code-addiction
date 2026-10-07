@@ -116,9 +116,27 @@ IF THE IDEA IS BAD OR UNNECESSARY:
 
 ```
 /add-framework--plan [idea]   → New strategic analysis (STEP 1-7)
-/add-framework--plan [plan]   → Continue an existing plan (full basename or unique slug substring)
+/add-framework--plan [plan]   → Continue an existing plan (full basename, unique slug substring, or a plain path)
+/add-framework--plan docs/brainstorming/<file>.md   → New analysis, the idea read from that file
 /add-framework--plan          → List plans in draft
 ```
+
+**A path argument is routed first, by where it points:**
+
+| The argument | Goes to |
+|---|---|
+| A bare slug, or a path under `docs/plans/` | Argument Resolution — Continue Mode |
+| A path outside `docs/plans/` | Never Argument Resolution — it is the new-idea input, read from that file |
+| Anything else — not a bare slug, not an existing file | A free-text idea |
+
+For a path outside `docs/plans/`: a file whose name ends in `-intent.md` is the **intent file**, read at
+STEP 1.2. Any other file under `docs/brainstorming/` is a **design document**, read as the design. Its
+intent file is the `*-intent.md` in the same folder that shares its `YYYY-MM-DDTHHMMSS` prefix — the
+architectural pair, and an umbrella set, share one timestamp even though an umbrella design is named
+`<timestamp>-<slug>-000-umbrella.md` and its intent `<timestamp>-<slug>-intent.md`. When `test -f` finds
+none there is no intent file, and STEP 4 runs in full. This rule sits before the resolution on purpose:
+Argument Resolution strips the directory part, so an intent path sent there would fall into "No match"
+and STOP.
 
 Continue Mode and List Mode resolution are owned by `add-plan-authoring`. Load it, resolve the
 argument BEFORE reading anything else, then run STEP 6 and STEP 7 on the updated document. An update
@@ -163,6 +181,9 @@ IF THE INVOCATION NAMES A DESIGN FILE, OR THE IDEA RESTATES ONE:
 `add-plan-authoring` owns its shape. It carries the path that conversation classified, every decision
 it closed, and whatever it could not.
 
+**When the invocation passed a file path, the routing rule in Operation Mode says which file this is:**
+an intent path is the intent file, and a design path finds its intent file beside it.
+
 **It exists on paths where a design document does not.** `bounded` writes no design document at all,
 so on that path the intent file is the only thing carrying the conversation forward.
 
@@ -186,7 +207,8 @@ plan at STEP 5. **Then write `planning`** — and at STEP 7, before the report, 
 
 ### 1.3 Dispatch Discovery (SILENT)
 
-IF no idea in the invocation args → skip, go to STEP 2.
+IF no idea in the invocation args → skip, go to STEP 2. A path invocation carries one: the idea is
+what the file at that path says.
 
 **DISPATCH AGENT:** `@framework-discovery-agent`
 - **Capability:** read-only
@@ -487,8 +509,10 @@ the report FIRST, metadata after.
 A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
 future tense. `add-plan-authoring` carries that one adjustment and nothing else.
 
-Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands —
-`/add-framework--build [slug]` to implement, `/add-framework--plan [slug]` to revise.
+Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands, in the
+form `add-final-report` owns under **The Continuation Line** — `/add-framework--plan docs/plans/<basename>.md`
+to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line. A plan
+set prints one build line per plan that has F-blocks, in set order.
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
 
@@ -497,7 +521,7 @@ Metadata: plan path, status `draft`, review verdict, fixes applied, and the two 
 | `> **Delivery:**` | Do |
 |---|---|
 | `confirm`, or absent | Print the report and STOP. The user runs the build |
-| `automatic` | Print the report, then load `/add-framework--build` with this plan's basename and continue there |
+| `automatic` | Print the report and the same build line, then load `/add-framework--build` with this plan's basename and continue there |
 
 Loading the build is a handoff, not implementation: this skill still writes nothing outside
 `docs/plans/`, and the build runs under its own gates.
