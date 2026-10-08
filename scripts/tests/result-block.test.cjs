@@ -12,7 +12,6 @@ const root = path.resolve(__dirname, '..', '..');
 const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 const REFERENCE = 'workbench/skills/add-final-report/references/result-block.md';
 const SKILL = 'workbench/skills/add-final-report/SKILL.md';
-const STOP_RULE = 'On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.';
 
 const block = obj => '```codeadd-result\n' + JSON.stringify(obj, null, 2) + '\n```';
 const base = {
@@ -94,29 +93,7 @@ test('headless callers are told to allow the resolver, and this repository does'
   assert.ok(settings.permissions.allow.includes('Bash(node scripts/output-mode.js)'));
 });
 
-test('add-final-report states the prose-mode stop and leaves the status meanings to the reference', () => {
-  const skill = read(SKILL);
-  assert.match(skill, /\| `prose` \|[^\n]*A mid-run STOP prints exactly what it printed before/);
-  assert.doesNotMatch(skill, /`stopped` at a gate or hard stop/);
-  assert.match(skill, /`references\/result-block\.md` states what each means/);
-});
-
-test('add-final-report owns the emission rule and points at the reference without copying the table', () => {
-  const skill = read(SKILL);
-  assert.match(skill, /^## The Result Block$/m);
-  const section = skill.split(/^## The Result Block$/m)[1].split(/^## /m)[0];
-  for (const needle of ['scripts/output-mode.js', 'references/result-block.md', '`prose`', '`json`', '`both`', STOP_RULE]) assert.ok(section.includes(needle), needle);
-  assert.match(section, /falls? to `prose`/);
-  assert.match(section, /never shown|is not shown/);
-  assert.doesNotMatch(skill, /^\| `needs_approval` \|/m);
-  const position = skill.split('**Position:**')[1].split('\n\n')[0];
-  assert.match(position, /`both`/);
-  assert.match(position, /last thing printed/);
-  assert.match(position, /`json`/);
-  assert.match(position, /`next_step`/);
-});
-
-// Derived from disk, so a future add-framework--* artefact fails here until it carries the line.
+// Derived from disk, so a future add-framework--* artefact is checked without a list to update.
 function stageArtefacts() {
   const out = [];
   for (const d of fs.readdirSync(path.join(root, 'workbench', 'skills'))) if (d.startsWith('add-framework--')) out.push(`workbench/skills/${d}/SKILL.md`);
@@ -140,14 +117,12 @@ test('no add-framework--* artefact restates the field table', () => {
   for (const f of stageArtefacts()) assert.doesNotMatch(read(f), /^\| `(needs_approval|next_step)` \|/m, f);
 });
 
-test('add-final-report never forbids an early load without the STOP and early-exit exception', () => {
+test('add-final-report is back to its last-step load rule, and building-commands says so too', () => {
   const text = read(SKILL);
   const description = text.match(/^description: "(.*)"$/m)[1];
   const guard = text.match(/```\nIF THE COMMAND IS[\s\S]*?```/)[0];
-  for (const [name, part] of [['description', description], ['load guard', guard]]) {
-    assert.match(part, /STOP/, `${name} must name STOP`);
-    assert.match(part, /early exit/i, `${name} must name the early exit`);
-  }
-  assert.doesNotMatch(description, /not at the first/i, 'description must not ban the early load outright');
-  assert.match(guard, /✅ DO: Load this at that STOP or early exit/, 'guard must tell the agent to load at a STOP');
+  assert.ok(description.includes('Load at the last step, not at the first.'), 'description');
+  assert.doesNotMatch(guard, /early exit/i, 'guard');
+  assert.doesNotMatch(text, /^## The Result Block$/m);
+  assert.doesNotMatch(read('workbench/skills/building-commands/SKILL.md'), /any STOP or early exit/);
 });
