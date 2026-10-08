@@ -74,8 +74,11 @@ function buildOpencodeZip() {
 }
 
 let tmpDir;
+const realIsTTY = process.stdin.isTTY;
 
 beforeEach(() => {
+  // install refuses to run without a TTY; these tests answer its prompts through mocks.
+  process.stdin.isTTY = true;
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-e2e-'));
   mocks.getLatestTag.mockReset();
   mocks.downloadReleaseAsset.mockReset();
@@ -94,6 +97,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  process.stdin.isTTY = realIsTTY;
   fs.rmSync(tmpDir, { recursive: true, force: true });
   vi.clearAllMocks();
 });
