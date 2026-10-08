@@ -93,6 +93,7 @@ jobs:
   # native six-job matrix above is what needs the cross-platform expansion.
   board:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: board
@@ -120,6 +121,7 @@ jobs:
         run: npm run build
 
       - name: Install Playwright Chromium
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests (360, 768, 1080)
