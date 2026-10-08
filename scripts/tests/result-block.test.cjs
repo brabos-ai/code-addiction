@@ -124,18 +124,15 @@ function stageArtefacts() {
   return out;
 }
 
-test('every add-framework--* artefact carries the stop-rule line right after its prohibitions marker', () => {
+test('no add-framework--* artefact carries the 0028B output-mode wording', () => {
   const files = stageArtefacts();
   assert.ok(files.length > 0);
   for (const name of ['brainstorm', 'plan', 'build', 'done', 'backlog', 'release', 'sync']) {
     assert.ok(files.some(f => f.includes(`add-framework--${name}`)), `missing ${name}`);
   }
   for (const f of files) {
-    const lines = read(f).split('\n');
-    const at = lines.findIndex(l => l.trim() === '**⛔ ABSOLUTE PROHIBITIONS:**');
-    assert.notEqual(at, -1, `${f}: no ABSOLUTE PROHIBITIONS marker`);
-    const next = lines.slice(at + 1).find(l => l.trim() !== '');
-    assert.equal(next, STOP_RULE, f);
+    const text = read(f);
+    for (const needle of ['output-mode.js', 'result block', '`both` mode']) assert.ok(!text.includes(needle), `${f}: ${needle}`);
   }
 });
 
