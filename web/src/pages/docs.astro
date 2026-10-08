@@ -101,7 +101,7 @@ import "../styles/global.css";
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">codeadd CLI</div>
-            <p class="text-muted-light text-sm">install, update, uninstall, doctor, validate, features, plugins, config</p>
+            <p class="text-muted-light text-sm">install, update, uninstall, doctor, validate, features, plugins, providers, modify, config</p>
           </div>
         </div>
       </section>
@@ -118,6 +118,8 @@ import "../styles/global.css";
           <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --version v2.0.1</span></div>
           <div class="pt-2"><span class="text-muted select-none"># install from a specific branch</span></div>
           <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --branch feature-xyz</span></div>
+          <div class="pt-2"><span class="text-muted select-none"># already installed? shows Modify / Update / Reinstall / Cancel</span></div>
+          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span></div>
         </div>
 
         <h3 class="font-display font-semibold text-lg mt-8 mb-4">What gets installed</h3>
@@ -172,7 +174,15 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
-            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus, Playwright)</span>
+            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus, Playwright). An enabled plugin whose tool is not detected is named in install/update output</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd providers</code>
+            <span class="text-muted-light text-sm">List providers, or add / remove one: <code class="text-foreground">providers list|add &lt;name&gt;|remove &lt;name&gt; [--force]</code>. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd modify</code>
+            <span class="text-muted-light text-sm">Interactive screen to edit providers, features and plugins of an existing installation in one place. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd config show</code>

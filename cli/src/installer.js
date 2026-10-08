@@ -4,31 +4,25 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
-import { promptProviders, promptScope, promptConfirm, promptGitignore } from './prompt.js';
+import { promptProviders, promptScope, promptConfirm, promptGitignore, promptExistingInstall } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-import { applyEnabledFeatures, FEATURES } from './features.js';
-import { applyEnabledPlugins } from './plugins.js';
-import { resolveSelected, agentDest } from './providers.js';
+import { applyEnabledFeatures, getFeatureStates, FEATURES } from './features.js';
+// modify.js and updater.js import this module back. Both are function-only
+// imports, used at call time, so the cycle is safe in either load order.
+import { modify } from './modify.js';
+import { update } from './updater.js';
+import { applyEnabledPluginsDetailed } from './plugins.js';
+import { resolveSelected } from './providers.js';
+import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { readManifest, captureBaselines } from './injection-core.js';
 import { allMigrationIds } from './migrations.js';
 
-/**
- * Paths that survive an overwrite. This is the single definition of "never
- * delete this" for BOTH install and update — updater.js imports it rather than
- * keeping a copy, because two definitions will diverge and the one that
- * diverges deletes someone's session history.
- */
-export const PRESERVE_PATTERNS = [/\/history\//, /\.local\.json$/, /(^|\/)\.codeadd\/baselines\//];
-
-/**
- * @param {string} relPath  path relative to the install root
- * @returns {boolean}
- */
-export function shouldPreserve(relPath) {
-  return PRESERVE_PATTERNS.some((p) => p.test(relPath));
-}
+// The single definition of "never delete this" lives in release-copy.js, next to
+// the copy and prune passes that apply it. Re-exported so importers of this
+// module (updater.js, the tests) do not change.
+export { PRESERVE_PATTERNS, shouldPreserve };
 
 /**
  * Force LF line endings on all .sh files under a directory.
@@ -174,38 +168,19 @@ function dirExists(dir) {
 }
 
 /**
- * Copy entries from zip that match a source prefix to a destination directory.
- * The release asset zip uses `framwork/` prefix (e.g. "framwork/.claude/commands/add.md").
- * Returns array of relative paths (from cwd) of files copied.
- *
- * @param {AdmZip} zip
- * @param {string} srcPrefix path inside zip (e.g. "framwork/.codeadd")
- * @param {string} destDir   absolute destination directory
- * @param {string} cwd       project root
- * @returns {string[]}
+ * What the install menu shows about the installation already in `targetDir`.
+ * @param {string} targetDir
+ * @param {object} manifest
+ * @returns {{version: string, scope: string, providers: string[], features: string[], plugins: string[]}}
  */
-function copyFromZip(zip, srcPrefix, destDir, cwd) {
-  const copied = [];
-  const prefix = `${srcPrefix}/`;
-
-  for (const entry of zip.getEntries()) {
-    if (!entry.entryName.startsWith(prefix)) continue;
-    if (entry.isDirectory) continue;
-
-    const relativeToDest = entry.entryName.slice(prefix.length);
-    if (!relativeToDest) continue;
-
-    const destFile = path.join(destDir, relativeToDest);
-    const destFileDir = path.dirname(destFile);
-
-    fs.mkdirSync(destFileDir, { recursive: true });
-    fs.writeFileSync(destFile, entry.getData());
-
-    const relFromCwd = path.relative(cwd, destFile).replace(/\\/g, '/');
-    copied.push(relFromCwd);
-  }
-
-  return copied;
+function describeInstall(targetDir, manifest) {
+  return {
+    version: manifest.version ?? 'unknown',
+    scope: manifest.scope ?? 'project',
+    providers: manifest.providers ?? [],
+    features: getFeatureStates(targetDir).filter((f) => f.enabled).map((f) => f.name),
+    plugins: Object.entries(manifest.plugins ?? {}).filter(([, s]) => s?.enabled).map(([name]) => name),
+  };
 }
 
 /**
@@ -219,6 +194,32 @@ export async function install(cwd, options = {}) {
   // --global forces global scope; otherwise prompt (defaults to project).
   const scope = options.global ? 'global' : await promptScope();
   const targetDir = scope === 'global' ? os.homedir() : cwd;
+
+  // An installation is already here: show it and ask, BEFORE anything is resolved
+  // or written. A reinstall resets features and plugins and deletes the files of any
+  // provider not re-ticked, so it is one choice among four rather than the only road.
+  const existing = readManifest(targetDir);
+  if (existing) {
+    const choice = await promptExistingInstall(describeInstall(targetDir, existing));
+    // The manifest's scope is authoritative for Modify and Update, as `update()` already treats it.
+    const installScope = existing.scope ?? scope;
+    if (choice === 'cancel') {
+      outro('Cancelled. Nothing was changed.');
+      return;
+    }
+    if (choice === 'modify') {
+      if (options.version || options.channel) {
+        log.info('--version and --channel are ignored by Modify: it never changes the installed version. Use Update for that.');
+      }
+      await modify(targetDir, [], installScope);
+      return;
+    }
+    if (choice === 'update') {
+      await update(targetDir, { version: options.version, channel: options.channel }, installScope);
+      return;
+    }
+    // 'reinstall' continues into today's flow, behind its own overwrite confirmation.
+  }
 
   const channel = options.channel || 'stable';
 
@@ -267,23 +268,9 @@ export async function install(cwd, options = {}) {
   s.start('Installing...');
   const zip = new AdmZip(zipBuffer);
 
-  const allFiles = [];
-
-  const coreFiles = copyFromZip(zip, 'framwork/.codeadd', addDir, targetDir);
-  allFiles.push(...coreFiles);
-
-  for (const p of providers) {
-    const destDir = path.join(targetDir, p.dest);
-    const pFiles = copyFromZip(zip, p.src, destDir, targetDir);
-    allFiles.push(...pFiles);
-
-    // A provider whose agents live outside its main root (Codex: skills under
-    // .agents/, agents under .codex/agents/) needs a second copy pass.
-    if (p.agentsSrc) {
-      const agentDir = path.join(targetDir, agentDest(p));
-      allFiles.push(...copyFromZip(zip, p.agentsSrc, agentDir, targetDir));
-    }
-  }
+  // Install copies everything: a reinstall overwrites even the preserved paths'
+  // release counterparts. Update is the one that passes skipPreserved.
+  const allFiles = copyRelease(zip, targetDir, providers, { skipPreserved: false });
 
   s.stop(`Installed ${allFiles.length} files.`);
 
@@ -298,20 +285,7 @@ export async function install(cwd, options = {}) {
   // Mirror of the update-path prune (updater.js): anything the prior install
   // wrote that this one did not is obsolete. Same shared preservation rules.
   if (priorManifest) {
-    const written = new Set(allFiles);
-    let removed = 0;
-    for (const old of priorManifest.files ?? []) {
-      if (written.has(old) || shouldPreserve(old)) continue;
-      try {
-        const full = path.join(targetDir, old);
-        if (fs.existsSync(full)) {
-          fs.unlinkSync(full);
-          removed++;
-        }
-      } catch {
-        // A file we cannot remove is not worth failing an install over.
-      }
-    }
+    const removed = pruneObsolete(targetDir, priorManifest.files ?? [], allFiles);
     if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
   }
 
@@ -351,10 +325,11 @@ export async function install(cwd, options = {}) {
   log.info('The tdd-pipeline feature is enabled by default. Run `codeadd features` to adjust.');
 
   // Apply enabled plugins (disabled by default — no-op on fresh install)
-  const pluginsApplied = applyEnabledPlugins(targetDir);
-  if (pluginsApplied > 0) {
-    log.success(`Applied ${pluginsApplied} plugin injection(s).`);
+  const plugins = applyEnabledPluginsDetailed(targetDir);
+  if (plugins.modified > 0) {
+    log.success(`Applied ${plugins.modified} plugin injection(s).`);
   }
+  reportNotDetectedPlugins(plugins.notDetected);
 
   const enabledFeatures = Object.entries(defaultFeatures)
     .filter(([, v]) => v)
@@ -380,6 +355,25 @@ export async function install(cwd, options = {}) {
       `  2. Ask what you want to build\n\n` +
       `Docs: https://github.com/brabos-ai/code-addiction`
   );
+}
+
+/**
+ * Say which enabled plugins could not be applied because their tool is not
+ * detected.
+ *
+ * Shared by install, update and modify so all three use one wording. (Install
+ * calls it too, but a reinstall resets `plugins` to `{}` first, so today it has
+ * nothing to report there; the call keeps the wording in one place.) A plugin
+ * in this list stays enabled in the manifest; the line says it did not reach
+ * ANY provider, not just a new one, because a recopy erases its old injections
+ * too.
+ *
+ * @param {string[]} notDetected  plugin names from applyEnabledPluginsDetailed()
+ */
+export function reportNotDetectedPlugins(notDetected) {
+  for (const name of notDetected) {
+    log.warn(`plugin ${name} is enabled but not applied to any provider (tool not detected)`);
+  }
 }
 
 /**

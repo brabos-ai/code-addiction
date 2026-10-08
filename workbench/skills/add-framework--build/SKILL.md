@@ -140,7 +140,8 @@ empty — the only file it may have touched there is the gitignored `artefact-gr
 ## Operation Mode
 
 ```
-/add-framework--build [plan]           → Execute a plan (full basename or unique slug substring)
+/add-framework--build [plan]           → Execute a plan (full basename, unique slug substring, or a plain path)
+/add-framework--build docs/plans/<basename>.md   → The same, by the path a closing printed
 /add-framework--build [type] [name]    → Direct build, no plan, for simple artefacts
 ```
 
@@ -149,6 +150,9 @@ empty — the only file it may have touched there is the gitignored `artefact-gr
 `map` is `AGENTS.md` itself. Its direct form takes the file and a description rather than a type and
 a name: `/add-framework--build AGENTS.md "update the pipeline section"`. A bare artefact name works
 the same way for any existing artefact — the path resolves it, and the path decides the layer.
+
+**Telling the two forms apart:** an argument that resolves to a plan under `docs/plans/` is planned
+mode. Any other path or name is the direct form.
 
 To optimize an existing artefact, use the direct form — STEP 2 detects it already exists and presents
 the analysis against `building-commands` before any edit.
@@ -660,7 +664,10 @@ Then, after the seven blocks and before the metadata, report always:
   `in-review` here) the `SHA`, that it was already there, that STEP 9's answer skipped it, or what did not
   happen.
 
-Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block.
+Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the
+last line, the next command in the form `add-final-report` owns under **The Continuation Line**:
+`/add-framework--done <the plan path resolved at STEP 1.1>`. A direct build has no plan to point at,
+so it prints no such line. The line is only printed — this build never loads `/add-framework--done`.
 
 ---
 

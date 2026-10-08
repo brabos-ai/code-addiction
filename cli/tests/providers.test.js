@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected, globalCapable, agentDest } from '../src/providers.js';
+import { PROVIDERS, PROVIDER_PRIORITY, resolveSelected, globalCapable, agentDest, ownedRoots, exclusiveFiles } from '../src/providers.js';
 
 describe('PROVIDERS', () => {
   it('contains exactly the 6 MCP-capable provider keys', () => {
@@ -128,5 +128,67 @@ describe('globalCapable', () => {
 
   it('is false for unknown keys', () => {
     expect(globalCapable('nope')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ownedRoots / exclusiveFiles — which files a provider removal may delete (L1.1)
+// ---------------------------------------------------------------------------
+describe('ownedRoots', () => {
+  it('returns dest and the agent root, without repeating a shared one', () => {
+    expect(ownedRoots(resolveSelected(['claude'])[0])).toEqual(['.claude']);
+    expect(ownedRoots(resolveSelected(['codex'])[0])).toEqual(['.agents', '.codex']);
+    expect(ownedRoots(resolveSelected(['zcode'])[0])).toEqual(['.agents', '.zcode']);
+  });
+
+  it('uses the scope-resolved dest in global scope', () => {
+    expect(ownedRoots(resolveSelected(['opencode'], 'global')[0])).toEqual(['.config/opencode']);
+  });
+});
+
+describe('exclusiveFiles (L1.1)', () => {
+  const files = [
+    '.codeadd/core.md',
+    '.claude/commands/a.md',
+    '.agents/skills/x/SKILL.md',
+    '.codex/agents/a.toml',
+    '.zcode/agents/a.md',
+    '.cursor/commands/a.md',
+    '.cursor/skills/x/SKILL.md',
+    '.opencode/commands/a.md',
+    '.config/opencode/commands/a.md',
+  ];
+  const sel = (keys, scope) => resolveSelected(keys, scope);
+
+  it('removing codex with zcode remaining returns .codex/** and not the shared .agents/**', () => {
+    expect(exclusiveFiles(files, sel(['codex']), sel(['claude', 'zcode']))).toEqual(['.codex/agents/a.toml']);
+  });
+
+  it('removing zcode with codex remaining returns .zcode/** only', () => {
+    expect(exclusiveFiles(files, sel(['zcode']), sel(['claude', 'codex']))).toEqual(['.zcode/agents/a.md']);
+  });
+
+  it('removing codex with nobody sharing .agents returns .agents/** too', () => {
+    expect(exclusiveFiles(files, sel(['codex']), sel(['claude'])).sort()).toEqual([
+      '.agents/skills/x/SKILL.md',
+      '.codex/agents/a.toml',
+    ]);
+  });
+
+  it('removing cursor returns every .cursor/** file and nothing else', () => {
+    expect(exclusiveFiles(files, sel(['cursor']), sel(['claude']))).toEqual([
+      '.cursor/commands/a.md',
+      '.cursor/skills/x/SKILL.md',
+    ]);
+  });
+
+  it('does not match a sibling directory that only shares a name prefix', () => {
+    expect(exclusiveFiles(['.claude-extra/a.md', '.claude/a.md'], sel(['claude']), [])).toEqual(['.claude/a.md']);
+  });
+
+  it('in global scope removing opencode returns .config/opencode/**, not .opencode/**', () => {
+    expect(exclusiveFiles(files, sel(['opencode'], 'global'), sel(['claude'], 'global'))).toEqual([
+      '.config/opencode/commands/a.md',
+    ]);
   });
 });

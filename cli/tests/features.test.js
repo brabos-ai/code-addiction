@@ -7,6 +7,9 @@ const mockPromptFeatures = vi.hoisted(() => vi.fn());
 
 vi.mock('../src/prompt.js', () => ({
   promptFeatures: mockPromptFeatures,
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('@clack/prompts', async (importOriginal) => {

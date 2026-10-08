@@ -6,6 +6,9 @@ import { readManifest } from '../src/uninstaller.js';
 
 vi.mock('../src/prompt.js', () => ({
   promptConfirm: vi.fn().mockResolvedValue(undefined),
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),

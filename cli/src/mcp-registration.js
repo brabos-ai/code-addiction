@@ -138,6 +138,64 @@ export function registerProvider(cwd, providerKey, version, corpus = 'docs') {
   return { provider: providerKey, status: 'written', file: config.file, line };
 }
 
+/** The line a user can follow by hand when this does not edit the config. */
+function removalLine(file) {
+  return `remove the "${SERVER_NAME}" entry from ${file ?? 'your MCP configuration'}`;
+}
+
+/**
+ * Remove codeadd's server from one provider's configuration — the mirror of
+ * `registerProvider`, used when a provider is removed from an installation.
+ *
+ * Only `SERVER_NAME` goes. Every other server and every other field stays, and
+ * an emptied `mcpServers` / `mcp` object stays as an empty object rather than
+ * being dropped: this deletes one key, it does not tidy the user's file.
+ *
+ * Where `registerProvider` prints rather than writes (TOML, a provider with no
+ * entry in MCP_CONFIG) this prints too, and a config it cannot read is NOT
+ * touched — writing back `{}` would delete every server the user configured.
+ *
+ * NEVER THROWS, for the same reason `writeMcpRegistration` does not.
+ *
+ * @returns {{provider: string, status: 'removed'|'absent'|'print'|'unreadable', file: string|null, line: string}}
+ */
+export function unregisterProvider(cwd, providerKey) {
+  const config = MCP_CONFIG[providerKey];
+  if (!config || config.format === 'toml') {
+    return { provider: providerKey, status: 'print', file: config?.file ?? null, line: removalLine(config?.file) };
+  }
+
+  const result = (status) => ({ provider: providerKey, status, file: config.file, line: removalLine(config.file) });
+
+  try {
+    const file = path.join(cwd, config.file);
+    const current = readJson(file);
+    if (current === null) return result('unreadable');
+
+    let next;
+    if (config.format === 'mcpServers') {
+      if (!current.mcpServers || !(SERVER_NAME in current.mcpServers)) return result('absent');
+      const { [SERVER_NAME]: _gone, ...rest } = current.mcpServers;
+      next = { ...current, mcpServers: rest };
+    } else if (config.format === 'mcp.servers') {
+      if (!current.mcp?.servers || !(SERVER_NAME in current.mcp.servers)) return result('absent');
+      const { [SERVER_NAME]: _gone, ...rest } = current.mcp.servers;
+      next = { ...current, mcp: { ...current.mcp, servers: rest } };
+    } else {
+      // opencode: servers sit directly under `mcp`.
+      if (!current.mcp || !(SERVER_NAME in current.mcp)) return result('absent');
+      const { [SERVER_NAME]: _gone, ...rest } = current.mcp;
+      next = { ...current, mcp: rest };
+    }
+
+    writeJson(file, next);
+    return result('removed');
+  } catch {
+    // A config this cannot write degrades to a printed line, like registration.
+    return result('print');
+  }
+}
+
 /**
  * Register for every selected provider.
  *

@@ -129,6 +129,46 @@ export function agentDest(p) {
 }
 
 /**
+ * The directory roots a provider writes into: its `dest` and, when agents live
+ * elsewhere, the agent root. Codex and ZCode both own `.agents`, so a shared
+ * root appears in both providers' answers — that is what `exclusiveFiles` uses
+ * to tell a removable file from one a remaining provider still needs.
+ * @param {{dest: string, agentsDest?: string}} p  a resolveSelected() entry, so `dest` is already the scope's root
+ * @returns {string[]}
+ */
+export function ownedRoots(p) {
+  return [...new Set([p.dest, agentDest(p)])];
+}
+
+/**
+ * Whether `file` is `root` itself or sits under it. A bare prefix test would
+ * match `.claude-extra/` against `.claude`.
+ */
+function isUnder(file, root) {
+  return file === root || file.startsWith(`${root}/`);
+}
+
+/**
+ * The manifest files a provider removal may delete: those under a removed
+ * provider's roots and under no remaining provider's root.
+ *
+ * Computable from the manifest alone, with no zip — which is why removal never
+ * needs a download.
+ *
+ * @param {string[]} files  manifest `files`, paths relative to the install root with `/`
+ * @param {object[]} removedProviders    resolveSelected() entries
+ * @param {object[]} remainingProviders  resolveSelected() entries
+ * @returns {string[]}
+ */
+export function exclusiveFiles(files, removedProviders, remainingProviders) {
+  const removedRoots = removedProviders.flatMap(ownedRoots);
+  const keptRoots = remainingProviders.flatMap(ownedRoots);
+  return files.filter(
+    (file) => removedRoots.some((r) => isUnder(file, r)) && !keptRoots.some((r) => isUnder(file, r)),
+  );
+}
+
+/**
  * Whether a provider supports a user-level/global install.
  * @param {string} key
  * @returns {boolean}

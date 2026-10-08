@@ -20,6 +20,9 @@ vi.mock('../src/github.js', () => ({
 vi.mock('../src/prompt.js', () => ({
   promptProviders: vi.fn(),
   promptConfirm: vi.fn(),
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('@clack/prompts', () => ({
@@ -29,6 +32,7 @@ vi.mock('@clack/prompts', () => ({
   log: { success: vi.fn(), warn: vi.fn() },
 }));
 
+import { log } from '@clack/prompts';
 import { update } from '../src/updater.js';
 
 function buildZip() {
@@ -55,6 +59,43 @@ beforeEach(() => {
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
   vi.clearAllMocks();
+});
+
+describe('update command — a plugin whose tool is not detected (L2.10)', () => {
+  afterEach(() => {
+    delete process.env.CODEADD_PLUGINS_CATALOG;
+  });
+
+  const catalogWith = (detect) => {
+    const file = path.join(tmpDir, 'catalog.json');
+    fs.writeFileSync(file, JSON.stringify({ gx: { type: 'mcp', description: 'g', detect, injects: [], skills: [] } }));
+    process.env.CODEADD_PLUGINS_CATALOG = file;
+  };
+
+  it('says the plugin is enabled but not applied, and keeps it enabled in the manifest', async () => {
+    catalogWith('false');
+    writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', providers: [], plugins: { gx: { enabled: true } } });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    expect(log.warn).toHaveBeenCalledWith('plugin gx is enabled but not applied to any provider (tool not detected)');
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    expect(manifest.plugins.gx).toEqual({ enabled: true });
+  });
+
+  it('stays quiet about a plugin whose tool is detected', async () => {
+    catalogWith('node -e "process.exit(0)"');
+    writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', providers: [], plugins: { gx: { enabled: true } } });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    const warned = log.warn.mock.calls.map((c) => c[0]).filter((m) => /not applied to any provider/.test(m));
+    expect(warned).toEqual([]);
+  });
 });
 
 describe('update command', () => {

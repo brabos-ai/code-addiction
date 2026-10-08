@@ -19,6 +19,9 @@ vi.mock('../src/prompt.js', () => ({
   promptFeatures: mocks.promptFeatures,
   promptConfirm: mocks.promptConfirm,
   promptGitignore: mocks.promptGitignore,
+  promptExistingInstall: vi.fn(),
+  promptModify: vi.fn(),
+  promptApplyDiff: vi.fn(),
 }));
 
 vi.mock('@clack/prompts', () => ({

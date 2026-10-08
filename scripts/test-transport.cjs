@@ -69,7 +69,9 @@ function pack(root, names, file, scratch) {
   const staged = fs.mkdtempSync(path.join(scratch, 'pack-'));
   try {
     for (const name of names) { const dest = path.join(staged, name); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.copyFileSync(path.join(root, name), dest); }
-    command('tar', ['-c', '-f', file, '.'], { cwd: staged });
+    // GNU tar reads `C:` in `-f C:\x.tar` as a remote host, so the archive goes through stdout into a file we opened ourselves.
+    const fd = fs.openSync(file, 'w');
+    try { command('tar', ['-c', '-f', '-', '.'], { cwd: staged, stdio: ['ignore', fd, 'pipe'] }); } finally { fs.closeSync(fd); }
   } finally { fs.rmSync(staged, { recursive: true, force: true }); }
 }
 function exportStatus(code, failed) { return code !== 0 ? code : failed ? 2 : 0; }

@@ -619,7 +619,7 @@ write NOT VERIFIED where the question could not be asked.]
 
 ## Next Steps
 
-Run: `/add-framework--plan [idea]`
+Run: `/add-framework--plan docs/brainstorming/<this design document's own filename>`
 ```
 
 **For umbrella specs:**
@@ -790,25 +790,32 @@ is a recommendation, and keeping it is a new request with its own classification
 
 #### Then route
 
-**Name both files in the handoff**, verbatim, whichever this path wrote. The planning stage reads
-`docs/brainstorming/` and needs to know which file — a handoff naming only the idea leaves it matching
-a topic against a directory of timestamped basenames, and in Continue Mode that directory holds a
-whole set sharing one timestamp.
+**Name the intent file as the command's argument, and the design as a reference**, verbatim, whichever
+this path wrote. The planning stage reads `docs/brainstorming/` and needs to know which file — a
+handoff naming only the idea leaves it matching a topic against a directory of timestamped basenames,
+and in Continue Mode that directory holds a whole set sharing one timestamp.
 
-On `delivery: confirm` and `architectural`, print this and STOP:
+The command line is the intent file's own path, in the form `add-final-report` owns under
+**The Continuation Line**. Run `test -f` on the intent file written above, and print the line only
+when it exists. On `delivery: confirm` and `architectural`, print this and STOP:
 
 ```
-Idea is ready to formalize. Run: /add-framework--plan [idea]
+Idea is ready to formalize.
 Design: docs/brainstorming/<the file written at 5.3>
-Intent: docs/brainstorming/<the intent file written above>
 (brainstorm stops here — it does not run the next stage for you.)
+/add-framework--plan docs/brainstorming/<the intent file written above>
 ```
 
-On `bounded`, there is no design document, so that line is omitted and the `Intent:` line stands alone.
+The command is the last line, spelled for the provider as **The Continuation Line** says. The `Design:`
+line stays as a reference; it is not an argument. On an umbrella spec, print 7.4's refinement offer
+just above the stop line, so the command is still the last line.
 
-On `delivery: automatic`, print the same lines with the last one reading `(delivering automatically —
+On `bounded`, there is no design document, so the `Design:` line is omitted and the command line
+stands alone after the stop line.
+
+On `delivery: automatic`, print the same lines with the stop line reading `(delivering automatically —
 the build will ask before opening the PR.)`, then load `/add-framework--plan` with the intent file as
-its argument and continue there.
+its argument and continue there. The command line is still printed before the load.
 
 ⛔ **On `spike`, do NOT route to the planner at all.** A spike’s terminal state is its recommendation.
 Sending it to a full planning pass contradicts this skill’s own ratchet — `2.2.3` already says a

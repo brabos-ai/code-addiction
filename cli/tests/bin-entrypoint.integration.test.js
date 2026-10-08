@@ -60,6 +60,69 @@ describe('bin entrypoint (process level)', () => {
     expect(result.stdout).toContain('Missing value for --version');
   });
 
+  it('help lists the providers and modify commands (L3.3)', () => {
+    const result = runNode(BIN, ['--help']);
+    expect(result.status).toBe(0);
+    for (const line of [
+      'providers list',
+      'providers add <name>',
+      'providers remove <name>',
+      'modify',
+      'npx codeadd providers add cursor',
+      'npx codeadd modify',
+    ]) {
+      expect(result.stdout, line).toContain(line);
+    }
+  });
+
+  describe('routing', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-route-'));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-route-home-'));
+    afterAll(() => {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(home, { recursive: true, force: true });
+    });
+
+    const writeManifest = (dir, manifest) => {
+      fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+      fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify(manifest));
+    };
+
+    const run = (args) =>
+      spawnSync(process.execPath, [BIN, ...args], {
+        encoding: 'utf8',
+        timeout: 30000,
+        cwd: project,
+        env: { ...CHILD_ENV, HOME: home, USERPROFILE: home },
+      });
+
+    it.each([['providers', ['providers', 'list']], ['modify', ['modify']]])(
+      '%s is routed, not treated as an unknown command',
+      (_name, args) => {
+        const result = run(args);
+        expect(result.stdout).not.toContain(USAGE);
+        expect(result.stdout).toContain('No ADD installation found');
+        expect(result.status).toBe(1);
+      },
+    );
+
+    it('providers list reads the project installation', () => {
+      writeManifest(project, { version: '1.0.0', scope: 'project', providers: ['cursor'] });
+      const result = run(['providers', 'list']);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toMatch(/● cursor/);
+      expect(result.stdout).toMatch(/○ claude/);
+    });
+
+    it('providers list --global reads the home installation, not the project one', () => {
+      writeManifest(home, { version: '1.0.0', scope: 'global', providers: ['claude'] });
+      const result = run(['providers', 'list', '--global']);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toMatch(/● claude/);
+      expect(result.stdout).not.toMatch(/cursor/);
+    });
+  });
+
   it('importing src/cli.js dispatches nothing and prints nothing', () => {
     const result = spawnSync(
       process.execPath,
