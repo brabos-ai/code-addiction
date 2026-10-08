@@ -378,7 +378,7 @@ describe('L3 the command and skill texts that held the duty', () => {
     expect(item1).toContain('scripts/inventory.js');
     expect(item1).toMatch(/commit/i);
     expect(item1).toMatch(/push/i);
-    expect(list.slice(list.indexOf('\n2. '))).toMatch(/working tree must be clean/i);
+    expect(list.slice(list.indexOf('\n2. '))).toMatch(/no tracked file may have uncommitted changes/i);
   });
 
   it('L3.2 add-framework-product-layer lost both AGENTS.md sections and stopped there', () => {
