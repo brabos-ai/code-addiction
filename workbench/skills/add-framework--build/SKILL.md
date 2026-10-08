@@ -302,6 +302,7 @@ Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 `doing` write. `add-plan-authoring` owns when it is skipped, how it is made and every degradation, under
 **The Ticket** — load it rather than acting from memory. Not before this point:
 a ticket marked `doing` for a build that stopped at STEP 2 is a claim the board cannot take back.
+A "do not push" instruction covers the branch and the PR and never skips this write.
 
 ### 5.2 One F-Block at a Time
 
@@ -651,10 +652,10 @@ The close-out runs only when the operator invokes it.
 
 ## STEP 10: Completion
 
-**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**`, read
-STEP 9's answer. A PR opened, or one that already existed and was pushed to, writes `in-review`. **"No"
-writes nothing:** the close-out then opens the PR and merges it in one run, and the ticket goes `doing` →
-`done`. **The Ticket** in `add-plan-authoring` owns the rules.
+**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**` and every
+F-block of the plan has its `complete` line, write `in-review` — whatever STEP 9 answered, "no" included. The
+close-out may run days later, and the work is finished and waiting. A build that stopped before the last
+F-block writes none. **The Ticket** in `add-plan-authoring` owns the rules.
 
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
@@ -682,7 +683,7 @@ Then, after the seven blocks and before the metadata, report always:
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
 - **The ticket, when the plan carried one** — the id, and for EACH of its two writes (`doing` at 5.1,
-  `in-review` here) the `SHA`, that it was already there, that STEP 9's answer skipped it, or what did not
+  `in-review` here) the `SHA`, that it was already there, that the build stopped before its last F-block, or what did not
   happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the
