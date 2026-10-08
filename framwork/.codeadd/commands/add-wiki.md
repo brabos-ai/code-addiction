@@ -56,7 +56,7 @@ IF invoked as `/add-wiki update`:
   ⛔ DO NOT: Regenerate the Technical Spec section
   ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
   ⛔ DO NOT: Dispatch the STEP add-wiki.agents-md agent for anything beyond items 1, 4, 5 and 6
-  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
+  ✅ DO: Migrate (STEP add-wiki.run-migration), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
 ```
 
 Update mode is surgical everywhere else, and it stays surgical here.
@@ -218,7 +218,7 @@ IF tiny:
     (primary classification first); every other area → Backlog entry
   - The spine analyzer runs in FOLD mode (returns sections instead of
     writing files — see STEP add-wiki.spine-analyzer-new); no spine files are written
-ELSE: standard — full plan as built in 2.3.
+ELSE: standard — full plan as built in STEP add-wiki.build-dispatch-plan.
 ```
 
 ### STEP add-wiki.create-output-directory Create Output Directory
@@ -746,7 +746,7 @@ landed once.
 IF A CHECK BELOW FAILS:
   ⛔ DO NOT: Write a CLAUDE.md or a GEMINI.md to make up for it
   ⛔ DO NOT: Proceed to STEP add-wiki.meta
-  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (6.1 for a leftover file, STEP add-wiki.dispatch-updater for a block), then check again
+  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (STEP add-wiki.run-migration for a leftover file, STEP add-wiki.dispatch-updater for a block), then check again
 ```
 
 - [ ] AGENTS.md exists at the project root
