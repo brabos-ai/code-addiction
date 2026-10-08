@@ -241,6 +241,17 @@ IF `--fix` WAS GIVEN:
 
 A fix is what its commits are, so the gate asks only that there is something to close out, and that the record is about this head; CI at 2.3 is its real validation.
 
+**The test-loss gate — last in 2.2, on the normal path and on `--fix`.** Run `git fetch origin main`, then `node scripts/test-loss-guard.cjs`. The script never fetches, and a stale `origin/main` can make a test that `main` itself deleted read as lost. Its header owns the output and the exit codes.
+
+```
+IF THE GUARD PRINTS GUARD=fail:
+  ⛔ DO NOT: Continue to 2.3
+  ⛔ DO NOT: Restore a test or write a `Test-Removed:` trailer here — which removals were decided belongs to the build and the operator
+  ✅ DO: Report each LOST_TEST line and STOP
+```
+
+It does not run on the recovery path (2.4): the work is already merged and there is no branch left to compare. It runs on the resume path (2.5). A loss that a `Test-Removed:` trailer covers prints as `NOTED_TEST` and does not stop the gate; STEP 9 names each one.
+
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
 CI runs the framework and board gates, on Ubuntu with Node 22.19.0.
@@ -702,6 +713,7 @@ Then, after the seven blocks and before the metadata, report always:
   STEP 8 composed — as text the operator runs, never as something this skill ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
+- **The test-loss gate** — its `GUARD` result, and every `NOTED_TEST` line it printed. "None" is stated, never omitted
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
