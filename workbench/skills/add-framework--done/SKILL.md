@@ -36,7 +36,7 @@ Closes out a delivered plan in **either layer** — or, with `--fix`, a plan-les
 
 **STEPS IN ORDER:**
 STEP 1: Collect context           → branch, plan (the fix record with --fix), ledger, diff, `gh auth status`
-STEP 2: Gates                     → ledger complete (the fix gate with --fix) + CI green on THIS sha [HARD STOP]
+STEP 2: Gates                     → ledger complete (the fix gate with --fix) + test-loss guard + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
@@ -241,6 +241,19 @@ IF `--fix` WAS GIVEN:
 
 A fix is what its commits are, so the gate asks only that there is something to close out, and that the record is about this head; CI at 2.3 is its real validation.
 
+**The test-loss gate — last in 2.2, on the normal path and on `--fix`.** Run `git fetch origin main`, then `node scripts/test-loss-guard.cjs`. The script never fetches, and a stale `origin/main` can make a test that `main` itself deleted read as lost. Its header owns the output and the exit codes.
+
+```
+IF THE GUARD PRINTS GUARD=fail:
+  ⛔ DO NOT: Continue to 2.3
+  ⛔ DO NOT: Restore a test or write a `Test-Removed:` trailer here — which removals were decided belongs to the build and the operator
+  ✅ DO: Report each LOST_TEST line and STOP
+```
+
+On `--fix` there is no build to answer it either. Say so in the report: the operator restores the test, or adds a `Test-Removed:` trailer in an empty commit, and runs this close-out again.
+
+It does not run on the recovery path (2.4): the work is already merged and there is no branch left to compare. It runs on the resume path (2.5). A loss that a `Test-Removed:` trailer covers prints as `NOTED_TEST` and does not stop the gate; STEP 9 names each one.
+
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
 CI runs the framework and board gates, on Ubuntu with Node 22.19.0.
@@ -291,7 +304,7 @@ one machine is still one machine.
 
 ### 2.4 The Recovery Path — merged, never indexed
 
-Reached only from 2.1's bottom row. **Every gate above still applies in full** — a delivery is not
+Reached only from 2.1's bottom row. **Every gate above still applies in full, except the test-loss gate in 2.2** — a delivery is not
 exempt from them because someone merged early. What changes is where the evidence lives and what is
 left to do:
 
@@ -300,6 +313,7 @@ left to do:
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
 | 1.3 | `git diff --name-status main...HEAD` | `git diff --name-status <merge-commit>^1 <merge-commit>` — the first-parent diff, which is the whole delivery |
 | 2.2 | The ledger gate | Unchanged. It still hard-stops |
+| 2.2 | The test-loss gate | Skipped — the work is merged and no branch is left to compare |
 | 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
@@ -702,6 +716,7 @@ Then, after the seven blocks and before the metadata, report always:
   STEP 8 composed — as text the operator runs, never as something this skill ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
+- **The test-loss gate** — its `GUARD` result, and every `NOTED_TEST` line it printed. "None" is stated, never omitted
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
