@@ -313,10 +313,9 @@ whole, after the seven blocks and before the metadata. Plain facts fold into the
 IF WRITING OR REVISING A COMMAND'S CLOSING STEP:
   ⛔ DO NOT: Invent a fact list for it
   ⛔ DO NOT: Drop a fact the step already demanded to make room for the shape
-  ⛔ DO NOT: Load the skill at STEP 1 of a run that is still going — it is needed at the end, and a
-             shape carried through fifteen steps is a shape the agent no longer has
+  ⛔ DO NOT: Load the skill at STEP 1 — it is needed at the end, and a shape carried
+             through fifteen steps is a shape the agent no longer has
   ✅ DO: Load add-final-report at that step and fill its blocks
-  ✅ DO: Also load it at any STOP or early exit, at whatever step — a stop is a closing too
 ```
 
 **Two commands are exempt, and only these two.** `add.md` routes to another command and `add-ux`
@@ -661,4 +660,4 @@ runs. Two things belong here, because they are properties of the ruler rather th
 | "DETECT LANGUAGE" blocks after LANG header | Remove — LANG header is sufficient |
 | `{"do":[...],"dont":[...]}` for rules | Use ALWAYS/NEVER markdown |
 | Closing step with its own invented fact list | Load `add-final-report` and fill its blocks |
-| Loading `add-final-report` at STEP 1 of a run that is still going | Load it at the closing step, and at any STOP or early exit |
+| Loading `add-final-report` at STEP 1 | Load it at the closing step, where it is used |

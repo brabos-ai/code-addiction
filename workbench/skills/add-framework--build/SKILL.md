@@ -50,8 +50,6 @@ STEP 10: Completion           → summary + EVERY ruling made
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
-On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
-
 ```
 IF PLAN / CONTEXT NOT LOADED (STEP 1 incomplete):
   ⛔ DO NOT USE: Write or Edit anywhere
@@ -667,7 +665,7 @@ Then, after the seven blocks and before the metadata, report always:
   happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the
-last line (before the result block, in `both` mode), the next command in the form `add-final-report` owns under **The Continuation Line**:
+last line, the next command in the form `add-final-report` owns under **The Continuation Line**:
 `/add-framework--done <the plan path resolved at STEP 1.1>`. A direct build has no plan to point at,
 so it prints no such line. The line is only printed — this build never loads `/add-framework--done`.
 

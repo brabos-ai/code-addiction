@@ -47,8 +47,6 @@ STEP 9: Completion                → what was written, merged, removed and skip
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
-On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
-
 IF `gh auth status` FAILED (STEP 1 not complete):
   ⛔ DO NOT USE: Write on docs/delivered.jsonl
   ⛔ DO NOT USE: Write on docs/changelog/

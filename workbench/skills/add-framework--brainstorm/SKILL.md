@@ -67,8 +67,6 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP 7.3:
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
-On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
-
 ```
 IF USER ASKS OPEN-ENDED QUESTION DURING STEP 4:
   ⛔ DO NOT MOVE TO STEP 5 (document generation)
@@ -808,7 +806,7 @@ Design: docs/brainstorming/<the file written at 5.3>
 /add-framework--plan docs/brainstorming/<the intent file written above>
 ```
 
-The command is the last line (before the result block, in `both` mode), spelled for the provider as **The Continuation Line** says. The `Design:`
+The command is the last line, spelled for the provider as **The Continuation Line** says. The `Design:`
 line stays as a reference; it is not an argument. On an umbrella spec, print 7.4's refinement offer
 just above the stop line, so the command is still the last line.
 

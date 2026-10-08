@@ -86,7 +86,6 @@ Development tools that build and maintain the framework itself. **It has a provi
 | Type | Path |
 |------|------|
 | Registry | `workbench/provider-map.json` — its own, targeting claude, codex and opencode. NEVER `framwork/provider-map.json` |
-| Settings | `workbench/settings.json` — the repo's workbench config, tracked. Read by `scripts/output-mode.js` |
 | Commands | `workbench/commands/*.md` — flat namespace `add-framework--*`, no sub-prefix |
 | Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
@@ -177,8 +176,6 @@ Key files:
 | `framwork/provider-map.json` | Single registry of every command, skill, agent and its provider distribution |
 | `scripts/build.js` | Compiles `.codeadd/` source → 15 provider output dirs, and emits the sidecars |
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
-| `scripts/output-mode.js` | Resolves the workbench output mode a stage closes in. `add-final-report` owns the contract |
-| `workbench/settings.json` | The repository's workbench config, tracked. The resolver reads it |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Owns supported test dispatch: framework default, individual suites, all, watch and report export; its header defines execution policy |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
