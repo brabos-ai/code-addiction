@@ -136,7 +136,7 @@ test('add-final-report is back to its last-step load rule, and building-commands
 
 test('the call doc points at the schema file and says how to pass it to the CLI', () => {
   const doc = read('workbench/skills/add-final-report/references/result-block.md');
-  for (const needle of ['result-block.schema.json', '--output-format json', '--json-schema']) assert.ok(doc.includes(needle), needle);
+  for (const needle of ['result-block.schema.json', '--output-format json', '--json-schema', 'structured_output']) assert.ok(doc.includes(needle), needle);
   assert.match(doc, /path is not accepted/i);
   assert.ok(doc.includes("-replace '\"','\\\"'"), 'PowerShell 5.1 escape');
   assert.doesNotMatch(doc, /\| `v` \|/, 'the doc must not restate the field table');
