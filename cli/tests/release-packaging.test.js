@@ -54,7 +54,7 @@ describe('release packaging', () => {
     const subdirs = packagedSubdirs();
     // These hold assets consumed AFTER install (not build-source compiled into
     // provider dirs). Each must be in the ZIP or the feature breaks at runtime.
-    for (const required of ['.codeadd/scripts', '.codeadd/fragments', '.codeadd/templates', '.codeadd/plugins']) {
+    for (const required of ['.codeadd/scripts', '.codeadd/fragments', '.codeadd/templates', '.codeadd/plugins', '.codeadd/agent-mode']) {
       expect(subdirs, `release.yml packaging list missing ${required}`).toContain(required);
     }
   });

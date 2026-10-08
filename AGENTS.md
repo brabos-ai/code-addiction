@@ -12,7 +12,8 @@ Two layers with distinct purposes.
 
 Source of truth for distributed artefacts. Users consume these via CLI install. Commands live at
 `commands/*.md`, skills at `skills/<name>/SKILL.md`, agents at `agents/*-agent.md`, scripts at
-`scripts/*.cjs` — the native runtime, entry points and shared cores alike.
+`scripts/*.cjs` — the native runtime, entry points and shared cores alike. `.codeadd/agent-mode/` holds the
+headless guide and the result schema for bots that run commands through `claude -p`.
 
 The inventory below is **generated** — `node scripts/inventory.js` writes it from disk and
 `/add-framework--done` keeps it current. Do not hand-edit it, and do not add a count anywhere: an

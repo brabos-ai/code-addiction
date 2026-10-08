@@ -618,6 +618,7 @@ IF WRITING THE RUNTIME POLICY:
 ## Runtime policy
 Run shipped framework entries with Node (>=22.19.0), e.g. `node .codeadd/scripts/status.cjs`.
 No Bash, WSL or Git Bash is required; the entries are native CommonJS.
+Headless callers (claude -p): read .codeadd/agent-mode/README.md.
 
 [//]: # (codeadd-shell:end)
 ```
