@@ -77,7 +77,7 @@ Facts the AI needs in **every session**, not available elsewhere:
 
 ## Format Rules
 
-**Target:** 80-150 lines total. The two managed blocks - Project Knowledge Base (17 lines) and Writing Style (13 lines) - are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else. The Runtime policy managed block adds 5 more.
+**Target:** 80-150 lines total. The two managed blocks - Project Knowledge Base (17 lines) and Writing Style (13 lines) - are 31 lines together and are accounted for within this budget, leaving 49-119 lines for everything else. The Runtime policy managed block adds 6 more.
 
 ### JSON = DATA. Markdown = INSTRUCTIONS.
 
