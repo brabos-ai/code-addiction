@@ -15,6 +15,7 @@ Every stage prompt carried output plumbing for JSON the CLI already produces, an
 - Removed: `scripts/output-mode.js`, its test, `workbench/settings.json`, the `.claude/settings.json` allow entry and three `AGENTS.md` rows.
 - Added: `references/result-block.schema.json` (JSON Schema with no `$schema` key because the CLI rejects the 2020-12 meta-schema, the only contract for the twelve v1 fields). `scripts/tests/result-block-schema.cjs` reads it and validates raw JSON for keys, types and enums.
 - `references/result-block.md` is now the call doc: how to pass the schema text to `claude -p`, the PowerShell 5.1 escape, and how to validate a captured stdout. With Claude Code 2.1.292 stdout is a result envelope and the validated object is in its `structured_output` field, so the doc and its validate command read that field.
+- `docs/delivered.jsonl`: the 0028B entry is marked `superseded` by this delivery. The index marks a whole entry, so its plan-less fix track items, which stay live, ride on that status; the entry name says so. The 0028B ticket gets the same mark.
 
 ## Validation
 
