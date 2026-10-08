@@ -167,3 +167,19 @@ test('11. an unknown ref is a caller error', () => {
     assert.equal(g.out.status, 2);
   });
 });
+
+test('12. a regex literal after return does not swallow the file', () => {
+  const body = 'function f(a) { return /\x60/.test(a); }\ntest(\'after regex\', () => {});\n';
+  withRepo({ [F]: body }, r => {
+    commit(r, 'empty');
+    assert.equal(guard(r).kv('TESTS_BASE'), '1');
+  });
+});
+
+test('13. ::* does not cover a file that still exists', () => {
+  withRepo({ [F]: src(['a', 'b']) }, r => {
+    write(path.join(r.repo, F), src(['b']));
+    commit(r, 'drop a', `Test-Removed: ${F}::* — wide`);
+    assert.equal(guard(r).kv('GUARD'), 'fail');
+  });
+});

@@ -209,7 +209,8 @@ cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
 
 The one deliberate difference: the internal `in-review` condition is the build reaching STEP 10 with every
 F-block complete, whatever STEP 9 answered. The product's add-build writes it on `Publish:` `pr-opened` or
-`pr-updated` only (lifecycle.md). The product side is not changed.
+`pr-updated` only (lifecycle.md). The product side is not changed — and `add--backlog/references/phases.md` still reads
+`in-review` as "a pull request is open", which is no longer always true of this repository's board.
 -->
 
 **A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
@@ -248,7 +249,7 @@ link costs one manual update; a wrong one costs the board's credibility.
 | | STEP 5 | `> **Ticket:**` in the plan header, the ticket's `done_when` as `**Ticket done when:**` | — |
 | | STEP 7, before the report — the plan is written and reviewed | — | `planned` |
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
-| | STEP 10, before the report, reading STEP 9's answer | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
+| | STEP 10, before the report | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
 | `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `done` |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
 | | STEP 8, first, before any deletion | — | `done` |
@@ -270,8 +271,8 @@ IF THE OPERATOR SAYS "DO NOT PUSH":
   ✅ DO: Name each write's `SHA` in the stage's report
 ```
 
-**What reaches `main` is only `docs/backlog.jsonl`**, and `backlog-commit.cjs` carries it by its own route, as above. The
-branch is not pushed and no PR is opened.
+**What reaches `main` is only `docs/backlog.jsonl`**, and `backlog-commit.cjs` carries it by its own route, described under **How a write is made**. Under a
+"do not push" instruction the branch is not pushed and no PR is opened.
 
 **The product's `feature` field has no internal counterpart.** There is no feature id here; it stays `null`.
 

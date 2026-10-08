@@ -40,7 +40,7 @@ A run that ends with `status: needs-approval` stopped at a question, an approval
 Read `.session_id` from the envelope, then answer in the same session:
 
 ```bash
-claude -p "<answer>" --resume <session_id> --output-format json   --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
+claude -p "<answer>" --resume <session_id> --output-format json --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
 ```
 
 `claude -c` in place of `--resume <session_id>` continues the most recent session in the same directory. Use it only when no other run started there since.

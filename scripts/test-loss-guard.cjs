@@ -25,12 +25,14 @@
  * counts. A name is reported with the path it had at the base ref.
  *
  * A renamed file (git diff -M) carries its names to the new path. A name gone from one file that
- * appears, new, in another file at head is MOVED, not lost.
+ * appears, new, in another file at head is MOVED, not lost. The match is by name alone, so a new test
+ * elsewhere with a common name ("works") excuses a lost test of that name.
  *
  * The note is a commit trailer on any commit in base..head:
  *   Test-Removed: <path>::<name> — <reason>      one name
  *   Test-Removed: <path>::*                      a whole deleted file
  * `<name>` is the normalised name this script prints; the reason starts after the LAST ` — `.
+ * `::*` covers a file only when it is absent at head (deleted); a live file needs per-name trailers.
  *
  * Output (KEY=VALUE, one per line), then one line per unnoted and per noted loss:
  *   GUARD=pass|fail  BASE=<sha>  TESTS_BASE=<n>  TESTS_HEAD=<n>  LOST=<n>  NOTED=<n>  MOVED=<n>
@@ -40,7 +42,7 @@
  * Exit codes:
  *   0 — pass
  *   1 — fail (at least one unnoted loss)
- *   2 — caller error (bad ref, not a git repository)
+ *   2 — caller error (bad ref, not a git repository) or any internal error, message on stderr
  *
  * Known limit: cases generated in a loop from data (for example scripts/tests/native-script-cases.json)
  * are invisible to a static read.
@@ -58,7 +60,7 @@ const CLOSER = { '(': ')', '[': ']', '{': '}' };
 class CallerError extends Error {}
 
 function git(args) {
-  const r = spawnSync('git', args, { encoding: 'utf8', shell: false, maxBuffer: 256 * 1024 * 1024 });
+  const r = spawnSync('git', ['-c', 'core.quotepath=off', ...args], { encoding: 'utf8', shell: false, maxBuffer: 256 * 1024 * 1024 });
   if (r.error) throw new CallerError(`cannot run git: ${r.error.message}`);
   return r;
 }
@@ -92,10 +94,14 @@ function skipTemplate(s, i) {
   }
   return s.length;
 }
+const REGEX_KEYWORDS = new Set(['return', 'typeof', 'case', 'in', 'of', 'else', 'do', 'void', 'delete', 'throw', 'new', 'yield', 'await']);
 function regexAllowed(s, i) {
   let j = i - 1;
   while (j >= 0 && /\s/.test(s[j])) j--;
-  return j < 0 || '(,=:[!&|?{};+-*%<>~^'.includes(s[j]);
+  if (j < 0 || '(,=:[!&|?{};+-*%<>~^'.includes(s[j])) return true;
+  let k = j;
+  while (k >= 0 && isIdent(s[k])) k--;
+  return REGEX_KEYWORDS.has(s.slice(k + 1, j + 1));
 }
 function skipRegex(s, i) {
   let inClass = false;
@@ -205,7 +211,7 @@ function testFilesAt(sha) {
 }
 function namesOf(sha, file) {
   const r = git(['show', `${sha}:${file}`]);
-  if (r.status !== 0) return new Map();
+  if (r.status !== 0) throw new CallerError(`cannot read ${sha}:${file}`);
   const map = new Map();
   for (const name of extractNames(r.stdout)) map.set(name, (map.get(name) || 0) + 1);
   return map;
@@ -278,7 +284,8 @@ function run(argv) {
   const trailers = gitOut(['log', `${base}..${head}`, '--format=%(trailers:key=Test-Removed,valueonly)'], 'log')
     .split('\n').map(l => l.trim()).filter(Boolean)
     .map(v => { const cut = v.lastIndexOf(' — '); return cut < 0 ? v : v.slice(0, cut); });
-  const covered = ({ file, name }) => trailers.includes(`${file}::${name}`) || trailers.includes(`${file}::*`);
+  const covered = ({ file, name }) => trailers.includes(`${file}::${name}`)
+    || (trailers.includes(`${file}::*`) && !headNames.has(renamed.get(file) || file));
 
   const unnoted = unmoved.filter(e => !covered(e));
   const noted = unmoved.filter(covered);
@@ -303,8 +310,7 @@ if (require.main === module) {
   try {
     process.exitCode = run(process.argv.slice(2));
   } catch (error) {
-    if (!(error instanceof CallerError)) throw error;
-    console.error(`test-loss-guard: ${error.message}`);
+    console.error(`test-loss-guard: ${error instanceof CallerError ? error.message : error.stack}`);
     process.exitCode = 2;
   }
 }

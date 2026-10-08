@@ -603,6 +603,11 @@ IF THE GUARD PRINTS GUARD=fail:
          make alone, because a trailer written by the agent the guard watches is no guard
 ```
 
+**A restore or a trailer commit belongs to no F-block.** It gets no `complete` line. Validate it like any
+other commit (`node scripts/build.js` clean) and record the ruling in the ledger. **A guard STOP is a
+red validation, not a fifth hard stop:** the run ends at STEP 9, STEP 10 is not reached and no
+`in-review` is written, and the report says the guard failed.
+
 On `main` the guard still runs and its result goes in the report; the publish rules below are
 unchanged.
 
@@ -683,7 +688,7 @@ Then, after the seven blocks and before the metadata, report always:
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
 - **The ticket, when the plan carried one** — the id, and for EACH of its two writes (`doing` at 5.1,
-  `in-review` here) the `SHA`, that it was already there, that the build stopped before its last F-block, or what did not
+  `in-review` here) the `SHA`, that it was already there, that the build stopped before its last F-block or at STEP 9, or what did not
   happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the
