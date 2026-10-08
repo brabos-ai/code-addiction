@@ -41,7 +41,7 @@ at for. The pair keeps them apart without spending a column on each.
 | `planning` | A plan is being written |
 | `planned` | The plan is approved and waiting to be built |
 | `doing` | The build is running |
-| `in-review` | The work is built and a pull request is open |
+| `in-review` | The work is built and waiting for review. `add-build` writes it when it opens or updates a PR; the board shows the status as written and does not check that a PR is open |
 | `done` | Delivered |
 | `dropped` | Decided against. Nobody moves a ticket here but a person |
 
