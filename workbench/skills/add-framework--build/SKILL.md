@@ -585,6 +585,26 @@ Nothing else in `AGENTS.md` is written here. The rest of the file changes only w
 - **A PR exists.** The push was decided when that PR was opened. Push without asking, and say the
   existing PR was updated.
 
+**The test-loss guard runs first, in both states and on `main` too.** Run `git fetch origin main`,
+then `node scripts/test-loss-guard.cjs`. The script never fetches, and a stale `origin/main` can make
+a test that `main` itself deleted read as lost. Its header owns the output and the exit codes.
+
+```
+IF THE GUARD PRINTS GUARD=fail:
+  ⛔ DO NOT USE: Bash to run git push, gh pr create, or git commit --amend
+  ⛔ DO NOT: Ask the publish question
+  ⛔ DO NOT: Add a `Test-Removed:` trailer for a test the plan never decided to remove
+  ✅ DO: Restore each LOST_TEST, as a new commit
+  ✅ DO: Add the trailer only when an F-block of the plan decided that removal — record a ruling
+         naming the F-block, make one empty commit (`git commit --allow-empty`) carrying
+         `Test-Removed: <path>::<name> — <reason>`, and run the guard again
+  ✅ DO: STOP when neither fits — a removal the plan never decided is a ruling this build may not
+         make alone, because a trailer written by the agent the guard watches is no guard
+```
+
+On `main` the guard still runs and its result goes in the report; the publish rules below are
+unchanged.
+
 ```
 IF THE CURRENT BRANCH IS main:
   ⛔ DO NOT USE: Bash to run git push
@@ -657,6 +677,7 @@ Then, after the seven blocks and before the metadata, report always:
   **`docs/plans/` is gitignored, so this report is the only way a ruling reaches a human while the
   work is still changeable.** Zero rulings is stated, never omitted.
 - Which validations ran per layer, and their result.
+- **The test-loss guard** — its `GUARD` result, and every `NOTED_TEST` line it printed, each with the F-block that decided the removal. "None" is stated, never omitted.
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
