@@ -1,60 +1,45 @@
 'use strict';
-// Validator for the `codeadd-result` block (schema v1), shared by result-block.test.cjs and by the
-// manual L4 check. The contract lives in workbench/skills/add-final-report/references/result-block.md;
-// the test asserts that document's field table names exactly RESULT_KEYS, so the two cannot drift.
+// Validator for the result block, shared by result-block.test.cjs and by a caller checking a captured
+// `claude -p --output-format json --json-schema` stdout. The contract is the JSON Schema file
+// beside the call doc; this module reads it and walks the keywords it uses (type, enum, const,
+// properties, required, additionalProperties, items). It carries no key list and no rule of its own.
 // Not a *.test.cjs on purpose: the runner must not pick it up on its own.
 
-const RESULT_KEYS = ['v', 'status', 'stage', 'branch', 'commits', 'tests', 'pr', 'ci', 'ticket', 'next_step', 'needs_approval', 'reason'];
-const STATUSES = ['done', 'stopped', 'needs-approval', 'failed'];
-const CI_STATES = ['success', 'failure', 'pending', 'none'];
-const FENCE = /^```codeadd-result[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*$/gm;
+const fs = require('node:fs');
+const path = require('node:path');
 
-/** Every `codeadd-result` fence in the text, as the raw body between the fences. */
-function extractBlocks(text) {
-  return [...String(text).matchAll(FENCE)].map(m => m[1]);
+const SCHEMA = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'workbench', 'skills', 'add-final-report', 'references', 'result-block.schema.json'), 'utf8'));
+const RESULT_KEYS = SCHEMA.required;
+const STATUSES = SCHEMA.properties.status.enum;
+
+const typeOf = v => (v === null ? 'null' : Array.isArray(v) ? 'array' : Number.isInteger(v) ? 'integer' : typeof v);
+const isType = (v, t) => typeOf(v) === t || (t === 'number' && typeof v === 'number') || (t === 'integer' && Number.isInteger(v));
+
+function walk(schema, value, at, reasons) {
+  const name = at || 'value';
+  if (schema.type !== undefined) {
+    const types = [].concat(schema.type);
+    if (!types.some(t => isType(value, t))) { reasons.push(`${name} must be ${types.join(' or ')}`); return; }
+  }
+  if ('const' in schema && value !== schema.const) reasons.push(`${name} must be ${JSON.stringify(schema.const)}`);
+  if (schema.enum && !schema.enum.includes(value)) reasons.push(`${name} is not one of ${JSON.stringify(schema.enum)}`);
+  if (typeOf(value) === 'object') {
+    const where = at ? `${at}: ` : '';
+    for (const k of schema.required || []) if (!(k in value)) reasons.push(`${where}missing key ${k}`);
+    if (schema.additionalProperties === false) for (const k of Object.keys(value)) if (!(k in (schema.properties || {}))) reasons.push(`${where}extra key ${k}`);
+    for (const [k, sub] of Object.entries(schema.properties || {})) if (k in value) walk(sub, value[k], at ? `${at}.${k}` : k, reasons);
+  }
+  if (typeOf(value) === 'array' && schema.items) value.forEach((item, i) => walk(schema.items, item, `${name}[${i}]`, reasons));
 }
 
-const isInt = n => Number.isInteger(n) && n >= 0;
-const isObj = o => o !== null && typeof o === 'object' && !Array.isArray(o);
-const sameKeys = (o, keys) => Object.keys(o).length === keys.length && keys.every(k => k in o);
-
-function counts(c) { return isObj(c) && sameKeys(c, ['passed', 'failed', 'skipped']) && isInt(c.passed) && isInt(c.failed) && isInt(c.skipped); }
-
-/** Returns `{ ok, reasons }`; each reason is a short phrase naming the broken rule. */
+/** Takes the raw JSON text (CLI stdout). Returns `{ ok, reasons }`; each reason names the broken keyword. */
 function validateResultBlock(text) {
+  let body;
+  try { body = JSON.parse(text); } catch { return { ok: false, reasons: ['body is not valid JSON'] }; }
+  if (typeOf(body) !== 'object') return { ok: false, reasons: ['body is not a JSON object'] };
   const reasons = [];
-  const bodies = extractBlocks(text);
-  if (bodies.length !== 1) return { ok: false, reasons: [`expected exactly one codeadd-result fence, found ${bodies.length}`] };
-  let b;
-  try { b = JSON.parse(bodies[0]); } catch { return { ok: false, reasons: ['body is not valid JSON'] }; }
-  if (!isObj(b)) return { ok: false, reasons: ['body is not a JSON object'] };
-
-  for (const k of RESULT_KEYS) if (!(k in b)) reasons.push(`missing key ${k}`);
-  for (const k of Object.keys(b)) if (!RESULT_KEYS.includes(k)) reasons.push(`extra key ${k}`);
-  if (reasons.length) return { ok: false, reasons };
-
-  if (b.v !== 1) reasons.push('v must be 1');
-  if (!STATUSES.includes(b.status)) reasons.push('status is not one of the four values');
-  if (typeof b.stage !== 'string' || !b.stage) reasons.push('stage must be a non-empty string');
-  if (b.branch !== null && typeof b.branch !== 'string') reasons.push('branch must be string or null');
-  if (!Array.isArray(b.commits) || !b.commits.every(c => typeof c === 'string')) reasons.push('commits must be an array of strings');
-  if (b.tests !== null) {
-    const okTests = isObj(b.tests) && sameKeys(b.tests, ['before', 'after']) && [b.tests.before, b.tests.after].every(s => s === null || counts(s));
-    if (!okTests) reasons.push('tests must be null or {before, after} of null or {passed, failed, skipped}');
-  }
-  if (b.pr !== null && !(isObj(b.pr) && sameKeys(b.pr, ['number', 'url']) && isInt(b.pr.number) && typeof b.pr.url === 'string')) reasons.push('pr must be null or {number, url}');
-  if (b.ci !== null && !CI_STATES.includes(b.ci)) reasons.push('ci is not one of the four values or null');
-  if (b.ticket !== null) {
-    const t = b.ticket;
-    const okTicket = isObj(t) && sameKeys(t, ['id', 'status', 'sha', 'pushed']) && typeof t.id === 'string' && typeof t.status === 'string' && (t.sha === null || typeof t.sha === 'string') && typeof t.pushed === 'boolean';
-    if (!okTicket) reasons.push('ticket must be null or {id, status, sha, pushed}');
-  }
-  if (b.next_step !== null && typeof b.next_step !== 'string') reasons.push('next_step must be string or null');
-  if (typeof b.needs_approval !== 'boolean') reasons.push('needs_approval must be a boolean');
-  else if (b.needs_approval !== (b.status === 'needs-approval')) reasons.push('needs_approval must be true exactly when status is needs-approval');
-  if (b.reason !== null && typeof b.reason !== 'string') reasons.push('reason must be string or null');
-  else if (b.status !== 'done' && STATUSES.includes(b.status) && (b.reason === null || b.reason === '')) reasons.push('reason must be non-null when status is not done');
+  walk(SCHEMA, body, '', reasons);
   return { ok: reasons.length === 0, reasons };
 }
 
-module.exports = { RESULT_KEYS, STATUSES, CI_STATES, extractBlocks, validateResultBlock };
+module.exports = { SCHEMA, RESULT_KEYS, STATUSES, validateResultBlock };

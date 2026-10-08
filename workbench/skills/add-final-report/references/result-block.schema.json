@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "codeadd result v1",
+  "description": "The structured result of one codeadd command run. Every key is always present; use null for unknown, never omit a key and never invent a value. needs_approval is true exactly when status is needs-approval. reason is non-null and non-empty when status is not done; on done it is null unless the run has a caveat worth one line.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["v", "status", "stage", "branch", "commits", "tests", "pr", "ci", "ticket", "next_step", "needs_approval", "reason"],
+  "properties": {
+    "v": {
+      "description": "Schema version. Starts at 1. A breaking change bumps it.",
+      "type": "integer",
+      "const": 1
+    },
+    "status": {
+      "description": "The outcome. done: the command finished its work. stopped: a gate or a hard stop ended the run on purpose. needs-approval: the run is waiting on the user. failed: an error the command did not plan for.",
+      "type": "string",
+      "enum": ["done", "stopped", "needs-approval", "failed"]
+    },
+    "stage": {
+      "description": "The command name, for example add-framework--build. Never empty.",
+      "type": "string"
+    },
+    "branch": {
+      "description": "The current branch, or null when unknown.",
+      "type": ["string", "null"]
+    },
+    "commits": {
+      "description": "Short SHAs this run created, in order. An empty array when none.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tests": {
+      "description": "Test counts before and after the run, or null when no test run happened. Each side is null when that run did not happen.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["before", "after"],
+      "properties": {
+        "before": {
+          "description": "Counts from the run before the change, or null.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["passed", "failed", "skipped"],
+          "properties": {
+            "passed": { "description": "Tests that passed.", "type": "integer" },
+            "failed": { "description": "Tests that failed.", "type": "integer" },
+            "skipped": { "description": "Tests that were skipped.", "type": "integer" }
+          }
+        },
+        "after": {
+          "description": "Counts from the run after the change, or null.",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["passed", "failed", "skipped"],
+          "properties": {
+            "passed": { "description": "Tests that passed.", "type": "integer" },
+            "failed": { "description": "Tests that failed.", "type": "integer" },
+            "skipped": { "description": "Tests that were skipped.", "type": "integer" }
+          }
+        }
+      }
+    },
+    "pr": {
+      "description": "The pull request this run opened or updated, or null.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["number", "url"],
+      "properties": {
+        "number": { "description": "The pull request number.", "type": "integer" },
+        "url": { "description": "The pull request URL.", "type": "string" }
+      }
+    },
+    "ci": {
+      "description": "The required-checks state on the head SHA, when the command read it; null when it did not.",
+      "type": ["string", "null"],
+      "enum": ["success", "failure", "pending", "none", null]
+    },
+    "ticket": {
+      "description": "The last board write this run made, or null when it made none.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["id", "status", "sha", "pushed"],
+      "properties": {
+        "id": { "description": "The ticket id, for example 0028B.", "type": "string" },
+        "status": { "description": "The status the ticket was written to.", "type": "string" },
+        "sha": { "description": "The commit SHA of the write, or null when the write degraded.", "type": ["string", "null"] },
+        "pushed": { "description": "True when the write reached main; false when it degraded.", "type": "boolean" }
+      }
+    },
+    "next_step": {
+      "description": "The Continuation Line verbatim, or null when the command prints none.",
+      "type": ["string", "null"]
+    },
+    "needs_approval": {
+      "description": "True when the run is waiting on the user.",
+      "type": "boolean"
+    },
+    "reason": {
+      "description": "The gate, stop or question, in one line; null when there is none.",
+      "type": ["string", "null"]
+    }
+  }
+}
