@@ -123,6 +123,45 @@ describe('bin entrypoint (process level)', () => {
     });
   });
 
+  describe('install without a TTY', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-notty-'));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-notty-home-'));
+    afterAll(() => {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(home, { recursive: true, force: true });
+    });
+
+    // spawnSync pipes stdin, so the child sees a non-TTY stdin. A closed pipe is
+    // given on purpose: a prompt waiting for input would hit the timeout instead.
+    const run = (args) =>
+      spawnSync(process.execPath, [BIN, ...args], {
+        encoding: 'utf8',
+        timeout: 15000,
+        input: '',
+        cwd: project,
+        env: { ...CHILD_ENV, HOME: home, USERPROFILE: home },
+      });
+
+    it('fails with a clear error and a non-zero exit instead of prompting', () => {
+      const result = run(['install']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('interactive terminal');
+    });
+
+    it('points to codeadd update when an installation already exists', () => {
+      fs.mkdirSync(path.join(project, '.codeadd'), { recursive: true });
+      fs.writeFileSync(
+        path.join(project, '.codeadd', 'manifest.json'),
+        JSON.stringify({ version: '1.0.0', scope: 'project', providers: ['claude'] }),
+      );
+      const result = run(['install']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('codeadd update');
+    });
+  });
+
   it('importing src/cli.js dispatches nothing and prints nothing', () => {
     const result = spawnSync(
       process.execPath,

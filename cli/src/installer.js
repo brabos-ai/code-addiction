@@ -191,6 +191,16 @@ function describeInstall(targetDir, manifest) {
 export async function install(cwd, options = {}) {
   intro('ADD CLI - Install');
 
+  // Every road through install asks something (scope, providers, the existing-install
+  // menu), so without a TTY it would wait forever. Fail before the first prompt instead.
+  if (!process.stdin.isTTY) {
+    const dir = options.global ? os.homedir() : cwd;
+    if (readManifest(dir)) {
+      throw new Error('An ADD installation already exists here and install needs an interactive terminal to choose what to do. Run "codeadd update" to update it.');
+    }
+    throw new Error('install needs an interactive terminal (stdin is not a TTY) to choose scope and providers. Run it from a terminal.');
+  }
+
   // --global forces global scope; otherwise prompt (defaults to project).
   const scope = options.global ? 'global' : await promptScope();
   const targetDir = scope === 'global' ? os.homedir() : cwd;

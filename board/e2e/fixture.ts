@@ -154,7 +154,7 @@ const SHIPPED_DEFS = {
       "order": 7,
       "column": "review",
       "label": "In review",
-      "means": "PR open"
+      "means": "build finished, PR may not exist yet; waiting for review and merge"
     },
     {
       "name": "done",
