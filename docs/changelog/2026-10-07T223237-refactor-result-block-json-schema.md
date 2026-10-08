@@ -19,4 +19,4 @@ Every stage prompt carried output plumbing for JSON the CLI already produces, an
 
 ## Validation
 
-`scripts` suite 683 tests, all green; cli vitest 79 files and board e2e green. Two simplifications from the operator: no hand-written JSON Schema keyword checker, and the validator drops the cross-field rules (they stay in the schema `description`). The headless smoke run of `/add-framework--backlog update 9999B` with `--json-schema` has not been run; it is the ticket's last check.
+`scripts` suite 683 tests, all green; cli vitest 79 files and board e2e green. Two simplifications from the operator: no hand-written JSON Schema keyword checker, and the validator drops the cross-field rules (they stay in the schema `description`). The headless smoke run of `/add-framework--backlog update 9999B` with `--json-schema` ran on 2026-10-07. The CLI first rejected the 2020-12 `$schema` (fixed in 04f2775). On the rerun, `structured_output` validated (`ok: true`). Without the flags the command still prints prose.
