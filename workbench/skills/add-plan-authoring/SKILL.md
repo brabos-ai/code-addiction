@@ -206,6 +206,10 @@ add-framework--done calls delivered.cjs.
 
 The seven statuses and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
+
+The one deliberate difference: the internal `in-review` condition is the build reaching STEP 10 with every
+F-block complete, whatever STEP 9 answered. The product's add-build writes it on `Publish:` `pr-opened` or
+`pr-updated` only (lifecycle.md). The product side is not changed.
 -->
 
 **A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
@@ -244,7 +248,7 @@ link costs one manual update; a wrong one costs the board's credibility.
 | | STEP 5 | `> **Ticket:**` in the plan header, the ticket's `done_when` as `**Ticket done when:**` | — |
 | | STEP 7, before the report — the plan is written and reviewed | — | `planned` |
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
-| | STEP 10, before the report, reading STEP 9's answer | — | `in-review` — **only when a PR was opened or already existed** |
+| | STEP 10, before the report, reading STEP 9's answer | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
 | `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `done` |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
 | | STEP 8, first, before any deletion | — | `done` |
@@ -254,10 +258,20 @@ link costs one manual update; a wrong one costs the board's credibility.
 **After the plan, the plan header is the only carrier.** Build and done read `> **Ticket:**` from the plan
 and never from the intent file. A direct build has no plan, so it carries no ticket and touches no board.
 
-**`in-review` depends on STEP 9's answer, and one answer never writes it.** On "yes" the build opens the PR,
-and when a PR already exists it pushes to it: both write `in-review`. On "no" the close-out opens the PR and
-merges it in one run, so `in-review` would exist for seconds — the ticket goes `doing` → `done`, the same jump
-a product hotfix makes.
+**`in-review` depends on the work, not on STEP 9's answer.** The build writes it whenever it reaches STEP 10 with
+every F-block of the plan complete — PR opened, PR updated, or the operator said "no". On "no" the close-out may
+run days later, and until then the work is finished and waiting on review; a ticket left in `doing` says the
+opposite. A build that stopped before its last F-block writes no `in-review`.
+
+```
+IF THE OPERATOR SAYS "DO NOT PUSH":
+  ⛔ DO NOT: Read it as covering the board — skip `doing` at STEP 5.1 or `in-review` at STEP 10
+  ✅ DO: Make both writes. The instruction covers the branch and the PR; it never skips a board write
+  ✅ DO: Name each write's `SHA` in the stage's report
+```
+
+**What reaches `main` is only `docs/backlog.jsonl`**, and `backlog-commit.cjs` carries it by its own route, as above. The
+branch is not pushed and no PR is opened.
 
 **The product's `feature` field has no internal counterpart.** There is no feature id here; it stays `null`.
 
