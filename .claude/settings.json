@@ -5,7 +5,6 @@
       "Bash(npx playwright *)",
       "Read(//home/fnd/.cache/ms-playwright/**)",
       "Bash(npm run *)",
-      "Bash(node scripts/output-mode.js)",
       "Bash(echo \"started pid: $!\")",
       "Read(//tmp/**)"
     ],

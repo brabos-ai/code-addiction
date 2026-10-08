@@ -87,10 +87,12 @@ test('the reference carries one valid example per status, plus the rules', () =>
   assert.match(ref, /`stage` is never empty\. `reason` is non-null and non-empty when `status` is not `done`/);
 });
 
-test('headless callers are told to allow the resolver, and this repository does', () => {
-  assert.match(read(REFERENCE), /## Headless callers[\s\S]*Bash\(node scripts\/output-mode\.js\)[\s\S]*falls to `prose`/);
+test('the resolver and its settings file are gone, and nothing allows the resolver', () => {
+  assert.ok(!fs.existsSync(path.join(root, 'scripts', 'output-mode.js')));
+  assert.ok(!fs.existsSync(path.join(root, 'workbench', 'settings.json')));
   const settings = JSON.parse(read('.claude/settings.json'));
-  assert.ok(settings.permissions.allow.includes('Bash(node scripts/output-mode.js)'));
+  assert.ok(!settings.permissions.allow.some(entry => entry.includes('output-mode')));
+  assert.doesNotMatch(read('AGENTS.md'), /output-mode|workbench\/settings\.json/);
 });
 
 // Derived from disk, so a future add-framework--* artefact is checked without a list to update.
