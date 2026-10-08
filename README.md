@@ -15,7 +15,7 @@ Most AI coding setups are fragmented across custom prompts, scripts, and editor-
 Code Addiction standardizes this with:
 - A shared core in `.codeadd/` (commands, scripts, skills, templates)
 - Provider-specific integrations (Claude, Codex, Antigravity, Cursor, OpenCode, ZCode)
-- A versioned installer (`codeadd`) with `install`, `update`, `uninstall`, `doctor`, and `validate`
+- A versioned installer (`codeadd`) with `install`, `update`, `modify`, `providers`, `uninstall`, `doctor`, and `validate`
 
 ## Quickstart
 
@@ -31,6 +31,9 @@ npx codeadd install --channel beta
 
 # install at user level (home directory)
 npx codeadd install --global
+
+# running install over an existing installation offers Modify / Update / Reinstall / Cancel
+# instead of resetting it
 
 # check environment health
 npx codeadd doctor
@@ -49,6 +52,14 @@ npx codeadd update --version v0.2.14
 
 # switch release channels while updating
 npx codeadd update --channel stable
+
+# edit providers, features and plugins in one interactive screen
+npx codeadd modify
+
+# list, add or remove providers (--global / --user apply here and to modify)
+npx codeadd providers list
+npx codeadd providers add cursor
+npx codeadd providers remove cursor --force
 
 # remove Code Addiction files from your project
 npx codeadd uninstall
