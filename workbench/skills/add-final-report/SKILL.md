@@ -1,6 +1,6 @@
 ---
 name: add-final-report
-description: "Use at a command's closing step, in the internal layer — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first."
+description: "Use at a command's closing step AND at any STOP or early exit, in the internal layer — the seven blocks every finishing command reports in, the banned phrasings, the self-check and the result block. Load it at the last step, and at every STOP or early exit in every command; never at STEP 1 of a run that is still going."
 ---
 
 # Final Report — The Closing Shape
@@ -18,10 +18,12 @@ the document. This is the message the user actually reads, and for most runs it 
 the work they will ever see.
 
 ```
-IF THE COMMAND IS NOT AT ITS CLOSING STEP:
+IF THE COMMAND IS STILL WORKING (NO STOP, NO EARLY EXIT):
   ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
   ✅ DO: Load this at the closing step, where the report is written
-  ✅ DO: Load it earlier only at a STOP that ends the run or waits on the user — The Result Block below
+IF THE COMMAND STOPS OR EXITS EARLY, AT ANY STEP, IN ANY COMMAND:
+  ✅ DO: Load this at that STOP or early exit — ticket not found, gate failed, user declined,
+         waiting on the user — and run the resolver there (The Result Block below)
 ```
 
 A shape carried through fifteen steps is a shape the agent no longer has when it matters. This skill

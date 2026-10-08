@@ -142,3 +142,15 @@ test('every add-framework--* artefact carries the stop-rule line right after its
 test('no add-framework--* artefact restates the field table', () => {
   for (const f of stageArtefacts()) assert.doesNotMatch(read(f), /^\| `(needs_approval|next_step)` \|/m, f);
 });
+
+test('add-final-report never forbids an early load without the STOP and early-exit exception', () => {
+  const text = read(SKILL);
+  const description = text.match(/^description: "(.*)"$/m)[1];
+  const guard = text.match(/```\nIF THE COMMAND IS[\s\S]*?```/)[0];
+  for (const [name, part] of [['description', description], ['load guard', guard]]) {
+    assert.match(part, /STOP/, `${name} must name STOP`);
+    assert.match(part, /early exit/i, `${name} must name the early exit`);
+  }
+  assert.doesNotMatch(description, /not at the first/i, 'description must not ban the early load outright');
+  assert.match(guard, /✅ DO: Load this at that STOP or early exit/, 'guard must tell the agent to load at a STOP');
+});
