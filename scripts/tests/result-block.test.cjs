@@ -132,3 +132,20 @@ test('add-final-report is back to its last-step load rule, and building-commands
   assert.doesNotMatch(text, /^## The Result Block$/m);
   assert.doesNotMatch(read('workbench/skills/building-commands/SKILL.md'), /any STOP or early exit/);
 });
+
+test('the call doc points at the schema file and says how to pass it to the CLI', () => {
+  const doc = read('workbench/skills/add-final-report/references/result-block.md');
+  for (const needle of ['result-block.schema.json', '--output-format json', '--json-schema']) assert.ok(doc.includes(needle), needle);
+  assert.match(doc, /path is not accepted/i);
+  assert.ok(doc.includes("-replace '\"','\\\"'"), 'PowerShell 5.1 escape');
+  assert.doesNotMatch(doc, /\| `v` \|/, 'the doc must not restate the field table');
+  assert.doesNotMatch(doc, /## Headless callers/);
+});
+
+test('no markdown under workbench/ mentions the 0028B output mode', () => {
+  const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => (e.isDirectory() ? walk(path.join(dir, e.name)) : e.name.endsWith('.md') ? [path.join(dir, e.name)] : []));
+  for (const file of walk(path.join(root, 'workbench'))) {
+    const body = fs.readFileSync(file, 'utf8');
+    for (const needle of ['CODEADD_OUTPUT', 'output-mode.js', 'codeadd-result']) assert.ok(!body.includes(needle), `${path.relative(root, file)}: ${needle}`);
+  }
+});
