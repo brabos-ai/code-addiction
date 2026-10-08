@@ -26,7 +26,7 @@ const DEFAULT_DEFS = {
     { name: 'planning',  order: 4, column: 'planning', label: 'Planning',   means: 'add-plan running' },
     { name: 'planned',   order: 5, column: 'planning', label: 'Planned',    means: 'plan approved, waiting to build' },
     { name: 'doing',     order: 6, column: 'building', label: 'Doing',      means: 'add-build running' },
-    { name: 'in-review', order: 7, column: 'review',   label: 'In review',  means: 'PR open' },
+    { name: 'in-review', order: 7, column: 'review',   label: 'In review',  means: 'build finished, PR may not exist yet; waiting for review and merge' },
     { name: 'done',      order: 8, column: 'done',     label: 'Done',       means: 'delivered' },
     { name: 'dropped',   order: 9, column: 'dropped',  label: 'Dropped',    means: 'decided against' }
   ]
