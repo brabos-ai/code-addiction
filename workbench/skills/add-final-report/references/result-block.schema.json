@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "codeadd result v1",
   "description": "The structured result of one codeadd command run. Every key is always present; use null for unknown, never omit a key and never invent a value. needs_approval is true exactly when status is needs-approval. reason is non-null and non-empty when status is not done; on done it is null unless the run has a caveat worth one line.",
   "type": "object",

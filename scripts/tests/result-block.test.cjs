@@ -30,7 +30,8 @@ const valid = {
 
 test('the schema file parses, is closed, and describes every property', () => {
   const parsed = JSON.parse(read(SCHEMA_FILE));
-  assert.equal(parsed.$schema, 'https://json-schema.org/draft/2020-12/schema');
+  // the CLI rejects the 2020-12 meta-schema passed through --json-schema
+  assert.ok(!('$schema' in parsed), 'schema must not carry a $schema key');
   assert.equal(parsed.title, 'codeadd result v1');
   assert.deepEqual(parsed.required, ['v', 'status', 'stage', 'branch', 'commits', 'tests', 'pr', 'ci', 'ticket', 'next_step', 'needs_approval', 'reason']);
   assert.deepEqual(Object.keys(parsed.properties), parsed.required);
