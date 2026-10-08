@@ -40,6 +40,9 @@ Three documents are named here — the plan, the changelog and the intent file. 
 |---|---|
 | The plan | `docs/plans/YYYY-MM-DDTHHMMSS-PLAN--<slug>.md` |
 | The changelog | `docs/changelog/YYYY-MM-DDTHHMMSS-<verb>-<slug>.md` |
+| The fix record | `docs/plans/YYYY-MM-DDTHHMMSS-FIX--<slug>.md` — written only by `/add-framework--done --fix`, never by hand |
+
+**The fix record is not a plan.** `/add-framework--done --fix` generates it for work that never had a plan, and it is gitignored like one. Its changelog carries the verb `fix`, so that delivery's changelog is found by the key `-fix-<slug>` in `docs/changelog/` — there is no plan slug to look for. `/add-framework--plan` and `/add-framework--build` never create or resolve one.
 
 Timestamp in **local time**, `T` between date and time, **no separators inside `HHMMSS`** — Windows
 forbids `:` in a filename. Lexicographic sort therefore equals chronological sort.
@@ -243,6 +246,10 @@ link costs one manual update; a wrong one costs the board's credibility.
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
 | | STEP 10, before the report, reading STEP 9's answer | — | `in-review` — **only when a PR was opened or already existed** |
 | `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `done` |
+| `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
+| | STEP 8, first, before any deletion | — | `done` |
+
+**On the fix track the fix record is the carrier.** Its `> **Ticket:**` line is written only from `--ticket` — an id is never inferred from the branch or the commits — and every rule in this section then applies to it unchanged.
 
 **After the plan, the plan header is the only carrier.** Build and done read `> **Ticket:**` from the plan
 and never from the intent file. A direct build has no plan, so it carries no ticket and touches no board.
@@ -399,6 +406,7 @@ no lookup table between them.
 | `intent.md` | the `docs/brainstorming/` **intent file** the plan's **Context** document table names, resolved the same way | the plan cites one |
 | `review.md` | the highest-numbered `docs/plans/<basename>--review-v*.md` | a legacy companion is on disk |
 | `evidences/` | `docs/evidence/` files for this plan, original names kept | such files are on disk |
+| `fix.md` | `docs/plans/<basename>.md` — the fix record | the delivery went through `--fix`, in place of `plan.md` and `ledger.md` |
 
 **The first two are load-bearing; their absence is a defect, not a variation.** The plan carries the
 reasoning and the ledger carries the rulings, and neither has a second copy anywhere.
@@ -414,6 +422,8 @@ matches before staging.
 no design document exists. `docs/brainstorming/` is gitignored exactly as `docs/plans/` is, so without
 this member that delivery reaches `main` carrying a plan whose reasoning points at a file nobody else
 will ever have.
+
+**On the fix track `fix.md` is the one load-bearing member, in place of `plan.md` and `ledger.md`.** A fix has no plan and no ledger, so their absence there is not a defect, and the "always" in their rows reads for a delivery that had a plan. `fix.md` follows the same byte-for-byte rule as every other member.
 
 **The last four are conditional, and a directory holding none of them is the normal case.** No
 command writes a `--review-v*` companion or anything under `docs/evidence/` any more, so both members
@@ -597,6 +607,18 @@ neither, so it passes through unchanged. This is what lets the continuation line
 - **Exactly one match** → that is the plan.
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
 - **No match** → list `docs/plans/` and STOP.
+
+**`--fix <slug>` resolves `*-FIX--<slug>` through three sources, in this order, and stops at the first that answers:**
+
+1. `docs/delivered.jsonl` on the current branch — an entry whose `id` ends `-FIX--<slug>`. Tracked, so it survives a fresh clone or another worktree.
+2. `docs/deliveries/*-FIX--<slug>/` on the current branch — tracked, for the same reason.
+3. `docs/plans/*-FIX--<slug>.md` — the local, gitignored record.
+
+One match reuses that `id`, and the local record when source 3 holds it. A reused record keeps only its `id` and ticket line: the caller rebuilds `## What changed` and the head SHA on every run. None anywhere means the caller allocates a timestamp from the clock and writes the record. More than one → ⛔ STOP, print every candidate and ask which; never guess.
+
+When source 1 or 2 answered and no local record exists — a resume on a fresh clone or in another worktree — the record to read is the tracked `docs/deliveries/<id>/fix.md` on the branch.
+
+**A plan argument keeps matching `*PLAN--*` only.** A fix record never resolves as a plan, in build, plan or List Mode.
 
 **Continue Mode** (argument resolves to a plan): load it, summarize what was already decided, ask what
 to adjust, update it with a changelog row, then review and complete it the same way a new plan is.

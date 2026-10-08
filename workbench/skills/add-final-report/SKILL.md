@@ -1,6 +1,6 @@
 ---
 name: add-final-report
-description: "Use at a command's closing step, in the internal layer — the seven blocks every finishing command reports in, the banned phrasings, and the self-check. Load at the last step, not at the first."
+description: "Use at a command's closing step AND at any STOP or early exit, in the internal layer — the seven blocks every finishing command reports in, the banned phrasings, the self-check and the result block. Load it at the last step, and at every STOP or early exit in every command; never at STEP 1 of a run that is still going."
 ---
 
 # Final Report — The Closing Shape
@@ -10,6 +10,7 @@ description: "Use at a command's closing step, in the internal layer — the sev
 - mention: add-framework--plan
 - mention: add-framework--done
 - mention: add-build-ledger
+- skill: add-final-report/references/result-block.md
 -->
 
 Owns the LAST thing a command says. Not what it wrote to disk — that belongs to whichever skill owns
@@ -17,9 +18,12 @@ the document. This is the message the user actually reads, and for most runs it 
 the work they will ever see.
 
 ```
-IF THE COMMAND IS NOT AT ITS CLOSING STEP:
+IF THE COMMAND IS STILL WORKING (NO STOP, NO EARLY EXIT):
   ⛔ DO NOT: Load this skill at STEP 1 or at any step before the last
   ✅ DO: Load this at the closing step, where the report is written
+IF THE COMMAND STOPS OR EXITS EARLY, AT ANY STEP, IN ANY COMMAND:
+  ✅ DO: Load this at that STOP or early exit — ticket not found, gate failed, user declined,
+         waiting on the user — and run the resolver there (The Result Block below)
 ```
 
 A shape carried through fifteen steps is a shape the agent no longer has when it matters. This skill
@@ -137,7 +141,8 @@ The path is identical in all three.
 
 **Position:** it is the **last line of the metadata**, and so the last line of the closing. Other
 command lines — for example `/add-framework--plan <relative path>` to revise a plan — may come before
-it and use the same plain-path form.
+it and use the same plain-path form. In `both` mode the result block follows it and is the
+last thing printed; in `json` mode the line is not printed and travels as `next_step`.
 
 **Plan set:** one line per plan that has F-blocks, in set order.
 
@@ -146,6 +151,41 @@ it and use the same plain-path form.
 **Who never prints one:** a closing that wrote no file the next stage reads — backlog, release, sync,
 done, a direct build and a brainstorm spike. `/add-framework--done` is the terminal stage, and the
 build prints its line but never loads it.
+
+## The Result Block
+
+**An agent driving a command through `claude -p` can read the outcome from one fenced JSON block
+instead of parsing the report.** It is opt-in. `references/result-block.md` owns the shape; this
+section owns when the block is due and what each mode prints. Do not restate the field table anywhere
+else.
+
+**When it is due:** at the closing step, and at every STOP that ends the run early or waits on the
+user. Each `add-framework--*` artefact carries this one line in its prohibitions block, and this is its
+only statement:
+
+> On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
+**The resolver runs once, at that point — never at STEP 1.** Run `node scripts/output-mode.js` from the
+repository root and read its `OUTPUT_MODE=` line. A resolver that cannot run — denied, missing, a
+non-zero exit — falls to `prose`: the fall is always toward today's report.
+
+| Mode | The closing prints |
+|---|---|
+| `prose` | Exactly today's report. No resolver output is shown and nothing else changes. A mid-run STOP prints exactly what it printed before this section existed |
+| `json` | Only the fenced block. The seven blocks, the metadata and the Continuation Line are not printed |
+| `both` | Today's report in full, then the fenced block as the last thing printed |
+
+**`OUTPUT_MODE_WARNING=<source>:<value>` is shown as one metadata line in `both`, and nowhere else.**
+`prose` shows no resolver output, and `json` prints only the block, so a warning is not shown in either.
+A mistyped value therefore gives no sign of itself there: the run falls to the next source's mode, or to
+`prose`, in silence.
+
+**In `json` mode the seven blocks, the command-specific facts (rulings, gate matrices) and the self-check below do not apply** — there is no report to
+check. The block is checked against `references/result-block.md` instead.
+
+**Fill every field from facts the run already holds.** `next_step` is the Continuation Line verbatim,
+after its own `test -f` rule, and `null` where the closing prints none; for a plan set, the first line. A field the run did not read is
+`null`, never a guess. `status` takes one of four values; `references/result-block.md` states what each means.
 
 ## How It Reads
 

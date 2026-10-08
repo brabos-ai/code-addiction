@@ -47,6 +47,8 @@ STEP 7: Completion            → [HARD STOP] the report in the shape, then meta
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
+On any STOP, load `add-final-report` and run `node scripts/output-mode.js`; when the mode is not `prose`, emit the result block with `status` and `reason` set.
+
 ```
 ALWAYS — THIS SKILL DOES NOT EXECUTE:
   ⛔ DO NOT USE: Write outside docs/plans/
@@ -424,7 +426,7 @@ Sections:
 
 ### 4.2 End with the plan preview
 
-**Print the plan preview on every row of 4.0, immediately before the `STOP AND WAIT` that ends 4.1** — it is the last thing this step shows. `add-plan-authoring`
+**Print the plan preview on every row of 4.0, immediately before the `STOP AND WAIT` that ends 4.1** — it is the last thing this step shows (before the result block, in `both` mode). `add-plan-authoring`
 owns its five items and what it must not carry — read **The Plan Preview** there. It is composed from
 STEP 3's analysis and the answers so far; it runs no new analysis, and it adds no stop of its own.
 
@@ -511,7 +513,7 @@ future tense. `add-plan-authoring` carries that one adjustment and nothing else.
 
 Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands, in the
 form `add-final-report` owns under **The Continuation Line** — `/add-framework--plan docs/plans/<basename>.md`
-to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line. A plan
+to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line (before the result block, in `both` mode). A plan
 set prints one build line per plan that has F-blocks, in set order.
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
