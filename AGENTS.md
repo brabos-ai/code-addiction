@@ -178,6 +178,7 @@ Key files:
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Owns supported test dispatch: framework default, individual suites, all, watch and report export; its header defines execution policy |
+| `scripts/test-loss-guard.cjs` | Fails when a test name on the branch is gone without a `Test-Removed:` commit trailer. Build STEP 9 and done 2.2 run it; its header owns usage and exit codes |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
 | `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |
