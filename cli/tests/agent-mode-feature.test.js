@@ -310,3 +310,23 @@ describe('L1.6 / L1.7 -- the installed render, feature on and off', () => {
     }
   });
 });
+
+describe('L1.4(b) (F5-F7) -- the moved sections are gone from their old owners', () => {
+  const BY_OWNER = {
+    'add--delivery-mode': MOVED.filter((m) => m.from === 'add--delivery-mode').map((m) => m.name),
+  };
+
+  it.each(Object.entries(BY_OWNER).flatMap(([owner, names]) => names.map((n) => [owner, n])))(
+    '%s no longer holds %s',
+    (owner, name) => {
+      expect(readNorm(path.join(SKILLS, owner, 'SKILL.md'))).not.toContain(fixture(name));
+    },
+  );
+
+  it('add--delivery-mode points at the interaction skill instead, and names no offer rule', () => {
+    const text = readNorm(path.join(SKILLS, 'add--delivery-mode', 'SKILL.md'));
+    expect(text).toContain('the interaction skill the command loaded');
+    expect(text).toContain('`{{skill:add--human-interaction/SKILL.md}}`');
+    expect(text).not.toContain('ask ONCE whether');
+  });
+});
