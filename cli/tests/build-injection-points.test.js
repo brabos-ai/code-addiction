@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { PROVIDERS } from '../src/providers.js';
+import { TOTAL_POINTS, agentModePoints } from './helpers/agent-mode-points.js';
 
 const require = createRequire(import.meta.url);
 const {
@@ -150,10 +151,11 @@ function stepRefFiles() {
 
 describe('slot membership map v2', () => {
   it('freezes the slot membership map and its nonempty fallbacks', () => {
-    expect(MAP.membershipCount).toBe(71);
-    expect(MAP.slotCount).toBe(64);
+    // 71 memberships in 64 slots before agent-mode; every agent-mode slot holds exactly one member (F10-F21).
+    expect(MAP.membershipCount).toBe(TOTAL_POINTS());
+    expect(MAP.slotCount).toBe(64 + agentModePoints());
     const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
-    expect(members).toHaveLength(71);
+    expect(members).toHaveLength(TOTAL_POINTS());
     // Nonempty fallbacks: plan-specs, plus every agent-mode.* slot (plan 2026-10-09T184411-PLAN--agent-mode-feature, F24).
     const slotsOf = (r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md');
     const agentModeSlots = MAP.resources.flatMap((r) => slotsOf(r).filter((s) => s.id.startsWith('agent-mode.')));

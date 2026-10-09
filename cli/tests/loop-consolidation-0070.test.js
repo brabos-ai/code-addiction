@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const { readMap } = require('../../scripts/build.js');
 
 import { FEATURES } from '../src/features.js';
+import { TOTAL_POINTS } from './helpers/agent-mode-points.js';
 
 /**
  * Plan 0070 — Development Loop Consolidation.
@@ -94,7 +95,7 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 71 points', () => {
+  it('L1.0 injection map totals exactly the 71 baseline points plus the agent-mode ones', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add-hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add-done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
@@ -113,7 +114,8 @@ describe('0070 L1 — build-side unit', () => {
     // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
     // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
     // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
-    expect(sidecarPoints()).toHaveLength(71);
+    // 71 -> 71 + the agent-mode sections: counted from fragments/agent-mode/ (plan 2026-10-09T184411-PLAN--agent-mode-feature).
+    expect(sidecarPoints()).toHaveLength(TOTAL_POINTS());
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {

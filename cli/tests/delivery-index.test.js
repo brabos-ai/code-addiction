@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { FEATURES } from '../src/features.js';
+import { TOTAL_POINTS } from './helpers/agent-mode-points.js';
 
 /**
  * Delivery index — the validation matrix for plan
@@ -144,8 +145,8 @@ describe('L2 — build integrity', () => {
   // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
   // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
-  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections, 71', () => {
-    expect(SIDECAR().points).toHaveLength(71);
+  it('L2.3: the injection-point total is the absolute baseline 46 + the board sections (71) + the agent-mode sections', () => {
+    expect(SIDECAR().points).toHaveLength(TOTAL_POINTS());
   });
 
   // Two became five: feature:board moves add-done's three ticket sections into

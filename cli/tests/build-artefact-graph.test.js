@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { agentModeFragments } from './helpers/agent-mode-points.js';
 
 /**
  * Artefact graph extraction + gate guard (plan 0077, waves 1-2).
@@ -1003,7 +1004,8 @@ describe('node inventory snapshot', () => {
       // fragment 29 -> 30: fragments/board/add-build.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F12+F13).
       // fragment 30 -> 31: fragments/board/add-done.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F14+F15).
       // fragment 31 -> 32: fragments/board/add-hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
-      fragment: 32,
+      // fragment 32 -> 32 + the agent-mode files: one per command whose slots have landed (2026-10-09T184411-PLAN--agent-mode-feature, F10-F21).
+      fragment: 32 + agentModeFragments(),
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1012,7 +1014,8 @@ describe('node inventory snapshot', () => {
       // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
       // never reported as orphans; they own their members through CONTAINS.
       // feature 3 -> 4: fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
-      feature: 4,
+      // feature 4 -> 5: agent-mode (same plan, F10).
+      feature: 5,
       plugin: 2,
     });
     // 208 -> 211: +4 skills, +1 reference, -2 commands.
@@ -1123,8 +1126,9 @@ describe('node inventory snapshot', () => {
     // retirement (F20 removed the 19 shells) or an addition moves this by
     // exactly the on-disk delta, with no hardcoded total to drift.
     const shippedScriptsCount = shippedScripts();
-    expect(nodes).toHaveLength(226 + shippedScriptsCount);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(142);
+    // 226 -> 227 + the agent-mode fragments: the agent-mode feature node (F10), then one fragment node each.
+    expect(nodes).toHaveLength(227 + agentModeFragments() + shippedScriptsCount);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(142 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {

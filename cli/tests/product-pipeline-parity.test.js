@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withFallbacks } from './helpers/with-fallbacks.js';
 
 /**
  * Plan 2026-09-16T205633 — product pipeline parity.
@@ -17,7 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
-const read = (p) => fs.readFileSync(p, 'utf8');
+const read = (p) => withFallbacks(fs.readFileSync(p, 'utf8'));
 const cmd = (name) => path.join(CODEADD, 'commands', `${name}.md`);
 const skill = (name) => path.join(CODEADD, 'skills', name, 'SKILL.md');
 

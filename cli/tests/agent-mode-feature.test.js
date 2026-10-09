@@ -5,14 +5,16 @@
  * that goes green in the F-block named in its title; the file grows with the
  * build, one RED-first assertion per F-block.
  */
-import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
 import { PROVIDERS } from '../src/providers.js';
-import { composeSlot, resolvePlaceholders } from '../src/injection-core.js';
+import { FEATURES, enableFeature } from '../src/features.js';
+import { treeFixture } from './helpers/tree-fixture.js';
+import { composeSlot, resolvePlaceholders, parseFragmentSections } from '../src/injection-core.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const require = createRequire(import.meta.url);
@@ -189,6 +191,103 @@ describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only',
     expect(texts.length).toBeGreaterThan(0);
     for (const { file, text } of texts) {
       for (const re of CONTRACT_WORDS) expect(text, `${file} matches ${re}`).not.toMatch(re);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase C -- one F-block per command. AGENT_SLOTS grows by one entry per F-block
+// (the plan's end-state map); every test below is parameterised over it.
+// ---------------------------------------------------------------------------
+const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
+const AGENT_SLOTS = {
+  'add-brainstorm': ['interaction', 'output-cap', 'cap-scope', 'objective-draft', 'cadence', 'structured-ask', 'approval-ask', 'offer', 'rules-cadence'],
+};
+const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
+const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));
+
+function memberBody(command, section) {
+  const raw = readNorm(path.join(CODEADD, 'fragments', 'agent-mode', `${command}.md`));
+  return parseFragmentSections(raw).get(section);
+}
+
+describe('L1.2 (F3/F10-F21) -- agent-mode is registered, off by default, and lists only commands that carry slots', () => {
+  it('has an entry that is disabled by default', () => {
+    const meta = FEATURES['agent-mode'];
+    expect(meta).toBeTruthy();
+    expect(meta.default).toBe(false);
+    expect(typeof meta.description).toBe('string');
+  });
+
+  it('lists exactly the commands whose F-block has landed', () => {
+    expect([...FEATURES['agent-mode'].commands].sort()).toEqual(Object.keys(AGENT_SLOTS).sort());
+  });
+});
+
+describe.each(Object.keys(AGENT_SLOTS))('L1.3 -- %s carries its agent-mode slots', (command) => {
+  it('the sidecar holds exactly the planned slots, one agent-mode member each, with a safe fallback path', () => {
+    const slots = agentSlotsOf(command);
+    expect(slots.map((s) => s.id.slice('agent-mode.'.length)).sort()).toEqual([...AGENT_SLOTS[command]].sort());
+    for (const s of slots) {
+      const section = s.id.slice('agent-mode.'.length);
+      expect(s.members, s.id).toEqual([{ namespace: 'feature', name: 'agent-mode', section }]);
+      expect(s.fallbackPath, s.id).toMatch(/^fallbacks\/agent-mode\.[A-Za-z0-9._-]+\.md$/);
+      expect(s.fallback.length, s.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('the fragment holds one non-empty section per slot and nothing else', () => {
+    const raw = readNorm(path.join(CODEADD, 'fragments', 'agent-mode', `${command}.md`));
+    const sections = parseFragmentSections(raw);
+    expect([...sections.keys()].sort()).toEqual([...AGENT_SLOTS[command]].sort());
+    for (const [name, body] of sections) expect(body.trim().length, name).toBeGreaterThan(0);
+  });
+});
+
+describe('L1.6 / L1.7 -- the installed render, feature on and off', () => {
+  const fixtureAM = treeFixture({
+    prefix: 'agent-mode-',
+    copy: [
+      ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest, optional: true })),
+      { src: 'framwork/.codeadd', dest: '.codeadd' },
+    ],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: Object.keys(PROVIDERS), features: {}, plugins: {}, hashes: {} },
+    },
+    normalize: true,
+  });
+  let tmp;
+  beforeEach(() => { tmp = fixtureAM.root(); });
+  afterEach(() => fixtureAM.cleanup());
+  afterAll(() => fixtureAM.dispose());
+
+  const installed = (key, command) => {
+    const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, `${command}.md`);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+  };
+  const cases = Object.keys(AGENT_SLOTS).flatMap((command) => CMD_PROVIDERS.map((key) => [command, key]));
+
+  it.each(cases)('%s on %s: with agent-mode OFF every fallback renders and no member text does', (command, key) => {
+    const text = installed(key, command);
+    if (text === null) return;
+    expect(agentSlotsOf(command)).toHaveLength(AGENT_SLOTS[command].length);
+    for (const s of agentSlotsOf(command)) {
+      const section = s.id.slice('agent-mode.'.length);
+      expect(text, `${s.id} fallback`).toContain(resolvePlaceholders(s.fallback, PROVIDERS[key]).trim());
+      expect(text, `${s.id} member`).not.toContain(resolvePlaceholders(memberBody(command, section), PROVIDERS[key]).trim());
+    }
+  });
+
+  it.each(cases)('%s on %s: with agent-mode ON every member renders and no fallback text does', (command, key) => {
+    enableFeature(tmp, 'agent-mode');
+    const text = installed(key, command);
+    if (text === null) return;
+    expect(agentSlotsOf(command)).toHaveLength(AGENT_SLOTS[command].length);
+    for (const s of agentSlotsOf(command)) {
+      const section = s.id.slice('agent-mode.'.length);
+      expect(text, `${s.id} member`).toContain(resolvePlaceholders(memberBody(command, section), PROVIDERS[key]).trim());
+      expect(text, `${s.id} fallback`).not.toContain(resolvePlaceholders(s.fallback, PROVIDERS[key]).trim());
     }
   });
 });

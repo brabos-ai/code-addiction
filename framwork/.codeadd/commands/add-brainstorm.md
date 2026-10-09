@@ -3,9 +3,9 @@
 <!-- uses:
 - skill: add--doc-schemas
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--final-report
 - skill: add--knowledge-discovery
-- mention: add--ecosystem
 - command: /add-diagnose
 - command: /add-hotfix
 - command: /add-new
@@ -14,9 +14,11 @@
 - script: status.cjs
 -->
 
-> **OUTPUT RULE:** Responses max 20 words. Tables and lists are exceptions. Be direct, no fluff.
-> **The closing report at STEP add-brainstorm.handoff is exempt** — it reports in the shape `add--final-report` owns, and a
-> 20-word stub is not that shape.
+<!-- slot:agent-mode.output-cap fallback="fallbacks/agent-mode.add-brainstorm.output-cap.md" -->
+<!-- feature:agent-mode:output-cap -->
+<!-- /feature:agent-mode:output-cap -->
+<!-- /slot:agent-mode.output-cap -->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
 
@@ -83,6 +85,11 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP add-brainstorm.handof
 a new request with its own classification.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -207,24 +214,19 @@ still presented, and this command still stops until the user says yes.
 | **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
 | **architectural** | Everything written below. | STEPS 3 → 4 → 5. |
 
-The cadence, the challenge techniques and the 20-word `OUTPUT RULE` apply on all three paths. If the
-conversation reveals hidden complexity, apply STEP add-brainstorm.classify's one-way ratchet before continuing.
+<!-- slot:agent-mode.cap-scope fallback="fallbacks/agent-mode.add-brainstorm.cap-scope.md" -->
+<!-- feature:agent-mode:cap-scope -->
+<!-- /feature:agent-mode:cap-scope -->
+<!-- /slot:agent-mode.cap-scope -->
 
 For investigations, search the codebase before answering.
 
 ### STEP add-brainstorm.draft-objective-first Draft the objective FIRST, and have the user correct it
 
-**Draft the objective from what the user has already said, and ask them to correct it.** One or two
-sentences, in their words, answering one question: **what will be true when this is done that is not
-true today?**
-
-```
-IF STARTING STEP add-brainstorm.explore ON bounded OR architectural:
-  ⛔ DO NOT: Ask "what is your objective?" and wait — someone who could state it cold would have
-  ⛔ DO NOT: Hand back the request as the objective — "you want X" names the thing, not what it achieves
-  ⛔ DO NOT: Ask any other question while the objective is still unstated
-  ✅ DO: Propose the draft, then let them correct it
-```
+<!-- slot:agent-mode.objective-draft fallback="fallbacks/agent-mode.add-brainstorm.objective-draft.md" -->
+<!-- feature:agent-mode:objective-draft -->
+<!-- /feature:agent-mode:objective-draft -->
+<!-- /slot:agent-mode.objective-draft -->
 
 **Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
 turning that into what they are trying to achieve is the first thing this command is for.
@@ -256,13 +258,10 @@ draft; the questions are how it stops being one.
 [ ] Open threads — none left by the approval
 ```
 
-**Cadence (MANDATORY):** Ask **ONE** clarifying or challenge question, WAIT for the answer, THEN ask the
-next. DO NOT stack multiple questions in one turn. The 20-word output rule still applies.
-
-**Every question is drawn from the objective.** A question that sharpens no part of it is a question
-this conversation does not need.
-
-**Active posture:** Go beyond the user's framing. Question premises, surface edge cases, force decisions until doubts resolve. The one-question cap limits questions, not unsolicited insight.
+<!-- slot:agent-mode.cadence fallback="fallbacks/agent-mode.add-brainstorm.cadence.md" -->
+<!-- feature:agent-mode:cadence -->
+<!-- /feature:agent-mode:cadence -->
+<!-- /slot:agent-mode.cadence -->
 
 **Challenge techniques (apply one per turn):**
 - **Question premises:** "You assume [action] — why not [alternative]?"
@@ -324,9 +323,10 @@ IF PRESENTING CANDIDATE DIRECTIONS OR OPTIONS:
 **This is the whole job.** A command that exists to help someone decide, and refuses to say what it
 would do, has handed the work back. The user still chooses — they now choose against a position.
 
-**Ask through the provider's structured-question tool** where the `structuredQuestions` capability
-declares one, marking the recommended option. Where it declares none, present the same content as an
-option table with the recommendation stated below it.
+<!-- slot:agent-mode.structured-ask fallback="fallbacks/agent-mode.add-brainstorm.structured-ask.md" -->
+<!-- feature:agent-mode:structured-ask -->
+<!-- /feature:agent-mode:structured-ask -->
+<!-- /slot:agent-mode.structured-ask -->
 
 **Close what you can close.** Do not carry a question to the approval that one more turn would have
 settled — it lands in the intent file's `## Open` and becomes a question `/add-new` has to ask
@@ -448,15 +448,10 @@ nothing) and the 3-5 key decisions.
 
 ### STEP add-brainstorm.approval Ask for the one approval — `bounded` and `architectural`
 
-**This is the only approval the pipeline asks for by default.** Ask it through the provider's
-structured-question tool where the `structuredQuestions` capability declares one — otherwise as an
-option table — with these three options and nothing else:
-
-| Option | What happens |
-|---|---|
-| **Approve, I confirm each stage** | The intent file records `delivery: confirm`. Each stage stops and offers optional fresh-context instructions; this command stops |
-| **Approve, deliver automatically** | The intent file records `delivery: automatic`, and this command follows `/add-new`. Every stage then hands off without waiting until the build asks whether to open the PR |
-| **Keep discussing** | No intent file, no handoff. Return to STEP add-brainstorm.explore with what the user wants to reopen |
+<!-- slot:agent-mode.approval-ask fallback="fallbacks/agent-mode.add-brainstorm.approval-ask.md" -->
+<!-- feature:agent-mode:approval-ask -->
+<!-- /feature:agent-mode:approval-ask -->
+<!-- /slot:agent-mode.approval-ask -->
 
 **Stop kind — deciding, in every state.** The delivery mode is what this question creates. What each
 mode does afterwards — which stops wait, how stages hand off, where the automatic path ends — is owned by
@@ -518,21 +513,10 @@ extracts decisions from this file without asking.
 `/add-new` alone — it resolves the intent file at its STEP add-new.intent. `/add-diagnose` and `/add-hotfix` have
 no such step, so naming the file to them would promise a handoff neither receives.
 
-On `delivery: confirm`, and on every route that is not `/add-new`, name the route in the report's
-metadata and offer the continuation:
-
-| Route | Next activity | Documents the block points at |
-|---|---|---|
-| `/add-new` | Formalize the idea as a feature | The existing intent file written at STEP add-brainstorm.write-intent-file carries every settled decision; do not invent a feature id or cite its future files as existing references |
-| `/add-diagnose` | Triage a suspected bug | Actual existing project evidence for the symptom; `add--ecosystem` Main Flows carries the routing |
-| `/add-hotfix` | Fix a confirmed bug | Actual existing diagnosis or issue documents, when available; never fabricate a hotfix directory that the next command has not created |
-| Needs more exploration | none — stay in this conversation | Offer nothing |
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. The last row above is the
-no-activity case: a brainstorm that still needs exploring has no next command, so it ends normally
-with no offer.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-brainstorm.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 On `delivery: automatic`, print the `/add-new` line with the last one reading `(delivering
 automatically — the build will ask before opening the PR.)`, then follow {{cmd:add-new}} with the intent
@@ -547,8 +531,12 @@ file as its argument, from its first step, as `add--delivery-mode` describes.
 **ALWAYS:**
 - Run status.cjs and load context before answering
 - State the classified path in one line and continue in the same turn — never ask the user to confirm it
-- Draft the objective and have the user correct it before any other question
-- Ask exactly one question per turn; wait for the answer
+
+<!-- slot:agent-mode.rules-cadence fallback="fallbacks/agent-mode.add-brainstorm.rules-cadence.md" -->
+<!-- feature:agent-mode:rules-cadence -->
+<!-- /feature:agent-mode:rules-cadence -->
+<!-- /slot:agent-mode.rules-cadence -->
+
 - Name the source of every recommendation; let this project win over outside practice
 - Present 2–3 candidate directions with trade-offs, and say which you would take
 - Fill `Used by` from the graph, or write NOT VERIFIED

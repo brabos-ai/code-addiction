@@ -88,6 +88,20 @@ export const FEATURES = {
     default: false,
     commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
   },
+  // OFF by default because it changes how a command TALKS, and a person at a
+  // terminal is who the commands were written for. On, the human-only passages
+  // (one question per turn, the structured-question tool, the yes/no
+  // continuation offer, confirming stops that wait) are swapped for bot ones
+  // through the agent-mode.* slots, and every command loads
+  // add--agent-interaction instead of add--human-interaction. Off, the slot
+  // fallbacks hold today's text. `commands` lists the commands whose slots and
+  // fragment have landed; the plan (0038B) ends it at the twelve of its design,
+  // docs/brainstorming/2026-10-09T145554-agent-mode-feature.md.
+  'agent-mode': {
+    description: 'Agent mode (commands ask in one numbered batch with a recommendation, call no interactive tool, and close on the next command) for bots that drive them headless',
+    default: false,
+    commands: ['add-brainstorm'],
+  },
 };
 
 /**

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withFallbacks } from './helpers/with-fallbacks.js';
 
 /**
  * Plan 2026-10-04T185331 -- optional chat continuation handoff.
@@ -41,7 +42,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = path.join(ROOT, 'framwork', '.codeadd');
 
-const read = (rel) => fs.readFileSync(path.join(SRC, rel), 'utf8');
+const read = (rel) => withFallbacks(fs.readFileSync(path.join(SRC, rel), 'utf8'));
 
 const FINAL_REPORT = 'skills/add--final-report/SKILL.md';
 const DELIVERY_MODE = 'skills/add--delivery-mode/SKILL.md';
