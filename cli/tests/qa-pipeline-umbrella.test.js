@@ -223,26 +223,27 @@ describe('setup contract (0061)', () => {
     expect(handoff).toBeGreaterThan(gate);
   });
 
-  it('materializes a dedicated QA ignore block before migration and smoke testing', () => {
+  it('materializes a dedicated QA ignore block before migration and the setup proof', () => {
     const ignore = src.indexOf('## STEP add-qa-setup.ignore:');
     const migration = src.indexOf('## STEP add-qa-setup.migrate:');
-    const smoke = src.indexOf('## STEP add-qa-setup.smoke:');
+    const proof = src.indexOf('## STEP add-qa-setup.proof:');
     expect(ignore).toBeGreaterThan(-1);
     expect(migration).toBeGreaterThan(ignore);
-    expect(smoke).toBeGreaterThan(migration);
+    expect(proof).toBeGreaterThan(migration);
     expect(src).toContain('# ADD QA evidence - managed by add-qa-setup');
     expect(src).not.toMatch(/^!final\/$/m);
     expect(src).toContain('.codeadd/scripts/qa-evidence.cjs ensure-ignore');
   });
 
-  it('no-screens deferral still writes and validates the receipt', () => {
-    const smoke = src.slice(
-      src.indexOf('## STEP add-qa-setup.smoke:'),
+  it('a run with no screen catalog still proves the setup with preflight a and writes the receipt', () => {
+    const proof = src.slice(
+      src.indexOf('## STEP add-qa-setup.proof:'),
       src.indexOf('## STEP add-qa-setup.receipt:'),
     );
-    expect(smoke).toMatch(/DEFER only the smoke dispatch and correction loop/i);
-    expect(smoke).toMatch(/continue to STEP add-qa-setup\.receipt/i);
-    expect(smoke).not.toMatch(/skip to hand-off/i);
+    expect(proof).toContain('qa-preflight.cjs a');
+    expect(proof).toMatch(/do NOT run `b`/i);
+    expect(proof).toMatch(/continue to STEP add-qa-setup.receipt/i);
+    expect(proof).not.toMatch(/autonomously dispatch/i);
   });
 
   it('registers add--setup-contract in the provider map', () => {

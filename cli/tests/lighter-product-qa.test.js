@@ -195,3 +195,22 @@ describe('F6 — review boots the app instead of blocking', () => {
     expect(read(P.qaReview)).toMatch(/only if the preflight booted it/i);
   });
 });
+
+describe('F7 — setup drops the smoke review and its correction loop', () => {
+  it('19. no smoke step, no correction loop, no /add-build dispatch', () => {
+    const t = read(P.setup);
+    expect(t).not.toContain('add-qa-setup.smoke');
+    expect(t).not.toContain('correction-loop-max');
+    expect(t).not.toMatch(/autonomously dispatch `\/add-build`/i);
+  });
+
+  it('20. setup proof names preflight a and b; the hand-off names the first real review', () => {
+    const t = read(P.setup);
+    expect(t).toContain('qa-preflight.cjs b');
+    expect(between(t, '## STEP add-qa-setup.handoff:')).toMatch(/first real/i);
+  });
+
+  it('21. guard: the Materializes shape is unchanged', () => {
+    expect(read(P.setup)).toContain('shape: sha256:2326519b34fdd1fe');
+  });
+});
