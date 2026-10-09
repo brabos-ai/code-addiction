@@ -67,7 +67,7 @@ delivery mode.
 ```
 STEP add-review.setup: Pre-Review Setup        → CHECK unstaged, ASK user
 STEP add-review.bootstrap: Bootstrap Context       → status.cjs, load docs, load AGENTS.md, read changed files
-STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
+STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review); SKIPPED when BUILD_REVIEW_COVERS=yes
 <!-- slot:tdd-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
@@ -136,7 +136,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 - `PENDING`: Tick `[ ]` (not implemented)
 - `STALE TICK`: Tick `[x]` but code missing → reopen, block delivery
 
-**Success Criteria:** `SPEC_AUDIT_STATUS = COMPLIANT` (>80% items compliant, no STALE_TICK, no UNCOVERED RF/RN).
+**Success Criteria:** `SPEC_AUDIT_STATUS = COMPLIANT` (>80% items compliant, no STALE_TICK, no UNCOVERED RF/RN). With `BUILD_REVIEW_COVERS=yes` (STEP add-review.build-coverage) the gate is met by the build's Final review and its status is `SKIPPED`.
 **Failure:** Audit status = `DIVERGENT` or `INCOMPLETE`. Report findings; do NOT dispatch reviewers until resolved.
 
 **Special Cases:**
@@ -357,11 +357,33 @@ From `status.cjs` output, read ALL files in `FILES_TO_REVIEW`.
 
 **IMPORTANT:** Review must cover ALL changed files (committed, staged, unstaged, untracked).
 
+### STEP add-review.build-coverage Does the Build's Final Review Still Cover This Tree?
+
+Decide `BUILD_REVIEW_COVERS` (`yes` | `no`) once, here, before the spec audit. The build's Final review already ran
+the spec audit and the OWASP pass on the finished unit; repeating them on the same code costs two dispatches and finds
+nothing new. It is `yes` only when, for EVERY in-scope ledger — `docs/features/${FEATURE_ID}/build-ledger.md`, or each
+`build-ledger.md` of `REVIEW_SCOPE` on an epic — all four hold:
+
+1. The last `Final review:` line reads `passed` or `ruled N` (`blocked N` never skips anything).
+2. A `Final review head: <sha>` line follows it.
+3. `git diff --name-only <sha>..HEAD` prints nothing once `docs/features/${FEATURE_ID}` is left out.
+4. `git status --porcelain` prints nothing once the same folder is left out.
+
+```
+IF ANY LEDGER IS MISSING, HAS NO HEAD LINE, OR ANY CONDITION FAILS:
+  ⛔ DO NOT: Skip the spec audit or the OWASP pass "because the build reviewed it" — an older ledger or a later commit means it did not review THIS tree
+  ✅ DO: Set BUILD_REVIEW_COVERS=no and run the review in full
+```
+
+The area reviewers, the build, the validation gates, the test-spec coverage slot and the QA steps run in both cases.
+
 ---
 
 ## STEP add-review.spec-audit: Spec Compliance Audit (BEFORE technical review)
 
 **Deep audit of plan.md spec vs implemented code. Catches gaps the code review does not.**
+
+**IF `BUILD_REVIEW_COVERS=yes`:** skip the four sub-steps below and write `Spec audit: SKIPPED — covered by Final review: <verdict> at <sha>` as the content of this report's `## Spec Compliance Audit`, with `⊘ SKIPPED` in the Quality Gate Report. Gate 3 counts as met. The `tdd-pipeline.spec-audit` slot still runs.
 
 ### STEP add-review.load-contracts-acceptance Load Contracts and Acceptance Checklist
 
@@ -468,7 +490,7 @@ the evidence this command just captured.
 **If only ONE area exists:**
 - Dispatch single reviewer
 
-**If the owasp trigger fired (STEP add-review.scope):**
+**If the owasp trigger fired (STEP add-review.scope):** the OWASP pass is skipped when `BUILD_REVIEW_COVERS=yes`, because the Final review ran it on this tree. Otherwise:
 - Dispatch `@reviewer-agent` (owasp) in the SAME parallel batch as the area reviewer(s) — never
   instead of them, never as a later round.
 
@@ -762,7 +784,7 @@ Collect results from all previous steps:
 | Gate | Status | Details |
 |------|--------|---------|
 | Build | ✅ PASSED / ❌ BLOCKED | build command — X errors |
-| Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED | X/Y items compliant |
+| Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED / ⊘ SKIPPED | X/Y items compliant, or `covered by Final review: <verdict> at <sha>` |
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
 | Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP add-review.gates with `<command> → exit <code>` (omit row if AGENTS.md has no validation_gates) |
@@ -845,7 +867,7 @@ status: open
 [table from 11.1]
 
 ## Spec Compliance Audit
-[output from STEP add-review.spec-audit]
+[output from STEP add-review.spec-audit, or the `Spec audit: SKIPPED — …` line]
 
 ## Code Review Summary
 [aggregated findings from STEP add-review.consolidate]

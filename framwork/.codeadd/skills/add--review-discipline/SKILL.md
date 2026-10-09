@@ -192,7 +192,17 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    ```
 
    `NNN` is the highest `review-NNN.md` in the feature folder at this moment, `000` when there is
-   none. On `blocked`, write one line per open blocker right after it:
+   none. **Right after the verdict, write the commit it covers on its own line**, through the same script:
+
+   ```
+   Final review head: <sha>
+   ```
+
+   `<sha>` is `git rev-parse HEAD` at that moment. `/add-review` reads it to tell whether the tree still
+   matches what this review covered. It is a separate line on purpose: `converge-gates.cjs` reads the
+   verdict line end-anchored, so a suffix on it would read as malformed.
+
+   On `blocked`, write one line per open blocker after the head line:
 
    ```
    Blocker suggestion: <finding id> — <ready-to-paste command>
@@ -245,7 +255,7 @@ Apply it and continue.
 
 `review-NNN.md` and `qa-validation-NNN.md` are written on purpose, and so is the build's
 `Final review:` line in `build-ledger.md`, which `converge-gates.cjs` reads as gate 1's verdict when
-no newer review exists.
+no newer review exists. The `Final review head:` line beside it is read by `/add-review` alone.
 `qa-evidence.cjs` promotes immutable run snapshots keyed to their report numbers,
 and `converge-gates.cjs` reads the review's `| **Overall** |` row and its
 `> **QA baseline:**` line. Neither is a stored opinion a human must find; both

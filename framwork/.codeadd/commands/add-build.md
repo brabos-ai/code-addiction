@@ -1122,11 +1122,11 @@ After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
 **Runs once per delivery unit, after its last area and before STEP add-build.comply.** `add--review-discipline` owns
 it — **LOAD `{{skill:add--review-discipline/SKILL.md}}`** and follow **The Build's Final Review**: the
-`MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line.
-On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
+`MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line with the
+`Final review head:` line after it. On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
 
 **After a CORRECTION run, dispatch nothing new.** STEP add-build.re-review's re-review is this run's review: write
-the verdict from it — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
+the verdict from it, plus its `Final review head:` line — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
 `blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP add-build.correct answered stays
 the newest verdict and `/add-done` blocks on it.
 
@@ -1579,8 +1579,7 @@ the full invocation.** On `automatic`, print the complete invocation and follow 
 instruction block on `confirm` waits for the user's acceptance.
 
 - After `## Loop End` → the step it reached: `/add-plan ${FEATURE_ID}` for the next subfeature, or,
-  past the publish question, `/add-done` — with `/add-review ${FEATURE_ID}` named as optional, for
-  detail and QA
+  past the publish question, `/add-done`
 - `Final review: blocked N` → each `Blocker suggestion:` command
 
 **Stop kind — confirming.** The report describes work the approval already covered. On `automatic`,

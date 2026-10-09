@@ -58,8 +58,7 @@ correction contract, one path.
    user chooses the fix scope — on an automatic delivery the scope is every
    agent-routed row, and the manual ones wait for the user as step 3 says.
 
-`## Final Review` then writes this run's verdict. Re-running `{{cmd:add-review}}` is optional — it
-writes the next `review-NNN.md` when a side-by-side QA comparison is wanted.
+`## Final Review` then writes this run's verdict.
 The QA-specific nuance above sits on top of the base **Routed Correction Contract**
 in STEP add-build.correct — the resolution annex and the finalized marker are written there,
 whether or not this section was injected.

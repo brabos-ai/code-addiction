@@ -138,3 +138,37 @@ describe('F3 — a build-only fix round gets no re-review', () => {
   });
 });
 
+describe('F4 — add-review does not repeat the build\'s Final Review', () => {
+  it('L1.14 the Final review head line is named by add--review-discipline and add-build', () => {
+    expect(read(P.discipline)).toContain('Final review head:');
+    expect(read(P.build)).toContain('Final review head:');
+  });
+
+  it('L1.15 add-build no longer names /add-review as an optional next step', () => {
+    const s = section(read(P.build), 'STEP add-build.next-command');
+    expect(s).not.toBeNull();
+    expect(s).not.toMatch(/named\s+as optional/);
+  });
+
+  it('L1.16 the qa-pipeline build fragment no longer calls re-running add-review optional', () => {
+    expect(read(P.qaBuildFragment)).not.toMatch(/Re-running[^\n]*add-review[^\n]*optional/);
+  });
+
+  it('L1.17 add-review specifies the skip: flag, conditions, record and OWASP', () => {
+    const t = read(P.review);
+    expect(t).toContain('BUILD_REVIEW_COVERS');
+    expect(t).toContain('Final review head:');
+    expect(t).toContain('Spec audit: SKIPPED');
+    expect(t).toMatch(/OWASP[^\n]*skipp|skipp[^\n]*OWASP/i);
+  });
+
+  it('L1.18 (guard) add-review still runs the test-spec slot and the area reviewers', () => {
+    const t = read(P.review);
+    expect(t).toContain('slot:tdd-pipeline.spec-audit');
+    expect(t).toContain('STEP add-review.dispatch-strategy');
+  });
+
+  it('L1.19 (guard) the router still calls /add-review optional', () => {
+    expect(read(P.router)).toMatch(/\/add-review[^\n]*optional|optional[^\n]*\/add-review/i);
+  });
+});

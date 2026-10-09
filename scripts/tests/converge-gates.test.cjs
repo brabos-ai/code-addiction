@@ -1248,3 +1248,34 @@ test('converge-gates#075 — final review: review-008 is compared in base ten, n
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /REVIEW_SOURCE=review/);
 });
+
+// ─── The build's `Final review head:` line (plan 2026-10-08T211926, F4) ───────
+// /add-review reads it to decide whether the Final Review still covers the tree.
+// It is a separate line, so the verdict line keeps its end-anchored grammar.
+
+test('converge-gates#076 — final review head: a head line after a passed verdict leaves gate 1 ok', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0084F-headpassed');
+  const abs = path.join(base, dir);
+  writeFinalReview(abs, 'passed (after review-000)');
+  fs.appendFileSync(path.join(abs, 'build-ledger.md'), 'Final review head: 0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\n');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /GATE_REVIEW=ok/);
+  assert.match(res.output, /REVIEW_SOURCE=build/);
+});
+
+test('converge-gates#077 — final review head: a head line between a blocked verdict and its suggestions keeps the suggestions', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0085F-headblocked');
+  const abs = path.join(base, dir);
+  writeFinalReview(abs, 'blocked 1 (after review-000)');
+  fs.appendFileSync(
+    path.join(abs, 'build-ledger.md'),
+    'Final review head: 0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\nBlocker suggestion: FR-1 — /add-plan 0085F\n',
+  );
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /GATE_REVIEW=broken/);
+  assert.match(res.output, /GATE_REVIEW_DETAIL=.*blocked 1.*FR-1 — \/add-plan 0085F/);
+});
