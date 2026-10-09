@@ -82,3 +82,52 @@ describe('L1.8 (F2) -- a fallback holding a raw .codeadd/ path warns at build', 
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// L1.4 -- the human-only sections move, byte for byte, into add--human-interaction
+// ---------------------------------------------------------------------------
+const SKILLS = path.join(ROOT, 'framwork', '.codeadd', 'skills');
+const MOVED_DIR = path.join(import.meta.dirname, 'fixtures', 'agent-mode-moved');
+const readNorm = (file) => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+const fixture = (name) => readNorm(path.join(MOVED_DIR, `${name}.md`)).replace(/\n$/, '');
+
+// Each fixture is the text at the base commit (a14dd45), taken by line range.
+// Where the passage lives afterwards: `from` is the skill it leaves (F5-F7).
+const MOVED = [
+  { name: 'dm-confirm-row', from: 'add--delivery-mode' },
+  { name: 'dm-no-invocation', from: 'add--delivery-mode' },
+  { name: 'dm-offer-gate', from: 'add--delivery-mode' },
+  { name: 'dm-real-activity', from: 'add--delivery-mode' },
+  { name: 'dm-deciding-not-replaced', from: 'add--delivery-mode' },
+  { name: 'dm-semi-automatic', from: 'add--delivery-mode' },
+  { name: 'dm-rule-offer-once', from: 'add--delivery-mode' },
+  { name: 'dm-rule-no-invocation', from: 'add--delivery-mode' },
+  { name: 'dm-rule-no-real-activity', from: 'add--delivery-mode' },
+  { name: 'dm-rule-no-substitute', from: 'add--delivery-mode' },
+  { name: 'fr-second-response-body', from: 'add--final-report' },
+  { name: 'fs-structured-tool', from: 'add--feature-specification' },
+];
+
+describe('L1.4(a) (F4) -- add--human-interaction holds every moved section byte for byte', () => {
+  const human = () => readNorm(path.join(SKILLS, 'add--human-interaction', 'SKILL.md'));
+
+  it('exists with a name and description in its frontmatter', () => {
+    const text = human();
+    expect(text).toMatch(/^---\nname: add--human-interaction\ndescription: ".+"\n---\n/);
+  });
+
+  it.each(MOVED.map((m) => m.name))('holds %s verbatim', (name) => {
+    expect(human()).toContain(fixture(name));
+  });
+
+  it('owns both continuation contract ids', () => {
+    const text = human();
+    expect(text).toContain('chat-continuation-eligibility-v1');
+    expect(text).toContain('chat-continuation-output-v1');
+  });
+
+  it('is registered in the product provider map', () => {
+    const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+    expect(map.skills).toHaveProperty('add--human-interaction');
+  });
+});

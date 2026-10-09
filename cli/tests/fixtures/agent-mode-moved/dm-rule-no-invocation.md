@@ -1,0 +1,1 @@
+- Print the full next-command invocation on `confirm` before the user asks for it

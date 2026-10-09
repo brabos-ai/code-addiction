@@ -1,0 +1,1 @@
+- Substitute the offer for a deciding stop
