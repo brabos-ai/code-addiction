@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 85,
-  "slotCount": 78,
+  "membershipCount": 90,
+  "slotCount": 83,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -1268,17 +1268,53 @@
       "name": "add-plan",
       "slots": [
         {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.stop-kinds",
+          "fallback": "fallbacks/agent-mode.add-plan.stop-kinds.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "stop-kinds"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "stop-kinds"
+            }
+          ]
+        },
+        {
           "id": "plan-specs",
           "fallback": "fallbacks/plan-specs.md",
           "sourceOrder": [
             {
               "namespace": "feature",
-              "name": "qa-pipeline",
+              "name": "tdd-pipeline",
               "section": "step-list"
             },
             {
               "namespace": "feature",
-              "name": "tdd-pipeline",
+              "name": "qa-pipeline",
               "section": "step-list"
             }
           ],
@@ -1368,6 +1404,24 @@
           ]
         },
         {
+          "id": "agent-mode.preview-wait",
+          "fallback": "fallbacks/agent-mode.add-plan.preview-wait.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "preview-wait"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "preview-wait"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-done-when",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1400,6 +1454,42 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-planned"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.closing-route",
+          "fallback": "fallbacks/agent-mode.add-plan.closing-route.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-plan.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
             }
           ]
         }
@@ -1686,6 +1776,27 @@
         {
           "id": "product/command/add-plan",
           "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
         },
         {
           "id": "product/skill/add--agent-interaction",

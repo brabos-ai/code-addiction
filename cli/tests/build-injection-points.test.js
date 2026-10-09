@@ -377,7 +377,9 @@ describe('slot membership map v2', () => {
 
   it('add-plan step-list source order is tdd then qa', () => {
     const slot = MAP.resources.find((r) => r.resource === 'command/add-plan').slots.find((s) => s.id === 'plan-specs');
-    const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots[0];
+    // The slot is found by its members, not by position: agent-mode.interaction now precedes it in source (F12).
+    const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots
+      .find((members) => members.some((m) => m.name === 'tdd-pipeline' && m.section === 'step-list'));
     expect(derived).toEqual(slot.expectedOrder);
   });
 });
