@@ -179,3 +179,19 @@ describe('F5 — the e2e specs enter a build commit', () => {
     expect(c).toMatch(/e2e batch/i);
   });
 });
+
+describe('F6 — review boots the app instead of blocking', () => {
+  const row3 = () => read(P.qaReview).split('\n').find((l) => l.startsWith('| 3 |'));
+
+  it('17. row 3 boots through the Managed App Lifecycle and blocks only when boot fails', () => {
+    const r = row3();
+    expect(r).toBeTruthy();
+    expect(r).not.toContain('block — surface the config `bootHint`');
+    expect(r).toMatch(/boot/i);
+    expect(read(P.qaReview)).toMatch(/blocks? only (when|if) (the )?boot fails/i);
+  });
+
+  it('18. teardown covers only an app the preflight booted, at the end of the QA steps', () => {
+    expect(read(P.qaReview)).toMatch(/only if the preflight booted it/i);
+  });
+});

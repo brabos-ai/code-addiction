@@ -97,7 +97,7 @@ output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
 |---|---|---|---|
 | 1 | `docs/qa/config.json` present + parseable + has `baseUrl` | `QA_CONFIG` | block |
 | 2 | `baseUrl` local/throwaway | `QA_BASEURL_LOCAL` | block — refuse production |
-| 3 | `baseUrl` reachable | `QA_BASEURL_REACHABLE` | block — surface the config `bootHint` |
+| 3 | `baseUrl` reachable — boot it when down | `QA_BASEURL_REACHABLE` | boot first (below); **block** only if boot fails — surface the config `bootHint` |
 | 4 | `@playwright/test` functional in the project | `QA_RUNNER` | block |
 | 5 | chromium launchable | `QA_CHROMIUM` | block |
 | 6 | `qa-project` skill present | `QA_PROJECT_SKILL` | block — it carries the run commands |
@@ -107,6 +107,10 @@ output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
 
 `{{cmd:add-qa-setup}}` interprets rows 8–9 as work-to-do, never a stop. This
 command interprets them as `block` — the asymmetry is deliberate and unchanged.
+
+**Row 3 boots before it blocks.** When `QA_BASEURL_REACHABLE` is not `ok` and rows 1, 2 and 6 held, start the app through the `qa-project` Managed App Lifecycle (`bootHint`, boot in the background, wait until ready) and probe `baseUrl` again. The row blocks only if boot fails, and then it surfaces `bootHint`. The app stays up through capture and the judges, so STEP qa-pipeline.capture finds it running and boots nothing of its own.
+
+**The preflight owns the app it booted.** Tear it down when the QA steps end — after STEP qa-pipeline.merge-write-per for the last scope, or at once when a `block` row stops the QA steps — and only if the preflight booted it. An app that was already running is never stopped.
 
 Collect ALL rows. Do NOT stop here even on a `block` failure; the user gets
 every problem and its remedy at once, after Phase B.
@@ -327,4 +331,6 @@ schema `qa-validation`.
 **The per-scope report is not replaced by `review-NNN.md`.** `qa-evidence.cjs
 validate`, `working-baseline` and `previous`, and `/add-done`, all depend on
 this exact contract. Both documents are written every run.
+
+**QA teardown.** After the last scope is written, stop the app only if the preflight booted it (row 3). Never stop one that was already running.
 <!-- /section:judge-tail -->
