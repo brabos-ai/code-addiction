@@ -27,6 +27,7 @@ import {
 import { writeMcpRegistration, unregisterProvider } from './mcp-registration.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { promptConfirm, promptModify, promptApplyDiff } from './prompt.js';
+import { readChangeFlags } from './change-flags.js';
 
 /**
  * The core every way of changing an installation goes through.
@@ -455,20 +456,57 @@ export async function providers(cwd, args, scope = 'project') {
 }
 
 /**
- * CLI entry point for `codeadd modify` — the interactive editor.
+ * Turn "a requested plugin was not enabled" into a failing exit, AFTER everything
+ * else was applied. The warning `applyDesiredState` already logs is for a person;
+ * a bot needs the exit code.
  *
- * Asks ONCE: `promptApplyDiff` shows the diff and takes the confirmation, and
- * the core is then called with `force: true` so a removal is not confirmed a
+ * @param {string[]} names  `pluginsNotEnabled` from `applyDesiredState`
+ */
+export function assertPluginsEnabled(names) {
+  if (names.length > 0) {
+    throw new Error(`Plugin ${names.join(', ')} was not enabled: its tool was not detected. Everything else was applied.`);
+  }
+}
+
+const MODIFY_FLAGS_HELP =
+  'modify needs an interactive terminal, or flags saying what to change: ' +
+  '--providers <a,b|none> (the final set), --enable-feature <name>, --disable-feature <name>, ' +
+  '--enable-plugin <name>, --disable-plugin <name>. Add --force to remove a provider.';
+
+/**
+ * CLI entry point for `codeadd modify`.
+ *
+ * With change flags it builds `desired` from them and applies it, with no prompt:
+ * `--providers` is the FINAL set, the feature and plugin flags are deltas. Without
+ * flags it is the interactive editor.
+ *
+ * The editor asks ONCE: `promptApplyDiff` shows the diff and takes the confirmation,
+ * and the core is then called with `force: true` so a removal is not confirmed a
  * second time.
  *
  * @param {string} cwd  the scope-resolved install root
- * @param {string[]} args  unused; accepted so the dispatcher can pass it positionally
+ * @param {string[]} args
  * @param {'project'|'global'} [scope]
  */
 export async function modify(cwd, args, scope = 'project') {
-  void args;
   const manifest = requireManifest(cwd);
   const installScope = manifest.scope ?? scope;
+
+  const flags = readChangeFlags(args);
+  if (flags.any) {
+    intro('ADD CLI - Modify');
+    const desired = {};
+    if (flags.providers !== undefined) desired.providers = flags.providers;
+    if (Object.keys(flags.features).length > 0) desired.features = flags.features;
+    if (Object.keys(flags.plugins).length > 0) desired.plugins = flags.plugins;
+    const result = await applyDesiredState(cwd, desired, { force: flags.force });
+    assertPluginsEnabled(result.pluginsNotEnabled);
+    outro('Installation updated.');
+    return;
+  }
+
+  // No flags and nobody to answer the editor: say what to pass, never wait.
+  if (!process.stdin.isTTY) throw new Error(MODIFY_FLAGS_HELP);
 
   intro('ADD CLI - Modify');
   const desired = await promptModify(
