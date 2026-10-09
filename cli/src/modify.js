@@ -130,6 +130,12 @@ export function validateDesired(desired, scope, installed = []) {
   for (const [name, on] of Object.entries(desired.features ?? {})) {
     const resolved = resolveFeatureName(name);
     if (!resolved) throw new Error(`Unknown feature "${name}". Available: ${Object.keys(FEATURES).join(', ')}`);
+    // An alias and its canonical key are one feature: asking for opposite states is a conflict,
+    // and the flag reader cannot see it because it compares the raw names.
+    if (resolved.key in features && features[resolved.key] !== on) {
+      throw new Error(`"${name}" and "${resolved.key}" are the same feature and were asked for opposite states. Pick one.`);
+    }
+    if (resolved.alias) log.warn(`"${resolved.alias}" is deprecated and now means "${resolved.key}". Update your scripts.`);
     features[resolved.key] = on;
   }
 

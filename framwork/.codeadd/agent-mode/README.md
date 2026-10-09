@@ -98,4 +98,7 @@ npx codeadd features list
 - `--enable-feature`, `--disable-feature`, `--enable-plugin` and `--disable-plugin` change only the
   names you give. Repeat the flag or separate names with commas.
 - An installation already there is not reinstalled. Use `modify` or `update`; to start over, run
-  `uninstall --force` and then `install`.
+  `uninstall --force` and then `install`. One exception: when a project install and a user-level
+  install both exist, plain `uninstall` asks which one to remove, and with no terminal it waits.
+  `--global` (or `--user`) picks the user-level one. There is no flag for the project one in that
+  case, so do not use `uninstall` there from a bot.

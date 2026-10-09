@@ -98,7 +98,8 @@ Commands:
                                Change features and plugins on top of the defaults.
                                Repeat the flag or use commas: --enable-feature board,qa-pipeline
   install --no-gitignore       Do not write the .gitignore block (default: written)
-  install --force              Overwrite an existing .codeadd/ or provider dir without asking
+  install --force              Overwrite existing .codeadd/ or provider files without asking
+                               (an installation already registered is changed with modify or update)
   update                       Update to latest release (respects current channel)
   update --version <tag>       Update to a specific release tag
   update --channel <channel>   Update and switch release channel (stable or beta)

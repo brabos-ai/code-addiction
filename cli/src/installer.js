@@ -262,6 +262,9 @@ export async function install(cwd, options = {}) {
       if (options.version || options.channel) {
         log.info('--version and --channel are ignored by Modify: it never changes the installed version. Use Update for that.');
       }
+      if (flags.any) {
+        log.warn('The change flags (--providers, --enable-feature, ...) are not applied by this menu. To apply them without it, run `codeadd modify` with the same flags.');
+      }
       await modify(targetDir, [], installScope);
       return;
     }

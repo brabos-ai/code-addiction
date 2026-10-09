@@ -265,6 +265,14 @@ describe('modify with flags and no TTY (L2.6, L2.8)', () => {
     expect(m.plugins?.gx?.enabled).not.toBe(true);
   });
 
+  it('an alias and its canonical feature name asked for opposite states is a conflict', async () => {
+    seed(['claude']);
+    const before = fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8');
+
+    await expect(modify(dir, ['--enable-feature', 'tdd', '--disable-feature', 'tdd-pipeline'], 'project')).rejects.toThrow(/same feature/);
+    expect(fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8')).toBe(before);
+  });
+
   it('refuses an unknown name before changing anything', async () => {
     seed(['claude']);
     const before = fs.readFileSync(path.join(dir, '.codeadd', 'manifest.json'), 'utf8');

@@ -43,7 +43,7 @@ npx codeadd uninstall --force
 - `install --providers <a,b|none>`: choose providers up front; required when stdin is not a terminal
 - `install --enable-feature|--disable-feature|--enable-plugin|--disable-plugin <name>`: change features and plugins on top of the defaults (repeat the flag or use commas)
 - `install --no-gitignore`: skip the `.gitignore` block
-- `install --force`: overwrite an existing `.codeadd/` or provider dir without asking
+- `install --force`: overwrite existing `.codeadd/` or provider files without asking (an installation already registered is changed with `modify` or `update`)
 - `modify --providers <a,b|none>`: set the final provider set with no prompt (removing one needs `--force`)
 - `modify --enable-feature|--disable-feature|--enable-plugin|--disable-plugin <name>`: turn features and plugins on or off with no prompt
 - `features list`: print the feature states (prints and exits when stdin is not a terminal)
