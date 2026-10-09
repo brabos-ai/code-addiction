@@ -314,6 +314,7 @@ describe('L1.6 / L1.7 -- the installed render, feature on and off', () => {
 describe('L1.4(b) (F5-F7) -- the moved sections are gone from their old owners', () => {
   const BY_OWNER = {
     'add--delivery-mode': MOVED.filter((m) => m.from === 'add--delivery-mode').map((m) => m.name),
+    'add--final-report': MOVED.filter((m) => m.from === 'add--final-report').map((m) => m.name),
   };
 
   it.each(Object.entries(BY_OWNER).flatMap(([owner, names]) => names.map((n) => [owner, n])))(
