@@ -211,6 +211,7 @@ const AGENT_SLOTS = {
   'add-diagnose': ['interaction', 'offer'],
   'add-hotfix': ['interaction', 'offer'],
   'add-qa-setup': ['interaction', 'install-confirm', 'config-values', 'offer'],
+  'add-pull-request': ['interaction', 'offer'],
 };
 const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));

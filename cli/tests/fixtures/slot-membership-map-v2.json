@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 107,
-  "slotCount": 100,
+  "membershipCount": 109,
+  "slotCount": 102,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -1676,6 +1676,50 @@
       ]
     },
     {
+      "resource": "command/add-pull-request",
+      "file": "framwork/.codeadd/commands/add-pull-request.md",
+      "kind": "command",
+      "name": "add-pull-request",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-pull-request.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "resource": "command/add-qa-setup",
       "file": "framwork/.codeadd/commands/add-qa-setup.md",
       "kind": "command",
@@ -2202,6 +2246,23 @@
         },
         {
           "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-pull-request.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-pull-request",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
           "via": "USES_SKILL"
         }
       ]
