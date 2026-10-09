@@ -139,7 +139,8 @@ describe('L1.4(a) (F4) -- add--human-interaction holds every moved section byte 
 // ---------------------------------------------------------------------------
 // Words a result contract owns. The schema's own description carries them; no
 // prompt may (docs/deliveries/2026-10-08T193103-PLAN--product-agent-mode-claude-code).
-const CONTRACT_WORDS = [/needs-approval/i, /\bstopped\b/, /next_step/, /structured_output/, /json-schema/i, /result block/i];
+// `stopped` is a status value only when written as one: the plain word appears in the human text the fallbacks keep verbatim.
+const CONTRACT_WORDS = [/needs-approval/i, /`stopped`/, /status\W+(?:is\W+)?stopped/i, /next_step/, /structured_output/, /json-schema/i, /result block/i];
 
 function agentModeTexts() {
   const files = [path.join(SKILLS, 'add--agent-interaction', 'SKILL.md')];
@@ -208,6 +209,7 @@ const AGENT_SLOTS = {
   'add-review': ['interaction', 'staging-consent', 'offer'],
   'add-done': ['interaction', 'ci-watch', 'offer'],
   'add-diagnose': ['interaction', 'offer'],
+  'add-hotfix': ['interaction', 'offer'],
 };
 const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));

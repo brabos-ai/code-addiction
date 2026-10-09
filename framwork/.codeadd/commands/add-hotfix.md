@@ -1,14 +1,14 @@
 # Hotfix - Rapid Bug Fix Workflow
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--doc-schemas/references/fix.md
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--ecosystem
 - skill: add--final-report
 - skill: add--id-convention
 - skill: add--investigation
-- mention: /add-done
 - skill: add--knowledge-discovery
 - skill: add--ux-design
 - skill: add--subagent-driven-development
@@ -32,6 +32,11 @@
 > **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/`; relationships live in the `about.md` `## Relations` section
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -573,20 +578,10 @@ files, build status.
 
 ### STEP add-hotfix.handoff Offer the continuation
 
-**This command stays advisory about what happens next.** It fixed a bug and stopped. It does not
-merge, and it never routes to `/add-review` — the diagnose `@docs/diagnose/<file>.md` handoff and the
-route to `/add-done` are untouched by this step.
-
-| State | Next activity |
-|---|---|
-| Fix built, branch ready | `/add-done` — finalize the branch |
-| Build red | none yet — a red build is a deciding stop of its own |
-
-Finish the report and its metadata, then ask ONCE for instructions on the first row only.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-hotfix.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 
