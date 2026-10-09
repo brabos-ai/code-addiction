@@ -131,3 +131,64 @@ describe('L1.4(a) (F4) -- add--human-interaction holds every moved section byte 
     expect(map.skills).toHaveProperty('add--human-interaction');
   });
 });
+
+// ---------------------------------------------------------------------------
+// L1.5 -- the bot text describes behaviour, never the result contract
+// ---------------------------------------------------------------------------
+// Words a result contract owns. The schema's own description carries them; no
+// prompt may (docs/deliveries/2026-10-08T193103-PLAN--product-agent-mode-claude-code).
+const CONTRACT_WORDS = [/needs-approval/i, /\bstopped\b/, /next_step/, /structured_output/, /json-schema/i, /result block/i];
+
+function agentModeTexts() {
+  const files = [path.join(SKILLS, 'add--agent-interaction', 'SKILL.md')];
+  for (const dir of [path.join(ROOT, 'framwork', '.codeadd', 'fragments', 'agent-mode')]) {
+    if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) files.push(path.join(dir, f));
+  }
+  const fallbacks = path.join(ROOT, 'framwork', '.codeadd', 'fallbacks');
+  for (const f of fs.readdirSync(fallbacks)) if (f.startsWith('agent-mode.')) files.push(path.join(fallbacks, f));
+  return files.filter((f) => fs.existsSync(f)).map((f) => ({ file: path.relative(ROOT, f), text: readNorm(f) }));
+}
+
+describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only', () => {
+  const agent = () => readNorm(path.join(SKILLS, 'add--agent-interaction', 'SKILL.md'));
+
+  it('exists with frontmatter, registered in the product provider map', () => {
+    expect(agent()).toMatch(/^---\nname: add--agent-interaction\ndescription: ".+"\n---\n/);
+    const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+    expect(map.skills).toHaveProperty('add--agent-interaction');
+  });
+
+  it('has one section per kind of pause', () => {
+    const text = agent();
+    for (const h of ['## Questions', '## Approval and deciding stops', '## Confirming stops', '## Error stops', '## Closing']) {
+      expect(text, h).toContain(h);
+    }
+  });
+
+  it('states the question format and the accepted answers', () => {
+    const text = agent();
+    expect(text).toContain('### 1.');
+    expect(text).toContain('RECOMMENDED');
+    expect(text).toContain('`1a, 2b`');
+    expect(text).toContain('`recommended`');
+    expect(text).toMatch(/never call a structured-question tool/i);
+  });
+
+  it('closes with the next command and offers no continuation', () => {
+    const text = agent();
+    expect(text).toMatch(/next command[^\n]*last line|last line[^\n]*next command/i);
+    expect(text).toMatch(/no continuation offer/i);
+  });
+
+  it('the human skill names it as the bot counterpart', () => {
+    expect(readNorm(path.join(SKILLS, 'add--human-interaction', 'SKILL.md'))).toContain('`add--agent-interaction`');
+  });
+
+  it('no agent-mode text names a result field, a status or the schema flag', () => {
+    const texts = agentModeTexts();
+    expect(texts.length).toBeGreaterThan(0);
+    for (const { file, text } of texts) {
+      for (const re of CONTRACT_WORDS) expect(text, `${file} matches ${re}`).not.toMatch(re);
+    }
+  });
+});

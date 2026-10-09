@@ -136,6 +136,7 @@
     "add--review-discipline":           {},
     "add--delivery-mode":               {},
     "add--human-interaction":           {},
+    "add--agent-interaction":           {},
     "add--resource-path-convention":    {},
     "add--investigation":               {},
     "add--id-convention":               {},

@@ -944,7 +944,8 @@ describe('node inventory snapshot', () => {
       // slots, fallbacks and STEP IDs.
       // skill 61 -> 62: add--human-interaction, the product owner of how a command talks to a
       // person (plan 2026-10-09T184411-PLAN--agent-mode-feature, F4).
-      skill: 62,
+      // skill 62 -> 63: add--agent-interaction, the bot counterpart (F8).
+      skill: 63,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1114,6 +1115,7 @@ describe('node inventory snapshot', () => {
     // (plan 2026-10-04T004044-PLAN--native-node-backlog, F1's three-node L1.)
     // 223 -> 224: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
     // 224 -> 225: add--human-interaction (2026-10-09T184411-PLAN--agent-mode-feature, F4); it declares, so 140 -> 141.
+    // 225 -> 226: add--agent-interaction (same plan, F8); it declares, so 141 -> 142.
     // Data-derived: the 224 non-script nodes are fixed by the registered
     // commands/skills/agents/references/templates/fragments/features/plugins,
     // while every file directly under `.codeadd/scripts/` is one script node.
@@ -1121,8 +1123,8 @@ describe('node inventory snapshot', () => {
     // retirement (F20 removed the 19 shells) or an addition moves this by
     // exactly the on-disk delta, with no hardcoded total to drift.
     const shippedScriptsCount = shippedScripts();
-    expect(nodes).toHaveLength(225 + shippedScriptsCount);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(141);
+    expect(nodes).toHaveLength(226 + shippedScriptsCount);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(142);
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {

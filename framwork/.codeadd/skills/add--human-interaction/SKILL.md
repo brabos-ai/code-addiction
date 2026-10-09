@@ -9,6 +9,7 @@ description: "Use when a command talks to a person at a terminal — one questio
 - skill: add--delivery-mode
 - skill: add--final-report
 - mention: add--feature-specification
+- mention: add--agent-interaction
 - mention: /add-done
 -->
 
@@ -16,11 +17,11 @@ description: "Use when a command talks to a person at a terminal — one questio
 
 Owns HOW a command talks to a person: how it asks, when a stop waits, and how a finished run offers the
 next step. It is the rule set every command loaded before the agent-mode feature existed, kept as it
-was. The bot version of the same four jobs is a separate skill.
+was. The bot version of the same four jobs is `add--agent-interaction`.
 
 **A command loads exactly one of the two, through its `agent-mode.interaction` slot.** With the
 feature off the slot holds a line that loads this skill; with it on, the slot holds the line that loads
-the bot skill. A command that loaded neither is read as human — this is the default, mirroring "absent
+`add--agent-interaction`. A command that loaded neither is read as human — this is the default, mirroring "absent
 means `confirm`".
 
 ## When to Use
