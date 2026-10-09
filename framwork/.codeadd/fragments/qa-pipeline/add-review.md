@@ -147,7 +147,7 @@ the row reports `not-probed`.
 |---|---|---|---|
 | 10 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
 | 11 | `DESIGN_FILE` (SF-level, else feature-level — see STEP qa-pipeline.reconcile-qa-scope) | file read | **degrade** — the UX axis cannot run; the functional axis still can |
-| 12 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `{{cmd:add-qa-setup}}` scaffolds the empty catalog; `/add-plan` fills it |
+| 12 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `{{cmd:add-qa-setup}}` scaffolds the empty catalog; `/add-plan` fills it. **Unless the feature declares no screen** (no `DESIGN_FILE`, or one with no screen): `/add-plan` writes no catalog then, so QA does not apply — record "no screen declared — QA not applicable" and skip STEP qa-pipeline.evidence and STEP qa-pipeline.judge without a block |
 | 13 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP qa-pipeline.specs-absent's stopgap |
 
 Emit ONE consolidated preflight report (Phase A + Phase B): every failed row
@@ -209,7 +209,7 @@ It resolves the immediate numeric predecessor from working plus final evidence,
 never a deeper history walk.
 
 Run the surface's `<surface>.qa.spec` via the `qa-project` Managed App Lifecycle
-(probe → boot-bg + wait-ready if down → run → teardown-iff-booted). Collect, all
+(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted). Collect, all
 under the resolved `run-NNN`:
 
 - the functional assertion pass/fail roll-up
@@ -222,7 +222,7 @@ under the resolved `run-NNN`:
 The specs are authored by `@e2e-agent` under this same feature, so reaching this
 step means the feature is on and the specs were simply not generated yet.
 
-- Route to `/add-build` to author them; or
+- Route to `/add-build` to author them — on an epic, `/add-build` writes the specs on the LAST subfeature, so a review of an earlier subfeature reaches this step by design; or
 - (plugin ON) fall back to live-drive-from-catalog as a stopgap.
 
 ⛔ **There is no feature-off branch here, and there must not be one.** With the

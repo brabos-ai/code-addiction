@@ -56,7 +56,7 @@ IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Bash for git operations
   ✅ DO: Show error and stop
 
-IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
+IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed (`QA_PROMOTION_STATUS=skipped` is resolved: the user chose it at branch 5):
   ⛔ DO NOT USE: Write to create changelog.md
   ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
