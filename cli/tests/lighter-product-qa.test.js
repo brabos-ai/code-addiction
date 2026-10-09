@@ -78,3 +78,24 @@ describe('F1 — close-out without a QA judgement skips promotion', () => {
     expect(head).toContain('GATE_QA_BASELINE=skipped');
   });
 });
+
+describe('F2 — the build names /add-review as next step only with qa-pipeline on', () => {
+  const next = () => between(read(P.build), '### STEP add-build.next-command', '### STEP add-build.handoff');
+
+  it('4. next-command holds the qa-pipeline.next-command slot with the empty fallback and an empty member pair', () => {
+    const s = next();
+    expect(s).toContain('<!-- slot:qa-pipeline.next-command fallback="fallbacks/empty.md" -->');
+    expect(s).toMatch(/<!-- feature:qa-pipeline:next-command -->\s*<!-- \/feature:qa-pipeline:next-command -->/);
+  });
+
+  it('5. the fragment section next-command names add-review and does not call it optional', () => {
+    const s = frag(read(P.qaBuild), 'next-command');
+    expect(s).not.toBeNull();
+    expect(s).toContain('{{cmd:add-review}}');
+    expect(s).not.toMatch(/optional/i);
+  });
+
+  it('6. guard: add-build.md itself gained no add-review command reference in next-command', () => {
+    expect(next()).not.toContain('{{cmd:add-review}}');
+  });
+});

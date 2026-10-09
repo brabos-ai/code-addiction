@@ -1582,6 +1582,11 @@ instruction block on `confirm` waits for the user's acceptance.
   past the publish question, `/add-done`
 - `Final review: blocked N` → each `Blocker suggestion:` command
 
+<!-- slot:qa-pipeline.next-command fallback="fallbacks/empty.md" -->
+<!-- feature:qa-pipeline:next-command -->
+<!-- /feature:qa-pipeline:next-command -->
+<!-- /slot:qa-pipeline.next-command -->
+
 **Stop kind — confirming.** The report describes work the approval already covered. On `automatic`,
 print the report and the line, then follow the next command from its first step, as
 `add--delivery-mode` describes. The build never runs `/add-review` for you.

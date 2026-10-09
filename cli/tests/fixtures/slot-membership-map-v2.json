@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 70,
-  "slotCount": 63,
+  "membershipCount": 71,
+  "slotCount": 64,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -648,6 +648,24 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-metadata"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.next-command",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "next-command"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "next-command"
             }
           ]
         }

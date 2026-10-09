@@ -7,6 +7,7 @@
 - agent: fix-agent
 - skill: add--ux-design
 - agent: ux-agent
+- command: /add-done
 -->
 
 <!-- section:qa-fix -->
@@ -76,3 +77,9 @@ If @e2e-agent is not available in this engine, dispatch a generic subagent with 
 WAIT-ALL before STEP add-build.correct.
 
 <!-- /section:e2e-dispatch -->
+
+<!-- section:next-command -->
+
+- **QA is still owed** (qa-pipeline) — the QA judgement lives only in `{{cmd:add-review}}`. This build proves the specs pass and the Final Review reads the code; neither judges the screens. Name `{{cmd:add-review}}` for this feature or subfeature as the next step, ahead of `/add-done`. On `automatic` the build still never runs it for you.
+
+<!-- /section:next-command -->
