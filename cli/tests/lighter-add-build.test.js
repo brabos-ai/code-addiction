@@ -72,3 +72,36 @@ describe('F1 — add-build no longer dispatches a readback', () => {
   });
 });
 
+describe('F2 — the TASKS MODE validator runs once per area', () => {
+  const tasksMode = () => section(read(P.build), 'TASKS MODE \\(when tasks.md exists\\)');
+
+  it('L1.5 TASKS MODE validates once per area, after the area\'s last task', () => {
+    const s = tasksMode();
+    expect(s).not.toBeNull();
+    expect(s).toMatch(/once per area/i);
+    expect(s).toContain('AREA_BASE');
+  });
+
+  it('L1.6 the COMMIT CONTRACT gates a TASKS MODE commit on the build, and keeps the validator gate elsewhere', () => {
+    const t = read(P.build);
+    expect(t).toContain('In TASKS MODE the commit gate is the build');
+    expect(t).toMatch(/DEVELOPMENT and CORRECTION MODE[^\n]*area validator/);
+  });
+
+  it('L1.7 the area-end ledger line and its resume rule are specified', () => {
+    const t = read(P.build);
+    expect(t).toContain('<area>: validated (commits AREA_BASE..HEAD');
+    expect(t).toContain('resumes at its validator');
+  });
+
+  it('L1.8 the TASKS MODE prompt addition carries one brief per dispatch', () => {
+    expect(read(P.build)).not.toContain('Execute ALL tasks in order');
+  });
+
+  it('L1.9 add--subagent-driven-development steps 5 and 6 name the per-area variant', () => {
+    const t = read(P.sdd);
+    expect(section(t, '5\\. Review Subagent')).toMatch(/once per area/i);
+    expect(section(t, '6\\. Commit and Record')).toMatch(/TASKS MODE/);
+  });
+});
+

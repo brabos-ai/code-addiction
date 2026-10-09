@@ -27,6 +27,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - script: status.cjs
 - script: task-brief.cjs
 - skill: add--subagent-driven-development/references/persistent-logging-and-tasks.md
+- mention: /add-build
 - mention: /add-review
 - mention: add--architecture-discovery
 -->
@@ -49,7 +50,7 @@ conversation.
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)
-- Code review after each task (catch issues early)
+- Code review after each task (catch issues early) — `/add-build` in TASKS MODE reviews once per area instead (step 5)
 - Faster iteration (no human-in-loop between tasks)
 
 **When to use:**
@@ -352,6 +353,14 @@ Write your full report to REPORT_FILE. Return inline ONLY:
 point, so `BASE..HEAD` is still empty and `review-package.cjs` would refuse the range with exit 2. The
 package belongs to the **re-review** in step 7, after a fix batch has been committed.
 
+**Variant — `/add-build` in TASKS MODE: review once per area, on the committed range.** A task there is
+already service-scoped and capped at three files, and its commit is gated by the build and the task's own
+`Verify` command (step 6). So the reviewer runs **once per area**, after that area's last task, over the
+whole range `AREA_BASE..HEAD` — `AREA_BASE` being the `BASE` of the area's first `complete` ledger line —
+packaged by `review-package.cjs`. What it finds feeds the fix loop in step 7, and the area gets one
+`<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` ledger line. Every other
+caller keeps the per-task review described above.
+
 Dispatch `@reviewer-agent` with `MODE: task`, the `FILES_CREATED` / `FILES_MODIFIED` lists from the
 implementer's report, and the plan's `## Global Constraints` block verbatim. Review-specific deltas:
 
@@ -415,6 +424,10 @@ batch, record `HEAD`, and append the ledger line with its `BASE..HEAD` bracket a
 
 That ordering is the whole point of the step. A commit made before the review is a commit of unreviewed
 code, and a commit made before the build passes is a commit that does not compile.
+
+**Variant — `/add-build` in TASKS MODE:** the per-area review of step 5 has not run when a task commits, so
+that commit is gated by the build and the task's `Verify` command instead, and the area's review reads the
+committed range afterwards. A commit still never lands on a red build.
 
 **The coordinator commits, never the implementer.** The reviewer is a separate dispatch, so an implementer
 that committed its own work would put the commit **upstream of review** — the one ordering this step exists
@@ -600,7 +613,7 @@ Coordinator must confirm before reporting completion:
 - [ ] No subagent received summaries — only file paths
 - [ ] `## Global Constraints` travelled verbatim in every dispatch
 - [ ] Ledger line appended after every task, fix round, deferred minor, parked finding and ruling
-- [ ] Every commit landed AFTER its validator returned and the build passed
+- [ ] Every commit landed AFTER its validator returned and the build passed — in `/add-build` TASKS MODE, after the build and the task's `Verify` passed, with the area validator run once afterwards
 - [ ] Code review dispatched after every implementation task
 - [ ] Every fix round has a matching `MODE: re-review` line
 - [ ] Critical review issues fixed before advancing
