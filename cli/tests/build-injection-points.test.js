@@ -149,12 +149,16 @@ function stepRefFiles() {
 }
 
 describe('slot membership map v2', () => {
-  it('freezes 71 memberships in 64 slots, one nonempty fallback', () => {
+  it('freezes the slot membership map and its nonempty fallbacks', () => {
     expect(MAP.membershipCount).toBe(71);
     expect(MAP.slotCount).toBe(64);
     const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
     expect(members).toHaveLength(71);
-    const nonempty = MAP.resources.flatMap((r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md'));
+    // Nonempty fallbacks: plan-specs, plus every agent-mode.* slot (plan 2026-10-09T184411-PLAN--agent-mode-feature, F24).
+    const slotsOf = (r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md');
+    const agentModeSlots = MAP.resources.flatMap((r) => slotsOf(r).filter((s) => s.id.startsWith('agent-mode.')));
+    for (const s of agentModeSlots) expect(s.fallback).toMatch(/^fallbacks\/agent-mode\.[A-Za-z0-9._-]+\.md$/);
+    const nonempty = MAP.resources.flatMap((r) => slotsOf(r).filter((s) => !s.id.startsWith('agent-mode.')));
     expect(nonempty).toEqual([
       expect.objectContaining({
         id: 'plan-specs',
