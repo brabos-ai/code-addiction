@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 109,
-  "slotCount": 102,
+  "membershipCount": 111,
+  "slotCount": 104,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -278,6 +278,50 @@
               "namespace": "plugin",
               "name": "gitnexus",
               "section": "graph"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-audit",
+      "file": "framwork/.codeadd/commands/add-audit.md",
+      "kind": "command",
+      "name": "add-audit",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-audit.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
             }
           ]
         }
@@ -2099,6 +2143,23 @@
     }
   ],
   "fragments": [
+    {
+      "id": "product/fragment/fragments/agent-mode/add-audit.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-audit",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
     {
       "id": "product/fragment/fragments/agent-mode/add-brainstorm.md",
       "dependencies": [
