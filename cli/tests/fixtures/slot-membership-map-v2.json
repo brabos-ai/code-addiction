@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 80,
-  "slotCount": 73,
+  "membershipCount": 85,
+  "slotCount": 78,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -1080,6 +1080,42 @@
       "name": "add-new",
       "slots": [
         {
+          "id": "agent-mode.output-cap",
+          "fallback": "fallbacks/agent-mode.add-new.output-cap.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-intent-field",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1152,6 +1188,24 @@
           ]
         },
         {
+          "id": "agent-mode.confirm-wait",
+          "fallback": "fallbacks/agent-mode.add-new.confirm-wait.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "confirm-wait"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "confirm-wait"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-shaped",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1166,6 +1220,42 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-shaped"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.closing-route",
+          "fallback": "fallbacks/agent-mode.add-new.closing-route.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-new.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
             }
           ]
         }
@@ -1582,6 +1672,27 @@
         },
         {
           "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-new.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-new",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
           "via": "USES_SKILL"
         }
       ]

@@ -202,6 +202,7 @@ describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only',
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
 const AGENT_SLOTS = {
   'add-brainstorm': ['interaction', 'output-cap', 'cap-scope', 'objective-draft', 'cadence', 'structured-ask', 'approval-ask', 'offer', 'rules-cadence'],
+  'add-new': ['interaction', 'output-cap', 'confirm-wait', 'closing-route', 'offer'],
 };
 const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));
