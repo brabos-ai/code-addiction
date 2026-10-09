@@ -87,7 +87,7 @@ const CARRIES_DELIVERY_MODE = Object.keys(F3);
 const NEEDS_DELIVERY_MODE = Object.keys(F4);
 
 /** R7: the two router/transformer roles the plan exempts by name. */
-const EXEMPT = ['add.md', 'add-ux.md'];
+const EXEMPT = ['add-help.md', 'add-ux.md'];
 
 /**
  * The unconditional manual print the plan replaces, one exact string per site.
