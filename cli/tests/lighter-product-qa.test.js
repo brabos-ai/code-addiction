@@ -123,3 +123,40 @@ describe('F3 — the plan-side QA step', () => {
     expect(frag(t, 'step-list')).toContain('STEP qa-pipeline.qa-spec');
   });
 });
+
+describe('F4 — one @e2e-agent per delivery', () => {
+  const e2e = () => frag(read(P.qaBuild), 'e2e-dispatch');
+
+  it('10. the dispatch is ONE @e2e-agent per delivery, not one per surface', () => {
+    const s = e2e();
+    expect(s).toMatch(/ONE `?@e2e-agent`?/);
+    expect(s).not.toMatch(/one per surface/i);
+    expect(s).not.toContain('per in-scope surface');
+  });
+
+  it('11. it names the epic last-subfeature condition, per-surface pass/fail and the no-rows skip', () => {
+    const s = e2e();
+    expect(s).toMatch(/last subfeature/i);
+    expect(s).toMatch(/pass\/fail per surface/i);
+    expect(s).toMatch(/no `?## QA\/E2E Specification`? rows/i);
+  });
+
+  it('12. Correction Dispatch lists failing e2e assertions as a build-only source; MAX_ATTEMPTS stays 3', () => {
+    const t = read(P.build);
+    const s = between(t, '**A build-only round gets no re-review.**', 'IF `ATTEMPT` would exceed');
+    expect(s).toMatch(/e2e/i);
+    expect(s).toMatch(/specs? re-?run/i);
+    expect(t).toContain('MAX_ATTEMPTS = 3');
+  });
+
+  it('13. guard: add--review-discipline still counts re-review per fix round with a reviewer-sourced row', () => {
+    expect(read(P.discipline)).toMatch(/per fix round that carries a\s+reviewer-sourced row/);
+  });
+
+  it('14. e2e-agent accepts one or more surfaces; a build-time run leaves no run-NNN; the build never allocates one', () => {
+    const a = read(P.e2eAgent);
+    expect(a).toMatch(/one or more surfaces/i);
+    expect(a).toMatch(/build-time run/i);
+    expect(e2e()).toMatch(/never calls `qa-evidence\.cjs next`/);
+  });
+});

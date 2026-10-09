@@ -8,6 +8,8 @@
 - skill: add--ux-design
 - agent: ux-agent
 - command: /add-done
+- script: build-ledger.cjs
+- mention: qa-evidence.cjs
 -->
 
 <!-- section:qa-fix -->
@@ -68,13 +70,28 @@ whether or not this section was injected.
 
 <!-- section:e2e-dispatch -->
 
-### E2E Spec Authoring (qa-pipeline) — dispatch @e2e-agent per in-scope surface
+### E2E Spec Authoring (qa-pipeline) — ONE @e2e-agent per delivery
 
-DISPATCH AGENT: @e2e-agent [read-write on test files, standard] — one per surface in plan.md ## QA/E2E Specification (every declared surface — do not skip one), AFTER the area validators return — @e2e-agent needs existing components and stable selectors, and the WAIT-ALL it requires is already in place here.
-Each receives: the surface/subfeature id, the plan ## QA/E2E Specification rows (incl. capture states), FEATURE_DIR/_tests/screens.json (each entry's design field points at the screen's design.md ## Design Contract), the just-built component file paths, docs/qa/config.json.
-Directive: author ONE <surface>.qa.spec — layer i assertions + layer ii capture at each capture state (written as <screen>.<state>.<viewport>.png) + layer iii computed-style capture + axe a11y — finalize the screens.json reachability recipe (append an entry if the surface is absent), then green-confirm via the qa-project managed app lifecycle. Layer iii: for each ## Design Contract dimension verified by "computed style" (spacing scale, token allowlist, typographic scale, grid/container), capture the resolved values the contract names (gap/margin/padding, resolved custom-property names, font-size/font-weight, container width + column count) per screen × viewport into _tests/run-NNN/computed-styles/<screen>.<viewport>.json (minified, beside the screenshots). HARD requirement of the conformance rubric: a contract dimension whose capture is missing must be reported unverifiable — never passing. NEVER soften an assertion to make it pass; NEVER drop a capture state silently; NEVER drop a computed-style dimension silently.
+**When:** after every area of the delivery is implemented and validated — the area validators and the build gate have returned — and before `## Final Review`. @e2e-agent needs existing components and stable selectors, and the WAIT-ALL it requires is already in place here.
+
+- **Normal feature:** on this build.
+- **Epic:** only on the build of the last subfeature — the one whose `epic.md` row is the last not `done`, the same point the DELTA pass runs — and it covers every subfeature's `## QA/E2E Specification` rows. On every earlier subfeature write "e2e deferred to the last subfeature" and dispatch nothing.
+- **IF there are no `## QA/E2E Specification` rows in scope:** dispatch nothing, say so, and go on.
+- **Resume:** IF the ledger already holds a line starting `e2e: complete` for this delivery, do NOT dispatch again. The line is the only record the dispatch happened.
+
+DISPATCH AGENT: ONE `@e2e-agent` [read-write on test files, standard] — one dispatch for the whole delivery, never a dispatch for each surface or each subfeature.
+It receives: every surface (with its subfeature id) from the `## QA/E2E Specification` rows in scope, including capture states; every `FEATURE_DIR/_tests/screens.json` in scope (each entry's design field points at the screen's design.md ## Design Contract); the just-built component file paths; docs/qa/config.json; and `CAPTURE_DIR` = `${FEATURE_DIR}/_build/e2e-scratch`.
+Directive: for EACH surface author ONE <surface>.qa.spec — layer i assertions + layer ii capture at each capture state (written as <screen>.<state>.<viewport>.png) + layer iii computed-style capture + axe a11y — finalize the screens.json reachability recipe (append an entry if the surface is absent), then green-confirm via the qa-project managed app lifecycle. Layer iii: for each ## Design Contract dimension verified by "computed style" (spacing scale, token allowlist, typographic scale, grid/container), capture the resolved values the contract names (gap/margin/padding, resolved custom-property names, font-size/font-weight, container width + column count) per screen × viewport into CAPTURE_DIR/computed-styles/<screen>.<viewport>.json (minified, beside the screenshots). HARD requirement of the conformance rubric: a contract dimension whose capture is missing must be reported unverifiable — never passing. NEVER soften an assertion to make it pass; NEVER drop a capture state silently; NEVER drop a computed-style dimension silently. Write every capture under CAPTURE_DIR and nowhere else. Report pass/fail per surface.
 If @e2e-agent is not available in this engine, dispatch a generic subagent with this same directive AND instruct it to load the qa-project skill (conventions + managed app lifecycle) first (soft-degrade — the inline prompt then carries the full self-sufficient task).
-WAIT-ALL before STEP add-build.correct.
+WAIT for the report.
+
+**No evidence is left behind.** This build never calls `qa-evidence.cjs next` and leaves no `_tests/run-NNN/`: run numbers are allocated by `{{cmd:add-review}}`, and a working run with no report is exactly what blocks a later close-out. Delete `CAPTURE_DIR` once the report is in. The build only proves the specs pass; UX and conformance are judged in `{{cmd:add-review}}`.
+
+**Failures are a normal fix wave.** The agent fixes spec defects itself, so an assertion still failing is a gap in the delivery. Each one becomes a row `E2E-n` (surface, spec path, assertion, failure message) of a wave in STEP add-build.correct. Build the wave's `ROUTED_ROWS` yourself from the report — this wave reads no `review-NNN.md` and writes no Resolution Annex — and dispatch ONE `@fix-agent` per the Correction Dispatch contract, `MAX_ATTEMPTS = 3`. The round is build-only: its gate is build green, tests green and you re-running the specs green through the qa-project managed lifecycle. Dispatch no reviewer for it and no second `@e2e-agent`; the Final Review reads the fix diff. At the cap with rows still failing, rule each one (surface and assertion, a real gap `{{cmd:add-review}}` will see) and continue.
+
+**Boot failed** (the agent authored the specs and deferred the first run): there is nothing to re-run. Record it in the ledger line and go on.
+
+Then append the ledger line, once, through `build-ledger.cjs`: `e2e: complete (N surfaces, P passing)` — `P` is the count after any fix round.
 
 <!-- /section:e2e-dispatch -->
 
