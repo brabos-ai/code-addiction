@@ -59,7 +59,10 @@ function mdFiles(dir, out = []) {
 // chat-continuation handoff contract — +31, of which 10 were removed again after
 // the accept/decline block was pulled back to its owner in add--final-report
 // instead of being copied into five commands.
-const BUILD_LINE_BUDGET = 1657;
+// 1664 is plan 2026-10-09T114527 (lighter product QA): +8 over the 1656 at its branch start — the
+// qa-pipeline.next-command slot (+5) and three sentences (+3: the e2e build-only source, the e2e ledger
+// row, the e2e batch commit). The e2e dispatch itself stays in the fragment, not in this file.
+const BUILD_LINE_BUDGET = 1664;
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {
