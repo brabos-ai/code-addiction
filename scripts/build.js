@@ -32,7 +32,7 @@ function readMap() {
 
 function assertProductNames(map) {
   for (const name of Object.keys(map.commands || {})) {
-    if (name !== 'add' && !/^add-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
+    if (!/^add-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
       throw new Error(`Invalid product command name: ${name}`);
     }
   }

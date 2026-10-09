@@ -2,12 +2,12 @@ flowchart LR
     n_internal_command_add_framework__backlog(["add-framework--backlog"])
     n_internal_command_add_framework__release(["add-framework--release"])
     n_internal_command_add_framework__sync(["add-framework--sync"])
-    n_product_command_add(["add"])
     n_product_command_add_audit(["add-audit"])
     n_product_command_add_brainstorm(["add-brainstorm"])
     n_product_command_add_build(["add-build"])
     n_product_command_add_diagnose(["add-diagnose"])
     n_product_command_add_done(["add-done"])
+    n_product_command_add_help(["add-help"])
     n_product_command_add_hotfix(["add-hotfix"])
     n_product_command_add_new(["add-new"])
     n_product_command_add_plan(["add-plan"])
@@ -17,14 +17,6 @@ flowchart LR
     n_product_command_add_ux(["add-ux"])
     n_product_command_add_wiki(["add-wiki"])
     n_internal_command_add_framework__sync --> n_internal_command_add_framework__release
-    n_product_command_add --> n_product_command_add_brainstorm
-    n_product_command_add --> n_product_command_add_build
-    n_product_command_add --> n_product_command_add_diagnose
-    n_product_command_add --> n_product_command_add_done
-    n_product_command_add --> n_product_command_add_hotfix
-    n_product_command_add --> n_product_command_add_new
-    n_product_command_add --> n_product_command_add_plan
-    n_product_command_add --> n_product_command_add_review
     n_product_command_add_audit --> n_product_command_add_new
     n_product_command_add_brainstorm --> n_product_command_add_diagnose
     n_product_command_add_brainstorm --> n_product_command_add_hotfix
@@ -47,6 +39,15 @@ flowchart LR
     n_product_command_add_done --> n_product_command_add_review
     n_product_command_add_done --> n_product_command_add_wiki
     n_product_command_add_done -.-> n_product_command_add_new
+    n_product_command_add_help --> n_product_command_add_audit
+    n_product_command_add_help --> n_product_command_add_brainstorm
+    n_product_command_add_help --> n_product_command_add_build
+    n_product_command_add_help --> n_product_command_add_diagnose
+    n_product_command_add_help --> n_product_command_add_done
+    n_product_command_add_help --> n_product_command_add_hotfix
+    n_product_command_add_help --> n_product_command_add_new
+    n_product_command_add_help --> n_product_command_add_plan
+    n_product_command_add_help --> n_product_command_add_review
     n_product_command_add_hotfix --> n_product_command_add_diagnose
     n_product_command_add_hotfix --> n_product_command_add_wiki
     n_product_command_add_hotfix -.-> n_product_command_add_done

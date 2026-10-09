@@ -27,7 +27,7 @@ export function shouldPreserve(relPath) {
 /**
  * Copy entries from the release zip that match a source prefix to a destination
  * directory. The release asset zip uses `framwork/` prefix (e.g.
- * "framwork/.claude/commands/add.md").
+ * "framwork/.claude/commands/add-help.md").
  *
  * @param {import('adm-zip')} zip
  * @param {string} srcPrefix  path inside zip (e.g. "framwork/.codeadd")
