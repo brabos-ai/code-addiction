@@ -21,6 +21,16 @@ Help guide for the add-pro ecosystem. Answers which command to use and in what o
 
 **IMPORTANT:** This command is READ-ONLY for project code. May create analysis documentation in `docs/analysis/` when the response is complex or the user requests it.
 
+**STEPS IN ORDER:**
+```
+STEP add-help.ecosystem  → load the ecosystem map, always first
+STEP add-help.classify   → pick the question type
+STEP add-help.overview   → only when there is no question
+STEP add-help.detect     → only for feature, status, next-step and project questions
+STEP add-help.respond    → answer by Type A to I
+STEP add-help.suggest    → close with the next command
+```
+
 ---
 
 ## PROHIBITIONS AND PERMISSIONS
@@ -61,16 +71,16 @@ This file contains all add-pro commands with purpose/skills, available skills, f
 | Type | Examples | Action |
 |------|----------|--------|
 | **No question** | `/add-help` alone | -> STEP add-help.overview |
-| **About commands / flows** | "how does /add-review work?", "when to use /add-plan?", "which command first, and then?" | -> STEP add-help.respondA |
-| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP add-help.detect + STEP add-help.respondB |
-| **Status/Context** | "where am I?", "which feature is active?" | -> STEP add-help.detect + STEP add-help.respondC |
-| **Compliance** | "does implementation follow the plan?" | -> STEP add-help.detect + STEP add-help.respondD |
-| **Project** | "does the project have multi-tenancy?" | -> STEP add-help.detect + STEP add-help.respondE |
+| **About commands / flows** | "how does /add-review work?", "when to use /add-plan?", "which command first, and then?" | -> STEP add-help.respond, Type A |
+| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP add-help.detect + STEP add-help.respond, Type B |
+| **Status/Context** | "where am I?", "which feature is active?" | -> STEP add-help.detect + STEP add-help.respond, Type C |
+| **Compliance** | "does implementation follow the plan?" | -> STEP add-help.detect + STEP add-help.respond, Type D |
+| **Project** | "does the project have multi-tenancy?" | -> STEP add-help.detect + STEP add-help.respond, Type E |
 | **Next step** | "what to do now?", "next command?" | -> STEP add-help.detect + STEP add-help.suggest |
-| **Setup/Environment** | "how to install Node?", "node not found", "git missing", env errors | -> STEP add-help.respondF |
-| **Features / plugins** | "how do I enable QA?", "what is GitNexus?", "is TDD on?" | -> STEP add-help.respondG |
-| **Bot / agent mode** | "how do I run this from a bot?", "headless", "CI" | -> STEP add-help.respondH |
-| **CLI lifecycle** | "how do I update?", "uninstall", "add a provider", "what do I run after update?" | -> STEP add-help.respondI |
+| **Setup/Environment** | "how to install Node?", "node not found", "git missing", env errors | -> STEP add-help.respond, Type F |
+| **Features / plugins** | "how do I enable QA?", "what is GitNexus?", "is TDD on?" | -> STEP add-help.respond, Type G |
+| **Bot / agent mode** | "how do I run this from a bot?", "headless", "CI" | -> STEP add-help.respond, Type H |
+| **CLI lifecycle** | "how do I update?", "uninstall", "add a provider", "what do I run after update?" | -> STEP add-help.respond, Type I |
 
 ---
 
@@ -96,7 +106,7 @@ Execute when question involves a specific feature, current status, "where am I?"
 node .codeadd/scripts/status.cjs
 ```
 
-**Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
+**Parse output:** `BRANCH` (current branch), `FEATURE` and `PHASE` (current feature and its phase), `DOCS` (which documents exist: about, plan, review), `HAS_EPIC` and `EPIC` (epic and its sub-features).
 
 ### STEP add-help.read-context Read additional context (if exists)
 
@@ -251,7 +261,7 @@ ALWAYS:
 - Read the manifest for whether a feature or plugin is on, `.codeadd/agent-mode/README.md` for bot mode and `codeadd --help` for the CLI
 - Execute status.cjs when question involves context
 - Read changelog before going to code
-- Include smart suggestion at end
+- Include smart suggestion at end, except when the question was only about a specific command, a feature, a plugin, bot mode or the CLI
 - Be specific about files and paths
 
 NEVER:
@@ -262,4 +272,4 @@ NEVER:
 - Go straight to code without reading changelog
 - Assume without verifying
 - Give generic responses without evidence
-- Leave user without next step
+- Leave user without next step, except for the questions the suggestion step exempts
