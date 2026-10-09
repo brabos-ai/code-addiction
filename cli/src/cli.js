@@ -15,12 +15,16 @@ import { migrate } from './migrations.js';
 import { mcp } from './mcp.js';
 import { promptUninstallScope } from './prompt.js';
 
+// What each flag takes, for the error message. A flag not listed gets a generic hint.
+const VALUE_HINTS = { '--version': '<tag|main>', '--channel': '<stable|beta>' };
+
 export function getArgValue(argv, flag) {
+  const hint = VALUE_HINTS[flag] ?? '<value>';
   const inline = argv.find((a) => a.startsWith(`${flag}=`));
   if (inline) {
     const value = inline.slice(flag.length + 1).trim();
     if (!value) {
-      throw new Error(`Missing value for ${flag}. Use ${flag} <tag|main>.`);
+      throw new Error(`Missing value for ${flag}. Use ${flag} ${hint}.`);
     }
     return value;
   }
@@ -30,7 +34,7 @@ export function getArgValue(argv, flag) {
 
   const value = argv[index + 1];
   if (!value || value.startsWith('--')) {
-    throw new Error(`Missing value for ${flag}. Use ${flag} <tag|main>.`);
+    throw new Error(`Missing value for ${flag}. Use ${flag} ${hint}.`);
   }
   return value;
 }
