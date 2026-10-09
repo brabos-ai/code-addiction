@@ -860,3 +860,29 @@ test('backlog#067 — L4.8: update sets status and feature in ONE write, leaving
   const ticket = lastTicket(dir);
   assert.equal(`${ticket.status} ${ticket.feature} ${ticket.work_id}`, 'refining 0042F null');
 });
+
+test('backlog#068 — get --ref reads the board at a git ref, not the stale checked-out copy', (t) => {
+  const repo = h.makeRepo();
+  t.after(() => repo.cleanup());
+  backlogLine(repo.repo, '0012B', 'ticket', 'planned');
+  repo.git('add', '-A');
+  repo.git('commit', '-q', '-m', 'board: planned');
+  // A feature branch born here keeps `planned`; the board moves on in main.
+  repo.git('checkout', '-q', '-b', 'feat/x');
+  repo.git('checkout', '-q', 'main');
+  fs.writeFileSync(path.join(repo.repo, BACKLOG), '');
+  backlogLine(repo.repo, '0012B', 'ticket', 'in-review');
+  repo.git('commit', '-q', '-am', 'board: in-review');
+  repo.git('checkout', '-q', 'feat/x');
+
+  const local = backlog(repo.repo, ['get', '0012B']);
+  assert.match(tickets(local.stdout)[0], /"status":"planned"/);
+
+  const res = backlog(repo.repo, ['get', '0012B', '--ref', 'main']);
+  assert.equal(res.status, 0, res.output);
+  assert.match(tickets(res.stdout)[0], /"status":"in-review"/);
+
+  const bad = backlog(repo.repo, ['get', '0012B', '--ref', 'no-such-ref']);
+  assert.equal(bad.status, 1, bad.output);
+  assert.match(bad.stdout, /ERROR=ref-read-failed/);
+});

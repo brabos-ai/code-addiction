@@ -67,8 +67,13 @@ A declared ticket id is answered by `get`: an exact, case-sensitive read of the 
 status filter and one argument.
 
 ```bash
-node .codeadd/scripts/backlog-cli.cjs get <ticket id>
+git fetch origin main
+node .codeadd/scripts/backlog-cli.cjs get <ticket id> --ref origin/main
 ```
+
+**The read comes from `origin/main`, never from the checked-out copy.** Every board write lands on the
+base branch and never on the branch being worked, so the branch's own `docs/backlog.jsonl` is as old as the
+branch. The fetch is part of the read — a stale `origin/main` answers stale.
 
 Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
 the id. No matching row means the id is not on the board.

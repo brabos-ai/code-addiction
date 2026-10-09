@@ -18,6 +18,11 @@
  * Consumes stdin only for add/update/comment. Renders KEY=VALUE lines then
  * raw JSONL rows. Exit codes: 0 success, 1 write failure, 2 caller error.
  *
+ * Read modes (list/search/get) accept a trailing `--ref <git-ref>`: the board and
+ * definitions are read with `git show <ref>:docs/...` into a temp root, so the
+ * answer is the ref's, not the checked-out copy's. An unreadable ref or a ref
+ * without the board is ERROR=ref-read-failed, exit 1. The caller fetches first.
+ *
  * Reusable exports: parseInvocation (argv grammar — never interprets an
  * option-looking target ID or search text as a flag), captureRecord (file
  * capture, authoritative over stdin), and renderOperation (result to the
@@ -28,9 +33,11 @@
  */
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const core = require('./backlog-core.cjs');
 const idc = require('./backlog-id.cjs');
+const storage = require('./backlog-storage.cjs');
 
 const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   add                       --record-file ticket.json
@@ -41,6 +48,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   list    [--all | --status <name>] [--full | --ids]
   search  <query> [--full]
   get     <id>
+Reads also accept a trailing --ref <git-ref> (e.g. origin/main): the board is read from that ref.
 Records also accept stdin when --record-file is absent.
 Reads print a seven-field summary by default; --full restores the raw rows.
 `;
@@ -48,6 +56,7 @@ Reads print a seven-field summary by default; --full restores the raw rows.
 const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get'];
 const RECORD_MODES = ['add', 'update', 'comment'];
 const RECORD_FILE_FLAG = '--record-file';
+const REF_FLAG = '--ref';
 
 function usage() {
   process.stderr.write(USAGE);
@@ -74,6 +83,21 @@ function parseInvocation(argv) {
 
   const rest = args;
   const isRecordMode = RECORD_MODES.includes(mode);
+
+  // A read may name the git ref it reads the board from, as a trailing pair.
+  // The first argument of get/search stays the literal target or query.
+  let ref = '';
+  if (!isRecordMode && mode !== 'move' && mode !== 'remove') {
+    const at = rest.indexOf(REF_FLAG, mode === 'list' ? 0 : 1);
+    if (at !== -1) {
+      const value = rest[at + 1];
+      if (value === undefined || value === '' || at !== rest.length - 2) {
+        return { ok: false, error: 'bad-argument', usage: true };
+      }
+      ref = value;
+      rest.splice(at, 2);
+    }
+  }
 
   // Only the surplus portion of a record invocation may carry the trailing
   // file pair. Missing/repeated/nontrailing options are caller errors.
@@ -156,7 +180,7 @@ function parseInvocation(argv) {
         return { ok: false, error: 'bad-argument', usage: true };
       }
     }
-    return { ok: true, mode, filter, view, recordSource };
+    return { ok: true, mode, filter, view, recordSource, ref };
   } else if (mode === 'search') {
     // The first argument is reserved as the literal query — option-looking
     // spellings included — and only --full may follow it.
@@ -176,7 +200,7 @@ function parseInvocation(argv) {
     view = 'full';
   }
 
-  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, view, recordSource };
+  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, view, recordSource, ref };
 }
 
 /**
@@ -318,6 +342,28 @@ function renderOperation(result, view = 'summary') {
 }
 
 /**
+ * Copy the board and its definitions as they stand at a git ref into a temp
+ * root, so a read answers from that ref instead of the checked-out copy. The
+ * board must exist at the ref; the definitions may be absent, as on disk.
+ *
+ * @param {string} cwd
+ * @param {string} ref
+ * @returns {{ok: true, root: string}|{ok: false}}
+ */
+function materializeRef(cwd, ref) {
+  // Lazy: the only git the read path touches, through the one module that runs it.
+  const git = require('./backlog-git.cjs');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-backlog-ref-'));
+  fs.mkdirSync(path.join(tmp, 'docs'));
+  for (const file of [storage.BACKLOG_FILE, storage.DEFS_FILE]) {
+    const shown = git.run(['show', `${ref}:${file}`], cwd, { allowFailure: true });
+    if (shown.status === 0) fs.writeFileSync(path.join(tmp, file), shown.stdout, 'utf8');
+    else if (file === storage.BACKLOG_FILE) return { ok: false };
+  }
+  return { ok: true, root: tmp };
+}
+
+/**
  * Execute one local invocation. argv defaults to the process arguments.
  *
  * @param {string[]} [argv]
@@ -332,7 +378,15 @@ function main(argv) {
   }
 
   const { mode } = invocation;
-  const root = process.cwd();
+  let root = process.cwd();
+  if (invocation.ref) {
+    const fromRef = materializeRef(root, invocation.ref);
+    if (!fromRef.ok) {
+      process.stdout.write('ERROR=ref-read-failed\n');
+      process.exit(1);
+    }
+    root = fromRef.root;
+  }
 
   // Mode-order note: a file read failure exits BEFORE allocation and
   // persistence; on the stdin path the allocation carries the metadata
@@ -376,6 +430,8 @@ function main(argv) {
     rawRecord,
     newId
   });
+
+  if (invocation.ref) fs.rmSync(root, { recursive: true, force: true });
 
   if (!result.ok) {
     if (result.writeFailure) {
