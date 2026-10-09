@@ -87,11 +87,13 @@ WAIT for the report.
 
 **No evidence is left behind.** This build never calls `qa-evidence.cjs next` and leaves no `_tests/run-NNN/`: run numbers are allocated by `{{cmd:add-review}}`, and a working run with no report is exactly what blocks a later close-out. Delete `CAPTURE_DIR` once the report is in. The build only proves the specs pass; UX and conformance are judged in `{{cmd:add-review}}`.
 
+**Commit the specs — before any fix round.** The authored `<surface>.qa.spec` files and each `screens.json` are uncommitted work, and `{{cmd:add-review}}` only counts the build as having covered the tree when nothing is left outside a commit. Record `BATCH_BASE=$(git rev-parse HEAD)`, then commit them as ONE extra batch through STEP add-build.commit, staging by path the spec paths the agent reported plus each `screens.json`. The commit carries the `Feature-Id` trailer and no `Task-Id`; its gate is the build green and the specs green, because the area validators returned before this dispatch.
+
 **Failures are a normal fix wave.** The agent fixes spec defects itself, so an assertion still failing is a gap in the delivery. Each one becomes a row `E2E-n` (surface, spec path, assertion, failure message) of a wave in STEP add-build.correct. Build the wave's `ROUTED_ROWS` yourself from the report — this wave reads no `review-NNN.md` and writes no Resolution Annex — and dispatch ONE `@fix-agent` per the Correction Dispatch contract, `MAX_ATTEMPTS = 3`. The round is build-only: its gate is build green, tests green and you re-running the specs green through the qa-project managed lifecycle. Dispatch no reviewer for it and no second `@e2e-agent`; the Final Review reads the fix diff. At the cap with rows still failing, rule each one (surface and assertion, a real gap `{{cmd:add-review}}` will see) and continue.
 
 **Boot failed** (the agent authored the specs and deferred the first run): there is nothing to re-run. Record it in the ledger line and go on.
 
-Then append the ledger line, once, through `build-ledger.cjs`: `e2e: complete (N surfaces, P passing)` — `P` is the count after any fix round.
+Then append the ledger line, once, through `build-ledger.cjs`: `e2e: complete (N surfaces, P passing; commits BATCH_BASE..HEAD)` — `P` is the count after any fix round, and `HEAD` is taken now, so the range includes the fix commit.
 
 <!-- /section:e2e-dispatch -->
 

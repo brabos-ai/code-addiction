@@ -160,3 +160,22 @@ describe('F4 — one @e2e-agent per delivery', () => {
     expect(e2e()).toMatch(/never calls `qa-evidence\.cjs next`/);
   });
 });
+
+describe('F5 — the e2e specs enter a build commit', () => {
+  it('15. the e2e batch commits through STEP add-build.commit with Feature-Id', () => {
+    const s = frag(read(P.qaBuild), 'e2e-dispatch');
+    expect(s).toContain('add-build.commit');
+    expect(s).toContain('Feature-Id');
+  });
+
+  it('16. the ledger table carries the e2e line with its commit range', () => {
+    expect(read(P.build)).toContain('e2e: complete (N surfaces, P passing; commits');
+  });
+
+  it('16a. the e2e batch has no Task-Id, and STEP add-build.commit names it with its gate', () => {
+    const s = frag(read(P.qaBuild), 'e2e-dispatch');
+    expect(s).toMatch(/no `?Task-Id`?/i);
+    const c = between(read(P.build), '### STEP add-build.commit', '### STEP add-build.validation-gates');
+    expect(c).toMatch(/e2e batch/i);
+  });
+});

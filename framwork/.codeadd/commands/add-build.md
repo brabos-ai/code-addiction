@@ -992,6 +992,7 @@ yet, and the line must not claim it did. The area's own `<area>: validated (…)
   `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
   were fixed together against one ordering, and `review-package.cjs` packages `FIX_BASE..HEAD` for
   STEP add-build.re-review as one range.
+- **The e2e batch (`qa-pipeline`) is the one batch outside an area dispatch.** After the e2e-dispatch section's report, its authored spec paths and each `screens.json` are staged BY PATH and committed once. It carries `Feature-Id` and no `Task-Id`. Gates 1 and 2 count as held — every area validator returned before that dispatch — and the gate is the build green plus the specs green. Its ledger line is `e2e: complete (…; commits BATCH_BASE..HEAD)`, never a `T0N` line.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
   way, and only when more than one batch exists — the normal case, since STEP add-build.dependency-order dispatches each in-scope
   area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
@@ -1223,7 +1224,7 @@ Walk the run and confirm one line exists for each of:
 | TASKS MODE: area validated | `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` — once per area, after its last task |
 | fix round | `T0N: fix round N/3 (X addressed, Y open; commits FIX_BASE..HEAD)` |
 | fix round, build-only | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
-| e2e dispatch (`qa-pipeline`) | `e2e: complete (N surfaces, P passing)` — once per delivery, written by the e2e-dispatch section; absent when `qa-pipeline` is off or no surface was in scope |
+| e2e dispatch (`qa-pipeline`) | `e2e: complete (N surfaces, P passing; commits BATCH_BASE..HEAD)` — once per delivery, written by the e2e-dispatch section; absent when `qa-pipeline` is off or no surface was in scope |
 | deferred minor | `T0N: minor (deferred): <one line>` |
 | parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
 | final review | `Final review: <verdict> (after review-NNN)`, then `Final review head: <sha>` — written by `## Final Review` |
