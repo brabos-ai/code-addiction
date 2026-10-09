@@ -213,6 +213,7 @@ const AGENT_SLOTS = {
   'add-qa-setup': ['interaction', 'install-confirm', 'config-values', 'offer'],
   'add-pull-request': ['interaction', 'offer'],
   'add-audit': ['interaction', 'offer'],
+  'add-wiki': ['interaction', 'offer'],
 };
 const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));
@@ -228,6 +229,13 @@ describe('L1.2 (F3/F10-F21) -- agent-mode is registered, off by default, and lis
     expect(meta).toBeTruthy();
     expect(meta.default).toBe(false);
     expect(typeof meta.description).toBe('string');
+  });
+
+  it('lists the twelve commands of the plan (F21 closes the set)', () => {
+    expect([...FEATURES['agent-mode'].commands].sort()).toEqual([
+      'add-audit', 'add-brainstorm', 'add-build', 'add-diagnose', 'add-done', 'add-hotfix',
+      'add-new', 'add-plan', 'add-pull-request', 'add-qa-setup', 'add-review', 'add-wiki',
+    ]);
   });
 
   it('lists exactly the commands whose F-block has landed', () => {
