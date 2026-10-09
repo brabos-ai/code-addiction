@@ -7,6 +7,7 @@
 - skill: add--cross-sf-consistency
 - skill: add--database-development
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--final-report
 - skill: add--frontend-development
@@ -44,6 +45,11 @@
 Coordinator for feature implementation, bug fixes, and epic feature execution. Detects context automatically, coordinates subagents, validates against skill checklists, and ensures 100% compilation.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -1275,15 +1281,10 @@ nothing and dispatches no implementer.
    not advance.
 5. **If the sequence landed and rows are still pending**, per `EPIC_DELIVERY`:
 
-   | `EPIC_DELIVERY` | Do |
-   |---|---|
-   | `automatic` | Print what `SFxx` delivered, then follow {{cmd:add-plan}} for this feature — it plans the next pending subfeature — as `add--delivery-mode` describes |
-   | `semi-automatic` | **STOP — deciding.** Show what `SFxx` delivered and what the next subfeature will do, and WAIT. On the user's go, follow {{cmd:add-plan}}. This question IS the stop — do not also offer continuation instructions |
-   | absent (`confirm`) | Keep the full checkpoint report for `SFxx`, then offer the continuation under `chat-continuation-eligibility-v1` and STOP |
-
-**The `confirm` checkpoint keeps its whole report.** The offer is a question after that report, never a
-replacement for it, and never a compression of it. The next activity is `/add-plan ${FEATURE_ID}` for
-the next pending subfeature; on acceptance, `STEP add-build.handoff` answers it in one block.
+<!-- slot:agent-mode.checkpoint-route fallback="fallbacks/agent-mode.add-build.checkpoint-route.md" -->
+<!-- feature:agent-mode:checkpoint-route -->
+<!-- /feature:agent-mode:checkpoint-route -->
+<!-- /slot:agent-mode.checkpoint-route -->
 
 6. **If no row is pending any more** → go to STEP add-build.publish.
 
@@ -1597,17 +1598,10 @@ print the report and the line, then follow the next command from its first step,
 
 ### STEP add-build.handoff Offer the continuation — `confirm`
 
-**On `confirm`, finish the report, the rulings table and the metadata, and only then ask ONCE whether
-the user wants instructions for continuing in a fresh context.** Then stop and wait.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
-activity and its documents; `automatic` never reaches it.
-
-⛔ **The publish question is deciding in every state and outranks this step.** On a branch with no PR,
-the build asks that question and waits; it does not offer continuation in its place, and the two are
-never merged into one prompt.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-build.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 
