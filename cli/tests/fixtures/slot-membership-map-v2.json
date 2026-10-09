@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 96,
-  "slotCount": 89,
+  "membershipCount": 99,
+  "slotCount": 92,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -920,6 +920,24 @@
       "name": "add-done",
       "slots": [
         {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
           "id": "docs-pruning.prune",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -934,6 +952,24 @@
               "namespace": "feature",
               "name": "docs-pruning",
               "section": "prune"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.ci-watch",
+          "fallback": "fallbacks/agent-mode.add-done.ci-watch.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "ci-watch"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "ci-watch"
             }
           ]
         },
@@ -1006,6 +1042,24 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-report"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-done.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
             }
           ]
         }
@@ -1891,6 +1945,27 @@
         },
         {
           "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-done.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-done",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
           "via": "USES_SKILL"
         }
       ]

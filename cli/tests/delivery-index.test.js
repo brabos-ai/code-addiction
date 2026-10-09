@@ -153,8 +153,9 @@ describe('L2 — build integrity', () => {
   // fragments/board/ (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses,
   // F14+F15). The gitnexus and docs-pruning points must survive that intact.
   it('L2.3: add-done carries exactly five injection points — gitnexus, docs-pruning and three board', () => {
+    // agent-mode's own points (interaction, ci-watch, offer) are counted by the agent-mode suite.
     const onDone = SIDECAR().points.filter(
-      (p) => p.resource.kind === 'command' && p.resource.name === 'add-done',
+      (p) => p.resource.kind === 'command' && p.resource.name === 'add-done' && p.name !== 'agent-mode',
     );
     expect(onDone).toHaveLength(5);
 
