@@ -80,7 +80,7 @@
     }
   },
   "commands": {
-    "add":           { "description": "Intelligent ecosystem gateway - answers questions, guides flow, suggests next command" },
+    "add-help":      { "description": "Help guide - answers which command to use, what each feature and plugin is and how to enable it, bot mode and the CLI lifecycle" },
     "add-wiki":      { "description": "Project knowledge base generator - classifies apps, dispatches analyzer agents, writes the .codeadd/wiki (patterns, conventions, workflows, architecture) and keeps it fresh via update mode" },
     "add-audit":     { "description": "Complete technical project audit with health analysis and recommendations" },
     "add-brainstorm":{ "description": "Project conversation partner for exploring ideas (READ-ONLY)" },

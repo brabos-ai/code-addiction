@@ -1,6 +1,6 @@
 ---
 name: add--ecosystem
-description: Consolidated view of the add-pro ecosystem - commands, skills, relationships and dependencies. Loaded by /add as source of truth.
+description: Consolidated view of the add-pro ecosystem - commands, skills, relationships and dependencies. Loaded by /add-help as source of truth.
 ---
 
 # Ecosystem Map - add-pro
@@ -72,12 +72,12 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: @ux-agent
 - mention: @ux-flow-agent
 - mention: @ux-layout-agent
-- mention: /add
 - mention: /add-audit
 - mention: /add-brainstorm
 - mention: /add-build
 - mention: /add-diagnose
 - mention: /add-done
+- mention: /add-help
 - mention: /add-hotfix
 - mention: /add-new
 - mention: /add-plan
@@ -121,7 +121,7 @@ for accepted manual instructions; the route itself remains unchanged.
 
 | Command | Purpose | Skills Loaded |
 |---------|---------|---------------|
-| add | Intelligent gateway - answers questions, guides flows, suggests next command | add--dev-environment-setup, add--ecosystem |
+| add-help | Help guide - answers which command to use and in what order, what each feature and plugin is and how to enable it, how to run from a bot, and the CLI lifecycle | add--dev-environment-setup, add--ecosystem |
 | add-audit | Complete technical analysis of project (security, architecture, data, docs). Escalates to add--investigation on ambiguous findings | add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--health-check, add--investigation, add--subagent-driven-development |
 | add-brainstorm | Explore ideas (READ-ONLY) | add--delivery-mode, add--doc-schemas, add--final-report, add--knowledge-discovery |
 | add-build | Development Execution Specialist. STEP 2 create-or-checkout of the feature branch via build-setup.cjs (`F[NNNN]` + `--worktree` args). Consumes the review's `## Fix Routing` table and writes the resolution annex back. Generates unit/integration tests via @test-agent (tdd-pipeline) and E2E specs via @e2e-agent (qa-pipeline). `## Final Review` reviews each delivery unit whole (`@reviewer-agent` `MODE: feature`, conditional OWASP, one fix wave) and writes the `Final review:` ledger line `/add-done` accepts; the build then enters its loop end itself — the Checkpoint Sequence on an epic, then the next subfeature or the publish question | add--backend-development, add--code-review, add--commit, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--final-report, add--frontend-development, add--id-convention, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--ux-design |
@@ -242,7 +242,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--database-development | add-build, add-plan |
 | add--ux-design | add-ux, add-build, add-review, add-hotfix, add-plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add--code-review | add-build; @reviewer-agent, @security-agent, @conformance-agent and @failure-analysis-agent declare it as a skill |
-| add--final-report | add, add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki — every command that finishes work. The root `add` command and add-ux are exempt: a router and an instruction transformer finish none |
+| add--final-report | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki — every command that finishes work. The `add-help` command and add-ux are exempt: a router and an instruction transformer finish none |
 | add--security-audit | @security-agent and @reviewer-agent declare it as a skill |
 | add--setup-contract | add-qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add--qa-migration | add-qa-setup (STEP 5, first-run migration + `--migrate`) |
@@ -367,12 +367,13 @@ a next activity — and a command resolving one of those rows offers nothing at 
 | add-audit | critical issues found | `/add-new` per issue | Create features to fix findings |
 | add-qa-setup | prereqs + config ready | `/add-review` | Its QA sections validate the rendered result (UX + functional) — optionally `codeadd plugins enable playwright` first for live driving |
 | add-audit | project healthy | none | No action needed |
+| codeadd update | `.codeadd/wiki/` exists | `/add-wiki update` | The update can change the artefacts the wiki was mapped from; refresh it incrementally |
 
 ⛔ **Never propose a feature nobody asked for at `add-done`.** The `was feature / was epic / was
 hotfix` rows fire on the branch's own history, which is a fact. A branch merged with no stated next
 goal is a completed delivery, and inventing an epic to fill the column is how a close-out starts work
 its user never requested.
 
-**Two rows are exempt from the offer by role, not by state.** `add` routes and transforms; `add-ux`
+**Two rows are exempt from the offer by role, not by state.** `add-help` routes and transforms; `add-ux`
 rewrites an instruction. Neither finishes work, so neither reports, and neither offers — a
 continuation question from a router leaves the user two threads and no delivery to attach either to.

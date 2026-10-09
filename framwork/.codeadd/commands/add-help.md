@@ -36,12 +36,12 @@ ALLOWED - CREATE DOCUMENTATION:
 IF ECOSYSTEM-MAP NOT LOADED:
   ⛔ DO NOT RESPOND: About commands or skills
   ⛔ DO NOT LIST: Available commands
-  ✅ DO: Execute STEP add.ecosystem first
+  ✅ DO: Execute STEP add-help.ecosystem first
 ```
 
 ---
 
-## STEP add.ecosystem: Load Ecosystem Map (ALWAYS)
+## STEP add-help.ecosystem: Load Ecosystem Map (ALWAYS)
 
 Read skill `add--ecosystem` before any response.
 
@@ -51,25 +51,25 @@ This file contains all add-pro commands with purpose/skills, available skills, m
 
 ---
 
-## STEP add.classify: Classify Question
+## STEP add-help.classify: Classify Question
 
 | Type | Examples | Action |
 |------|----------|--------|
-| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP add.respondA |
-| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP add.detect + STEP add.respondB |
-| **Status/Context** | "where am I?", "which feature is active?" | -> STEP add.detect + STEP add.respondC |
-| **Compliance** | "does implementation follow the plan?" | -> STEP add.detect + STEP add.respondD |
-| **Project** | "does the project have multi-tenancy?" | -> STEP add.detect + STEP add.respondE |
-| **Next step** | "what to do now?", "next command?" | -> STEP add.detect + STEP add.suggest |
-| **Setup/Environment** | "how to install Node?", "node not found", "git missing", env errors | -> STEP add.respondF |
+| **About commands** | "how does /review work?", "when to use /plan?" | -> STEP add-help.respondA |
+| **About feature** | "what does feature X do?", "how does auth work?" | -> STEP add-help.detect + STEP add-help.respondB |
+| **Status/Context** | "where am I?", "which feature is active?" | -> STEP add-help.detect + STEP add-help.respondC |
+| **Compliance** | "does implementation follow the plan?" | -> STEP add-help.detect + STEP add-help.respondD |
+| **Project** | "does the project have multi-tenancy?" | -> STEP add-help.detect + STEP add-help.respondE |
+| **Next step** | "what to do now?", "next command?" | -> STEP add-help.detect + STEP add-help.suggest |
+| **Setup/Environment** | "how to install Node?", "node not found", "git missing", env errors | -> STEP add-help.respondF |
 
 ---
 
-## STEP add.detect: Detect Context (CONDITIONAL)
+## STEP add-help.detect: Detect Context (CONDITIONAL)
 
 Execute when question involves a specific feature, current status, "where am I?", next step, or project/architecture.
 
-### STEP add.status Execute status.cjs
+### STEP add-help.status Execute status.cjs
 
 ```bash
 node .codeadd/scripts/status.cjs
@@ -77,17 +77,17 @@ node .codeadd/scripts/status.cjs
 
 **Parse output:** FEATURE_ID (current feature), CURRENT_PHASE (discovered, planned, implementing, etc.), IS_EPIC (list sub-features if true), HAS_PLAN/HAS_REVIEW (existing documents), BRANCH (current branch).
 
-### STEP add.read-context Read additional context (if exists)
+### STEP add-help.read-context Read additional context (if exists)
 
 Read `AGENTS.md` for project architecture patterns. List `.codeadd/projects/` for project documentation.
 
 ---
 
-## STEP add.respond: Respond by Type
+## STEP add-help.respond: Respond by Type
 
 ### Type A: About ADD Commands
 
-Use ecosystem-map from STEP add.ecosystem. If specific command details are needed, read `.claude/commands/add-[command].md`.
+Use ecosystem-map from STEP add-help.ecosystem. If specific command details are needed, read `.claude/commands/add-[command].md`.
 
 Include: what the command does, when to use it, which skills it loads, and main flow steps.
 
@@ -108,7 +108,7 @@ Include: feature ID, name, summary from changelog, explanation, main files (if a
 
 ### Type C: Status/Context
 
-Use output from STEP add.detect (status.cjs).
+Use output from STEP add-help.detect (status.cjs).
 
 Include: branch, feature ID, current phase, pending changes, document availability (about.md, plan.md, the highest review-NNN.md).
 
@@ -137,9 +137,9 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 
 **LOAD skill before responding:** Read skill `add--dev-environment-setup`.
 
-**EXECUTE skill flow:** Follow STEP add.classify-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
+**EXECUTE skill flow:** Follow STEP add-help.classify-6 from the skill (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
-**IF user has not granted permission to install:** Show diagnostic report only (STEP add.detect-3 of skill). Ask for confirmation before installing.
+**IF user has not granted permission to install:** Show diagnostic report only (STEP add-help.detect-3 of skill). Ask for confirmation before installing.
 
 NEVER:
 - Use `apt-get install gh` -- use official gh repo
@@ -147,7 +147,7 @@ NEVER:
 
 ---
 
-## STEP add.suggest: Smart Suggestion
+## STEP add-help.suggest: Smart Suggestion
 
 ALWAYS include at end of response (except if question was only about a specific command).
 
@@ -188,7 +188,7 @@ Only go down the hierarchy if the previous level does not answer the question.
 ## Rules
 
 ALWAYS:
-- Load ecosystem-map in STEP add.ecosystem
+- Load ecosystem-map in STEP add-help.ecosystem
 - Use ecosystem-map to answer about commands/skills
 - Execute status.cjs when question involves context
 - Read changelog before going to code
