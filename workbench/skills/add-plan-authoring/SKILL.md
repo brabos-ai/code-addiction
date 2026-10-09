@@ -284,8 +284,14 @@ both come from the detail, never from a summary. No match (`TICKETS_RETURNED=0`,
 is not on the board: report it and continue with no ticket.
 
 ```bash
-node framwork/.codeadd/scripts/backlog-cli.cjs get <id>
+git fetch origin main
+node framwork/.codeadd/scripts/backlog-cli.cjs get <id> --ref origin/main
 ```
+
+**The read comes from `origin/main`, never from the checked-out copy.** Every board write lands on `main`
+and never on the branch being built, so the branch's own `docs/backlog.jsonl` is as old as the branch: it
+still says `planned` after the `doing` and `in-review` writes landed. The fetch is part of the read — a
+stale `origin/main` answers stale. `--ref` is the same read for `list` and `search`.
 
 A subject, not an id, is resolved with `search`, which runs over every status and also answers an
 exact id; a `list --all` summary remains the board view for choosing, never the source of ticket
