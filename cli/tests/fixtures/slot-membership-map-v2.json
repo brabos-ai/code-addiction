@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 103,
-  "slotCount": 96,
+  "membershipCount": 107,
+  "slotCount": 100,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -1676,6 +1676,86 @@
       ]
     },
     {
+      "resource": "command/add-qa-setup",
+      "file": "framwork/.codeadd/commands/add-qa-setup.md",
+      "kind": "command",
+      "name": "add-qa-setup",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.install-confirm",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.install-confirm.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "install-confirm"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "install-confirm"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.config-values",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.config-values.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "config-values"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "config-values"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "resource": "command/add-review",
       "file": "framwork/.codeadd/commands/add-review.md",
       "kind": "command",
@@ -2122,6 +2202,23 @@
         },
         {
           "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-qa-setup.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-qa-setup",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-review",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
           "via": "USES_SKILL"
         }
       ]
