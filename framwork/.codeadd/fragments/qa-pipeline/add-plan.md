@@ -1,5 +1,6 @@
 <!-- uses:
 - skill: add--qa-spec
+- script: status.cjs
 -->
 
 <!-- section:step-list -->
@@ -10,7 +11,10 @@ STEP qa-pipeline.qa-spec: Generate the QA specification
 
 ### STEP qa-pipeline.qa-spec QA-Spec Subagent (qa-pipeline — runs BEFORE assembly)
 
-**When to run:** ALWAYS when qa-pipeline is enabled. Independent of tdd/STEP tdd-pipeline.test-spec — runs whether tdd is on or off.
+**Setup check — warn once, never a stop.** `add-plan` parses none of the QA setup keys, so extract `SETUP_QA`, `SETUP_QA_STALE` and `SETUP_QA_HINT` yourself from the `status.cjs` output STEP add-plan.recent already ran (`SETUP_QA` is `present`, `stale` or `absent`). When `SETUP_QA` is `absent` or `stale`, or `SETUP_QA_STALE:yes`, print ONE warning — the `SETUP_QA_HINT` text plus "run `{{cmd:add-qa-setup}}` before `{{cmd:add-review}}`" — and continue. This is a warning, not a stop, and it runs whether or not the spec below does.
+
+**When to run:** qa-pipeline is enabled AND the resolved `design.md` (the `feature-design` Location rule below) exists and declares at least one screen. Independent of tdd/STEP tdd-pipeline.test-spec — runs whether tdd is on or off.
+**Otherwise skip:** state "no screen declared — QA spec skipped", write neither `plan-qa-spec.md` nor `_tests/screens.json`, and go on. No dispatch, no empty table.
 
 **MANDATORY:** Load skill BEFORE dispatch: {{skill:add--qa-spec/SKILL.md}}
 

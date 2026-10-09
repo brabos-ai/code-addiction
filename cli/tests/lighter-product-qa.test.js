@@ -99,3 +99,27 @@ describe('F2 — the build names /add-review as next step only with qa-pipeline 
     expect(next()).not.toContain('{{cmd:add-review}}');
   });
 });
+
+describe('F3 — the plan-side QA step', () => {
+  const spec = () => frag(read(P.qaPlan), 'qa-spec');
+
+  it('7. qa-spec runs only when design.md declares at least one screen', () => {
+    const s = spec();
+    expect(s).not.toMatch(/ALWAYS when qa-pipeline is enabled/);
+    expect(s).toMatch(/design\.md[^\n]*declar[^\n]*screen/i);
+    expect(s).toMatch(/QA spec skipped/);
+  });
+
+  it('8. it reads SETUP_QA and warns toward add-qa-setup without stopping', () => {
+    const s = spec();
+    expect(s).toContain('SETUP_QA');
+    expect(s).toContain('{{cmd:add-qa-setup}}');
+    expect(s).toMatch(/never a stop|not a stop|do not stop/i);
+  });
+
+  it('9. guard: the step id and the step-list section are unchanged', () => {
+    const t = read(P.qaPlan);
+    expect(t).toContain('STEP qa-pipeline.qa-spec: Generate the QA specification');
+    expect(frag(t, 'step-list')).toContain('STEP qa-pipeline.qa-spec');
+  });
+});
