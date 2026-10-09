@@ -100,7 +100,7 @@ export const FEATURES = {
   'agent-mode': {
     description: 'Agent mode (commands ask in one numbered batch with a recommendation, call no interactive tool, and close on the next command) for bots that drive them headless',
     default: false,
-    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-review', 'add-done'],
+    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-review', 'add-done', 'add-diagnose'],
   },
 };
 
