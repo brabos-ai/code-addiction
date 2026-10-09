@@ -407,11 +407,20 @@ function anchorAt(surviving, survivingPos, label) {
 let INJECTION_SLOTS = [];
 let INJECTION_MODE = null;
 
+// Reads one fallback file and lints it like any other authored source: a
+// fallback is installed text, so a raw .codeadd/ path in it is as wrong as in
+// a command. The returned bytes are the lint's input, never its output.
+function readFallbackFile(full) {
+  const raw = fs.readFileSync(full, 'utf8');
+  lintResourcePaths(raw, full);
+  return raw.replace(/\r\n/g, '\n').replace(/\n$/, '');
+}
+
 function readProductFallback(rel) {
   assertSafeFallbackPath(rel, 'fallback', 0);
   const full = path.join(CODEADD_DIR, rel);
   if (!fs.existsSync(full)) throw new Error(`file not found: ${rel}`);
-  return fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n').replace(/\n$/, '');
+  return readFallbackFile(full);
 }
 
 /**
@@ -2504,6 +2513,7 @@ module.exports = {
   _resetContracts: () => { CONTRACTS = {}; },
   resolveResourcePaths,
   lintResourcePaths,
+  readFallbackFile,
   collectLintableSources,
   assertNoLintableSources,
   SHIPPED_SOURCE_ALLOWLIST,

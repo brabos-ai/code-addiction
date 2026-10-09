@@ -5,7 +5,8 @@
  * that goes green in the F-block named in its title; the file grows with the
  * build, one RED-first assertion per F-block.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
+import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -48,5 +49,36 @@ describe('L1.1 (F1) -- a fallback resolves its placeholders per provider', () =>
 
   it('with no provider the fallback is returned as authored (the old call shape)', () => {
     expect(composeSlot(slot(TEXT), [{ contribute: false }]).text).toBe(TEXT);
+  });
+});
+
+describe('L1.8 (F2) -- a fallback holding a raw .codeadd/ path warns at build', () => {
+  const build = require(path.join(ROOT, 'scripts', 'build.js'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'fallback-lint-'));
+  afterAll(() => fs.rmSync(tmp, { recursive: true, force: true }));
+  beforeEach(() => build._resetLintCache());
+
+  it('warns for a raw .codeadd/skills/ reference and returns the bytes unchanged', () => {
+    const file = path.join(tmp, 'agent-mode.raw.md');
+    fs.writeFileSync(file, 'read .codeadd/skills/add--human-interaction/SKILL.md first\n');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(build.readFallbackFile(file)).toBe('read .codeadd/skills/add--human-interaction/SKILL.md first');
+      expect(warn.mock.calls.map((c) => c.join(' ')).join('\n')).toMatch(/LINT .*raw \.codeadd\/skills\/ reference/);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('is silent for a fallback that uses a placeholder', () => {
+    const file = path.join(tmp, 'agent-mode.clean.md');
+    fs.writeFileSync(file, 'read {{skill:add--human-interaction/SKILL.md}} first\n');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      build.readFallbackFile(file);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
