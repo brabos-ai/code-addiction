@@ -48,15 +48,27 @@ STEP qa-pipeline.evidence: QA Evidence             → per SCOPE_DIR: run-NNN, r
 STEP qa-pipeline.judge: QA Judgement           → @ux-agent ∥ @qa-agent per SF, merge, write qa-validation-NNN.md
 <!-- /section:step-list -->
 
+<!--
+MAINTAINER NOTES for section preflight. They live here, outside every section, because a comment inside
+a section body is injected into the installed command as-is.
+
+1. The preflight section and the two after it carry the QA validation that used to live in a separate command.
+
+2. There is no "is qa-pipeline enabled" row, and there must not be one. The section only exists in the installed
+command when the feature is on, so a probe for it here can only ever report enabled. QA_FEATURE_STATE in the
+script output is consumed by the add-qa-setup command, not by this step.
+
+3. The add-qa-setup command interprets rows 8-9 as work-to-do, never a stop. The review command interprets them
+as block. The asymmetry is deliberate and unchanged.
+-->
+
 <!-- section:preflight -->
 
 ---
 
 ## STEP qa-pipeline.preflight: QA Preflight (deterministic, cheap)
 
-This section and the two below carry the QA validation that used to live in a
-separate command. They arrive with the `qa-pipeline` feature, which decides
-whether they exist at all, and they **self-gate on the `/add-qa-setup` receipt**,
+These steps arrive with the `qa-pipeline` feature, and they **self-gate on the `/add-qa-setup` receipt**,
 which decides whether they can run.
 
 **Two gates, two questions, and both must be satisfied.** The feature governs the
@@ -88,16 +100,11 @@ Parse the `KEY=STATUS` lines. `missing` and `broken` are distinct diagnoses
 (absent vs present-but-non-functional); `not-probed` means a cheaper blocker
 short-circuited the row — report it as not probed, never as passing.
 
-⛔ **There is no "is `qa-pipeline` enabled" row, and there must not be one.** This
-section only exists in the installed command when the feature is on, so a probe
-for it here can only ever report enabled. `QA_FEATURE_STATE` in the script's
-output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
-
 | # | Prerequisite | Probe | Severity |
 |---|---|---|---|
 | 1 | `docs/qa/config.json` present + parseable + has `baseUrl` | `QA_CONFIG` | block |
 | 2 | `baseUrl` local/throwaway | `QA_BASEURL_LOCAL` | block — refuse production |
-| 3 | `baseUrl` reachable | `QA_BASEURL_REACHABLE` | block — surface the config `bootHint` |
+| 3 | `baseUrl` reachable — boot it when down | `QA_BASEURL_REACHABLE` | boot first (below); **block** only if boot fails — surface the config `bootHint` |
 | 4 | `@playwright/test` functional in the project | `QA_RUNNER` | block |
 | 5 | chromium launchable | `QA_CHROMIUM` | block |
 | 6 | `qa-project` skill present | `QA_PROJECT_SKILL` | block — it carries the run commands |
@@ -105,8 +112,9 @@ output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
 | 8 | Receipt `docs/qa/qa-setup.md` present with readable `setup-shape` | `QA_RECEIPT` | **block** — remedy: `{{cmd:add-qa-setup}}` |
 | 9 | Receipt `setup-shape` equals shipped `contracts.json` shape | `QA_CONTRACT_MATCH` | **block** — remedy: `{{cmd:add-qa-setup}}` (full re-materialize) |
 
-`{{cmd:add-qa-setup}}` interprets rows 8–9 as work-to-do, never a stop. This
-command interprets them as `block` — the asymmetry is deliberate and unchanged.
+**Row 3 boots before it blocks.** When `QA_BASEURL_REACHABLE` is not `ok` and rows 1, 2 and 6 held, start the app through the `qa-project` Managed App Lifecycle (`bootHint`, boot in the background, wait until ready) and probe `baseUrl` again. The row blocks only if boot fails, and then it surfaces `bootHint`. The app stays up through capture and the judges, so STEP qa-pipeline.capture finds it running and boots nothing of its own.
+
+**The preflight owns the app it booted.** Tear it down when the QA steps end — after STEP qa-pipeline.merge-write-per for the last scope, or at once when a `block` row stops the QA steps — and only if the preflight booted it. An app that was already running is never stopped.
 
 Collect ALL rows. Do NOT stop here even on a `block` failure; the user gets
 every problem and its remedy at once, after Phase B.
@@ -139,7 +147,7 @@ the row reports `not-probed`.
 |---|---|---|---|
 | 10 | `about.md` per SF in scope | file read | block — the functional axis has no contract |
 | 11 | `DESIGN_FILE` (SF-level, else feature-level — see STEP qa-pipeline.reconcile-qa-scope) | file read | **degrade** — the UX axis cannot run; the functional axis still can |
-| 12 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `{{cmd:add-qa-setup}}` scaffolds the empty catalog; `/add-plan` fills it |
+| 12 | `FEATURE_DIR/_tests/screens.json` | `QA_SCREENS` | block — remedy: `{{cmd:add-qa-setup}}` scaffolds the empty catalog; `/add-plan` fills it. **Unless the feature declares no screen** (no `DESIGN_FILE`, or one with no screen): `/add-plan` writes no catalog then, so QA does not apply — record "no screen declared — QA not applicable" and skip STEP qa-pipeline.evidence and STEP qa-pipeline.judge without a block |
 | 13 | `<surface>.qa.spec` persisted | `QA_SPECS` | **degrade** — falls back to STEP qa-pipeline.specs-absent's stopgap |
 
 Emit ONE consolidated preflight report (Phase A + Phase B): every failed row
@@ -201,7 +209,7 @@ It resolves the immediate numeric predecessor from working plus final evidence,
 never a deeper history walk.
 
 Run the surface's `<surface>.qa.spec` via the `qa-project` Managed App Lifecycle
-(probe → boot-bg + wait-ready if down → run → teardown-iff-booted). Collect, all
+(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted). Collect, all
 under the resolved `run-NNN`:
 
 - the functional assertion pass/fail roll-up
@@ -214,7 +222,7 @@ under the resolved `run-NNN`:
 The specs are authored by `@e2e-agent` under this same feature, so reaching this
 step means the feature is on and the specs were simply not generated yet.
 
-- Route to `/add-build` to author them; or
+- Route to `/add-build` to author them — on an epic, `/add-build` writes the specs on the LAST subfeature, so a review of an earlier subfeature reaches this step by design; or
 - (plugin ON) fall back to live-drive-from-catalog as a stopgap.
 
 ⛔ **There is no feature-off branch here, and there must not be one.** With the
@@ -327,4 +335,6 @@ schema `qa-validation`.
 **The per-scope report is not replaced by `review-NNN.md`.** `qa-evidence.cjs
 validate`, `working-baseline` and `previous`, and `/add-done`, all depend on
 this exact contract. Both documents are written every run.
+
+**QA teardown.** After the last scope is written, stop the app only if the preflight booted it (row 3). Never stop one that was already running.
 <!-- /section:judge-tail -->

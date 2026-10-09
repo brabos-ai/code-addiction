@@ -56,7 +56,7 @@ IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Bash for git operations
   ✅ DO: Show error and stop
 
-IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
+IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed (`QA_PROMOTION_STATUS=skipped` is resolved: the user chose it at branch 5):
   ⛔ DO NOT USE: Write to create changelog.md
   ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
@@ -293,8 +293,12 @@ or `skipped`.**
 5. IF `GATE_QA_BASELINE=skipped` (`REVIEW_SOURCE=build`, `BASELINE=none`): no review judged QA.
    Resolve `QA_FEATURE_STATE`, the `qa-pipeline` feature — `true` is enabled; `false`, `unset` and `no-manifest` are disabled,
    the feature's default. **Disabled → proceed. Enabled → STOP — deciding, in every state:** "QA was
-   not judged for this feature — close it out without a QA judgement?" Yes → proceed with
-   `BASELINE=none`. No → print `/add-review ${FEATURE_ID}` and STOP.
+   not judged for this feature — close it out without a QA judgement? Working QA evidence left in
+   `_tests/` will not be promoted to `_tests/final/`." Yes → proceed with `BASELINE=none`.
+   No → print `/add-review ${FEATURE_ID}` and STOP.
+   **Whenever this branch proceeds, set `QA_PROMOTION_STATUS=skipped`.** No review judged the working
+   evidence, so there is no baseline to validate it against: STEP add-done.promote-qa runs neither
+   `validate` nor `promote` on this path.
 6. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: show `GATE_QA_BASELINE_DETAIL` →
    BLOCKED. `missing` means the review carries no `> **QA baseline:**` line; `broken` means
    `qa-evidence.cjs validate` rejected it. Both send the user to `/add-review ${FEATURE_ID}` — never
@@ -303,7 +307,7 @@ or `skipped`.**
 
 ⛔ **Reading `GATE_QA_BASELINE` is MANDATORY.** The preflight emits it and it is the gate whose silent loss let a feature whose evidence no longer matched its review reach the merge. Ignoring a computed gate is worse than never computing it.
 
-**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.cjs validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.cjs validate` again immediately before `promote`, and that second run remains the one that gates finalization.
+**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.cjs validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.cjs validate` again immediately before `promote`, and that second run remains the one that gates finalization — except on `GATE_QA_BASELINE=skipped`, where branch 5 already set `QA_PROMOTION_STATUS=skipped` and the STEP runs neither call.
 
 `GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` neither `ok` nor `skipped` → **BLOCKED**. Never infer a baseline or compare dates. STEP add-done.promote-qa performs the exact filesystem equality and promotion checks through `qa-evidence.cjs`.
 
@@ -506,6 +510,8 @@ here would record a relationship nobody can reproduce.
 ## STEP add-done.promote-qa: Validate and Promote Reviewed QA Evidence
 
 **SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP add-done.document.
+
+**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no review judged the working evidence). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
 
 For a feature branch, `QA_BASELINE` from STEP add-done.validate is the only promotion manifest. Run in this exact order:
 

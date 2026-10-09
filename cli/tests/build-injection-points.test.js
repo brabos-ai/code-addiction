@@ -149,11 +149,11 @@ function stepRefFiles() {
 }
 
 describe('slot membership map v2', () => {
-  it('freezes 70 memberships in 63 slots, one nonempty fallback', () => {
-    expect(MAP.membershipCount).toBe(70);
-    expect(MAP.slotCount).toBe(63);
+  it('freezes 71 memberships in 64 slots, one nonempty fallback', () => {
+    expect(MAP.membershipCount).toBe(71);
+    expect(MAP.slotCount).toBe(64);
     const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
-    expect(members).toHaveLength(70);
+    expect(members).toHaveLength(71);
     const nonempty = MAP.resources.flatMap((r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md'));
     expect(nonempty).toEqual([
       expect.objectContaining({

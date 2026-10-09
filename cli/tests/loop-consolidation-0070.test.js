@@ -84,7 +84,7 @@ const EXPECTED_MAP = [
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-review', count: 2 },
   { namespace: 'feature', name: 'tdd-pipeline', resource: 'add-hotfix', count: 1 },
   { namespace: 'feature', name: 'qa-pipeline', resource: 'add-plan', count: 2 },
-  { namespace: 'feature', name: 'qa-pipeline', resource: 'add-build', count: 2 },
+  { namespace: 'feature', name: 'qa-pipeline', resource: 'add-build', count: 3 },
   // Five sections — step-list, preflight, evidence, judge-head, judge-tail.
   // The head/tail split keeps the playwright pair below from being enclosed by
   // a feature pair (plan 2026-09-13T153219, F15/F16/F20).
@@ -94,7 +94,7 @@ const EXPECTED_MAP = [
 ];
 
 describe('0070 L1 — build-side unit', () => {
-  it('L1.0 injection map totals exactly 70 points', () => {
+  it('L1.0 injection map totals exactly 71 points', () => {
     // 38 at 0070; +1 for feature:tdd-pipeline:red-gate on add-hotfix (plan 0073);
     // +1 for feature:docs-pruning:prune on add-done
     // (plan 2026-09-07T160328-PLAN--delivery-index, F14);
@@ -112,7 +112,8 @@ describe('0070 L1 — build-side unit', () => {
     // 64 -> 65: feature:board adds add-plan's planned write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F25+F26).
     // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
     // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
-    expect(sidecarPoints()).toHaveLength(70);
+    // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
+    expect(sidecarPoints()).toHaveLength(71);
   });
 
   it('L1.0 injection map matches the expected per-resource breakdown', () => {

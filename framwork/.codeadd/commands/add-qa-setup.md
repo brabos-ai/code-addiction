@@ -1,5 +1,5 @@
 ---
-description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests the QA judgement via /add-review
+description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and proves the setup with the QA preflight
 argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add-qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces a full re-materialize even when the shape matches)"
 ---
 
@@ -15,7 +15,6 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - skill: add--setup-contract
 - skill: add--subagent-driven-development
 - agent: e2e-agent
-- agent: qa-agent
 - command: /add-build
 - command: /add-review
 - script: qa-evidence.cjs
@@ -25,7 +24,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow on a project's first run (confirm-then-dogfood), and closes the loop with a universal `/add-review` smoke test plus a bounded auto-correction loop. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
+Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow when the scan finds tooling it has no recorded decision for (confirm-then-dogfood), and proves the setup with the deterministic QA preflight — the first real `/add-review` is what proves QA end to end. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
 
 ---
 
@@ -34,7 +33,7 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 Load `{{skill:add--dev-environment-setup/SKILL.md}}` before STEP add-qa-setup.diagnose (OS detection + confirm-before-install methodology).
 Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-qa-setup.catalog (feature doc layout, `_tests/` per-run path + `screens.json` reachability schema, `qa-validation` conventions).
 Load `{{skill:add--qa-migration/SKILL.md}}` before STEP add-qa-setup.migration (existing-QA migration sequence + checkpoints).
-Load `{{skill:add--subagent-driven-development/SKILL.md}}` before STEP add-qa-setup.migrate (dispatch template, decision log, review gates — the mechanism reused by migration + correction dispatch).
+Load `{{skill:add--subagent-driven-development/SKILL.md}}` before STEP add-qa-setup.migrate (dispatch template, decision log, review gates — the mechanism the migration dispatch uses).
 Load {{skill:add--setup-contract/SKILL.md}} before STEP add-qa-setup.context (receipt classification, shape comparison, receipt rewrite).
 Load {{skill:add--doc-schemas/SKILL.md}} + its `references/receipt.md` before STEP add-qa-setup.receipt (the `setup-receipt` schema).
 
@@ -54,10 +53,10 @@ STEP add-qa-setup.config: Scaffold QA config       → docs/qa/config.json (inte
 STEP add-qa-setup.catalog: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
 STEP add-qa-setup.ignore: Ignore working evidence  → materialize the dedicated QA block in .gitignore
 STEP add-qa-setup.migrate: Autonomous migration    → IF MIGRATE: dispatch add-new→add-plan→add-build→add-review (checkpoints only)
-STEP add-qa-setup.smoke: Smoke test + correction → dispatch /add-review, analyze; on failure dispatch /add-build (max 3), else defer/escalate
+STEP add-qa-setup.proof: Setup proof              → qa-preflight.cjs a (+ b when a feature has screens.json); no nested review or build
 STEP add-qa-setup.receipt: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
 STEP add-qa-setup.validate: Validation gate         → add--doc-schemas gate against the setup-receipt schema
-STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) + /add-review for the QA judgement + migration/smoke/contract summary
+STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) + /add-review for the QA judgement + migration/proof/contract summary
 ```
 
 ## ⛔ ABSOLUTE PROHIBITIONS (by checkpoint)
@@ -76,11 +75,11 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.migration** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
 | **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP add-qa-setup.ignore's root `.gitignore`. Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP add-qa-setup.catalog** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add-plan}}` owns content |
-| **STEP add-qa-setup.ignore** | QA evidence block not materialized exactly once | Running migration or smoke test | Normalize the QA block while preserving installer-managed and user-authored content |
+| **STEP add-qa-setup.ignore** | QA evidence block not materialized exactly once | Running migration | Normalize the QA block while preserving installer-managed and user-authored content |
 | **STEP add-qa-setup.migrate** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
 | **STEP add-qa-setup.migrate** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
-| **STEP add-qa-setup.smoke** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature to smoke-test | Defer the smoke test; note it in hand-off |
-| **STEP add-qa-setup.smoke** | Smoke test still failing after 3 correction attempts | Looping again | Escalate to the user with accumulated findings |
+| **STEP add-qa-setup.proof** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature, or running preflight `b` | Run `a` only; note in hand-off that `b` was not run |
+| **STEP add-qa-setup.proof** | A preflight row still fails | Dispatching `/add-review` or `/add-build` to prove setup, or looping | Fix it here when install or config can; otherwise report the row and its remedy in the hand-off |
 | **STEP add-qa-setup.context** | Receipt absent but materialized state present | Treating the project as FIRST-RUN | Classify STALE and re-materialize under the merge rules |
 | **STEP add-qa-setup.feature-gate Phase A rows 8–9** | `QA_RECEIPT` or `QA_CONTRACT_MATCH` is not `ok` | Stopping the setup run | Treat as work-to-do — this command is the remedy |
 | **STEP add-qa-setup.receipt** | Always | Editing or deleting an existing Decision Log row | Append only |
@@ -348,7 +347,7 @@ Execute `node .codeadd/scripts/qa-evidence.cjs ensure-ignore "."`. The determini
 
 The pattern intentionally ignores only working `docs/features/**/_tests/run-*/` directories. Do NOT add a `!final/` exception: `_tests/final/run-NNN/` does not match the working-run pattern and remains trackable.
 
-⛔ Do NOT continue to migration or smoke testing until the canonical QA block exists exactly once.
+⛔ Do NOT continue to migration or the setup proof until the canonical QA block exists exactly once.
 
 ---
 
@@ -364,34 +363,32 @@ Dispatch each command in the chain as a subagent via the Agent tool — autonomo
 
 ---
 
-## STEP add-qa-setup.smoke: Universal Smoke Test + Bounded Correction Loop
+## STEP add-qa-setup.proof: Setup Proof
 
-⛔ IF no feature with a scaffolded `screens.json` exists → DEFER only the smoke dispatch and correction loop (there is nothing for the QA judgement to validate). Do NOT scaffold a synthetic feature. Record the deferral, then continue to STEP add-qa-setup.receipt so the receipt is written and validated before hand-off.
+**Setup proves its own prerequisites with the deterministic preflight. It dispatches no `/add-review` and no `/add-build`.** The first real `{{cmd:add-review}}` proves QA end to end; running one here would spend a whole review on a catalog this same run has just created.
 
-Otherwise, close the loop on every run:
+Run Phase A again, after every file above has been written:
 
-### STEP add-qa-setup.smoke-test Smoke test
-
-```
-IF `qa-pipeline` IS DISABLED — STEP add-qa-setup.feature-gate WAS DECLINED, OR IT WAS TURNED OFF SINCE:
-  ⛔ DO NOT: Dispatch the smoke test
-  ⛔ DO NOT: Enter STEP add-qa-setup.correction-loop-max's correction loop
-  ✅ DO: Record the deferral naming the decline, and continue to STEP add-qa-setup.receipt
+```bash
+node .codeadd/scripts/qa-preflight.cjs a
 ```
 
-⛔ **STEP add-qa-setup.correction-loop-max's guard is not this guard.** It catches a `/add-build` dispatch that
-reports the feature disabled — one wasted review and one wasted build later, and
-it names routed QA correction as the problem when the real one is that the
-review carried no QA steps to smoke-test. STEP add-qa-setup.feature-gate explicitly allows a decline
-and continues setup, so this branch is reachable on any run.
+The proof holds when `QA_CONFIG`, `QA_BASEURL_LOCAL`, `QA_BASEURL_REACHABLE`, `QA_RUNNER`, `QA_CHROMIUM` and `QA_PROJECT_SKILL` are all `ok`. `QA_BASEURL_REACHABLE` means the app is up: a proof that skips it is green with the app down. Do not read `QA_RECEIPT` or `QA_CONTRACT_MATCH` yet: STEP add-qa-setup.receipt writes the receipt next.
 
-Autonomously dispatch `/add-review <feature-id>` (Agent tool) against the scaffolded feature — the QA sections `qa-pipeline` injects into it are what this setup enables. Analyze whether it: ran cleanly, produced the correct assets (screenshots, run artefacts), and whether `qa-agent` produced valid analysis documentation. Record PASS or FAIL with the specific findings.
+When a feature with a scaffolded `FEATURE_DIR/_tests/screens.json` exists, also run Phase B:
 
-### STEP add-qa-setup.correction-loop-max Correction loop (max 3 attempts)
-On FAIL, compose a correction instruction from the findings and autonomously dispatch `/add-build` to work the routed rows, then re-run STEP add-qa-setup.smoke-test.
+```bash
+node .codeadd/scripts/qa-preflight.cjs b "<FEATURE_DIR>" "<spec glob from the qa-project skill>"
+```
 
-- Guard: routed QA correction requires the `qa-pipeline` feature. If that dispatch reports the feature is disabled, do NOT keep looping — surface it and instruct the user to run `codeadd features enable qa-pipeline` (or re-run this command, whose STEP add-qa-setup.feature-gate offers the enable).
-- ⛔ Cap at **3** correction attempts. If the smoke test still fails after the third, STOP looping and escalate to the user in STEP add-qa-setup.handoff with the accumulated findings from all attempts.
+`QA_SCREENS` must be `ok`; `QA_SPECS` reads `not-probed` or `missing` until `{{cmd:add-build}}` authors the specs, and that is expected. ⛔ IF no such feature exists, do NOT scaffold a synthetic one and do NOT run `b` — record that it was not run.
+
+```
+IF A ROW STILL FAILS:
+  ⛔ DO NOT: Dispatch /add-review or /add-build to find out more, or loop
+  ✅ DO: Fix it here when STEP add-qa-setup.install or STEP add-qa-setup.config can, otherwise
+         record the row and its remedy for STEP add-qa-setup.handoff, and continue to STEP add-qa-setup.receipt
+```
 
 ---
 
@@ -458,7 +455,7 @@ Then, after the seven blocks, tell the user, in order:
 1. The `qa-pipeline` feature outcome (from STEP add-qa-setup.feature-gate): enabled + verified, declined (remaining manual step: `codeadd features enable qa-pipeline`), or enable no-op detected (route: `codeadd update` / re-install).
 2. Any prerequisite they declined / must finish manually (from STEP add-qa-setup.install).
 3. Migration outcome (if `MIGRATE` ran): the migration branch (created at the add-build step), the Decision Log location, and that it awaits their review before merge.
-4. Smoke-test outcome: PASS, or the deferral reason (no feature/`screens.json` yet), or the escalation with accumulated findings after 3 failed corrections.
+4. Setup proof outcome: preflight `a` all ok, or the rows that still fail with their remedies; and whether `b` ran or was not run (no feature/`screens.json` yet). QA is proven end to end by the first real `{{cmd:add-review}}`, not by setup.
 5. Shape state: current (hashes match), or re-materialized from STALE, or FIRST-RUN receipt written. Never report a version integer.
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).

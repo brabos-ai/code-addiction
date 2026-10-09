@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 70,
-  "slotCount": 63,
+  "membershipCount": 71,
+  "slotCount": 64,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -424,24 +424,6 @@
           ]
         },
         {
-          "id": "qa-pipeline.qa-fix",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "qa-pipeline",
-              "section": "qa-fix"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "qa-pipeline",
-              "section": "qa-fix"
-            }
-          ]
-        },
-        {
           "id": "tdd-pipeline.detect-framework",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -570,6 +552,24 @@
           ]
         },
         {
+          "id": "qa-pipeline.qa-fix",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
+            }
+          ]
+        },
+        {
           "id": "tdd-pipeline.verification+tdd-pipeline.coverage",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -648,6 +648,24 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-metadata"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.next-command",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "next-command"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "next-command"
             }
           ]
         }

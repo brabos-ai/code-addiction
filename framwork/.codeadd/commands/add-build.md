@@ -290,10 +290,6 @@ Read all relevant feature docs based on status.cjs flags:
 Fallback for anything not covered: plan.md > design.md + about.md > about.md + discovery.md.
 
 ---
-<!-- slot:qa-pipeline.qa-fix fallback="fallbacks/empty.md" -->
-<!-- feature:qa-pipeline:qa-fix -->
-<!-- /feature:qa-pipeline:qa-fix -->
-<!-- /slot:qa-pipeline.qa-fix -->
 
 ## STEP add-build.wiki: Load Project Knowledge (IF wiki exists)
 
@@ -546,7 +542,7 @@ agents directly, at depth 1.
 | `@reviewer-agent` | read-only | `MODE` (`task` \| `re-review`), area `FILES_CREATED`/`FILES_MODIFIED` or the `review-package.cjs` path, checklist, open findings on re-review | `MODE: task` → `CHECKLIST_RESULTS`, `VIOLATIONS_FOUND` (routed rows), `FILES_INSPECTED`, `BUILD_STATUS`, `TICK_REPORT`, `SPEC_STATUS`; `MODE: re-review` → one `ADDRESSED`/`NOT ADDRESSED` verdict per open finding, `NEW_BREAKAGE`, `DEFERRED_MINORS`, `VERDICT` |
 | `@test-agent` | full-access (test files only) | `AREA`, `MODE`, `TEST_FRAMEWORK`, `TEST_COMMAND`, `AREA_FILES`, `CONTRACT_TESTS`, `COVERED_REQUIREMENTS`, `KNOWN_FAILURES`, `ATTEMPT`, `MAX_ATTEMPTS`, and on the final attempt only an explicit `MODEL` one tier above its declared model | `FILES_CREATED`, `FILES_MODIFIED`, `TESTS_PASSING`, `TEST_COUNT`, `BLOCKED`, `ERRORS`, `CONCERNS`, `RED_TEST` (CORRECTION) |
 | `@fix-agent` | full-access | `AREAS`, the whole wave's `ROUTED_ROWS` in table order, `ATTEMPT`, `MAX_ATTEMPTS`, `BUILD_ERRORS`, and at round 3 only an explicit `MODEL` one tier above its declared model. One dispatch per wave | `ROWS_RESOLVED`, `ROWS_FAILED`, `NOT_MINE`, `DISPUTED`, `FILES_MODIFIED`, `BUILD_STATUS`, `NEW_FINDINGS` |
-| `@e2e-agent` | read-write (test files only, no MCP) | in-scope surface, `screens.json`, component paths | authored spec paths, `screens.json` updates, green-confirm result |
+| `@e2e-agent` | read-write (test files only, no MCP) | every surface of the delivery in ONE dispatch, `screens.json`, component paths, `CAPTURE_DIR` | authored spec paths, `screens.json` updates, pass/fail per surface |
 | `@ux-agent` | read-write (`design.md` only) | routed design-spec finding + contract-line citation | amendment appended to `## Design Review` |
 
 **Fallback:** if a named agent is not installed on this engine, dispatch a
@@ -594,10 +590,11 @@ the wave spanned:
 `T02: fix round 1/3 (backend, frontend — 2 addressed, 0 open, 1 deferred; commits d4e5f6a..b7c8d9e)`.
 
 **A build-only round gets no re-review.** A round is build-only when EVERY row in its `ROUTED_ROWS` came from a
-build error or from a test-agent `BLOCKED` entry (STEP add-build.merge-ticks) — there is no reviewer judgement in
-it that a fix could misread. Its gate is the build green and the project's test command green (the build
-alone when the project has no test runner), and the Final Review reads that fix diff later, inside the unit's
-whole range. Its ledger line says so:
+build error, from a test-agent `BLOCKED` entry (STEP add-build.merge-ticks), or from a failing `@e2e-agent` spec
+assertion (`qa-pipeline`) — there is no reviewer judgement in it that a fix could misread. Its gate is the build
+green and the project's test command green (the build alone when the project has no test runner) — and, when the
+round carries e2e rows, the spec re-run green, run by you as a command and never by a second `@e2e-agent`. The
+Final Review reads that fix diff later, inside the unit's whole range. Its ledger line says so:
 `T02: fix round 1/3 (build-only — build green, tests green; commits d4e5f6a..b7c8d9e)`.
 ⛔ One reviewer-sourced row — the area validator, the Final Review, `/add-review`'s `## Fix Routing` or the
 Compliance Gate's missing-requirement rows — puts the whole round back under re-review.
@@ -991,6 +988,7 @@ yet, and the line must not claim it did. The area's own `<area>: validated (…)
   `FILES_MODIFIED` and commit once. ⛔ DO NOT split a wave's diff into per-area commits — the areas
   were fixed together against one ordering, and `review-package.cjs` packages `FIX_BASE..HEAD` for
   STEP add-build.re-review as one range.
+- **The e2e batch (`qa-pipeline`) is the one batch outside an area dispatch.** After the `E2E Spec Authoring (qa-pipeline)` section's report, its authored spec paths and each `screens.json` are staged BY PATH and committed once. It carries `Feature-Id` and no `Task-Id`. Gates 1 and 2 count as held — every area validator returned before that dispatch — and the gate is the build green plus the specs green. Its ledger line is `e2e: complete (…; commits BATCH_BASE..HEAD)`, never a `T0N` line.
 - ⛔ **Never `git add -A` here, and never reuse one `BASE` across several commits.** Both break the same
   way, and only when more than one batch exists — the normal case, since STEP add-build.dependency-order dispatches each in-scope
   area in turn and each one commits. `git add -A` on the first area sweeps the second area's files into that commit,
@@ -1043,6 +1041,11 @@ it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
 rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
+
+<!-- slot:qa-pipeline.qa-fix fallback="fallbacks/empty.md" -->
+<!-- feature:qa-pipeline:qa-fix -->
+<!-- /feature:qa-pipeline:qa-fix -->
+<!-- /slot:qa-pipeline.qa-fix -->
 
 ### STEP add-build.re-review Scoped Re-Review (after every fix round with a reviewer-sourced row) [HARD GATE]
 
@@ -1221,7 +1224,8 @@ Walk the run and confirm one line exists for each of:
 | task completed | `T0N: complete (commits BASE..HEAD, BUILD_STATUS=pass, review clean)` — in TASKS MODE the tail reads `validation at area end` |
 | TASKS MODE: area validated | `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` — once per area, after its last task |
 | fix round | `T0N: fix round N/3 (X addressed, Y open; commits FIX_BASE..HEAD)` |
-| fix round, build-only | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
+| fix round, build-only (`E2E` in place of `T0N` for an e2e wave) | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
+| e2e dispatch (`qa-pipeline`) | `e2e: complete (N surfaces, P passing; commits BATCH_BASE..HEAD)` — once per delivery, written by the `E2E Spec Authoring (qa-pipeline)` section; absent when `qa-pipeline` is off or no surface was in scope |
 | deferred minor | `T0N: minor (deferred): <one line>` |
 | parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
 | final review | `Final review: <verdict> (after review-NNN)`, then `Final review head: <sha>` — written by `## Final Review` |
@@ -1581,6 +1585,11 @@ instruction block on `confirm` waits for the user's acceptance.
 - After `## Loop End` → the step it reached: `/add-plan ${FEATURE_ID}` for the next subfeature, or,
   past the publish question, `/add-done`
 - `Final review: blocked N` → each `Blocker suggestion:` command
+
+<!-- slot:qa-pipeline.next-command fallback="fallbacks/empty.md" -->
+<!-- feature:qa-pipeline:next-command -->
+<!-- /feature:qa-pipeline:next-command -->
+<!-- /slot:qa-pipeline.next-command -->
 
 **Stop kind — confirming.** The report describes work the approval already covered. On `automatic`,
 print the report and the line, then follow the next command from its first step, as
