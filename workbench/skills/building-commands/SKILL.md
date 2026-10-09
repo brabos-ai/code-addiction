@@ -17,10 +17,10 @@ description: Use when designing command workflows or refactoring existing comman
 -->
 
 <!--
-`add.md` and `add-ux` below are PRODUCT commands and are named in prose on
+`add-help.md` and `add-ux` below are PRODUCT commands and are named in prose on
 purpose. They are deliberately NOT declared: `uses:` targets resolve inside the
-declaring artefact's own layer (scripts/build.js), so `- command: /add.md` from
-here would resolve to `internal/command/add.md`, which does not exist, and the
+declaring artefact's own layer (scripts/build.js), so `- command: /add-help.md` from
+here would resolve to `internal/command/add-help.md`, which does not exist, and the
 dangling gate would fail the build. The prose sniff skips cross-layer names.
 
 The same applies to the product `add-final-report`. `- skill: add-final-report`
@@ -318,7 +318,7 @@ IF WRITING OR REVISING A COMMAND'S CLOSING STEP:
   ✅ DO: Load add-final-report at that step and fill its blocks
 ```
 
-**Two commands are exempt, and only these two.** `add.md` routes to another command and `add-ux`
+**Two commands are exempt, and only these two.** `add-help.md` routes to another command and `add-ux`
 rewrites an instruction. Neither finishes work, so a delivery report on either is noise. A command
 that writes a file, changes state, or opens a PR is not exempt.
 
