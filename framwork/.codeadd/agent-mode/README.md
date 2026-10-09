@@ -67,3 +67,35 @@ Run one command per call. Each call returns its own result.
 ## 5. Provider support
 
 Claude Code only for now. Codex, Cursor, Antigravity, OpenCode and ZCode do not use this contract yet.
+That is the slash-command contract above. Section 6 is the `codeadd` CLI, which works for every provider.
+
+## 6. Install and change the installation from a bot
+
+This part is the `codeadd` command line, not a slash command. It works for every provider. When stdin
+is not a terminal it never asks a question: it finishes, or it exits 1 with a message naming the flag
+that is missing. `codeadd --help` lists every flag.
+
+```bash
+# install. --providers is required; "none" installs the core only
+npx codeadd install --providers claude,codex --enable-feature board
+
+# the project already has .codeadd/ or .claude/: overwriting needs --force
+npx codeadd install --providers claude --force
+
+# change an installed project. --providers is the FINAL set; feature and plugin flags are deltas
+npx codeadd modify --providers claude --force --disable-feature tdd-pipeline
+
+# update, and read the feature states
+npx codeadd update
+npx codeadd features list
+```
+
+- Exit 0 means it finished. Exit 1 means it refused and changed nothing, except for a plugin whose
+  tool is not installed: everything else is applied first, then it exits 1 naming that plugin.
+- `--force` confirms removing a provider and overwriting existing files. Without it those steps exit 1.
+- Defaults with no terminal: project scope (`--global` for your home dir), the `.gitignore` block on
+  (`--no-gitignore` turns it off), features at their registry defaults, no plugins.
+- `--enable-feature`, `--disable-feature`, `--enable-plugin` and `--disable-plugin` change only the
+  names you give. Repeat the flag or separate names with commas.
+- An installation already there is not reinstalled. Use `modify` or `update`; to start over, run
+  `uninstall --force` and then `install`.

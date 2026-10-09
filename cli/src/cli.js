@@ -90,6 +90,15 @@ Commands:
   install --version <tag>      Install a specific release tag (e.g. v2.0.1)
   install --channel <channel>  Install from a release channel (stable or beta)
   install --global             Install at user level (home dir, all projects)
+  install --providers <a,b|none>
+                               Choose providers up front; "none" installs the core only.
+                               Required when stdin is not a terminal (bots, CI)
+  install --enable-feature <name> / --disable-feature <name>
+  install --enable-plugin <name> / --disable-plugin <name>
+                               Change features and plugins on top of the defaults.
+                               Repeat the flag or use commas: --enable-feature board,qa-pipeline
+  install --no-gitignore       Do not write the .gitignore block (default: written)
+  install --force              Overwrite an existing .codeadd/ or provider dir without asking
   update                       Update to latest release (respects current channel)
   update --version <tag>       Update to a specific release tag
   update --channel <channel>   Update and switch release channel (stable or beta)
@@ -107,6 +116,12 @@ Commands:
   providers add <name>         Add a provider, keeping features and plugins
   providers remove <name>      Remove a provider (asks first; --force skips)
   modify                       Edit providers, features and plugins in one screen
+  modify --providers <a,b|none>
+                               Set the FINAL provider set, with no prompt (removing one needs --force)
+  modify --enable-feature <name> / --disable-feature <name>
+  modify --enable-plugin <name> / --disable-plugin <name>
+                               Turn features and plugins on or off, with no prompt.
+                               A name left out is left alone. With no TTY, modify needs at least one of these
   mcp --corpus=<name>          Serve the knowledge graph over MCP stdio (docs | artefacts)
   mcp --corpus=<name> --action=<verb>
                                Answer one verb and exit, for a provider with no MCP configured
@@ -117,6 +132,10 @@ Commands:
   config show --verbose         Display config + check for updates
 
   (--global / --user installs into your home dir instead of the project; applies to install/update/uninstall/doctor/validate/config/features/plugins/providers/modify)
+
+  Without a terminal (stdin is not a TTY) nothing is ever asked: the command finishes, or exits 1
+  with a message naming the missing flag. Destructive steps (removing a provider, overwriting
+  existing files) need --force. A plugin whose tool is not detected is applied last and exits 1.
 
 Examples:
   npx codeadd install
@@ -134,6 +153,11 @@ Examples:
   npx codeadd providers add cursor
   npx codeadd providers remove codex --force
   npx codeadd modify
+  npx codeadd install --providers claude,codex --enable-feature board
+  npx codeadd install --providers claude --force
+  npx codeadd install --providers none
+  npx codeadd modify --providers claude --force --disable-feature tdd-pipeline
+  npx codeadd modify --enable-plugin gitnexus
   npx codeadd doctor
   npx codeadd validate
   npx codeadd validate --repair

@@ -8,6 +8,12 @@ CLI installer for [Code Addiction (ADD)](https://github.com/brabos-ai/code-addic
 # interactive install
 npx codeadd install
 
+# install with no prompts (bots, CI): --providers is required, "none" installs the core only
+npx codeadd install --providers claude,codex --enable-feature board
+
+# change an installed project with no prompts
+npx codeadd modify --providers claude --force --disable-feature tdd-pipeline
+
 # install from main branch
 npx codeadd install --version main
 
@@ -34,6 +40,13 @@ npx codeadd uninstall --force
 ## Commands
 
 - `install`: install core and selected provider files
+- `install --providers <a,b|none>`: choose providers up front; required when stdin is not a terminal
+- `install --enable-feature|--disable-feature|--enable-plugin|--disable-plugin <name>`: change features and plugins on top of the defaults (repeat the flag or use commas)
+- `install --no-gitignore`: skip the `.gitignore` block
+- `install --force`: overwrite an existing `.codeadd/` or provider dir without asking
+- `modify --providers <a,b|none>`: set the final provider set with no prompt (removing one needs `--force`)
+- `modify --enable-feature|--disable-feature|--enable-plugin|--disable-plugin <name>`: turn features and plugins on or off with no prompt
+- `features list`: print the feature states (prints and exits when stdin is not a terminal)
 - `install --version main`: install from GitHub `main` branch
 - `install --version <tag>`: install from a specific GitHub tag
 - `update`: update installed files to latest GitHub release
@@ -43,6 +56,15 @@ npx codeadd uninstall --force
 - `validate --repair`: restore missing or modified files
 - `config show`: print current ADD installation config
 - `config show --verbose`: config + release update check
+
+## Without a terminal
+
+When stdin is not a TTY, nothing is ever asked: the command finishes, or exits 1 with a message
+naming the missing flag. `install` needs `--providers`; scope is `project` (`--global` for the home
+dir), the `.gitignore` block is written, features take their defaults and no plugins are enabled.
+Removing a provider and overwriting existing files need `--force`. A plugin whose tool is not
+detected is applied last, after everything else, and the command exits 1 naming it. `update` needs
+no flag. See `codeadd --help` for every flag.
 
 ## What gets installed
 
