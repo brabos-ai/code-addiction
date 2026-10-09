@@ -158,9 +158,9 @@ Include: reformulated question, answer (Yes/No/Partially), explanation based on 
 
 **LOAD skill before responding:** Read skill `add--dev-environment-setup`.
 
-**EXECUTE skill flow:** Follow the skill's STEP 1 to STEP 6 (detect OS -> diagnose -> report -> confirm -> install -> verify).
+**EXECUTE skill flow:** Follow the skill's steps in order (detect OS -> diagnose -> report -> confirm -> install -> verify).
 
-**IF user has not granted permission to install:** Show the diagnostic report only (the skill's STEP 3). Ask for confirmation (the skill's STEP 4) before installing.
+**IF user has not granted permission to install:** Show the diagnostic report only (the skill's report step). Ask for confirmation (the skill's confirm step) before installing.
 
 NEVER:
 - Use `apt-get install gh` -- use official gh repo

@@ -22,7 +22,7 @@ const P = {
   build: path.join(CODEADD, 'commands', 'add-build.md'),
   review: path.join(CODEADD, 'commands', 'add-review.md'),
   hotfix: path.join(CODEADD, 'commands', 'add-hotfix.md'),
-  router: path.join(CODEADD, 'commands', 'add.md'),
+  router: path.join(CODEADD, 'commands', 'add-help.md'),
   discipline: path.join(CODEADD, 'skills', 'add--review-discipline', 'SKILL.md'),
   sdd: path.join(CODEADD, 'skills', 'add--subagent-driven-development', 'SKILL.md'),
   ecosystem: path.join(CODEADD, 'skills', 'add--ecosystem', 'SKILL.md'),

@@ -27,7 +27,7 @@ const P = {
   build: cmd('add-build'),
   done: cmd('add-done'),
   review: cmd('add-review'),
-  router: cmd('add'),
+  router: cmd('add-help'),
   qaSetup: cmd('add-qa-setup'),
   qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
 };
