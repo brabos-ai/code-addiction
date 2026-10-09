@@ -205,6 +205,7 @@ const AGENT_SLOTS = {
   'add-new': ['interaction', 'output-cap', 'confirm-wait', 'closing-route', 'offer'],
   'add-plan': ['interaction', 'stop-kinds', 'preview-wait', 'closing-route', 'offer'],
   'add-build': ['interaction', 'checkpoint-route', 'offer'],
+  'add-review': ['interaction', 'staging-consent', 'offer'],
 };
 const SIDECAR = () => JSON.parse(fs.readFileSync(path.join(CODEADD, 'injection-points.json'), 'utf8'));
 const agentSlotsOf = (command) => SIDECAR().slots.filter((s) => s.resource.kind === 'command' && s.resource.name === command && s.id.startsWith('agent-mode.'));
