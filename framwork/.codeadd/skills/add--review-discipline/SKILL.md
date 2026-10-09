@@ -1,6 +1,6 @@
 ---
 name: add--review-discipline
-description: "Use when a command dispatches a reviewer or a cold reader over a document, or when /add-build runs its final review over a delivery unit — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk."
+description: "Use when a command dispatches a reviewer or a cold reader over a document, or when /add-build runs its final review over a delivery unit — how many times each runs, what makes a second dispatch legal, how a divergence is handled at the one site that dispatches a readback, and where a verdict may reach disk."
 ---
 
 # Review Discipline
@@ -169,7 +169,7 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    ```
 
    Exit 2 means an empty range: nothing was built, so there is nothing to review. Record
-   `Final review: passed (after review-NNN)` and stop here.
+   `Final review: passed (after review-NNN)` and its `Final review head: <sha>` line, and stop here.
 2. **DISPATCH AGENT: `@reviewer-agent`** [read-only] with `MODE: feature`, the package path and the
    unit's `about.md` / `plan.md` paths. **In the same parallel batch**, and only when the package
    touches a sensitive area — authentication, payment, file upload, input handling or validation,
@@ -178,7 +178,7 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    pass's findings join this list.
 3. **Number the findings** `FR-1`, `FR-2`, … in report order — the reviewer returns none — then
    **judge every one**; see What the Caller Owes the Report below. Record each discard.
-4. **One `@fix-agent` wave** carrying every accepted finding, then `/add-build` STEP 12.2's scoped
+4. **One `@fix-agent` wave** carrying every accepted finding, then `/add-build` STEP add-build.re-review's scoped
    re-review of the fix diff only. There is no second wave.
 5. **Sort what is still open.**
    - Not Critical → one `Ruling:` ledger line each; the delivery continues.

@@ -63,8 +63,10 @@ describe('F1 — add-build no longer dispatches a readback', () => {
     expect(t).not.toMatch(/`\/add-build`'s readback/);
   });
 
-  it('L1.4 add--ecosystem does not give add-build a readback', () => {
-    expect(read(P.ecosystem)).not.toContain('add-build (cold readback');
+  it('L1.4 add--ecosystem does not give add-build a readback or the retired 10.0.4 site', () => {
+    const t = read(P.ecosystem);
+    expect(t).not.toContain('add-build (cold readback');
+    expect(t).not.toContain('10.0.4');
   });
 
   it('guard: add-plan still dispatches the readback', () => {
@@ -103,6 +105,12 @@ describe('F2 — the TASKS MODE validator runs once per area', () => {
     expect(section(t, '5\\. Review Subagent')).toMatch(/once per area/i);
     expect(section(t, '6\\. Commit and Record')).toMatch(/TASKS MODE/);
   });
+
+  it('L1.9a the SDD checklist and the tdd fragment carry the TASKS MODE variant', () => {
+    expect(read(P.sdd)).toMatch(/Code review dispatched after every implementation task — in `\/add-build` TASKS MODE/);
+    const fragment = read(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add-build.md'));
+    expect(fragment).toContain('In TASKS MODE the unit of this order is the area');
+  });
 });
 
 describe('F3 — a build-only fix round gets no re-review', () => {
@@ -114,8 +122,11 @@ describe('F3 — a build-only fix round gets no re-review', () => {
 
   it('L1.11 the Compliance Gate accepts a build-only round and still refuses other unverified rounds', () => {
     const s = section(read(P.build), 'STEP add-build.comply');
-    expect(s).toContain('build-only');
-    expect(s).toMatch(/unverified/);
+    expect(s).toMatch(/build-only[\s\S]*other fix\s+round[\s\S]*unverified/);
+  });
+
+  it('L1.11a the STEP list no longer says every fix is re-reviewed', () => {
+    expect(read(P.build)).not.toContain('re-review every fix;');
   });
 
   it('L1.12 the exception is scoped to /add-build, and add-hotfix keeps its snapshot re-review', () => {
@@ -160,6 +171,13 @@ describe('F4 — add-review does not repeat the build\'s Final Review', () => {
     expect(t).toContain('Final review head:');
     expect(t).toContain('Spec audit: SKIPPED');
     expect(t).toMatch(/OWASP[^\n]*skipp|skipp[^\n]*OWASP/i);
+    expect(t).toContain('reads `passed` or `ruled N`');
+    expect(t).toContain('git diff --name-only <sha>..HEAD');
+    expect(t).toContain('git status --porcelain');
+  });
+
+  it('L1.17a the ledger table lists the final review and its head line', () => {
+    expect(read(P.build)).toMatch(/\| final review \| `Final review: <verdict>/);
   });
 
   it('L1.18 (guard) add-review still runs the test-spec slot and the area reviewers', () => {

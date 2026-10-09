@@ -75,7 +75,7 @@ STEP add-build.scope:  Determine scope             → Database, Backend, Worker
 STEP add-build.execution:  Execution decision          → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP add-build.implement: Implementation              → Pre-flight scan, then dispatch by path over the Agent Roster
 STEP add-build.validate: Area validation → COMMIT    → Validator agents (MANDATORY per area), build gate, THEN the commit (TASKS MODE: commit per task, validator once after the area's last task)
-STEP add-build.correct: Routed correction           → Consume ## Fix Routing; re-review every fix; write the resolution annex
+STEP add-build.correct: Routed correction           → Consume ## Fix Routing; re-review every fix round with a reviewer-sourced row; write the resolution annex
          Final Review                → Whole-unit review, one fix wave, the `Final review:` ledger line
 STEP add-build.comply: Compliance Gate             → Cross-reference RF/RN vs implementation
 STEP add-build.integrate: Integration verification    → Build MUST pass
@@ -825,12 +825,11 @@ Send `MODE: task`, the `PACKAGE=` path it printed, and `FILES_CREATED`/`FILES_MO
 area's task reports. It exits 2 on an empty range: ⛔ DO NOT dispatch against nothing — an empty range means no
 task of the area committed, which is itself the finding.
 
-Its report is handled in this order, and the commit already happened, so nothing here blocks one:
+Its report is handled in this order. The commits already happened, so nothing here blocks one:
 
 1. Append `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` to the ledger.
-2. Turn every violation into a routed row. **`SPEC_STATUS = INCOMPLETE` becomes routed rows too** — one per open
-   §3/§4 item — because there is no commit left to hold back.
-3. Dispatch one `@fix-agent` wave for the rows (Correction Dispatch), commit it, and re-review it (STEP add-build.re-review).
+2. Turn every violation into a routed row — `SPEC_STATUS = INCOMPLETE` too, one row per open §3/§4 item.
+3. Dispatch one `@fix-agent` wave for the rows (Correction Dispatch), commit it, and re-review it (STEP add-build.re-review). Its ledger lines carry the area where a task id would go: `backend: fix round 1/3 (…)`.
 
 ### STEP add-build.validator-subagent-prompt Validator Subagent Prompt Template
 
@@ -855,7 +854,7 @@ ${GLOBAL_CONSTRAINTS}
 1. Run: node .codeadd/scripts/status.cjs
 2. Read skill: add-${AREA}-development
 3. Read skill: add--tasks-checklist (tick rules, [!] semantics, "non-trivial change")
-4. Read ALL files in FILES_CREATED and FILES_MODIFIED below
+4. Read ALL files in FILES_CREATED and FILES_MODIFIED below; IF REVIEW_PACKAGE is not "none", read it too — it is the area's committed diff
 5. Read plan.md (prose contracts) and tasks.md (canonical checklist)
 
 ## IMPLEMENTED FILES
@@ -878,7 +877,7 @@ accepted. You do not fix and you do not tick — reporting IS your output.
 
 ## TASK B — Spec Compliance + tasks.md Tick (CURRENT AREA ONLY)
 
-Follow the **Tick Application Procedure** defined in the `add--tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — 11.2 merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
+Follow the **Tick Application Procedure** defined in the `add--tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — STEP add-build.merge-ticks merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
 
 IF any §3 or §4 item for this area is `[!]` or `[ ]`: SET SPEC_STATUS = INCOMPLETE.
 
@@ -931,12 +930,12 @@ area report, recompute §1 Requirements Coverage from the merged set, and write 
 IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
   ⛔ DO NOT USE: Write on tasks.md
   ⛔ DO NOT: Merge a subset — §1 is derived state, and half the ticks recompute it wrong
-  ✅ DO: WAIT-ALL, then merge
+  ✅ DO: WAIT-ALL, then merge — in TASKS MODE that is once, after the last area's validator
 ```
 
 ⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
 a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
-STEP add-build.commit gate 2 blocking the commit forever.
+STEP add-build.commit gate 2 (DEVELOPMENT and CORRECTION MODE) blocking the commit forever.
 
 `SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
@@ -1225,6 +1224,7 @@ Walk the run and confirm one line exists for each of:
 | fix round, build-only | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
 | deferred minor | `T0N: minor (deferred): <one line>` |
 | parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
+| final review | `Final review: <verdict> (after review-NNN)`, then `Final review head: <sha>` — written by `## Final Review` |
 | ruling | `Ruling: <what you decided> — <why> — <what it costs if wrong>` |
 | subagent failure | `T0N: failed — <error excerpt>` |
 
@@ -1569,7 +1569,7 @@ grep -n 'Ruling:' "${LEDGER_FILE}"
 - **Zero rulings is a valid outcome and is stated, not omitted:** "Rulings I made: none — no conflict and
   no finding reached the cap." Silence reads as "the section was skipped".
 
-Also surface, from the same ledger: deferred minors (count + one line each), parked findings, any
+Also surface, from the same ledger: deferred minors (count + one line each), parked findings,
 and any subagent failure line. These are not rulings and go in their own short list.
 
 ### STEP add-build.next-command Next command

@@ -375,6 +375,8 @@ IF ANY LEDGER IS MISSING, HAS NO HEAD LINE, OR ANY CONDITION FAILS:
   ✅ DO: Set BUILD_REVIEW_COVERS=no and run the review in full
 ```
 
+On an epic every in-scope ledger must qualify, so the skip rarely fires there: a later subfeature's source commit fails condition 3 for the earlier ones. That is intended — the earlier Final review never read that code.
+
 The area reviewers, the build, the validation gates, the test-spec coverage slot and the QA steps run in both cases.
 
 ---

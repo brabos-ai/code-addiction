@@ -152,6 +152,10 @@ T02: complete (commits d4e5f6a..b7c8d9e, review clean)
 T03: minor (deferred): magic number in retry backoff
 T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
 T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
+backend: validated (commits a1b2c3d..f9a8b7c, 2 violations, SPEC_STATUS=complete)
+T05: fix round 1/3 (build-only — build green, tests green; commits 0a1b2c3..1b2c3d4)
+Final review: passed (after review-000)
+Final review head: 1b2c3d4e5f60718293a4b5c6d7e8f901234567a
 Publish: pr-opened https://github.com/org/repo/pull/42
 ```
 
@@ -622,7 +626,7 @@ Coordinator must confirm before reporting completion:
 - [ ] `## Global Constraints` travelled verbatim in every dispatch
 - [ ] Ledger line appended after every task, fix round, deferred minor, parked finding and ruling
 - [ ] Every commit landed AFTER its validator returned and the build passed — in `/add-build` TASKS MODE, after the build and the task's `Verify` passed, with the area validator run once afterwards
-- [ ] Code review dispatched after every implementation task
+- [ ] Code review dispatched after every implementation task — in `/add-build` TASKS MODE, once per area after its last task
 - [ ] Every fix round has a matching `MODE: re-review` line — or, in `/add-build`, is a `(build-only …)` round
 - [ ] Critical review issues fixed before advancing
 - [ ] Only one implementation subagent in flight at a time

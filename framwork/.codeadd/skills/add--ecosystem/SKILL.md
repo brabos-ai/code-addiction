@@ -247,7 +247,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--setup-contract | add-qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
 | add--qa-migration | add-qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add--subagent-driven-development | add, add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki (`references/dispatch-rules.md` — read before any dispatch: a fresh dispatch leaves the engine's resume/session fields empty, only an id an earlier dispatch returned is passed) |
-| add--review-discipline | add-plan (STEP 12), add-new (STEP 8), add-build (10.0.4 and `## Final Review`) — the dispatch discipline all three share |
+| add--review-discipline | add-plan (STEP 12), add-new (STEP 8), add-build (`## Final Review`) — the dispatch discipline all three share |
 | add--plan-review | add-plan (STEP 12), add-new (STEP 8, full path only) — all via plan-reviewer-agent |
 | add--feature-readback | add-plan (STEP 12) — via readback-agent, after the plan-review fixes land |
 | add--feature-discovery | add-plan (direct) |
@@ -294,7 +294,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | backlog-commit.cjs | add--backlog — the git route for a backlog write: the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise, with durable recovery refs on every failed publication |
 | backlog-git.cjs | add--backlog — the git primitives the publication entry composes: base discovery, the path-scoped commit, fetch/rebase/push with verified aborts, and the recovery refs |
 | migrate-context-files.cjs | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
-| review-package.cjs | add-build (12.2 re-review only — STEP 11 forbids it, since nothing is committed there yet), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
+| review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
 
@@ -342,7 +342,7 @@ a next activity — and a command resolving one of those rows offers nothing at 
 | add-new | delivery mode is `automatic` (chosen at `/add-brainstorm`'s approval) | (hands off itself) | `/add-new` follows `{{cmd:add-plan}}` from its first step — see `add--delivery-mode` |
 | add-plan | default | `/add-build` | Most common path |
 | add-plan | delivery mode is `automatic` | (hands off itself) | `/add-plan` follows `{{cmd:add-build}}` from its first step — see `add--delivery-mode` |
-| add-build | final review passed or ruled | `/add-done` | The build reviewed the whole unit; `/add-review` is optional, for detail and the QA judgement |
+| add-build | final review passed or ruled | `/add-done` | The build reviewed the whole unit; the build does not suggest `/add-review` |
 | add-build | final review blocked | each `Blocker suggestion:` command | The build names them; `/add-done` blocks until one clears it |
 | add-build | mode=CORRECTION | `/add-done` | The correction wrote a newer `Final review:` verdict — no second review needed |
 | add-build | epic, more subfeatures pending | `/add-plan` for the next subfeature (automatic delivery does this itself) | Next subfeature in epic |
