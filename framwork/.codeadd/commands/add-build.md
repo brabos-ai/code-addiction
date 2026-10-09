@@ -23,7 +23,6 @@
 - agent: e2e-agent
 - agent: fix-agent
 - agent: frontend-agent
-- agent: readback-agent
 - agent: reviewer-agent
 - agent: test-agent
 - agent: ux-agent
@@ -75,8 +74,8 @@ STEP add-build.wiki:  Load project knowledge      → IF WIKI:present (status.cj
 STEP add-build.scope:  Determine scope             → Database, Backend, Workers, Frontend
 STEP add-build.execution:  Execution decision          → DIRECT (1 area) | SUBAGENTS (2+ areas)
 STEP add-build.implement: Implementation              → Pre-flight scan, then dispatch by path over the Agent Roster
-STEP add-build.validate: Area validation → COMMIT    → Validator agents (MANDATORY per area), build gate, THEN the commit
-STEP add-build.correct: Routed correction           → Consume ## Fix Routing; re-review every fix; write the resolution annex
+STEP add-build.validate: Area validation → COMMIT    → Validator agents (MANDATORY per area), build gate, THEN the commit (TASKS MODE: commit per task, validator once after the area's last task)
+STEP add-build.correct: Routed correction           → Consume ## Fix Routing; re-review every fix round with a reviewer-sourced row; write the resolution annex
          Final Review                → Whole-unit review, one fix wave, the `Final review:` ledger line
 STEP add-build.comply: Compliance Gate             → Cross-reference RF/RN vs implementation
 STEP add-build.integrate: Integration verification    → Build MUST pass
@@ -96,7 +95,7 @@ STEP add-build.complete: Completion                  → Inform user based on mo
 - **IMMUTABILITY:** Never allocate new [NNNN]F ID. Always reuse from existing frontmatter. Preserve created:, id:, type:
 - **IDEMPOTENCY:** Check file existence before writing. Never overwrite artefacts without reading first
 - **BUILD GATE:** Code MUST compile 100%. Fix errors before advancing
-- **COMMIT CONTRACT:** **One semantic commit per batch.** In TASKS MODE a batch is one `tasks.md` task (`T01`, `T02`, …); in DEVELOPMENT and CORRECTION MODE a batch is one area dispatch, because there are no task ids to commit against. Message follows `{{skill:add--commit/SKILL.md}}`, with the task id and the feature id as **trailers** (`Task-Id: T02`, `Feature-Id: ${FEATURE_ID}`) so the ledger, the commit and `tasks.md` can be joined later. ⛔ **The commit lands ONLY after the area validator returned AND the build passed** — STEP add-build.commit is the single place any commit happens, and a commit that lands before validation is a commit of unvalidated code
+- **COMMIT CONTRACT:** **One semantic commit per batch.** In TASKS MODE a batch is one `tasks.md` task (`T01`, `T02`, …); in DEVELOPMENT and CORRECTION MODE a batch is one area dispatch, because there are no task ids to commit against. Message follows `{{skill:add--commit/SKILL.md}}`, with the task id and the feature id as **trailers** (`Task-Id: T02`, `Feature-Id: ${FEATURE_ID}`) so the ledger, the commit and `tasks.md` can be joined later. ⛔ **In DEVELOPMENT and CORRECTION MODE the commit lands ONLY after the area validator returned AND the build passed** — a commit that lands before validation there is a commit of unvalidated code. **In TASKS MODE the commit gate is the build** plus the task's own `Verify` command; the area validator then runs once, after the area's last task, over the committed range, and what it finds goes to a fix round. STEP add-build.commit is the single place any commit happens
 - **LEDGER:** `${FEATURE_DIR}/build-ledger.md` (or `${SF_DIR}/build-ledger.md` on an epic) is read on entry and appended after **every** task, fix round, deferred minor, parked finding and ruling — always through `node .codeadd/scripts/build-ledger.cjs`, never by hand. A task carrying a `complete` line is NEVER re-dispatched
 - **BRANCH SETUP FIRST:** build-setup.cjs MUST have exited 0 before any implementation step
 
@@ -217,6 +216,7 @@ as `{{skill:add--subagent-driven-development/SKILL.md}}` states it:
 | a `complete` line exists | **NEVER re-dispatch it.** Not "probably done", not "let me re-check by re-running it". Done |
 | the last line is `fix round N/3` | resume at round **N+1**, not at round 1 |
 | no line at all | this is the first task to dispatch |
+| TASKS MODE: every task of an area has a `complete` line and the area has no `<area>: validated` line | the area **resumes at its validator**, never at a task. Recompute `AREA_BASE` from the area's first `complete` line |
 
 Set `RESUME_FROM` = the first `## Execution` task with no `complete` line. In TASKS MODE this feeds the
 **Resume vs Rerun Procedure** in STEP add-build.implement — the ledger decides `resume`, and only an explicit user request
@@ -363,6 +363,8 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
 
+**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
+
 #### STEP add-build.pre-flight-scan Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
 
 Read `TASKS_FILE` **once** and write a table to the ledger. Tasks carry six sub-bullets — Service, Files,
@@ -459,69 +461,6 @@ All three parts are required. The cost clause is what makes a ruling reviewable:
 caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
 STEP add-build.complete reprints every one of them.
 
-#### STEP add-build.read-plan-cold Read the Plan Cold (NOT a gate)
-
-The ledger is read on entry because a compacted session looks exactly like a
-fresh start. **The same argument applies to the plan**: what a compaction erases
-is the coordinator's understanding of it, and nothing checks that what it
-recovers matches the document. `/add-plan` STEP add-build.correct's readback ran in the session
-that WROTE the plan, while it could still be asked; this one reads it the way a
-resumed session actually holds it — alone.
-
-**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
-
-**DISPATCH AGENT: `@readback-agent`** [read-only]
-
-| Field | Value |
-|---|---|
-| `target` | `docs/features/${FEATURE_ID}` on a simple feature. On an epic, that folder **plus `${EPIC_CURRENT_SF}`** — the agent's contract puts the subfeature id in `target`, never in `scope` |
-| `scope` | `subfeature` when `HAS_EPIC=true`, `feature` otherwise |
-
-Compare its closing **"In one sentence"** line against the plan and tasks loaded
-in STEP add-build.load-docs.
-
-**LOAD `{{skill:add--review-discipline/SKILL.md}}`.** Its divergence-by-site table
-carries this site's row, and the counts and the re-gate condition are its alone.
-This step carries only the dispatch inputs and the ledger lines.
-
-```
-IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
-  ⛔ DO NOT: Halt the build and send the user back to /add-plan
-  ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
-  ✅ DO: Apply this site's row from add--review-discipline — a ruling naming the
-         divergence and which reading you built — and continue
-```
-
-**The approval already happened.** THIS CHECK has no `[STOP]` of its own — unlike
-STEP add-build.publish's Publish gate, which does stop and wait. The user read `/add-plan`'s
-closing report and chose to run the build. A reader that
-answers its own questions out loud marks assumptions constantly — that is the
-format working, not a defect to escalate.
-
-Append ONE line, through the script like every other event. Three carry the
-`Readback:` prefix and the fourth carries `Ruling:`, because a divergence here
-becomes a decision rather than an edit:
-
-```
-Readback: matches — <the one-sentence line>
-Readback: diverges — <what it understood>
-Ruling: built the plan's reading of <X> — <why> — <what it costs if wrong>
-Readback: skipped — no subagent dispatch on this provider
-```
-
-**On resume:** a `Readback:` line already in the ledger means it ran. Do not
-dispatch it again and do not re-rule its divergence — the same rule `Preflight:`
-follows.
-
-```
-IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
-  ⛔ DO NOT: Apply the readback inline yourself
-  ✅ DO: Append the skipped line, and say so at STEP add-build.complete
-```
-
-There is no inline fallback because the mechanism IS the reader not holding this
-conversation. A readback you perform on a plan you just loaded measures nothing.
-
 ---
 
 ### TASKS MODE (when tasks.md exists)
@@ -543,13 +482,21 @@ record the reconciliation as a ledger line.
 2. GROUP filtered tasks by service (database, backend, frontend, test).
 3. VALIDATE deps: build execution graph (tasks with no deps first).
 4. EXECUTION ORDER: test → database → backend → frontend.
-5. PER TASK: record BASE → write brief (STEP add-build.handoff-by-path) → dispatch → validator + build gate (STEP add-build.validate)
+5. PER TASK: record BASE → write brief (STEP add-build.handoff-by-path) → dispatch ONE implementer → build gate + the task's `Verify`
    → COMMIT the task (STEP add-build.commit) → append the ledger line with its BASE..HEAD bracket.
-6. AFTER all task groups complete: proceed to STEP add-build.validate (validation gates tick).
+6. AFTER THE LAST TASK OF AN AREA: ONE validator over that area's committed range (STEP add-build.validate)
+   → append `<area>: validated (…)` → one fix round for the rows it routed, re-reviewed (STEP add-build.re-review).
+7. AFTER all areas have their `validated` line: proceed to STEP add-build.validation-gates (validation gates tick).
 ```
 
-**One commit per task in this mode** — tasks are already service-scoped and capped at 3 files, so a task
-is the right commit. See the COMMIT CONTRACT invariant and STEP add-build.commit.
+**One commit per task, and one validator per area, in this mode.** Tasks are already service-scoped and
+capped at 3 files, so a task is the right commit, and its gate is the build plus its own `Verify` command.
+The validator runs **once per area**, after that area's last task is committed, and reads the whole committed
+range `AREA_BASE..HEAD`. See the COMMIT CONTRACT invariant, STEP add-build.commit and STEP add-build.validate.
+⛔ Never dispatch it while the area still has a task without a `complete` line — it would judge half an area.
+
+**`AREA_BASE` is the `BASE` recorded before the area's first task** — the `BASE` of that area's first
+`T0N: complete (commits BASE..HEAD, …)` ledger line. A resume recomputes it from the ledger, never from memory.
 
 <!-- slot:tdd-pipeline.tasks-flow+tdd-pipeline.gate+tdd-pipeline.verify-red fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:tasks-flow -->
@@ -562,15 +509,14 @@ is the right commit. See the COMMIT CONTRACT invariant and STEP add-build.commit
 
 **Subagent prompt addition for TASKS MODE:**
 
-Hand **brief paths**, never a pasted task table — one `task-brief.cjs` call per task in this agent's service
-area (STEP add-build.handoff-by-path). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
+Hand **one brief path per dispatch**, never a pasted task table — one `task-brief.cjs` call for the task
+being dispatched (STEP add-build.handoff-by-path). The brief carries all six sub-bullets; a table copied into the prompt loses `Consumes` and
 `Produces`, which are the only thing making two tasks build against the same name.
 ```
-## YOUR TASKS (briefs — read each one first)
+## YOUR TASK (brief — read it first)
 - T02 → ${BRIEF path printed by task-brief.cjs}
-- T04 → ${BRIEF path printed by task-brief.cjs}
 
-Execute ALL tasks in order. After each task, confirm the verify command passes.
+Execute this task only. Confirm its verify command passes.
 <!-- slot:tdd-pipeline.awareness fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:awareness -->
 <!-- /feature:tdd-pipeline:awareness -->
@@ -642,10 +588,19 @@ area's blocker, and cannot resolve a `Blocked by` that points outside its own sl
 Two rounds on the declared model is a fair trial. A loop that survives two rounds usually means the agent
 cannot see its own problem, and a third round on the same model buys nothing.
 
-**Every fix round is re-reviewed** — record `FIX_BASE` before the dispatch and run the scoped re-review in
-STEP add-build.re-review after it returns. Append **one ledger line per round**, not one per area, naming the areas
+**Every fix round that carries a reviewer-sourced row is re-reviewed** — record `FIX_BASE` before the dispatch and run
+the scoped re-review in STEP add-build.re-review after it returns. Append **one ledger line per round**, not one per area, naming the areas
 the wave spanned:
 `T02: fix round 1/3 (backend, frontend — 2 addressed, 0 open, 1 deferred; commits d4e5f6a..b7c8d9e)`.
+
+**A build-only round gets no re-review.** A round is build-only when EVERY row in its `ROUTED_ROWS` came from a
+build error or from a test-agent `BLOCKED` entry (STEP add-build.merge-ticks) — there is no reviewer judgement in
+it that a fix could misread. Its gate is the build green and the project's test command green (the build
+alone when the project has no test runner), and the Final Review reads that fix diff later, inside the unit's
+whole range. Its ledger line says so:
+`T02: fix round 1/3 (build-only — build green, tests green; commits d4e5f6a..b7c8d9e)`.
+⛔ One reviewer-sourced row — the area validator, the Final Review, `/add-review`'s `## Fix Routing` or the
+Compliance Gate's missing-requirement rows — puts the whole round back under re-review.
 
 ⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
 
@@ -851,10 +806,30 @@ counter tracked here. The cap is `MAX_ATTEMPTS = 3` per wave.
 
 **MANDATORY:** Validator MUST load `{{skill:add--tasks-checklist/SKILL.md}}` to apply tick rules, "non-trivial change" definition, and `[!]` failure-marker semantics.
 
-**This validator runs on the WORKING TREE, not on a diff — deliberately.** It is the gate the commit waits
-on (STEP add-build.commit), so at this point nothing is committed yet and `BASE..HEAD` is still empty. `review-package.cjs`
-belongs to the **re-review** in STEP add-build.re-review, after a fix batch is committed. Dispatch this one with `MODE: task`
-and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that cannot exist yet.
+**What the validator reads depends on the mode — and the mode decides whether a diff exists yet.**
+
+**DEVELOPMENT and CORRECTION MODE: the WORKING TREE, not a diff — deliberately.** It is the gate the commit
+waits on (STEP add-build.commit), so at this point nothing is committed yet and `BASE..HEAD` is still empty.
+`review-package.cjs` belongs to the **re-review** in STEP add-build.re-review, after a fix batch is committed.
+Dispatch this one with `MODE: task` and `FILES_CREATED`/`FILES_MODIFIED`; never with a package path that
+cannot exist yet.
+
+**TASKS MODE: the area's committed range, once per area.** Every task of the area is already committed, so
+the diff exists. After the area's last task, package it and dispatch ONE validator:
+
+```bash
+node .codeadd/scripts/review-package.cjs "${AREA_BASE}" "$(git rev-parse HEAD)" "${FEATURE_DIR}/_build"
+```
+
+Send `MODE: task`, the `PACKAGE=` path it printed, and `FILES_CREATED`/`FILES_MODIFIED` as the union of the
+area's task reports. It exits 2 on an empty range: ⛔ DO NOT dispatch against nothing — an empty range means no
+task of the area committed, which is itself the finding.
+
+Its report is handled in this order. The commits already happened, so nothing here blocks one:
+
+1. Append `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` to the ledger.
+2. Turn every violation into a routed row — `SPEC_STATUS = INCOMPLETE` too, one row per open §3/§4 item.
+3. Dispatch one `@fix-agent` wave for the rows (Correction Dispatch), commit it, and re-review it (STEP add-build.re-review). Its ledger lines carry the area where a task id would go: `backend: fix round 1/3 (…)`.
 
 ### STEP add-build.validator-subagent-prompt Validator Subagent Prompt Template
 
@@ -879,12 +854,15 @@ ${GLOBAL_CONSTRAINTS}
 1. Run: node .codeadd/scripts/status.cjs
 2. Read skill: add-${AREA}-development
 3. Read skill: add--tasks-checklist (tick rules, [!] semantics, "non-trivial change")
-4. Read ALL files in FILES_CREATED and FILES_MODIFIED below
+4. Read ALL files in FILES_CREATED and FILES_MODIFIED below; IF REVIEW_PACKAGE is not "none", read it too — it is the area's committed diff
 5. Read plan.md (prose contracts) and tasks.md (canonical checklist)
 
 ## IMPLEMENTED FILES
 ${FILES_CREATED}
 ${FILES_MODIFIED}
+
+## REVIEW PACKAGE (TASKS MODE only — the area's committed range; "none" in the other modes)
+${REVIEW_PACKAGE}
 
 ## TASK A — Skill Checklist Validation
 1. Extract "## Validation Checklist" from skill file
@@ -899,7 +877,7 @@ accepted. You do not fix and you do not tick — reporting IS your output.
 
 ## TASK B — Spec Compliance + tasks.md Tick (CURRENT AREA ONLY)
 
-Follow the **Tick Application Procedure** defined in the `add--tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — 11.2 merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
+Follow the **Tick Application Procedure** defined in the `add--tasks-checklist` skill (sections "Tick Application Procedure" and "Section Rules") to DETERMINE the ticks, then emit the JSON validator report from that skill's "Validator Report Shape". Do NOT write `tasks.md` — STEP add-build.merge-ticks merges every area report and writes it once, and §1 Requirements Coverage is recomputed there, from the merged set.
 
 IF any §3 or §4 item for this area is `[!]` or `[ ]`: SET SPEC_STATUS = INCOMPLETE.
 
@@ -910,7 +888,7 @@ TICK_REPORT (the JSON shape), SPEC_STATUS.
 
 ### STEP add-build.merge-ticks Validation Dispatch Flow — and the `tasks.md` Write
 
-Dispatch validator for each area immediately after its implementation agent returns. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
+Dispatch the validator for each area immediately after its implementation agent returns — in TASKS MODE, immediately after the area's last task is committed. After ALL validators complete, run build verification. If the build fails, dispatch `@fix-agent` per the **Correction Dispatch** contract, passing the validator outputs and build errors as `ROUTED_ROWS` + `BUILD_ERRORS`, and the tracked `ATTEMPT`.
 
 #### A `BLOCKED` report becomes a routed row, in this run
 
@@ -952,12 +930,12 @@ area report, recompute §1 Requirements Coverage from the merged set, and write 
 IF A VALIDATOR REPORT HAS NOT RETURNED FOR EVERY DISPATCHED AREA:
   ⛔ DO NOT USE: Write on tasks.md
   ⛔ DO NOT: Merge a subset — §1 is derived state, and half the ticks recompute it wrong
-  ✅ DO: WAIT-ALL, then merge
+  ✅ DO: WAIT-ALL, then merge — in TASKS MODE that is once, after the last area's validator
 ```
 
 ⛔ **Do NOT let a validator write `tasks.md`.** `@reviewer-agent` is read-only and is denied `Write`;
 a run that expects it to tick leaves every item untouched, `SPEC_STATUS` permanently `INCOMPLETE`, and
-STEP add-build.commit gate 2 blocking the commit forever.
+STEP add-build.commit gate 2 (DEVELOPMENT and CORRECTION MODE) blocking the commit forever.
 
 `SPEC_STATUS` for gate 2 below is the merged result: `INCOMPLETE` when ANY area reported it.
 
@@ -966,15 +944,22 @@ STEP add-build.commit gate 2 blocking the commit forever.
 **Read this sub-step top to bottom. The order IS the requirement — a commit that lands before validation
 is a commit of unvalidated code, and it is worse than no commit because it looks like delivered work.**
 
+**Gates 1 and 2 bind DEVELOPMENT and CORRECTION MODE only; in TASKS MODE they do not apply and count as held.
+In TASKS MODE the commit gate is the build (gate 3) plus the task's own `Verify` command** — the area validator
+runs once, after the area's last task, over the range these commits make (STEP add-build.validate), so it
+cannot return before a task's commit.
+
 Run the four gates below **in this order**, and only reach step 4 if 1, 2 and 3 all held:
 
-1. **The area validator has RETURNED.** Not "was dispatched", not "is running" — returned, with its
-   report in hand. ⛔ IF no validator report exists for this batch: DO NOT commit. Go back to STEP add-build.merge-ticks.
-2. **`SPEC_STATUS` is not `INCOMPLETE`.** ⛔ IF it is: DO NOT commit. Implement the missing spec items or
-   escalate, then re-validate.
-3. **The build PASSED.** Run the project build command (AGENTS.md) and read its exit status in this
-   session. ⛔ IF it is red: DO NOT commit. Dispatch `@fix-agent` per the **Correction Dispatch** contract
-   and return to gate 1 afterwards. `BUILD_STATUS: pass` is a fact you observed, never one you assumed.
+1. **The area validator has RETURNED** *(DEVELOPMENT and CORRECTION MODE)*. Not "was dispatched", not "is
+   running" — returned, with its report in hand. ⛔ IF no validator report exists for this batch: DO NOT
+   commit. Go back to STEP add-build.merge-ticks.
+2. **`SPEC_STATUS` is not `INCOMPLETE`** *(DEVELOPMENT and CORRECTION MODE)*. ⛔ IF it is: DO NOT commit.
+   Implement the missing spec items or escalate, then re-validate.
+3. **The build PASSED** *(every mode; in TASKS MODE also the task's `Verify` command exits 0)*. Run the project
+   build command (AGENTS.md) and read its exit status in this session. ⛔ IF it is red: DO NOT commit.
+   Dispatch `@fix-agent` per the **Correction Dispatch** contract and return to this gate afterwards.
+   `BUILD_STATUS: pass` is a fact you observed, never one you assumed.
 4. **NOW commit — and record the bracket.**
 
 ```bash
@@ -992,6 +977,9 @@ HEAD=$(git rev-parse HEAD)
 node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" \
   "${TASK_ID}: complete (commits ${BATCH_BASE}..${HEAD}, BUILD_STATUS=pass, review clean)"
 ```
+
+In TASKS MODE the tail reads `validation at area end` in place of `review clean`: the validator has not run
+yet, and the line must not claim it did. The area's own `<area>: validated (…)` line is what records it.
 
 - **Message** follows `{{skill:add--commit/SKILL.md}}`'s Conventional Commits logic and its Staging Rules.
 - **Trailers are mandatory:** `Task-Id:` (the `tasks.md` id, or the area name in DEVELOPMENT / CORRECTION
@@ -1056,9 +1044,12 @@ where a reviewer reported one, is not consumed here. This dispatch stays "one wa
 rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
 
-### STEP add-build.re-review Scoped Re-Review (after EVERY fix round) [HARD GATE]
+### STEP add-build.re-review Scoped Re-Review (after every fix round with a reviewer-sourced row) [HARD GATE]
 
 **A fix that compiles and misses the finding passes today. This is the step that catches it.**
+
+**A build-only round skips this step** (Correction Dispatch defines it): its rows are compile errors and
+`BLOCKED` entries, which the build and the tests already judge. Write its `build-only` ledger line instead and go on.
 
 After `@fix-agent` returns and its batch is committed (STEP add-build.commit), package the **fix diff only** and
 re-dispatch the reviewer:
@@ -1099,8 +1090,9 @@ node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" \
 - **At the cap with findings still open** → the breaker in **Correction Dispatch**: rule each one, record
   the `Ruling:` line, continue.
 
-⛔ A fix round with no `fix round N/3` ledger line naming its re-review is an **unverified fix**, whatever
-the build says. STEP add-build.comply's Compliance Gate refuses completion on exactly that.
+⛔ A fix round with a reviewer-sourced row and no `fix round N/3` ledger line naming its re-review is an
+**unverified fix**, whatever the build says. STEP add-build.comply's Compliance Gate refuses completion on
+exactly that. A `(build-only …)` line needs no re-review, and is accepted by the gate on its own.
 
 ### STEP add-build.resolution Resolution annex (write-back)
 
@@ -1129,13 +1121,17 @@ After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
 **Runs once per delivery unit, after its last area and before STEP add-build.comply.** `add--review-discipline` owns
 it — **LOAD `{{skill:add--review-discipline/SKILL.md}}`** and follow **The Build's Final Review**: the
-`MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line.
-On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
+`MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line with the
+`Final review head:` line after it. On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
 
 **After a CORRECTION run, dispatch nothing new.** STEP add-build.re-review's re-review is this run's review: write
-the verdict from it — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
+the verdict from it, plus its `Final review head:` line — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
 `blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP add-build.correct answered stays
 the newest verdict and `/add-done` blocks on it.
+
+**Exception — run the normal review above instead when the last fix round was build-only, or when no round was
+re-reviewed.** A build-only round changed code that no re-review read, so a verdict taken from an earlier
+re-review would cover code it never saw. The normal review packages the unit's whole range, which includes that fix.
 
 ```
 IF THE LEDGER HAS NO `Final review:` LINE FOR THIS RUN:
@@ -1154,10 +1150,14 @@ DO NOT report completion without executing this step.
    the coordinator is the only actor holding both the full spec and the full ledger
 3. Quick-read implementation files to confirm requirement exists in code
 4. IF any RF/RN missing: list items → dispatch `@fix-agent` (routed rows = the missing RF/RN, with the tracked `ATTEMPT`) → re-run gate
-5. **Ledger integrity check [REFUSAL]:** scan the ledger for every `fix round N/3` line. ⛔ IF any fix
+5. **Ledger integrity check [REFUSAL]:** scan the ledger for every `fix round N/3` line. A line reading
+   `(build-only — build green, tests green; …)` is accepted as it stands. ⛔ IF any other fix
    round has no matching re-review line recorded by STEP add-build.re-review, DO NOT report completion — that fix is
    unverified whatever the build says. Run the missing re-review, then re-run this gate.
-6. IF ALL RF/RN covered AND every fix round is re-reviewed: proceed to STEP add-build.integrate
+   **In TASKS MODE also scan for the area validators:** ⛔ IF an area has `complete` task lines and no
+   `<area>: validated (…)` line, DO NOT report completion — that area was committed and never validated.
+   Run its validator (STEP add-build.validate), then re-run this gate.
+6. IF ALL RF/RN covered, every fix round is re-reviewed, and (TASKS MODE) every area is validated: proceed to STEP add-build.integrate
 
 ---
 
@@ -1218,10 +1218,13 @@ Walk the run and confirm one line exists for each of:
 | Event | Ledger line shape |
 |---|---|
 | pre-flight scan | `Preflight: <row>` — one per pair and per task, plus a `Ruling:` per conflict |
-| task completed | `T0N: complete (commits BASE..HEAD, BUILD_STATUS=pass, review clean)` |
+| task completed | `T0N: complete (commits BASE..HEAD, BUILD_STATUS=pass, review clean)` — in TASKS MODE the tail reads `validation at area end` |
+| TASKS MODE: area validated | `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` — once per area, after its last task |
 | fix round | `T0N: fix round N/3 (X addressed, Y open; commits FIX_BASE..HEAD)` |
+| fix round, build-only | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
 | deferred minor | `T0N: minor (deferred): <one line>` |
 | parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
+| final review | `Final review: <verdict> (after review-NNN)`, then `Final review head: <sha>` — written by `## Final Review` |
 | ruling | `Ruling: <what you decided> — <why> — <what it costs if wrong>` |
 | subagent failure | `T0N: failed — <error excerpt>` |
 
@@ -1566,9 +1569,8 @@ grep -n 'Ruling:' "${LEDGER_FILE}"
 - **Zero rulings is a valid outcome and is stated, not omitted:** "Rulings I made: none — no conflict and
   no finding reached the cap." Silence reads as "the section was skipped".
 
-Also surface, from the same ledger: deferred minors (count + one line each), parked findings, any
-subagent failure line, and **the readback outcome** — matched, diverged, or skipped and why. These are
-not rulings and go in their own short list.
+Also surface, from the same ledger: deferred minors (count + one line each), parked findings,
+and any subagent failure line. These are not rulings and go in their own short list.
 
 ### STEP add-build.next-command Next command
 
@@ -1577,8 +1579,7 @@ the full invocation.** On `automatic`, print the complete invocation and follow 
 instruction block on `confirm` waits for the user's acceptance.
 
 - After `## Loop End` → the step it reached: `/add-plan ${FEATURE_ID}` for the next subfeature, or,
-  past the publish question, `/add-done` — with `/add-review ${FEATURE_ID}` named as optional, for
-  detail and QA
+  past the publish question, `/add-done`
 - `Final review: blocked N` → each `Blocker suggestion:` command
 
 **Stop kind — confirming.** The report describes work the approval already covered. On `automatic`,

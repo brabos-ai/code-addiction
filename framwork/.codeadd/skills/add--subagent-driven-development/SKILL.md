@@ -27,6 +27,8 @@ description: Use when executing implementation plans via dispatched subagents wi
 - script: status.cjs
 - script: task-brief.cjs
 - skill: add--subagent-driven-development/references/persistent-logging-and-tasks.md
+- mention: @test-agent
+- mention: /add-build
 - mention: /add-review
 - mention: add--architecture-discovery
 -->
@@ -49,7 +51,7 @@ conversation.
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)
-- Code review after each task (catch issues early)
+- Code review after each task (catch issues early) — `/add-build` in TASKS MODE reviews once per area instead (step 5)
 - Faster iteration (no human-in-loop between tasks)
 
 **When to use:**
@@ -142,7 +144,6 @@ Append-only, one line per event, identity on the first line:
 ```markdown
 # Build ledger — feature: F0003 — plan: docs/features/F0003/plan.md
 
-Readback: matches — the plan builds a per-scope QA snapshot promoted at close-out
 Preflight: 4 pairs checked, 1 conflict — T05 consumes `UserDto.name`, T02 produces `UserDto.fullName`
 Preflight: Ruling: T02's name wins (plan.md Architecture Decisions names it) — costs a rename in T05 if wrong
 T01: complete (commits a1b2c3d..a1b2c3d, review clean)
@@ -151,6 +152,10 @@ T02: complete (commits d4e5f6a..b7c8d9e, review clean)
 T03: minor (deferred): magic number in retry backoff
 T04: parked — reviewer wants a null guard — Ruling: the caller already guards; costs a crash if wrong
 T04: complete (commits c1d2e3f..f9a8b7c, 1 parked)
+backend: validated (commits a1b2c3d..f9a8b7c, 2 violations, SPEC_STATUS=complete)
+T05: fix round 1/3 (build-only — build green, tests green; commits 0a1b2c3..1b2c3d4)
+Final review: passed (after review-000)
+Final review head: 1b2c3d4e5f60718293a4b5c6d7e8f901234567a
 Publish: pr-opened https://github.com/org/repo/pull/42
 ```
 
@@ -353,6 +358,14 @@ Write your full report to REPORT_FILE. Return inline ONLY:
 point, so `BASE..HEAD` is still empty and `review-package.cjs` would refuse the range with exit 2. The
 package belongs to the **re-review** in step 7, after a fix batch has been committed.
 
+**Variant — `/add-build` in TASKS MODE: review once per area, on the committed range.** A task there is
+already service-scoped and capped at three files, and its commit is gated by the build and the task's own
+`Verify` command (step 6). So the reviewer runs **once per area**, after that area's last task, over the
+whole range `AREA_BASE..HEAD` — `AREA_BASE` being the `BASE` of the area's first `complete` ledger line —
+packaged by `review-package.cjs`. What it finds feeds the fix loop in step 7, and the area gets one
+`<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` ledger line. Every other
+caller keeps the per-task review described above.
+
 Dispatch `@reviewer-agent` with `MODE: task`, the `FILES_CREATED` / `FILES_MODIFIED` lists from the
 implementer's report, and the plan's `## Global Constraints` block verbatim. Review-specific deltas:
 
@@ -417,6 +430,10 @@ batch, record `HEAD`, and append the ledger line with its `BASE..HEAD` bracket a
 That ordering is the whole point of the step. A commit made before the review is a commit of unreviewed
 code, and a commit made before the build passes is a commit that does not compile.
 
+**Variant — `/add-build` in TASKS MODE:** the per-area review of step 5 has not run when a task commits, so
+that commit is gated by the build and the task's `Verify` command instead, and the area's review reads the
+committed range afterwards. A commit still never lands on a red build.
+
 **The coordinator commits, never the implementer.** The reviewer is a separate dispatch, so an implementer
 that committed its own work would put the commit **upstream of review** — the one ordering this step exists
 to prevent. `BASE` is recorded by the coordinator before dispatching and `HEAD` after the commit it makes
@@ -456,7 +473,12 @@ line stating priority. Everything else mirrors the implementation prompt.
 **Never patch manually — always dispatch a fix subagent.** Patching inline pollutes the coordinator's
 context with implementation detail it then carries into every later dispatch.
 
-**Every fix round is re-reviewed.** Two scoped package forms are valid. A committed feature fix uses a
+**Every fix round is re-reviewed — except a build-only round in `/add-build`.** That command's Final Review reads
+the whole unit's range afterwards, fix included, so a round whose every row came from a build error or a test-agent
+`BLOCKED` entry is gated by the build and the tests going green and gets no re-review; its ledger line reads
+`T02: fix round 1/3 (build-only — build green, tests green; commits d4e5f6a..b7c8d9e)`. One reviewer-sourced row
+puts the whole round back under the rule. The hotfix snapshot path has no such later read and keeps its re-review.
+Two scoped package forms are valid for a round that is re-reviewed. A committed feature fix uses a
 **commit-range package**: record `FIX_BASE`, then run
 `node .codeadd/scripts/review-package.cjs FIX_BASE HEAD "${FEATURE_DIR}/_build"`. An uncommitted hotfix
 correction uses the **correction-only snapshot package** emitted by `hotfix-gates.cjs diff-wave` from a
@@ -547,7 +569,9 @@ DO NOT skip quick-read — file existence alone does not confirm implementation.
 ```
 
 **The gate also refuses a task whose ledger holds a fix round with no matching re-review line.** A fix
-round that was never re-reviewed is an unverified fix, whatever the build says.
+round that was never re-reviewed is an unverified fix, whatever the build says. A `(build-only …)` round in
+`/add-build` is the one exception: it was never meant to be re-reviewed, and the line states the build and the
+tests were green.
 
 ### 12. Final Review
 
@@ -601,9 +625,9 @@ Coordinator must confirm before reporting completion:
 - [ ] No subagent received summaries — only file paths
 - [ ] `## Global Constraints` travelled verbatim in every dispatch
 - [ ] Ledger line appended after every task, fix round, deferred minor, parked finding and ruling
-- [ ] Every commit landed AFTER its validator returned and the build passed
-- [ ] Code review dispatched after every implementation task
-- [ ] Every fix round has a matching `MODE: re-review` line
+- [ ] Every commit landed AFTER its validator returned and the build passed — in `/add-build` TASKS MODE, after the build and the task's `Verify` passed, with the area validator run once afterwards
+- [ ] Code review dispatched after every implementation task — in `/add-build` TASKS MODE, once per area after its last task
+- [ ] Every fix round has a matching `MODE: re-review` line — or, in `/add-build`, is a `(build-only …)` round
 - [ ] Critical review issues fixed before advancing
 - [ ] Only one implementation subagent in flight at a time
 - [ ] Compliance Gate executed: each RF/RN cross-referenced + quick-read

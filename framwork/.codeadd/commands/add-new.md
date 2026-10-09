@@ -405,7 +405,7 @@ surfaces at `/add-plan`, in the verdict on the plan derived from it.
 **Stop kind — a `blocked` verdict is deciding in every state.** Its blockers are decisions nobody made,
 so an automatic delivery waits on them exactly as a confirmed one does.
 
-⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the sites that dispatch a readback, and this command is not one of them any more.
+⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the one site that dispatches a readback, `/add-plan`, and this command is not it.
 
 ⛔ **This command dispatches no readback.** The single readback of the whole flow runs at `/add-plan`,
 whose target is `docs/features/${FEATURE_ID}` — which already contains this `about.md`. The read moved;
