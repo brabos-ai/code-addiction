@@ -16,10 +16,10 @@
 
 #### QA-Routed Correction (qa-pipeline)
 
-Findings from the QA judgement reach this command the same way every other
-finding does: as rows in the `## Fix Routing` table on the highest-numbered
-`review-NNN.md`. There is no separate QA entry point and no `qa` argument — one
-correction contract, one path.
+Findings from the QA judgement reach this step the same way every other finding does: as rows in the
+`## Fix Routing` table on the highest-numbered `review-NNN.md`. There is no separate QA entry point
+and no `qa` argument — one correction contract, one path. This section sits inside STEP add-build.correct and adds
+to the base contract above (consume, scoped re-review, resolution annex, finalized marker); it replaces none of it.
 
 1. Read `## Fix Routing` from the highest `docs/features/${FEATURE_ID}/review-NNN.md`.
    Rows carried up from a per-scope `qa-validation-NNN.md` keep their `Scope`,
@@ -32,18 +32,18 @@ correction contract, one path.
    print the grouped rows in full and continue: every agent-routed row is fixed.
    The user ran the review that produced them, and asked for its routes to be applied.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
-   respecting `Blocked by`: sequential across layers
-   (`@database-agent → @backend-agent → @frontend-agent → @e2e-agent`), and
-   **one agent in flight at a time** — STEP add-build.order owns that rule and this
-   dispatch sits inside it. ⛔ DO NOT overlap two rows because they look
+   respecting `Blocked by`, and **one agent in flight at a time** — STEP add-build.dependency-order owns that
+   rule and this dispatch sits inside it. ⛔ DO NOT overlap two rows because they look
    independent: independence of two rows is not a licence to put two writers on
-   one tree. Each named agent maps per the **Agent Roster**; correction rows go to
-   `@fix-agent` per the **Correction Dispatch** contract, with the `ATTEMPT`
-   counter this command tracks.
-   - **Present, do NOT dispatch** (surface as user decisions — **deciding**, in every delivery mode): manual routes
-     `data-seed` / `env-boot` (name the `docs/qa/config.json` field to fix —
-     `authSeed` / `bootHint`), capability-invalid routes, and `@ux-agent` routes
-     missing their contract-line citation.
+   one tree.
+
+   | Route → agent | Who takes it |
+   |---|---|
+   | code rows — `@database-agent`, `@backend-agent`, `@frontend-agent` in the table | ONE `@fix-agent` for all of them, per the **Correction Dispatch** contract and its `ATTEMPT` counter. The area agents are not dispatched for a correction |
+   | `@e2e-agent` rows (`test-file`) | `@e2e-agent`, once, for all its rows, after the `@fix-agent` wave. It is a repair of an existing spec, not the delivery-time authoring |
+   | `@ux-agent` rows (`design-spec`) with their contract-line citation | `@ux-agent` in **FIX MODE — design-spec route** |
+   | `data-seed`, `env-boot`, capability-invalid, `@ux-agent` rows missing the citation | **Present, do NOT dispatch** — surfaced as user decisions (**deciding**, in every delivery mode). Name the `docs/qa/config.json` field to fix — `authSeed` / `bootHint` |
+
    - **Name the mode verbatim.** `@ux-agent` has three modes and only one may
      write; dispatch it stating **"FIX MODE — design-spec route"** in the prompt.
      Without the mode named, the agent must infer it from the target class and may
@@ -62,9 +62,6 @@ correction contract, one path.
    agent-routed row, and the manual ones wait for the user as step 3 says.
 
 `## Final Review` then writes this run's verdict.
-The QA-specific nuance above sits on top of the base **Routed Correction Contract**
-in STEP add-build.correct — the resolution annex and the finalized marker are written there,
-whether or not this section was injected.
 
 <!-- /section:qa-fix -->
 

@@ -48,15 +48,27 @@ STEP qa-pipeline.evidence: QA Evidence             → per SCOPE_DIR: run-NNN, r
 STEP qa-pipeline.judge: QA Judgement           → @ux-agent ∥ @qa-agent per SF, merge, write qa-validation-NNN.md
 <!-- /section:step-list -->
 
+<!--
+MAINTAINER NOTES for section preflight. They live here, outside every section, because a comment inside
+a section body is injected into the installed command as-is.
+
+1. The preflight section and the two after it carry the QA validation that used to live in a separate command.
+
+2. There is no "is qa-pipeline enabled" row, and there must not be one. The section only exists in the installed
+command when the feature is on, so a probe for it here can only ever report enabled. QA_FEATURE_STATE in the
+script output is consumed by the add-qa-setup command, not by this step.
+
+3. The add-qa-setup command interprets rows 8-9 as work-to-do, never a stop. The review command interprets them
+as block. The asymmetry is deliberate and unchanged.
+-->
+
 <!-- section:preflight -->
 
 ---
 
 ## STEP qa-pipeline.preflight: QA Preflight (deterministic, cheap)
 
-This section and the two below carry the QA validation that used to live in a
-separate command. They arrive with the `qa-pipeline` feature, which decides
-whether they exist at all, and they **self-gate on the `/add-qa-setup` receipt**,
+These steps arrive with the `qa-pipeline` feature, and they **self-gate on the `/add-qa-setup` receipt**,
 which decides whether they can run.
 
 **Two gates, two questions, and both must be satisfied.** The feature governs the
@@ -88,11 +100,6 @@ Parse the `KEY=STATUS` lines. `missing` and `broken` are distinct diagnoses
 (absent vs present-but-non-functional); `not-probed` means a cheaper blocker
 short-circuited the row — report it as not probed, never as passing.
 
-⛔ **There is no "is `qa-pipeline` enabled" row, and there must not be one.** This
-section only exists in the installed command when the feature is on, so a probe
-for it here can only ever report enabled. `QA_FEATURE_STATE` in the script's
-output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
-
 | # | Prerequisite | Probe | Severity |
 |---|---|---|---|
 | 1 | `docs/qa/config.json` present + parseable + has `baseUrl` | `QA_CONFIG` | block |
@@ -104,9 +111,6 @@ output is consumed by `{{cmd:add-qa-setup}}`, not by this step.
 | 7 | `playwright` MCP connected | provider MCP listing (not scripted) | **degrade** — read-PNG mode |
 | 8 | Receipt `docs/qa/qa-setup.md` present with readable `setup-shape` | `QA_RECEIPT` | **block** — remedy: `{{cmd:add-qa-setup}}` |
 | 9 | Receipt `setup-shape` equals shipped `contracts.json` shape | `QA_CONTRACT_MATCH` | **block** — remedy: `{{cmd:add-qa-setup}}` (full re-materialize) |
-
-`{{cmd:add-qa-setup}}` interprets rows 8–9 as work-to-do, never a stop. This
-command interprets them as `block` — the asymmetry is deliberate and unchanged.
 
 **Row 3 boots before it blocks.** When `QA_BASEURL_REACHABLE` is not `ok` and rows 1, 2 and 6 held, start the app through the `qa-project` Managed App Lifecycle (`bootHint`, boot in the background, wait until ready) and probe `baseUrl` again. The row blocks only if boot fails, and then it surfaces `bootHint`. The app stays up through capture and the judges, so STEP qa-pipeline.capture finds it running and boots nothing of its own.
 

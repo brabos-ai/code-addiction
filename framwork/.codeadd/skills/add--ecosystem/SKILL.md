@@ -244,7 +244,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--code-review | add-build; @reviewer-agent, @security-agent, @conformance-agent and @failure-analysis-agent declare it as a skill |
 | add--final-report | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki — every command that finishes work. The `add-help` command and add-ux are exempt: a router and an instruction transformer finish none |
 | add--security-audit | @security-agent and @reviewer-agent declare it as a skill |
-| add--setup-contract | add-qa-setup (STEP 1.5 compare + STEP 12 receipt rewrite) |
+| add--setup-contract | add-qa-setup (STEP add-qa-setup.classify-receipt compare + STEP add-qa-setup.receipt rewrite) |
 | add--qa-migration | add-qa-setup (STEP 5, first-run migration + `--migrate`) |
 | add--subagent-driven-development | add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki (`references/dispatch-rules.md` — read before any dispatch: a fresh dispatch leaves the engine's resume/session fields empty, only an id an earlier dispatch returned is passed) |
 | add--review-discipline | add-plan (STEP 12), add-new (STEP 8), add-build (`## Final Review`) — the dispatch discipline all three share |

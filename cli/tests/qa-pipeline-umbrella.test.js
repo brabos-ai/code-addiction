@@ -117,11 +117,11 @@ describe('QA umbrella — qa-pipeline injection wiring', () => {
     });
   });
 
-  it('add-build carries qa-fix anchored on the separator above the wiki step', () => {
+  it('add-build carries qa-fix anchored inside the routed correction step', () => {
     const pts = points('commands/add-build.md', 'add-build', 'command');
     const anchor = qa(pts, 'qa-fix').anchor;
-    expect(anchor).toMatchObject({ text: '---', position: 'after' });
-    expect(anchor.next).toMatch(/^## STEP add-build\.wiki/);
+    expect(anchor).toMatchObject({ position: 'after' });
+    expect(anchor.next).toMatch(/^### STEP add-build.re-review/);
   });
 });
 

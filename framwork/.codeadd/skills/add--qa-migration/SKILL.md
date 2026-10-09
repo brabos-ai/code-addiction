@@ -27,14 +27,14 @@ Domain layer that turns an existing QA/test setup into the code-addiction QA pip
 
 ## When to Use
 
-- `/add-qa-setup` detected an existing QA/test flow (Cypress, Jest, Vitest, Playwright-standalone, or a custom runner) on a project's **first** setup run and the user **confirmed** they want to migrate/adapt it.
+- `/add-qa-setup` detected an existing QA/test flow (Cypress, Jest, Vitest, Playwright-standalone, or a custom runner) on a setup run whose scan found it new (or `--migrate` was passed) and the user **confirmed** they want to migrate/adapt it.
 - The goal is to adopt code-addiction's dual-judge QA model over an existing suite, preserving intent, not to author QA from a blank slate.
 
 ## When NOT to Use
 
 - **No existing QA tooling** — nothing to migrate; run the normal `/add-qa-setup` scaffolding path.
 - **User declined migration** — never migrate silently; confirmation is mandatory upstream.
-- **Re-run of `add-qa-setup`** (config.json already present) — migration detection is first-run only; skip.
+- **Re-run of `add-qa-setup` with an unchanged scan and a recorded decision** — the scan itself runs on every run, but the decision stands; stay silent and skip.
 - **A single trivial test file** — dogfooding overhead outweighs benefit; decline migration (`MIGRATE = false`) and let normal scaffolding handle it.
 
 ---

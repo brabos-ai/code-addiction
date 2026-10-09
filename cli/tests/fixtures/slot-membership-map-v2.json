@@ -424,24 +424,6 @@
           ]
         },
         {
-          "id": "qa-pipeline.qa-fix",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "qa-pipeline",
-              "section": "qa-fix"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "qa-pipeline",
-              "section": "qa-fix"
-            }
-          ]
-        },
-        {
           "id": "tdd-pipeline.detect-framework",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -566,6 +548,24 @@
               "namespace": "feature",
               "name": "qa-pipeline",
               "section": "e2e-dispatch"
+            }
+          ]
+        },
+        {
+          "id": "qa-pipeline.qa-fix",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "qa-pipeline",
+              "section": "qa-fix"
             }
           ]
         },

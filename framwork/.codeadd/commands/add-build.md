@@ -290,10 +290,6 @@ Read all relevant feature docs based on status.cjs flags:
 Fallback for anything not covered: plan.md > design.md + about.md > about.md + discovery.md.
 
 ---
-<!-- slot:qa-pipeline.qa-fix fallback="fallbacks/empty.md" -->
-<!-- feature:qa-pipeline:qa-fix -->
-<!-- /feature:qa-pipeline:qa-fix -->
-<!-- /slot:qa-pipeline.qa-fix -->
 
 ## STEP add-build.wiki: Load Project Knowledge (IF wiki exists)
 
@@ -1045,6 +1041,11 @@ it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
 rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
+
+<!-- slot:qa-pipeline.qa-fix fallback="fallbacks/empty.md" -->
+<!-- feature:qa-pipeline:qa-fix -->
+<!-- /feature:qa-pipeline:qa-fix -->
+<!-- /slot:qa-pipeline.qa-fix -->
 
 ### STEP add-build.re-review Scoped Re-Review (after every fix round with a reviewer-sourced row) [HARD GATE]
 

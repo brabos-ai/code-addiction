@@ -214,3 +214,35 @@ describe('F7 — setup drops the smoke review and its correction loop', () => {
     expect(read(P.setup)).toContain('shape: sha256:2326519b34fdd1fe');
   });
 });
+
+describe('F8 — cleanup', () => {
+  it('22. no STEP add-build.order anywhere in framwork/.codeadd', () => {
+    const hits = walk(CODEADD).filter((f) => read(f).includes('add-build.order'));
+    expect(hits).toEqual([]);
+  });
+
+  it('23. the qa-pipeline.qa-fix slot sits inside STEP add-build.correct', () => {
+    const t = read(P.build);
+    const slot = t.indexOf('<!-- slot:qa-pipeline.qa-fix');
+    expect(slot).toBeGreaterThan(t.indexOf('## STEP add-build.correct:'));
+    expect(slot).toBeLessThan(t.indexOf('\n## Final Review'));
+  });
+
+  it('24. the qa-fix section states the route to agent map', () => {
+    const s = frag(read(P.qaBuild), 'qa-fix');
+    expect(s).toContain('Route → agent');
+    expect(s).toContain('FIX MODE');
+  });
+
+  it('25. add--setup-contract names no positional STEP numbers of add-qa-setup', () => {
+    expect(read(P.setupContract)).not.toMatch(/STEP 1\.5|STEP 12/);
+  });
+
+  it('26. add--qa-migration no longer says detection is first-run only', () => {
+    expect(read(P.qaMigration)).not.toMatch(/first-run only/i);
+  });
+
+  it('27. the umbrella test asserts the qa-fix anchor inside the routed correction step', () => {
+    expect(read(P.umbrella)).toContain('qa-fix anchored inside the routed correction step');
+  });
+});
