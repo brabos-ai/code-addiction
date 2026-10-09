@@ -101,25 +101,20 @@ subject, and its cap is `MAX_ATTEMPTS = 3` in
 `{{skill:add--subagent-driven-development/SKILL.md}}`. That skill owns the loop;
 this one only names where the boundary is.
 
-⛔ **One site gets a single dispatch and no re-dispatch at all:**
-`/add-build`'s readback at 10.0.4. Its divergence becomes a ruling rather
-than an edit, so no document changes and there is no re-gate to earn a second
-read.
-
 ## A Readback Divergence, by Site
 
-Two sites, two behaviours, one reason each. **Both are correct.** Left
+One site dispatches a readback. **Its behaviour is correct as written.** Left
 unwritten, the next caller copies whichever site it happens to read.
 
-⛔ **`/add-new` and `/add-brainstorm` are absent from this table because neither
-dispatches a readback any more.** `/add-plan` runs the only one in the flow, and
+⛔ **`/add-new`, `/add-brainstorm` and `/add-build` are absent from this table because
+none of them dispatches a readback.** `/add-plan` runs the only one in the flow, and
 its target is the whole feature folder, so nothing goes unread — it is read once
-instead of twice.
+instead of three times. The build starts from a plan the user already approved after
+that readback, so a second cold read of the same document answers a question already answered.
 
 | Site | On divergence | Why |
 |---|---|---|
 | `/add-plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative — on an automatic delivery this is still a deciding stop, per `add--delivery-mode` |
-| `/add-build` | Record a **ruling** naming the divergence and which reading was built. Continue | Execution is starting on a plan the user already approved. A stop costs a command round-trip on a decision already taken |
 
 ⛔ **A divergent restatement is a defect in the DOCUMENT, never in the reader.**
 The reader is the instrument. A gap it marked that turns out to be real is a gap
@@ -278,7 +273,6 @@ two gates read it.
 | "I dropped the weak findings, no need to say which" | The discard IS the evidence of judgement. Unrecorded, it looks like you never read them |
 | "The readback found a gap, so the readback failed" | The document failed. The reader is the instrument |
 | "The readback diverged, so this subfeature is BLOCKED" | It issues no verdict. A blocker comes from the reviewer, never from a restatement |
-| "add-build's readback diverged, I'll stop and ask" | That site rules and continues. The approval already happened |
 | "No script reads it, but the file is useful to keep" | That is the gate this boundary exists to refuse |
 
 ## Rules

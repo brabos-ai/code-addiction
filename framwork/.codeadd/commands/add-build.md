@@ -23,7 +23,6 @@
 - agent: e2e-agent
 - agent: fix-agent
 - agent: frontend-agent
-- agent: readback-agent
 - agent: reviewer-agent
 - agent: test-agent
 - agent: ux-agent
@@ -363,6 +362,8 @@ Fallback for anything not covered: plan.md > design.md + about.md > about.md + d
 The three blocks below run **once, before the first subagent of this run is dispatched**. None is optional,
 and none is satisfied by asserting it happened.
 
+**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
+
 #### STEP add-build.pre-flight-scan Pre-Flight Scan (BEFORE Task 1) [HARD GATE]
 
 Read `TASKS_FILE` **once** and write a table to the ledger. Tasks carry six sub-bullets — Service, Files,
@@ -458,69 +459,6 @@ Ruling: <what you decided> — <why> — <what it costs if wrong>
 All three parts are required. The cost clause is what makes a ruling reviewable: a human reading "the
 caller already guards" cannot tell whether to check it; a human reading "costs a crash if wrong" can.
 STEP add-build.complete reprints every one of them.
-
-#### STEP add-build.read-plan-cold Read the Plan Cold (NOT a gate)
-
-The ledger is read on entry because a compacted session looks exactly like a
-fresh start. **The same argument applies to the plan**: what a compaction erases
-is the coordinator's understanding of it, and nothing checks that what it
-recovers matches the document. `/add-plan` STEP add-build.correct's readback ran in the session
-that WROTE the plan, while it could still be asked; this one reads it the way a
-resumed session actually holds it — alone.
-
-**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
-
-**DISPATCH AGENT: `@readback-agent`** [read-only]
-
-| Field | Value |
-|---|---|
-| `target` | `docs/features/${FEATURE_ID}` on a simple feature. On an epic, that folder **plus `${EPIC_CURRENT_SF}`** — the agent's contract puts the subfeature id in `target`, never in `scope` |
-| `scope` | `subfeature` when `HAS_EPIC=true`, `feature` otherwise |
-
-Compare its closing **"In one sentence"** line against the plan and tasks loaded
-in STEP add-build.load-docs.
-
-**LOAD `{{skill:add--review-discipline/SKILL.md}}`.** Its divergence-by-site table
-carries this site's row, and the counts and the re-gate condition are its alone.
-This step carries only the dispatch inputs and the ledger lines.
-
-```
-IF THE READBACK MARKED A GAP OR READ SOMETHING THE PLAN DID NOT INTEND:
-  ⛔ DO NOT: Halt the build and send the user back to /add-plan
-  ⛔ DO NOT: Widen or narrow the plan's scope to match the reader's expectation
-  ✅ DO: Apply this site's row from add--review-discipline — a ruling naming the
-         divergence and which reading you built — and continue
-```
-
-**The approval already happened.** THIS CHECK has no `[STOP]` of its own — unlike
-STEP add-build.publish's Publish gate, which does stop and wait. The user read `/add-plan`'s
-closing report and chose to run the build. A reader that
-answers its own questions out loud marks assumptions constantly — that is the
-format working, not a defect to escalate.
-
-Append ONE line, through the script like every other event. Three carry the
-`Readback:` prefix and the fourth carries `Ruling:`, because a divergence here
-becomes a decision rather than an edit:
-
-```
-Readback: matches — <the one-sentence line>
-Readback: diverges — <what it understood>
-Ruling: built the plan's reading of <X> — <why> — <what it costs if wrong>
-Readback: skipped — no subagent dispatch on this provider
-```
-
-**On resume:** a `Readback:` line already in the ledger means it ran. Do not
-dispatch it again and do not re-rule its divergence — the same rule `Preflight:`
-follows.
-
-```
-IF THE PROVIDER HAS NO SUBAGENT DISPATCH:
-  ⛔ DO NOT: Apply the readback inline yourself
-  ✅ DO: Append the skipped line, and say so at STEP add-build.complete
-```
-
-There is no inline fallback because the mechanism IS the reader not holding this
-conversation. A readback you perform on a plan you just loaded measures nothing.
 
 ---
 
@@ -1567,8 +1505,7 @@ grep -n 'Ruling:' "${LEDGER_FILE}"
   no finding reached the cap." Silence reads as "the section was skipped".
 
 Also surface, from the same ledger: deferred minors (count + one line each), parked findings, any
-subagent failure line, and **the readback outcome** — matched, diverged, or skipped and why. These are
-not rulings and go in their own short list.
+and any subagent failure line. These are not rulings and go in their own short list.
 
 ### STEP add-build.next-command Next command
 
