@@ -146,7 +146,8 @@ describe('bin entrypoint (process level)', () => {
       const result = run(['install']);
       expect(result.error).toBeUndefined();
       expect(result.status).toBe(1);
-      expect(result.stdout).toContain('interactive terminal');
+      expect(result.stdout).toContain('--providers');
+      expect(result.stdout).toMatch(/--providers (claude|<)/);
     });
 
     it('points to codeadd update when an installation already exists', () => {
@@ -159,6 +160,109 @@ describe('bin entrypoint (process level)', () => {
       expect(result.error).toBeUndefined();
       expect(result.status).toBe(1);
       expect(result.stdout).toContain('codeadd update');
+      expect(result.stdout).toContain('codeadd modify');
+    });
+  });
+
+  describe('modify, providers remove and features without a TTY', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-notty-mod-'));
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-notty-mod-home-'));
+    const manifestPath = path.join(project, '.codeadd', 'manifest.json');
+    afterAll(() => {
+      fs.rmSync(project, { recursive: true, force: true });
+      fs.rmSync(home, { recursive: true, force: true });
+    });
+
+    const run = (args) =>
+      spawnSync(process.execPath, [BIN, ...args], {
+        encoding: 'utf8',
+        timeout: 15000,
+        input: '',
+        cwd: project,
+        env: { ...CHILD_ENV, HOME: home, USERPROFILE: home },
+      });
+
+    // A two-provider installation, small enough to compare byte for byte.
+    const seed = () => {
+      fs.rmSync(path.join(project, '.codeadd'), { recursive: true, force: true });
+      fs.mkdirSync(path.join(project, '.codeadd'), { recursive: true });
+      fs.mkdirSync(path.join(project, '.claude', 'commands'), { recursive: true });
+      fs.mkdirSync(path.join(project, '.agents', 'skills', 'add'), { recursive: true });
+      fs.writeFileSync(path.join(project, '.claude', 'commands', 'add-help.md'), 'x');
+      fs.writeFileSync(path.join(project, '.agents', 'skills', 'add', 'SKILL.md'), 'y');
+      fs.writeFileSync(
+        manifestPath,
+        JSON.stringify({
+          version: '1.0.0',
+          releaseTag: 'v1.0.0',
+          scope: 'project',
+          providers: ['claude', 'codex'],
+          files: ['.claude/commands/add-help.md', '.agents/skills/add/SKILL.md'],
+          hashes: {},
+          features: { 'tdd-pipeline': true },
+          plugins: {},
+        }),
+      );
+    };
+    const tree = () => [
+      fs.readFileSync(manifestPath, 'utf8'),
+      fs.existsSync(path.join(project, '.agents', 'skills', 'add', 'SKILL.md')),
+    ];
+
+    it('modify --providers without --force exits 1, names --force and changes nothing', () => {
+      seed();
+      const before = tree();
+      const result = run(['modify', '--providers', 'claude']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('--force');
+      expect(tree()).toEqual(before);
+    });
+
+    it('providers remove without --force exits 1, names --force and changes nothing', () => {
+      seed();
+      const before = tree();
+      const result = run(['providers', 'remove', 'codex']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('--force');
+      expect(tree()).toEqual(before);
+    });
+
+    it('modify with no flags exits 1 and names the change flags instead of opening the editor', () => {
+      seed();
+      const result = run(['modify']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('--enable-feature');
+    });
+
+    it('modify refuses an unknown feature name and exits 1', () => {
+      seed();
+      const result = run(['modify', '--enable-feature', 'nope']);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain('Unknown feature');
+    });
+
+    it.each([[['features', 'list']], [['features']]])('%j prints every feature and exits 0', (args) => {
+      seed();
+      const result = run(args);
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      for (const name of ['tdd-pipeline', 'qa-pipeline', 'docs-pruning', 'board']) {
+        expect(result.stdout).toContain(name);
+      }
+    });
+  });
+
+  describe('--help lists the non-interactive flags', () => {
+    it('install and modify flags are in the usage text', () => {
+      const result = runNode(BIN, ['--help']);
+      expect(result.status).toBe(0);
+      for (const flag of ['--providers', '--enable-feature', '--disable-feature', '--enable-plugin', '--disable-plugin', '--no-gitignore', '--force']) {
+        expect(result.stdout).toContain(flag);
+      }
     });
   });
 
