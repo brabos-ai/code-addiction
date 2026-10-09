@@ -210,6 +210,12 @@ describe('F7 — setup drops the smoke review and its correction loop', () => {
     expect(between(t, '## STEP add-qa-setup.handoff:')).toMatch(/first real/i);
   });
 
+  it('20a. the setup proof requires QA_BASEURL_REACHABLE (the app up), not only the static rows', () => {
+    const proof = between(read(P.setup), '## STEP add-qa-setup.proof:', '## STEP add-qa-setup.receipt:');
+    expect(proof).toMatch(/proof holds when[^.]*QA_BASEURL_REACHABLE/);
+    expect(proof).not.toMatch(/Do NOT read `QA_BASEURL_REACHABLE`/);
+  });
+
   it('21. guard: the Materializes shape is unchanged', () => {
     expect(read(P.setup)).toContain('shape: sha256:2326519b34fdd1fe');
   });

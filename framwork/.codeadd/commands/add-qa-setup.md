@@ -373,7 +373,7 @@ Run Phase A again, after every file above has been written:
 node .codeadd/scripts/qa-preflight.cjs a
 ```
 
-The proof holds when `QA_CONFIG`, `QA_BASEURL_LOCAL`, `QA_RUNNER`, `QA_CHROMIUM` and `QA_PROJECT_SKILL` are all `ok`. Do NOT read `QA_BASEURL_REACHABLE` as a failure — `{{cmd:add-review}}` boots the app when it is down — and do not read `QA_RECEIPT` or `QA_CONTRACT_MATCH` yet: STEP add-qa-setup.receipt writes the receipt next.
+The proof holds when `QA_CONFIG`, `QA_BASEURL_LOCAL`, `QA_BASEURL_REACHABLE`, `QA_RUNNER`, `QA_CHROMIUM` and `QA_PROJECT_SKILL` are all `ok`. `QA_BASEURL_REACHABLE` means the app is up: a proof that skips it is green with the app down. Do not read `QA_RECEIPT` or `QA_CONTRACT_MATCH` yet: STEP add-qa-setup.receipt writes the receipt next.
 
 When a feature with a scaffolded `FEATURE_DIR/_tests/screens.json` exists, also run Phase B:
 
