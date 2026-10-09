@@ -143,7 +143,12 @@ function snapshot() {
 const baselines = () =>
   Object.fromEntries(Object.entries(snapshot()).filter(([k]) => k.startsWith('.codeadd/baselines/')));
 
+const realIsTTY = process.stdin.isTTY;
+
 beforeEach(() => {
+  // These tests answer the prompts through mocks, so they run as a terminal would. Under
+  // vitest stdin is not a TTY, which would send them down the no-TTY branches instead.
+  process.stdin.isTTY = true;
   dir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-modify-'));
   catalogFile = path.join(dir, '..', `catalog-${path.basename(dir)}.json`);
   writeCatalog('node -e "process.exit(0)"');
@@ -157,6 +162,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  process.stdin.isTTY = realIsTTY;
   delete process.env.CODEADD_PLUGINS_CATALOG;
   fs.rmSync(dir, { recursive: true, force: true });
   fs.rmSync(catalogFile, { force: true });

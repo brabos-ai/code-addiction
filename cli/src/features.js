@@ -256,6 +256,13 @@ export async function features(cwd, args, scope = 'project') {
       }
     }
 
+    // Nobody to answer the multiselect: print the states and stop, as `plugins list` does.
+    if (!process.stdin.isTTY) {
+      log.message(states.map((f) => `${f.enabled ? '●' : '○'} ${f.name} — ${f.description}`).join('\n'));
+      outro('Change with: codeadd features enable|disable <name>');
+      return;
+    }
+
     const selected = await promptFeatures(currentlyEnabled);
 
     let totalModified = 0;
