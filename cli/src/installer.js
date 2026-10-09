@@ -9,7 +9,8 @@ import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 import { applyEnabledFeatures, getFeatureStates, FEATURES } from './features.js';
 // modify.js and updater.js import this module back. Both are function-only
 // imports, used at call time, so the cycle is safe in either load order.
-import { modify } from './modify.js';
+import { modify, applyDesiredState, validateDesired, assertPluginsEnabled } from './modify.js';
+import { readChangeFlags } from './change-flags.js';
 import { update } from './updater.js';
 import { applyEnabledPluginsDetailed } from './plugins.js';
 import { resolveSelected } from './providers.js';
@@ -183,27 +184,67 @@ function describeInstall(targetDir, manifest) {
   };
 }
 
+const NO_TTY_PROVIDERS =
+  'install needs --providers when there is no terminal to ask: --providers <a,b|none>, where "none" installs the core only. ' +
+  'Example: codeadd install --providers claude,codex --enable-feature board';
+
+/**
+ * Everything install can refuse WITHOUT a person to ask, before anything is
+ * downloaded or written. Each failure is a plain Error (exit 1): a prompt here
+ * would hang a bot, and USER_CANCEL would exit 0 with nothing installed.
+ *
+ * @returns {object} the validated request, feature names resolved to their canonical keys
+ */
+function preflightWithoutTty(targetDir, scope, flags) {
+  if (readManifest(targetDir)) {
+    throw new Error(
+      'An ADD installation already exists here, and install cannot choose what to do with it without a terminal. ' +
+        'Run "codeadd update" to update it, or "codeadd modify --providers <a,b> --enable-feature <name> ..." to change providers, features or plugins.',
+    );
+  }
+  if (flags.providers === undefined) throw new Error(NO_TTY_PROVIDERS);
+
+  const checked = validateDesired({ providers: flags.providers, features: flags.features, plugins: flags.plugins }, scope, []);
+
+  if (!flags.force) {
+    const clashes = [];
+    if (dirExists(path.join(targetDir, '.codeadd'))) clashes.push('.codeadd/');
+    for (const p of resolveSelected(flags.providers, scope)) {
+      if (dirExists(path.join(targetDir, p.dest))) clashes.push(`${p.dest}/`);
+    }
+    if (clashes.length > 0) {
+      throw new Error(`${clashes.join(', ')} already exist(s) and would be overwritten. There is no terminal to ask: pass --force to overwrite.`);
+    }
+  }
+  return checked;
+}
+
 /**
  * Main install flow.
+ *
+ * Without a TTY nothing is asked: `--providers` is required, the rest takes the
+ * documented defaults (scope project, gitignore on, registry-default features, no
+ * plugins), and an overwrite needs `--force`. With a TTY each flag only answers its
+ * own question, and what is not given is asked as it always was.
+ *
  * @param {string} cwd
- * @param {{version?: string, channel?: string, global?: boolean}} [options]
+ * @param {{version?: string, channel?: string, global?: boolean, args?: string[]}} [options]
+ *   `args` is the raw argument list, read for the change flags (`--providers`, `--force`, ...)
  */
 export async function install(cwd, options = {}) {
   intro('ADD CLI - Install');
 
-  // Every road through install asks something (scope, providers, the existing-install
-  // menu), so without a TTY it would wait forever. Fail before the first prompt instead.
-  if (!process.stdin.isTTY) {
-    const dir = options.global ? os.homedir() : cwd;
-    if (readManifest(dir)) {
-      throw new Error('An ADD installation already exists here and install needs an interactive terminal to choose what to do. Run "codeadd update" to update it.');
-    }
-    throw new Error('install needs an interactive terminal (stdin is not a TTY) to choose scope and providers. Run it from a terminal.');
-  }
+  const flags = readChangeFlags(options.args ?? []);
+  const interactive = Boolean(process.stdin.isTTY);
 
   // --global forces global scope; otherwise prompt (defaults to project).
-  const scope = options.global ? 'global' : await promptScope();
+  const scope = options.global ? 'global' : interactive ? await promptScope() : 'project';
   const targetDir = scope === 'global' ? os.homedir() : cwd;
+
+  // Names are refused here, before the menu and before the download, in either mode.
+  const requested = interactive
+    ? validateDesired({ providers: flags.providers, features: flags.features, plugins: flags.plugins }, scope, [])
+    : preflightWithoutTty(targetDir, scope, flags);
 
   // An installation is already here: show it and ask, BEFORE anything is resolved
   // or written. A reinstall resets features and plugins and deletes the files of any
@@ -246,20 +287,23 @@ export async function install(cwd, options = {}) {
     log.warn('⚠ You are installing a beta (pre-release) version. It may contain bugs or incomplete features.');
   }
 
+  // --force answers both overwrite questions. Without a TTY the preflight already refused
+  // any clash that --force did not cover, so no prompt is reachable there.
   const addDir = path.join(targetDir, '.codeadd');
-  if (dirExists(addDir)) {
+  if (dirExists(addDir) && !flags.force) {
     await promptConfirm('.codeadd/ already exists. Overwrite with latest version?');
   }
 
-  const selectedKeys = await promptProviders(scope);
+  const selectedKeys = flags.providers ?? (await promptProviders(scope));
   const providers = resolveSelected(selectedKeys, scope);
 
   // gitignore is meaningful only for project installs (you don't gitignore your home dir).
-  const addToGitignore = scope === 'project' ? await promptGitignore() : false;
+  // --no-gitignore answers it; with no TTY and no flag the interactive default (on) is used.
+  const addToGitignore = scope !== 'project' ? false : (flags.gitignore ?? (interactive ? await promptGitignore() : true));
 
   for (const p of providers) {
     const destDir = path.join(targetDir, p.dest);
-    if (dirExists(destDir)) {
+    if (dirExists(destDir) && !flags.force) {
       await promptConfirm(`${p.dest}/ already exists. Overwrite?`);
     }
   }
@@ -307,10 +351,13 @@ export async function install(cwd, options = {}) {
 
   // Features default to their registry defaults (no install-time prompt).
   // Users toggle post-install via `codeadd features enable|disable <name>`.
+  // The feature flags are deltas on top of those defaults, so naming one feature never
+  // switches the others off.
   const defaultFeatures = {};
   for (const [name, meta] of Object.entries(FEATURES)) {
     defaultFeatures[name] = meta.default;
   }
+  Object.assign(defaultFeatures, requested.features);
 
   writeManifest(
     targetDir,
@@ -357,6 +404,13 @@ export async function install(cwd, options = {}) {
 
   const providerList = selectedKeys.length > 0 ? selectedKeys.join(', ') : 'none (core only)';
   log.success(`Providers installed: ${providerList}`);
+
+  // Requested plugins go through the same core `modify` uses, now that the manifest exists.
+  // A plugin whose tool is missing fails the command AFTER everything above is on disk.
+  if (Object.keys(requested.plugins ?? {}).length > 0) {
+    const applied = await applyDesiredState(targetDir, { plugins: requested.plugins }, { force: true });
+    assertPluginsEnabled(applied.pluginsNotEnabled);
+  }
 
   outro(
     `ADD installed successfully!\n\n` +

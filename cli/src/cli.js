@@ -169,7 +169,7 @@ export async function runCli(argv) {
       const version = getArgValue(args, '--version');
       const channel = getArgValue(args, '--channel');
       // install owns the scope prompt (interactive UX); pass raw cwd + global flag.
-      await install(cwd, { version, channel, global });
+      await install(cwd, { version, channel, global, args });
     } else if (subcommand === 'update') {
       const version = getArgValue(args, '--version');
       const channel = getArgValue(args, '--channel');
