@@ -109,8 +109,11 @@ export function diffState(manifest, desired) {
 /**
  * Refuse a request that cannot be applied, BEFORE anything is touched. Returns
  * `desired` with feature names resolved to their canonical keys.
+ *
+ * Exported so `install` can refuse a bad name before it downloads anything,
+ * with the same wording `modify` uses.
  */
-function validate(desired, scope, installed = []) {
+export function validateDesired(desired, scope, installed = []) {
   // Only providers being ADDED are checked: one the CLI no longer knows (an old
   // install's `gemini`) may stay installed or be removed, but never be added.
   for (const key of (desired.providers ?? []).filter((k) => !installed.includes(k))) {
@@ -304,7 +307,9 @@ function applyRemove(targetDir, manifest, scope, wanted, diff) {
  * @param {string} targetDir  the scope-resolved install root
  * @param {{providers?: string[], features?: Record<string, boolean>, plugins?: Record<string, boolean>}} desired
  * @param {{force?: boolean}} [options]  `force` skips the removal confirmation
- * @returns {Promise<ReturnType<typeof diffState>>} what was applied
+ * @returns {Promise<ReturnType<typeof diffState> & {pluginsNotEnabled: string[]}>}
+ *   what was applied, plus the plugins asked for whose tool was not detected. A caller
+ *   without a person to read the warning turns that list into a failing exit.
  */
 export async function applyDesiredState(targetDir, desired, { force = false } = {}) {
   const manifest = readManifest(targetDir);
@@ -312,7 +317,7 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   const scope = manifest.scope ?? 'project';
 
   const installed = manifest.providers ?? [];
-  const checked = validate(desired, scope, installed);
+  const checked = validateDesired(desired, scope, installed);
   // Installed providers keep their manifest order; new ones follow in the order asked.
   // A prompt hands back its own display order, which must not reshuffle the manifest.
   const asked = checked.providers ?? installed;
@@ -323,11 +328,17 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   const diff = diffState(manifest, wanted);
   if (diff.isEmpty) {
     log.info('Nothing to change.');
-    return diff;
+    return { ...diff, pluginsNotEnabled: [] };
   }
 
   if (diff.providers.remove.length > 0) {
     if (!force) {
+      // Nobody to ask: a plain Error exits 1. USER_CANCEL (below) exits 0, which a bot reads as "done".
+      if (!process.stdin.isTTY) {
+        throw new Error(
+          `Removing ${diff.providers.remove.join(', ')} deletes its files from this project, and there is no terminal to ask. Pass --force to confirm.`,
+        );
+      }
       // promptConfirm throws USER_CANCEL on a decline, which `runCli` already treats as a clean exit.
       await promptConfirm(`Remove ${diff.providers.remove.join(', ')}? Its files are deleted from this project.`);
     }
@@ -346,9 +357,11 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   // functions the `features` and `plugins` subcommands call.
   for (const name of diff.features.enable) enableFeature(targetDir, name);
   for (const name of diff.features.disable) disableFeature(targetDir, name);
+  const pluginsNotEnabled = [];
   for (const name of diff.plugins.enable) {
     const result = enablePlugin(targetDir, name);
     if (!result.ok) {
+      pluginsNotEnabled.push(name);
       const entry = loadCatalog()[name];
       log.warn(`plugin ${name} was not enabled: its tool was not detected.${entry?.installHint ? ` ${entry.installHint}` : ''}`);
     }
@@ -359,7 +372,7 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
     syncGitignore(targetDir, manifest, scope, wanted.providers);
   }
 
-  return diff;
+  return { ...diff, pluginsNotEnabled };
 }
 
 // ---------------------------------------------------------------------------
