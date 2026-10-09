@@ -27,6 +27,7 @@ description: Use when executing implementation plans via dispatched subagents wi
 - script: status.cjs
 - script: task-brief.cjs
 - skill: add--subagent-driven-development/references/persistent-logging-and-tasks.md
+- mention: @test-agent
 - mention: /add-build
 - mention: /add-review
 - mention: add--architecture-discovery
@@ -468,7 +469,12 @@ line stating priority. Everything else mirrors the implementation prompt.
 **Never patch manually — always dispatch a fix subagent.** Patching inline pollutes the coordinator's
 context with implementation detail it then carries into every later dispatch.
 
-**Every fix round is re-reviewed.** Two scoped package forms are valid. A committed feature fix uses a
+**Every fix round is re-reviewed — except a build-only round in `/add-build`.** That command's Final Review reads
+the whole unit's range afterwards, fix included, so a round whose every row came from a build error or a test-agent
+`BLOCKED` entry is gated by the build and the tests going green and gets no re-review; its ledger line reads
+`T02: fix round 1/3 (build-only — build green, tests green; commits d4e5f6a..b7c8d9e)`. One reviewer-sourced row
+puts the whole round back under the rule. The hotfix snapshot path has no such later read and keeps its re-review.
+Two scoped package forms are valid for a round that is re-reviewed. A committed feature fix uses a
 **commit-range package**: record `FIX_BASE`, then run
 `node .codeadd/scripts/review-package.cjs FIX_BASE HEAD "${FEATURE_DIR}/_build"`. An uncommitted hotfix
 correction uses the **correction-only snapshot package** emitted by `hotfix-gates.cjs diff-wave` from a
@@ -559,7 +565,9 @@ DO NOT skip quick-read — file existence alone does not confirm implementation.
 ```
 
 **The gate also refuses a task whose ledger holds a fix round with no matching re-review line.** A fix
-round that was never re-reviewed is an unverified fix, whatever the build says.
+round that was never re-reviewed is an unverified fix, whatever the build says. A `(build-only …)` round in
+`/add-build` is the one exception: it was never meant to be re-reviewed, and the line states the build and the
+tests were green.
 
 ### 12. Final Review
 
@@ -615,7 +623,7 @@ Coordinator must confirm before reporting completion:
 - [ ] Ledger line appended after every task, fix round, deferred minor, parked finding and ruling
 - [ ] Every commit landed AFTER its validator returned and the build passed — in `/add-build` TASKS MODE, after the build and the task's `Verify` passed, with the area validator run once afterwards
 - [ ] Code review dispatched after every implementation task
-- [ ] Every fix round has a matching `MODE: re-review` line
+- [ ] Every fix round has a matching `MODE: re-review` line — or, in `/add-build`, is a `(build-only …)` round
 - [ ] Critical review issues fixed before advancing
 - [ ] Only one implementation subagent in flight at a time
 - [ ] Compliance Gate executed: each RF/RN cross-referenced + quick-read

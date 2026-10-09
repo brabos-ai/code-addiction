@@ -493,15 +493,10 @@ record the reconciliation as a ledger line.
 capped at 3 files, so a task is the right commit, and its gate is the build plus its own `Verify` command.
 The validator runs **once per area**, after that area's last task is committed, and reads the whole committed
 range `AREA_BASE..HEAD`. See the COMMIT CONTRACT invariant, STEP add-build.commit and STEP add-build.validate.
+⛔ Never dispatch it while the area still has a task without a `complete` line — it would judge half an area.
 
 **`AREA_BASE` is the `BASE` recorded before the area's first task** — the `BASE` of that area's first
 `T0N: complete (commits BASE..HEAD, …)` ledger line. A resume recomputes it from the ledger, never from memory.
-
-```
-IF AN AREA HAS TASKS STILL WITHOUT A `complete` LINE:
-  ⛔ DO NOT: Dispatch that area's validator — it would judge half an area
-  ✅ DO: Finish the area's tasks first, one at a time
-```
 
 <!-- slot:tdd-pipeline.tasks-flow+tdd-pipeline.gate+tdd-pipeline.verify-red fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:tasks-flow -->
@@ -593,10 +588,19 @@ area's blocker, and cannot resolve a `Blocked by` that points outside its own sl
 Two rounds on the declared model is a fair trial. A loop that survives two rounds usually means the agent
 cannot see its own problem, and a third round on the same model buys nothing.
 
-**Every fix round is re-reviewed** — record `FIX_BASE` before the dispatch and run the scoped re-review in
-STEP add-build.re-review after it returns. Append **one ledger line per round**, not one per area, naming the areas
+**Every fix round that carries a reviewer-sourced row is re-reviewed** — record `FIX_BASE` before the dispatch and run
+the scoped re-review in STEP add-build.re-review after it returns. Append **one ledger line per round**, not one per area, naming the areas
 the wave spanned:
 `T02: fix round 1/3 (backend, frontend — 2 addressed, 0 open, 1 deferred; commits d4e5f6a..b7c8d9e)`.
+
+**A build-only round gets no re-review.** A round is build-only when EVERY row in its `ROUTED_ROWS` came from a
+build error or from a test-agent `BLOCKED` entry (STEP add-build.merge-ticks) — there is no reviewer judgement in
+it that a fix could misread. Its gate is the build green and the project's test command green (the build
+alone when the project has no test runner), and the Final Review reads that fix diff later, inside the unit's
+whole range. Its ledger line says so:
+`T02: fix round 1/3 (build-only — build green, tests green; commits d4e5f6a..b7c8d9e)`.
+⛔ One reviewer-sourced row — the area validator, the Final Review, `/add-review`'s `## Fix Routing` or the
+Compliance Gate's missing-requirement rows — puts the whole round back under re-review.
 
 ⛔ IF `ATTEMPT` would exceed `MAX_ATTEMPTS`, stop dispatching — then split on what is still open:
 
@@ -1041,9 +1045,12 @@ where a reviewer reported one, is not consumed here. This dispatch stays "one wa
 rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
 
-### STEP add-build.re-review Scoped Re-Review (after EVERY fix round) [HARD GATE]
+### STEP add-build.re-review Scoped Re-Review (after every fix round with a reviewer-sourced row) [HARD GATE]
 
 **A fix that compiles and misses the finding passes today. This is the step that catches it.**
+
+**A build-only round skips this step** (Correction Dispatch defines it): its rows are compile errors and
+`BLOCKED` entries, which the build and the tests already judge. Write its `build-only` ledger line instead and go on.
 
 After `@fix-agent` returns and its batch is committed (STEP add-build.commit), package the **fix diff only** and
 re-dispatch the reviewer:
@@ -1084,8 +1091,9 @@ node .codeadd/scripts/build-ledger.cjs "${LEDGER_FILE}" \
 - **At the cap with findings still open** → the breaker in **Correction Dispatch**: rule each one, record
   the `Ruling:` line, continue.
 
-⛔ A fix round with no `fix round N/3` ledger line naming its re-review is an **unverified fix**, whatever
-the build says. STEP add-build.comply's Compliance Gate refuses completion on exactly that.
+⛔ A fix round with a reviewer-sourced row and no `fix round N/3` ledger line naming its re-review is an
+**unverified fix**, whatever the build says. STEP add-build.comply's Compliance Gate refuses completion on
+exactly that. A `(build-only …)` line needs no re-review, and is accepted by the gate on its own.
 
 ### STEP add-build.resolution Resolution annex (write-back)
 
@@ -1122,6 +1130,10 @@ the verdict from it — all `ADDRESSED` → `passed`, open non-blockers → `rul
 `blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP add-build.correct answered stays
 the newest verdict and `/add-done` blocks on it.
 
+**Exception — run the normal review above instead when the last fix round was build-only, or when no round was
+re-reviewed.** A build-only round changed code that no re-review read, so a verdict taken from an earlier
+re-review would cover code it never saw. The normal review packages the unit's whole range, which includes that fix.
+
 ```
 IF THE LEDGER HAS NO `Final review:` LINE FOR THIS RUN:
   ⛔ DO NOT: Go to STEP add-build.comply or ## Loop End
@@ -1139,7 +1151,8 @@ DO NOT report completion without executing this step.
    the coordinator is the only actor holding both the full spec and the full ledger
 3. Quick-read implementation files to confirm requirement exists in code
 4. IF any RF/RN missing: list items → dispatch `@fix-agent` (routed rows = the missing RF/RN, with the tracked `ATTEMPT`) → re-run gate
-5. **Ledger integrity check [REFUSAL]:** scan the ledger for every `fix round N/3` line. ⛔ IF any fix
+5. **Ledger integrity check [REFUSAL]:** scan the ledger for every `fix round N/3` line. A line reading
+   `(build-only — build green, tests green; …)` is accepted as it stands. ⛔ IF any other fix
    round has no matching re-review line recorded by STEP add-build.re-review, DO NOT report completion — that fix is
    unverified whatever the build says. Run the missing re-review, then re-run this gate.
    **In TASKS MODE also scan for the area validators:** ⛔ IF an area has `complete` task lines and no
@@ -1209,6 +1222,7 @@ Walk the run and confirm one line exists for each of:
 | task completed | `T0N: complete (commits BASE..HEAD, BUILD_STATUS=pass, review clean)` — in TASKS MODE the tail reads `validation at area end` |
 | TASKS MODE: area validated | `<area>: validated (commits AREA_BASE..HEAD, N violations, SPEC_STATUS=<value>)` — once per area, after its last task |
 | fix round | `T0N: fix round N/3 (X addressed, Y open; commits FIX_BASE..HEAD)` |
+| fix round, build-only | `T0N: fix round N/3 (build-only — build green, tests green; commits FIX_BASE..HEAD)` |
 | deferred minor | `T0N: minor (deferred): <one line>` |
 | parked finding | `T0N: parked — <finding> — Ruling: <decision> — <why> — <cost if wrong>` |
 | ruling | `Ruling: <what you decided> — <why> — <what it costs if wrong>` |

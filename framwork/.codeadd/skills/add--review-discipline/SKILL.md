@@ -96,8 +96,9 @@ changed, and a deterministic schema gate re-approved it. Without that gate a
 second read produces new opinions over lightly edited text, and new opinions are
 indistinguishable from progress while costing another full read.
 
-⛔ `@reviewer-agent` in `MODE: re-review` is counted **per fix round**, not per
-subject, and its cap is `MAX_ATTEMPTS = 3` in
+⛔ `@reviewer-agent` in `MODE: re-review` is counted **per fix round that carries a
+reviewer-sourced row**, not per subject — a build-only round in `/add-build` has none, because its
+gate is the build and the tests and the Final Review reads its diff later. Its cap is `MAX_ATTEMPTS = 3` in
 `{{skill:add--subagent-driven-development/SKILL.md}}`. That skill owns the loop;
 this one only names where the boundary is.
 

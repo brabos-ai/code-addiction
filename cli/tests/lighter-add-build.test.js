@@ -105,3 +105,36 @@ describe('F2 — the TASKS MODE validator runs once per area', () => {
   });
 });
 
+describe('F3 — a build-only fix round gets no re-review', () => {
+  it('L1.10 add-build specifies the build-only round, its ledger shape and that it is not re-reviewed', () => {
+    const t = read(P.build);
+    expect(t).toMatch(/fix round \d\/3 \(build-only/);
+    expect(t).toMatch(/gets no re-review/);
+  });
+
+  it('L1.11 the Compliance Gate accepts a build-only round and still refuses other unverified rounds', () => {
+    const s = section(read(P.build), 'STEP add-build.comply');
+    expect(s).toContain('build-only');
+    expect(s).toMatch(/unverified/);
+  });
+
+  it('L1.12 the exception is scoped to /add-build, and add-hotfix keeps its snapshot re-review', () => {
+    const s = section(read(P.sdd), '7\\. Fix Loop');
+    expect(s).toContain('build-only');
+    expect(s).toContain('/add-build');
+    expect(read(P.hotfix)).toContain('MODE: re-review');
+  });
+
+  it('L1.12a the CORRECTION branch of Final Review names both triggers for the normal review', () => {
+    const s = section(read(P.build), 'Final Review');
+    expect(s).toContain('last fix round was build-only');
+    expect(s).toMatch(/no round was\s+re-reviewed/);
+  });
+
+  it('L1.13 (guard) fix attempts stay at 3', () => {
+    const t = read(P.build);
+    expect(t).toContain('MAX_ATTEMPTS = 3');
+    expect(t).not.toMatch(/MAX_ATTEMPTS = (2|4|5)/);
+  });
+});
+
