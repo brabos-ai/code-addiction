@@ -379,7 +379,6 @@ activity and its documents.
 ## Rules
 
 ALWAYS:
-- Confirm the reformulation with the user before investigating (STEP add-diagnose.capture) — wrong framing wastes downstream investigation
 - Apply Phase 0 before reading code (STEP add-diagnose.investigate) — symptom classification guides triage depth
 - Dispatch A.1 and A.2 in a single message (STEP add-diagnose.dispatch) — parallel execution; sequential dispatch wastes latency
 - Wait for both A reports before Fase B (STEP add-diagnose.dispatch) — architecture-agent needs combined direction

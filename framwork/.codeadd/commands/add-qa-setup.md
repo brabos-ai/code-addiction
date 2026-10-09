@@ -257,6 +257,8 @@ Build a gap list distinguishing **missing** from **present-but-non-functional** 
 
 For each missing or non-functional prerequisite, show the EXACT command, explain what it does, then **WAIT for explicit confirmation** before running it. Never batch-run without confirmation. After each install, **functionally verify** it (re-run the STEP add-qa-setup.diagnose trivial invocation) — a successful install is one whose invocation now works, not one that merely completed.
 
+**Who runs the install.** This command runs `npm`/`npx` installs itself (`npm i -D @playwright/test`, `npx playwright install chromium`, `@playwright/mcp`) after the confirmation above. Anything that needs `sudo` or an interactive installer follows `{{skill:add--dev-environment-setup/SKILL.md}}` instead: show the command, the user runs it, then verify it functionally.
+
 Prerequisites (adapt commands to the detected OS/provider):
 - **`@playwright/test` runner (mandatory)** — e.g. `npm i -D @playwright/test` (adapt to detected pkg manager). Powers the deterministic layer + plugin-off degradation. If declined → record as a blocking manual step; downstream authoring cannot run.
 - **chromium for Playwright** — e.g. `npx playwright install chromium`. Verify with a trivial headless launch.
