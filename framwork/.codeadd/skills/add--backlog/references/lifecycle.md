@@ -67,18 +67,18 @@ A declared ticket id is answered by `get`: an exact, case-sensitive read of the 
 status filter and one argument.
 
 ```bash
-git fetch origin main
-node .codeadd/scripts/backlog-cli.cjs get <ticket id> --ref origin/main
+node .codeadd/scripts/backlog-cli.cjs get <ticket id>
 ```
 
-**The read comes from `origin/main`, never from the checked-out copy.** Every board write lands on the
-base branch and never on the branch being worked, so the branch's own `docs/backlog.jsonl` is as old as the
-branch. The fetch is part of the read — a stale `origin/main` answers stale.
+**The read comes from the board clone, never from the checked-out copy.** The board lives on its own
+`board` branch, in one clone per project on the machine, so a read is the same from every branch and
+worktree. `get` syncs that clone on its own (at most once per 30 s), so there is no `git fetch` to run.
+`SYNC=degraded` or `SYNC=skipped` in the output means the answer came from the clone without a fresh fetch.
 
 Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
 the id. No matching row means the id is not on the board.
 
-**A subject, not an id**, is resolved by `search`, which runs on every status and now also answers an
+**A subject, not an id**, is resolved by `search`, which runs on every status and also answers an
 exact id — never by scanning a `list --all` for the matching line. `list` (and `search`) print a
 seven-field summary by default and `--full` restores the raw rows; the summary is for choosing a
 candidate, and the detail is `get`.
@@ -95,18 +95,17 @@ as one JSON object into a scratch file (anything in the working tree the caller 
 node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <record.json>
 ```
 
-**The file is read in the caller's cwd BEFORE any git routing, allocation or persistence**, so the
-record's bytes are captured before the entry chooses a worktree — and a failed read exits 1 with
-`ERROR=record-read-failed` while nothing at all has happened on disk. The Node entry also
-accepts stdin when `--record-file` is absent; agents use the file recipe above.
+The entry reads the record file before it touches the clone (`add--backlog`, "The Two Entry Points", owns
+the grammar and the `ERROR=record-read-failed` exit); agents use the file recipe above.
 
-**The entry writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
-anywhere else it writes through a detached, locked worktree of its own, so the ticket reaches the base
-branch without touching the tree or the branch the command is working in.
+**The entry writes to the `board` branch, never to the caller's.** From any branch or worktree it takes
+the clone's lock, brings the clone level with the remote, writes, commits and pushes `board` — so the
+ticket never touches the tree or the branch the command is working in, and never reaches `main` or a
+code CI run. The report carries `ROUTE=board` and `BOARD_DIR`.
 
 **That is why a command that makes no git writes of its own can still move a ticket.** `add-new` and
-`add-plan` promise to leave the repository's tree untouched, and they do: the board write lands on another
-branch, through another tree.
+`add-plan` promise to leave the repository's tree untouched, and they do: the board write lands on the
+`board` branch, through the board clone.
 
 ---
 
@@ -344,7 +343,8 @@ relationship between the work and the note about the work.
 | State | What the command does |
 |---|---|
 | No `ticket:` in the document, no id in the invocation | Nothing. Most work never came from a ticket |
-| `docs/backlog.jsonl` absent (`BACKLOG_PRESENT=no`) | Nothing, silently |
+| This project has no board (`BACKLOG_PRESENT=no` on a read, `REFUSED=board-not-configured` on a write) | Nothing, silently |
+| The board cannot be resolved (`ERROR=board-migration-required`, `board-branch-missing`, `board-checkout-missing`) or is locked (`ERROR=board-locked`) | Report the error, and continue — never create the branch, the clone or the config by hand |
 | The id is not on the board | Report it, and continue with no ticket |
 | A write is refused (`REFUSED=unknown-status`) | Report which status, and continue |
 | The publication entry reports a `DEGRADED=` write | Report what did not happen, and continue |

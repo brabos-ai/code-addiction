@@ -3,9 +3,10 @@
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes **two
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
-its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
-(`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files. Local operations need Node >= 22.19.0; publication also needs Git.
+its status vocabulary. **Both live on the project's `board` branch, in the board clone, not in the code
+checkout.** **The canonical writer is the backlog Node core.** The read entry (`.codeadd/scripts/backlog-cli.cjs`)
+only reads them; the publication entry (`.codeadd/scripts/backlog-commit.cjs`) is the only writer. Reads need
+Node >= 22.19.0 and Git; publication needs Git and the remote.
 Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
@@ -21,13 +22,16 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 | `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through the canonical core | never in normal operation |
 | `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
-Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
-`docs/delivered.jsonl`'s is: the installer always gitignores `.codeadd/`, and these must survive a fresh
-clone. `cli/src/installer.js` never touches `docs/` at all, which is what protects a user's edited
-definitions from a reinstall — a structural guarantee rather than a rule someone must remember.
+Both are tracked in git, on the project's `board` branch, flat directly under `docs/` of the **board
+clone** (`~/.codeadd/<project-key>/board/`; `CODEADD_BOARD_DIR` overrides the path), UTF-8, **LF**. They are
+not in the code checkout, so they never differ between branches and never trigger code CI. The only file
+the code repository tracks for the board is `.codeadd/board.json` (`{ "remote": ..., "branch": "board" }`).
+`cli/src/installer.js` never touches the board, which is what protects a user's edited definitions from
+a reinstall — a structural guarantee rather than a rule someone must remember.
 
-Neither is scaffolded empty. They appear on the first backlog `add`, and their absence means "no ticket
-has ever been written", which is information an empty file would destroy.
+Neither is scaffolded empty. The first backlog `add` on a `board` branch that does not have them creates
+them, and an empty board means "no ticket has ever been written", which is information an empty file
+would destroy.
 
 ## Line order is the priority
 
@@ -193,7 +197,7 @@ they are entitled to make, so the two directions differ:
   hand-edited board is expected, not an anomaly — the delivery index's own reader already treats a damaged
   line this way, and `references/delivery-index.md` states it there.
 - **The allocators read this file, and how they read it is owned by `{{skill:add--id-convention/SKILL.md}}`**
-  — see its "One counter, two sources, two implementations" section. What matters here is only the
+  — see its "One counter, two sources, one implementation" section. What matters here is only the
   consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is
   why `id` is written first and is never omitted.
 - **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
@@ -224,6 +228,16 @@ they are entitled to make, so the two directions differ:
 | `READ_VIEW` | every read | `summary`, `full` or `ids` — which projection the payload carries |
 | `STATUS_COUNTS` | every read | One JSON object counting the whole board before any filter, statuses in first-occurrence order |
 | `TICKET_ID` | every write | The id written, allocated or targeted |
+| `BOARD_DIR` | every read and write | The board clone the entry read or wrote |
+| `SYNC` | every read | `fresh`, `synced`, `skipped` or `degraded` — how current the clone is |
+| `SYNC_REASON` | a `degraded` read | `fetch-failed`, `push-refused`, `rebase-conflict` or `lock-failed` |
+| `LOCK_RECLAIMED` | when it happens | The PID of a dead or very old lock that was taken over |
+| `ROUTE` | every write | Always `board` |
+| `PERSISTED`, `COMMITTED`, `PUSHED` | every write | `yes` or `no` — whether the bytes landed, were committed, and reached the remote |
+| `SHA` | a committed write | The commit on the `board` branch of the clone |
+| `DEGRADED` | a degraded write | `rebase-conflict`, `fetch-failed`, `push-refused` or a `recovery-ref-*` name |
+| `RECOVERY_REF`, `RECOVERY_PATH` | when a commit is only ref-protected, or the commit failed | The ref in the clone, or the clone path |
+| `HEAD`, `UNPUSHED`, `ADDED`, `UPDATED`, `REMOVED` | `changes` | The remote tip as the next cursor, the commits the clone is ahead by, and the ticket ids that changed since `--since <sha>` (comma-separated, empty when none) |
 
 ## Hard bans
 
@@ -243,8 +257,8 @@ Each is testable, and each has a `REFUSED=` name below.
    `move --after`.
 
 Two further promises are structural rather than submittable, so they carry no `REFUSED=` name:
-**the local CLI never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**.
-The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
+**the CLI only reads** (a write mode exits 2 with `ERROR=write-mode`), and **`docs/backlog.definitions.json`
+is never rewritten once it exists**. The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
 `backlog.bats` proves definitions preservation.
 
 ## `REFUSED=` vocabulary
@@ -264,6 +278,7 @@ two cannot drift.
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
 | `duplicate-id` | 4 | the id is already on the board |
 | `unknown-id` | 7 | the id named is not on the board, including a `move --after` anchor |
+| `board-not-configured` | — | the project has no board (no `.codeadd/board.json` and no board file), so there is nowhere to write; this is not a record ban |
 
 The name is shared with `delivery-index.md` where the meaning is the same: `invalid-json` and
 `missing-field` mean there exactly what they mean here. One spelling across both logs is what lets a
@@ -272,14 +287,16 @@ consumer branch once.
 ## Exit codes
 
 The backlog follows the script family's three-code doctrine, with the same single departure
-`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the local
-`backlog-cli.cjs` and the publication `backlog-commit.cjs`.
+`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the read
+`backlog-cli.cjs` and the publication `backlog-commit.cjs`. The board states add `ERROR=board-migration-required`,
+`ERROR=board-branch-missing`, `ERROR=board-checkout-missing` and `ERROR=board-locked` at exit **1**, and
+`REFUSED=board-not-configured` at exit **2**.
 
 | Exit | Means |
 |---|---|
-| `0` | A probe result, whatever it says. `list` and `search` always exit 0, **including on an absent board** |
-| `1` | **The filesystem refused a write.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie |
-| `2` | Caller error — a bad mode, bad arguments or a hard ban (`REFUSED=<name>`) |
+| `0` | A probe result, whatever it says. `list` and `search` exit 0 **on a project with no board or no ticket**. A write whose push was refused or whose fetch failed also exits 0 and says so in `DEGRADED` |
+| `1` | **A write could not land, or the board needs a person.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie. Also `ERROR=board-migration-required`, `board-branch-missing`, `board-checkout-missing`, `board-locked`, `board-lock-failed`, `commit-failed`, and `ERROR=cursor-unknown` on `changes` |
+| `2` | Caller error — a bad mode, bad arguments, a hard ban (`REFUSED=<name>`), a write sent to the CLI (`ERROR=write-mode`), a read sent to the publication entry (`ERROR=read-mode`), or `REFUSED=board-not-configured` |
 
 **Exit-2 causes are distinguished by output, not by code.** If Node itself is unavailable, the host
 reports the launch failure; the Node entries cannot emit a runtime-missing diagnostic before startup.

@@ -20,12 +20,21 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const h = require('./helpers.cjs');
 
+/**
+ * The board is read from a clone, never from the checkout. These fixtures make
+ * the temp directory both the code repository and the clone: CODEADD_BOARD_DIR
+ * points at it.
+ */
+const run = (name, args, opts = {}) =>
+  h.runScript(name, args, { ...opts, env: { CODEADD_BOARD_DIR: opts.cwd, ...(opts.env || {}) } });
+
 test('next-id preserves the public five-digit output at the four-digit boundary', (t) => {
   const dir = h.mkTmp('codeadd-overflow-');
   t.after(() => h.rmrf(dir));
+  h.git(dir, ['init', '-q']);
   h.write(path.join(dir, 'docs', 'backlog.jsonl'), '{"id":"9999B"}\n');
   for (const [name, args] of [['next-id', ['F']], ['status', ['next-id', 'F']]]) {
-    const result = h.runScript(name, args, { cwd: dir });
+    const result = run(name, args, { cwd: dir });
     assert.equal(result.status, 0, result.output);
     assert.equal(result.stdout.trim(), '10000F');
   }
@@ -35,6 +44,7 @@ test('next-id preserves the public five-digit output at the four-digit boundary'
 function tmpDir(t, prefix = 'codeadd-nextid-') {
   const dir = h.mkTmp(prefix);
   t.after(() => h.rmrf(dir));
+  h.git(dir, ['init', '-q']);
   return dir;
 }
 
@@ -50,28 +60,28 @@ function backlog(dir, lines) {
 
 test('next-id: no argument exits 1 with a required-argument error', (t) => {
   const dir = tmpDir(t);
-  const res = h.runScript('next-id', [], { cwd: dir });
+  const res = run('next-id', [], { cwd: dir });
   assert.equal(res.status, 1);
   assert.match(res.stderr, /TYPE_LETTER required/);
 });
 
 test('next-id: a lowercase letter is rejected as not a single uppercase letter', (t) => {
   const dir = tmpDir(t);
-  const res = h.runScript('next-id', ['f'], { cwd: dir });
+  const res = run('next-id', ['f'], { cwd: dir });
   assert.equal(res.status, 1);
   assert.match(res.stderr, /single uppercase letter/);
 });
 
 test('next-id: a multi-letter type is rejected', (t) => {
   const dir = tmpDir(t);
-  const res = h.runScript('next-id', ['FF'], { cwd: dir });
+  const res = run('next-id', ['FF'], { cwd: dir });
   assert.equal(res.status, 1);
   assert.match(res.stderr, /single uppercase letter/);
 });
 
 test('next-id: a digit type is rejected', (t) => {
   const dir = tmpDir(t);
-  const res = h.runScript('next-id', ['1'], { cwd: dir });
+  const res = run('next-id', ['1'], { cwd: dir });
   assert.equal(res.status, 1);
   assert.match(res.stderr, /single uppercase letter/);
 });
@@ -80,7 +90,7 @@ test('next-id: a digit type is rejected', (t) => {
 
 test('next-id: an empty tree starts at 0001 for the requested letter', (t) => {
   const dir = tmpDir(t);
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0001F');
 });
@@ -89,7 +99,7 @@ test('next-id: the number is global across letters (max over every dir)', (t) =>
   const dir = tmpDir(t);
   featureDir(dir, '0001F-a');
   featureDir(dir, '0003H-b');
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0004F');
 });
@@ -98,7 +108,7 @@ test('next-id: a non-ID directory does not advance the counter', (t) => {
   const dir = tmpDir(t);
   featureDir(dir, 'not-an-id');
   featureDir(dir, '0002F-real');
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0003F');
 });
@@ -108,7 +118,7 @@ test('next-id: a non-ID directory does not advance the counter', (t) => {
 test('next-id: ids on the backlog board advance the counter', (t) => {
   const dir = tmpDir(t);
   backlog(dir, ['{"id":"0007R","title":"ticket"}']);
-  const res = h.runScript('next-id', ['R'], { cwd: dir });
+  const res = run('next-id', ['R'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0008R');
 });
@@ -117,7 +127,7 @@ test('next-id: the counter is the max over features AND the backlog together', (
   const dir = tmpDir(t);
   featureDir(dir, '0002F-docs');
   backlog(dir, ['{"id":"0005B","title":"board"}']);
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0006F');
 });
@@ -125,7 +135,7 @@ test('next-id: the counter is the max over features AND the backlog together', (
 test('next-id: a line with damaged JSON still yields its id', (t) => {
   const dir = tmpDir(t);
   backlog(dir, ['{"id":"0005B" this is not valid JSON']);
-  const res = h.runScript('next-id', ['B'], { cwd: dir });
+  const res = run('next-id', ['B'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0006B');
 });
@@ -133,7 +143,7 @@ test('next-id: a line with damaged JSON still yields its id', (t) => {
 test('next-id: an id quoted in prose is not counted (anchored on "id")', (t) => {
   const dir = tmpDir(t);
   backlog(dir, ['{"id":"0001F","title":"see 0099Z someday"}']);
-  const res = h.runScript('next-id', ['Z'], { cwd: dir });
+  const res = run('next-id', ['Z'], { cwd: dir });
   assert.equal(res.status, 0);
   // 0099Z lives only in a title; counting it would burn a hundred ids.
   assert.equal(res.stdout.trim(), '0002Z');
@@ -144,7 +154,7 @@ test('next-id: four digits in a parent path do not pose as an id', (t) => {
   // feature dir is 0001F-a, so the next id is 0002F — not 10000F.
   const dir = tmpDir(t, 'codeadd-nextid-9999X-');
   featureDir(dir, '0001F-a');
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0002F');
 });

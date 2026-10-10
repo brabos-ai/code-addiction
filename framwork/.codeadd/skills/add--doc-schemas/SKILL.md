@@ -150,7 +150,7 @@ Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `B
 
 **`{{skill:add--id-convention/SKILL.md}}` is the owner of the `[NNNN][L]` shape, the counter, and the
 allocation command.** Load it before allocating, allocate through `status.cjs next-id <LETTER>` (or, for
-a backlog ticket, through the native `backlog-cli.cjs add` itself), and never hand-roll an id — one
+a backlog ticket, through the native `backlog-commit.cjs add` itself), and never hand-roll an id — one
 manual grep here and the manual copy could hand out a number second, under an old allocator that stays
 open instead of the shipped one. Never reuse an ID even if the doc is deleted.
 
@@ -306,7 +306,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | File | Describes | Read it when |
 |------|-----------|--------------|
 | `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.cjs` |
-| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the six-module family |
+| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the seven-module family |
 
 ## Validation Gate Block
 

@@ -155,3 +155,25 @@ A partial answer is applied, and only the questions left are asked again, with t
 With `--output-format stream-json`, a run that dispatches a subagent can print more than one result
 event. The last one is the run's result; an earlier one can be written while the subagent is still
 working.
+
+## 9. Mirror the board to an external tracker
+
+The project's board lives on its own `board` branch, in one clone per project on the machine. A bot that
+keeps an outside tracker in step with it does not read the files: it asks the board what changed since the
+last time it looked, with the same entry every command uses.
+
+1. Keep the last `HEAD` you stored. The first time there is none.
+2. Run `node .codeadd/scripts/backlog-cli.cjs changes --since <sha>` (no `--since` the first time: every
+   ticket comes back under `ADDED`). It syncs the clone first, then prints `HEAD=<sha>`, and
+   `ADDED=`, `UPDATED=` and `REMOVED=` as comma-separated ticket ids, empty when none.
+3. For each id under `ADDED` and `UPDATED`, run `backlog-cli.cjs get <id>` for the full ticket and push it
+   to the tracker. For each id under `REMOVED`, remove or close the tracker item.
+4. Store the `HEAD` from step 2 as the next cursor.
+
+`UNPUSHED=<n>` appears when the clone holds writes the remote does not have yet. Those are not in the
+lists, and `HEAD` is the remote tip, so they arrive in a later call once they are pushed.
+
+If the call exits 1 with `ERROR=cursor-unknown`, the stored sha is not on the board branch any more. Start
+again without `--since` and treat every ticket as new.
+
+Nothing here names a tracker: the framework ships no tracker code, and the sync itself is the bot's job.

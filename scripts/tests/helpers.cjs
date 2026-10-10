@@ -133,6 +133,45 @@ function makeRepo({ branch = 'main', prefix = 'codeadd-repo-' } = {}) {
   };
 }
 
+/**
+ * A board fixture: a temp bare remote holding an orphan `board` branch with an
+ * empty docs/backlog.jsonl, a code repository on `main` whose committed
+ * .codeadd/board.json points at that remote, and the CODEADD_BOARD_DIR path the
+ * board clone lands at. No test may use the real ~/.codeadd/: every call to a
+ * script passes `env`.
+ * Returns { base, bare, repo, boardDir, env, git, cleanup }.
+ */
+function makeBoard({ files = {} } = {}) {
+  const base = mkTmp('codeadd-board-');
+  const bare = path.join(base, 'remote.git');
+  git(base, ['init', '--bare', '-q', '--initial-branch=main', bare]);
+  const seed = path.join(base, 'seed');
+  fs.mkdirSync(seed);
+  git(seed, ['init', '-q', '--initial-branch=board']);
+  git(seed, ['config', 'user.email', 'test@test.com']);
+  git(seed, ['config', 'user.name', 'Test']);
+  git(seed, ['config', 'commit.gpgsign', 'false']);
+  write(path.join(seed, 'docs', 'backlog.jsonl'), '');
+  for (const [rel, content] of Object.entries(files)) write(path.join(seed, rel), content);
+  git(seed, ['add', '.']);
+  git(seed, ['commit', '-q', '-m', 'seed board']);
+  git(seed, ['push', '-q', bare, 'board']);
+
+  const repo = path.join(base, 'repo');
+  fs.mkdirSync(repo);
+  git(repo, ['init', '-q', '--initial-branch=main']);
+  git(repo, ['config', 'user.email', 'test@test.com']);
+  git(repo, ['config', 'user.name', 'Test']);
+  git(repo, ['config', 'commit.gpgsign', 'false']);
+  write(path.join(repo, '.codeadd', 'board.json'), JSON.stringify({ remote: bare, branch: 'board' }));
+  git(repo, ['add', '-f', '.codeadd/board.json']);
+  git(repo, ['commit', '-q', '-m', 'init']);
+
+  const boardDir = path.join(base, 'board-clone');
+  const env = { CODEADD_BOARD_DIR: boardDir, HOME: base, USERPROFILE: base };
+  return { base, bare, repo, boardDir, env, git: (cwd, ...args) => git(cwd, args), cleanup: () => rmrf(base) };
+}
+
 /** Write a file, creating parents. */
 function write(p, content) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -224,6 +263,7 @@ module.exports = {
   runFile,
   git,
   makeRepo,
+  makeBoard,
   write,
   read,
   readJsonl,

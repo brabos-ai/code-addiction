@@ -1,7 +1,13 @@
-// The e2e fixture: a project whose docs/ holds a board varied enough to stress
+// The e2e fixture: a project whose board clone holds a board varied enough to stress
 // the layout — the shipped nine statuses over seven columns, long titles, several labels, comments, a picked-up
 // ticket, markdown notes. Written synchronously when the Playwright config loads,
 // so it exists before the web server answers its first request.
+//
+// The server reads the board from a CLONE, never from the project's docs/, so the
+// fixture directory is both the code repository and the clone: it is git-inited
+// and the config points CODEADD_BOARD_DIR at it. No remote, so every sync is
+// degraded and every write is committed locally.
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -176,6 +182,7 @@ const SHIPPED_DEFS = {
 export function writeFixture(root: string): void {
   rmSync(root, { recursive: true, force: true });
   mkdirSync(join(root, 'docs'), { recursive: true });
+  execFileSync('git', ['init', '-q'], { cwd: root });
   writeFileSync(join(root, 'docs/backlog.jsonl'), FIXTURE_TICKETS.map((t) => `${JSON.stringify(t)}\n`).join(''));
   writeFileSync(
     join(root, 'docs/backlog.definitions.json'),

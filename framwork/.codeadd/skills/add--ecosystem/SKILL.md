@@ -102,6 +102,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: backlog-cli.cjs
 - mention: backlog-id.cjs
 - mention: backlog-git.cjs
+- mention: backlog-board.cjs
 - mention: backlog-commit.cjs
 - mention: migrate-context-files.cjs
 - mention: init.cjs
@@ -225,7 +226,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | tdd-pipeline | enabled | add-plan, add-build, add-review, add-hotfix | RED-GREEN-REFACTOR discipline + contract-test specs + unit/integration generation |
 | qa-pipeline | disabled | add-plan, add-build, add-review | E2E spec authoring + routed QA correction + the agent QA judgement in add-review |
 | docs-pruning | disabled | add-done | Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written |
-| board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app ships as a separate release asset, so a fresh install has neither the board nor `docs/backlog.jsonl` |
+| board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app ships as a separate release asset, so a fresh install has neither the board nor a `.codeadd/board.json` |
 | agent-mode | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki | Commands for a bot that drives them headless — every question in one numbered batch with a recommendation, no interactive tool, no continuation offer, a closing that ends on the next command. Off by default: the commands keep their human wording |
 
 Enable/disable via `codeadd features enable|disable|list <name>` — fragments are injected into the installed commands post-install. The split is canonical in add--qa's *Feature vs plugin* statement and is not restated here: `qa-pipeline` decides whether the QA flow exists at all, and the `playwright` plugin below only adds live driving to a judge the feature already supplied — enabling the plugin does not enable the pipeline.
@@ -297,10 +298,11 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | converge-gates.cjs | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.cjs | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.cjs | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
-| backlog-cli.cjs | add--backlog — the native local entry: the positional grammar, `--record-file` records and native allocation (through `backlog-id.cjs` at the operation root), calling the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app. Reads print a seven-field summary (`--full`/`--ids` opt-in) and `get <id>` answers the exact detail read |
-| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs plus the raw backlog text, anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
-| backlog-commit.cjs | add--backlog — the git route for a backlog write: the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise, with durable recovery refs on every failed publication |
-| backlog-git.cjs | add--backlog — the git primitives the publication entry composes: base discovery, the path-scoped commit, fetch/rebase/push with verified aborts, and the recovery refs |
+| backlog-cli.cjs | add--backlog — the READ entry of the board: it resolves and syncs the board clone through `backlog-board.cjs`, then reads it with the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app. Reads print `BOARD_DIR` and `SYNC` first, then a seven-field summary (`--full`/`--ids` opt-in); `get <id>` answers the exact detail read. A write mode exits 2 with `ERROR=write-mode` and names `backlog-commit.cjs` |
+| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs under the code root plus the raw backlog text of the board clone (`boardRoot`), anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
+| backlog-commit.cjs | add--backlog — the ONE write route: resolve the board clone, take its lock, fast-forward, write, commit and push the `board` branch, from any branch or worktree, with durable recovery refs on every failed publication. It reports `ROUTE=board` and `BOARD_DIR` |
+| backlog-board.cjs | add--backlog — the one module that knows where the board lives: the resolver (`CODEADD_BOARD_DIR`, then `.codeadd/board.json`), the project key, the clone on first use, the lock and the throttled read sync. Every backlog reader and writer goes through it |
+| backlog-git.cjs | add--backlog — the git primitives the board module and the publication entry compose: clone, fetch, ahead/behind, fast-forward, rebase-once and push of the `board` branch, `git show` at a sha, and the recovery refs |
 | migrate-context-files.cjs | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 

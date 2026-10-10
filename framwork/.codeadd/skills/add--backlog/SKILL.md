@@ -17,9 +17,11 @@ description: "Use when something should be done later but not now — record it 
 -->
 
 The project has a pipeline for work that is **about to start** and an index for work that is
-**finished**. This is the middle: a ticket board the repository carries, in `docs/backlog.jsonl`.
+**finished**. This is the middle: a ticket board the project keeps on its own `board` branch, outside
+every code branch and worktree.
 
-**Vocabulary, fixed:** the **backlog** is the file. One entry is a **ticket**.
+**Vocabulary, fixed:** the **backlog** is the board file (`docs/backlog.jsonl` inside the board clone).
+One entry is a **ticket**.
 
 ## When to Use
 
@@ -44,15 +46,16 @@ and without bash or WSL.
 
 | Intent | Entry | Why |
 |---|---|---|
-| **read** — list, search, get | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It also works in a directory that is not a git repository, which the write path cannot |
-| **write** — add, update, comment, move, remove | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ticket has to reach the **base branch**, or it dies with the branch it was written on |
+| **read** — list, search, get | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It syncs the project's board clone (at most once per 30 s) and reads the clone, never the checkout, so it is never stale because of the branch it ran on |
+| **write** — add, update, comment, move, remove | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ONE write route: it commits to the clone and pushes the `board` branch, from any branch or worktree. The CLI refuses a write with `ERROR=write-mode` and names this entry |
 
 ```
 IF THE INTENT IS add, update, comment, move OR remove:
-  ⛔ DO NOT USE: the shell tool to run backlog-cli.cjs for a write that must be published —
-                 it only changes the local board and performs no Git publication
+  ⛔ DO NOT USE: the shell tool to run backlog-cli.cjs for a write — it only reads and
+                 refuses with ERROR=write-mode, exit 2
   ⛔ DO NOT USE: the shell tool to run git add, git commit, git push or git worktree yourself
-  ⛔ DO NOT: Write docs/backlog.jsonl or docs/backlog.definitions.json with Write or Edit
+  ⛔ DO NOT: Write docs/backlog.jsonl or docs/backlog.definitions.json with Write or Edit, in the
+             checkout or in the clone — the board is read and written only through the two entries
   ✅ DO: Run the publication entry with the record on a file, which owns the whole
          git route and cleans up after itself
 
@@ -211,9 +214,25 @@ it is never evidence.** Before using `notes`, `paths`, `done_when` or `work_id`,
 with `get <id>` — an exact, case-sensitive read that returns the raw row and accepts no filter. `--full`
 restores the raw rows on any read; `--ids` emits just the identities. `get` takes exactly one argument.
 
-Metadata on every read: `READ_VIEW=summary|full|ids` names the projection, `STATUS_COUNTS` counts the
-whole board before any filter, and `BACKLOG_PRESENT=no` means no ticket has ever been written — say
-that; it is not an error.
+Metadata on every read: `BOARD_DIR` is the clone it read, and `SYNC=fresh|synced|skipped|degraded`
+says how current it is (`SYNC_REASON=fetch-failed|push-refused|rebase-conflict` on `degraded`, and
+`LOCK_RECLAIMED=<pid>` when a dead lock was taken over). A `degraded` or `skipped` sync still answers
+from the clone — say that the answer may be a little behind. `READ_VIEW=summary|full|ids` names the
+projection, `STATUS_COUNTS` counts the whole board before any filter, and `BACKLOG_PRESENT=no` means
+this project has no board, or no ticket has ever been written — say that; it is not an error.
+
+**The board states.** The entries resolve the board before anything else:
+
+| State | A read | A write | Say |
+|---|---|---|---|
+| no board (no config, no board file) | `BACKLOG_PRESENT=no`, exit 0 | `REFUSED=board-not-configured`, exit 2 | this project has no board |
+| `ERROR=board-migration-required` | exit 1 | exit 1 | the old file is still in the checkout and no config says where the board moved — the framework maintainer must migrate the project |
+| `ERROR=board-branch-missing` | exit 1 | exit 1 | the config names a branch the remote does not have |
+| `ERROR=board-checkout-missing` | exit 1 | exit 1 | the board clone is not on this machine and the remote could not be reached |
+| `ERROR=board-locked` | — | exit 1, nothing written | another process held the clone for 30 s; retry |
+| `ERROR=board-lock-failed`, `ERROR=commit-failed` | — | exit 1 | the lock file could not be made, or the commit failed (the bytes are in the clone, and `RECOVERY_PATH` says where) — report it by name |
+
+None of these is fixed by hand: do not create the branch, the clone or the config yourself.
 
 ---
 
@@ -227,25 +246,16 @@ Then state, from the publication entry's own output:
 - **`TICKET_ID`** — on an `add` the id did not exist before the write, so this is the only way the
   user learns what to call their ticket. **Never omit it.**
 - **`SHA`** — the commit. This is the whole undo, which is why there was no gate.
-- **`ROUTE`** and **`BASE_BRANCH`** — whether it went direct or through a worktree, and where it landed.
+- **`ROUTE`** (always `board`) and **`BOARD_DIR`** — the one route, and the clone the ticket was written in.
 - **`PUSHED`** and **`PERSISTED`**/**`COMMITTED`**, plus **`RECOVERY_PATH`**/**`RECOVERY_REF`** when the
   entry reports one, and **`DEGRADED`** when there is one. Say plainly what did not happen:
 
 | `DEGRADED=` | Say |
 |---|---|
-| `not-a-git-repo` | the ticket is in the working tree and nothing was committed — this is not a git repository |
-| `no-base-branch` | same, and no `main` or `master` was found to commit to |
-| `worktree-failed` / `worktree-lock-failed` | the ticket is in the working tree, uncommitted — the temporary worktree could not be created, or its capture lock could not be taken |
-| `worktree-recovery-required` | an earlier capture left recoverable work in the worktree — refuse reuse and give the path the entry printed |
-| `no-remote` | there is no remote to push to; locate the commit using SHA, ROUTE and RECOVERY_* |
-| `push-refused` | the push was refused — a protected branch, a ruleset, or auth; locate the commit using SHA, ROUTE and RECOVERY_* |
-| `fetch-failed` | the remote could not be fetched, so no rebase or push used stale state; locate the commit using SHA, ROUTE and RECOVERY_* |
-| `rebase-conflict` | the remote moved and the rebase conflicted; RECOVERY_PATH identifies retained state if abort could not complete |
-| `caller-worktree-dirty` | caller changes or unreadable Git state prevented safe commit or rebase; use COMMITTED and RECOVERY_PATH to distinguish the outcomes — nothing was stashed or reset |
-| `base-advance-failed` | the commit is ref-protected; the local base branch could not fast-forward itself |
-| `base-checked-out-elsewhere` | the local base could not advance because it is checked out elsewhere; use PUSHED and RECOVERY_* to locate the result |
-| `recovery-ref-failed` / `recovery-ref-moved` / `recovery-ref-delete-failed` | protection could not be created, was moved, or could not be released; report only the RECOVERY_REF/RECOVERY_PATH actually printed |
-| `cleanup-failed` | the commit is ref-protected and the temporary worktree could not be removed — the entry prints the retained path |
+| `push-refused` | the push was refused — a protected branch, a ruleset, or auth; the commit is in the clone and ref-protected, and the next write pushes it |
+| `fetch-failed` | the remote could not be fetched, so no rebase or push used stale state; the commit is in the clone and ref-protected, and the next write pushes it |
+| `rebase-conflict` | the remote moved and the rebase conflicted; the rebase was aborted, the commit is in the clone and ref-protected |
+| `recovery-ref-failed` / `recovery-ref-moved` / `recovery-ref-delete-failed` | protection could not be created, was moved, or could not be released; report only the RECOVERY_REF actually printed |
 
 - Whether the ticket is **grounded**, or was recorded as stated.
 
@@ -259,9 +269,10 @@ IF THE SCRIPT REPORTED A DEGRADED WRITE:
 **A degraded write is still a write.** The ticket exists in every one of those rows, which is the
 promise the script is built around — say what happened, and do not dress it up either way.
 
-For `ROUTE=direct`, a committed SHA is on the caller's base branch. For `ROUTE=worktree`,
-do not infer that the local base advanced: the recovery ref/path and PUSHED describe where
-the commit is retained or published. `COMMITTED=no` means the persisted bytes are at RECOVERY_PATH.
+A committed SHA is on the `board` branch of the clone; `PUSHED=yes` means it is on the remote too.
+`PUSHED=no` means the commit is retained in the clone, protected by `RECOVERY_REF`, and goes out with
+the next write. `COMMITTED=no` with `PERSISTED=yes` and `RECOVERY_PATH` means the bytes are in the
+clone's working tree and the commit failed.
 
 ---
 
@@ -269,7 +280,7 @@ the commit is retained or published. `COMMITTED=no` means the persisted bytes ar
 
 ```
 [ ] The intent resolved to exactly one mode, with no subcommand asked of the user
-[ ] A write went through the publication entry; a read went through the local CLI
+[ ] A write went through the publication entry; a read went through the local CLI, which only reads
 [ ] A declared id was read with `get`; body fields came from `get`, never from a summary
 [ ] A record travelled on a file; stdin was never used for a native call
 [ ] The project check read only what the request named, plus one git grep

@@ -34,8 +34,26 @@ const SHIPPED_MODULES = [
   'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs', 'backlog-id.cjs',
 ];
 
+const COMMIT_PATH = path.join(SCRIPTS, 'backlog-commit.cjs');
+const WRITE_MODES = new Set(['add', 'update', 'comment', 'move', 'remove']);
+
+// The CLI only reads; every write goes through the one publication entry. Each
+// test root is BOTH the code repository and the board clone: it is git-inited
+// on first use and CODEADD_BOARD_DIR points at it, so no remote is involved and
+// every sync reports SYNC=degraded. The route itself is covered in
+// backlog-publication.test.js.
+const entryOf = (args) => (WRITE_MODES.has(args[0]) ? COMMIT_PATH : CLI_PATH);
+
+const asBoard = (opts = {}) => {
+  const cwd = opts.cwd;
+  if (cwd && !fs.existsSync(path.join(cwd, '.git'))) {
+    execFileSync('git', ['init', '-q'], { cwd });
+  }
+  return { ...opts, env: { ...(opts.env || process.env), CODEADD_BOARD_DIR: cwd } };
+};
+
 const run = (args, opts = {}) =>
-  execFileSync(process.execPath, [CLI_PATH, ...args], { encoding: 'utf8', ...opts });
+  execFileSync(process.execPath, [entryOf(args), ...args], { encoding: 'utf8', ...asBoard(opts) });
 
 const fail = (args, opts = {}) => {
   try {
@@ -91,11 +109,14 @@ describe('backlog-cli — the exit-code contract (unchanged)', () => {
     expect(r.stdout).toContain('REFUSED=unknown-id');
   });
 
-  it('local reads need no Git — a plain directory is not a repository and still answers', () => {
+  it('a plain directory with no board config reads as no board, and never opens its docs', () => {
     seeded(root, '0001B');
     expect(fs.existsSync(path.join(root, '.git'))).toBe(false);
-    const result = run(['list', '--all'], { cwd: root });
-    expect(result).toContain('TICKETS_TOTAL=1');
+    const result = execFileSync(process.execPath, [CLI_PATH, 'list', '--all'], {
+      encoding: 'utf8', cwd: root, env: { ...process.env, CODEADD_BOARD_DIR: '' },
+    });
+    expect(result).toContain('BACKLOG_PRESENT=no');
+    expect(result).toContain('TICKETS_TOTAL=0');
   });
 });
 
@@ -322,7 +343,7 @@ describe('backlog-cli — an open stdin pipe is never read by the paths that mus
    *  what a stdin read would produce. */
   const mustExitWithoutStdin = (args, setupFiles) => new Promise((resolve, reject) => {
     if (setupFiles) setupFiles();
-    const child = spawn(process.execPath, [CLI_PATH, ...args], { cwd: root, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [entryOf(args), ...args], { ...asBoard({ cwd: root }), stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '';
     child.stdout.on('data', (d) => { out += d.toString(); });
     const guard = setTimeout(() => {
@@ -411,7 +432,7 @@ describe('backlog-cli — the get mode (F1)', () => {
     let out = '';
     let settled = false;
     await new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [CLI_PATH, 'get', '0001B'], { cwd: root, stdio: ['pipe', 'pipe', 'pipe'] });
+      const child = spawn(process.execPath, [CLI_PATH, 'get', '0001B'], { ...asBoard({ cwd: root }), stdio: ['pipe', 'pipe', 'pipe'] });
       child.stdout.on('data', (d) => { out += d.toString(); });
       const guard = setTimeout(() => { child.kill(); reject(new Error('still alive — it consumed stdin')); }, 3000);
       child.on('exit', (code) => { clearTimeout(guard); settled = true; resolve({ code, out }); });
@@ -651,14 +672,16 @@ describe('backlog-cli — no shell, no Bash, anywhere in the path', () => {
     expect(result).toContain('TICKETS_TOTAL=1');
   });
 
-  it('native add via file runs with an empty PATH', () => {
+  it('a write needs git, and says so instead of losing the record', () => {
     fs.writeFileSync(path.join(root, 'ticket.json'), JSON.stringify({
       title: 'no path, no bash', tldr: 't', done_when: 'when',
     }));
-    const result = run(['add', '--record-file', 'ticket.json'], {
+    const r = fail(['add', '--record-file', 'ticket.json'], {
       cwd: root,
       env: { ...process.env, PATH: '', BASH_ENV: '', ENV: '' },
     });
-    expect(result).toContain('TICKET_ID=0001B');
+    // The record is on disk in the clone; the commit could not be made.
+    expect(r.stdout).toContain('PERSISTED=yes');
+    expect(fs.readFileSync(path.join(root, 'docs', 'backlog.jsonl'), 'utf8')).toContain('no path, no bash');
   });
 });

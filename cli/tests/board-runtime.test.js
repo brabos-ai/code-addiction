@@ -6,7 +6,7 @@
  *
  * F7 of the native-node-backlog plan adds the closure question in its
  * WORST-SHAPE form: the shipped scripts dir now carries SIX canonical
- * backlog modules, and the runtime must stay exactly the two the server
+ * backlog modules, and the runtime must stay exactly the four the server
  * imports — the other four are entry-surface and never leak.
  */
 
@@ -20,9 +20,11 @@ const COPIER_PATH = path.resolve(__dirname, '../../scripts/build-board-runtime.j
 const SOURCE_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
 const SHIPPED_CANONICAL = [
   'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-  'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+  'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs', 'backlog-board.cjs',
 ];
-const RUNTIME_FILES = ['backlog-core.cjs', 'backlog-storage.cjs'];
+// The core and storage read the board; the board module and the git primitives
+// resolve, lock and sync the clone it lives in. Nothing else crosses.
+const RUNTIME_FILES = ['backlog-core.cjs', 'backlog-storage.cjs', 'backlog-board.cjs', 'backlog-git.cjs'];
 
 describe('build-board-runtime', () => {
   let tmpDir;
@@ -74,36 +76,31 @@ describe('build-board-runtime', () => {
     const runtimeDir = path.resolve(__dirname, '../../board/runtime');
     const sourceDir = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
 
-    // The closure is exactly core and storage — the two modules the server
-    // imports directly. Everything else (CLI, allocator, publication) is
-    // entry-surface and must never cross into the read-only runtime.
+    // The closure is exactly the four modules the server imports: the core and
+    // storage, and the board module and git primitives under it. Everything else
+    // (CLI, allocator, publication) is entry-surface and must never cross into
+    // the read-only runtime.
     for (const name of fs.readdirSync(runtimeDir)) {
-      expect(['backlog-core.cjs', 'backlog-storage.cjs'], name).toContain(name);
+      expect(RUNTIME_FILES, name).toContain(name);
     }
-    if (fs.existsSync(path.join(runtimeDir, 'backlog-core.cjs'))) {
-      const sourceCore = fs.readFileSync(path.join(sourceDir, 'backlog-core.cjs'), 'utf8');
-      const runtimeCore = fs.readFileSync(path.join(runtimeDir, 'backlog-core.cjs'), 'utf8');
-      expect(runtimeCore).toBe(sourceCore);
-    }
-
-    if (fs.existsSync(path.join(runtimeDir, 'backlog-storage.cjs'))) {
-      const sourceStorage = fs.readFileSync(path.join(sourceDir, 'backlog-storage.cjs'), 'utf8');
-      const runtimeStorage = fs.readFileSync(path.join(runtimeDir, 'backlog-storage.cjs'), 'utf8');
-      expect(runtimeStorage).toBe(sourceStorage);
+    for (const name of RUNTIME_FILES) {
+      if (!fs.existsSync(path.join(runtimeDir, name))) continue;
+      expect(fs.readFileSync(path.join(runtimeDir, name), 'utf8'), name)
+        .toBe(fs.readFileSync(path.join(sourceDir, name), 'utf8'));
     }
 
     // Explicit negatives: a native module that leaks into board/runtime would
     // create a second shipped copy of entry-surface code.
     expect(fs.existsSync(path.join(runtimeDir, 'backlog-id.cjs'))).toBe(false);
-    expect(fs.existsSync(path.join(runtimeDir, 'backlog-git.cjs'))).toBe(false);
     expect(fs.existsSync(path.join(runtimeDir, 'backlog-commit.cjs'))).toBe(false);
+    expect(fs.existsSync(path.join(runtimeDir, 'backlog-cli.cjs'))).toBe(false);
   });
 
-  it('the copier preboard stays closed when the shipped scripts dir carries all six modules', () => {
-    // The REAL tree now carries all six canonical backlog modules; board
+  it('the copier preboard stays closed when the shipped scripts dir carries all seven modules', () => {
+    // The REAL tree now carries all seven canonical backlog modules; board
     // package.json's preboard/pretest hooks run this copier before every
     // build and test. This proves the run keeps the runtime exactly the
-    // two files the served board imports — no native entry-surface copy
+    // four files the served board imports — no native entry-surface copy
     // appears just because it sits beside the source.
     const runtimeDir = path.resolve(__dirname, '../../board/runtime');
     if (!fs.existsSync(path.join(SOURCE_DIR, 'backlog-id.cjs')) ||
@@ -121,7 +118,7 @@ describe('build-board-runtime', () => {
     expect(result).toContain('Board runtime ready');
     // Exactly the canonical runtime names — nothing from the extra modules.
     const shippedNames = fs.readdirSync(runtimeDir).sort();
-    expect(shippedNames).toEqual(RUNTIME_FILES.sort());
+    expect(shippedNames).toEqual([...RUNTIME_FILES].sort());
   });
 
   it('no board test, fixture or server case names an OLD bash sentinel route', () => {

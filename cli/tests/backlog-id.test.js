@@ -36,6 +36,9 @@ afterEach(() => {
 const fixture = (name) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
   ROOTS.push(dir);
+  // The public entries read the ticket ids from the board clone: the fixture is
+  // both the code repository and the clone (CODEADD_BOARD_DIR points at it).
+  execFileSync('git', ['init', '-q'], { cwd: dir });
   return dir;
 };
 
@@ -71,7 +74,9 @@ const ticketRow = (fields = {}) => JSON.stringify({
 /** The two native public entries, in the fixture root. Unconditional — no skip
  *  path exists; a fixture that cannot be compared stops the suite. */
 const nodeNextId = (entry, args, cwd) =>
-  execFileSync(process.execPath, [entry, ...args], { encoding: 'utf8', cwd }).trim();
+  execFileSync(process.execPath, [entry, ...args], {
+    encoding: 'utf8', cwd, env: { ...process.env, CODEADD_BOARD_DIR: cwd },
+  }).trim();
 
 /** One fixture, one letter: the core and both native entries must agree. */
 const expectAllThree = (root, letter, id) => {
@@ -218,10 +223,36 @@ describe('L2 — calculate: exhaustion and unreadable sources', () => {
   });
 });
 
+describe('L2 — calculate: boardRoot splits the two sources', () => {
+  it('feature dirs count under root, ticket ids under boardRoot', () => {
+    const root = fixture('id-split-root-');
+    const board = fixture('id-split-board-');
+    featureDir(root, '0007F-thing');
+    backlogRow(board, ticketRow({ id: '0012B' }));
+    backlogRow(root, ticketRow({ id: '0099B' }));
+    expect(idc.calculate(root, 'B', { boardRoot: board })).toEqual({ ok: true, id: '0013B' });
+    expect(idc.calculate(root, 'B')).toEqual({ ok: true, id: '0100B' });
+  });
+
+  it('boardRoot keeps allowOverflow and the 9999 refusal', () => {
+    const root = fixture('id-split-ovf-root-');
+    const board = fixture('id-split-ovf-board-');
+    backlogRow(board, ticketRow({ id: '9999B' }));
+    expect(idc.calculate(root, 'B', { boardRoot: board })).toEqual({ ok: false, reason: 'id-exhausted' });
+    expect(idc.calculate(root, 'F', { boardRoot: board, allowOverflow: true })).toEqual({ ok: true, id: '10000F' });
+  });
+});
+
 describe('L2 — the allocator requires no import-time I/O', () => {
   it('requiring the module changes nothing anywhere on disk', () => {
-    const before = fs.readFileSync(path.join(ROOT, 'docs', 'backlog.jsonl'), 'utf8');
+    // The board no longer lives in the checkout, so the checkout may carry no
+    // docs/backlog.jsonl at all: the snapshot is the file's text, or null.
+    const snapshot = () => {
+      const file = path.join(ROOT, 'docs', 'backlog.jsonl');
+      return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
+    };
+    const before = snapshot();
     require(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-id.cjs'));
-    expect(fs.readFileSync(path.join(ROOT, 'docs', 'backlog.jsonl'), 'utf8')).toBe(before);
+    expect(snapshot()).toBe(before);
   });
 });

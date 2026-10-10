@@ -1,48 +1,32 @@
 /**
- * backlog-git.cjs — Native Git routing, publication and durable recovery.
+ * backlog-git.cjs — Git primitives for the board clone: clone, fetch, ahead /
+ * behind, fast-forward, rebase-once, push of one named branch, `git show` at a
+ * sha, the root commit and its trailers, and the durable recovery refs.
  *
- * Chooses the operation root for a write the way backlog-commit.sh did: base
- * discovery mirrors get-main-branch.sh (origin/HEAD, remote main/master,
- * local main/master); the current branch equal to the base commits
- * DIRECTLY, and everything else — a feature branch, a detached HEAD, a
- * linked-worktree caller — captures through a DETACHED, LOCKED
- * `.worktrees/backlog` created at the base. Not being a git repository or
- * having no base branch is a result, not a failure: the caller tree carries
- * the write uncommitted, and the caller of this module reports it.
+ * The board is one branch (`board`) of the project's own remote, checked out
+ * once per project outside every code branch. backlog-board.cjs resolves that
+ * clone, locks it and syncs it; backlog-commit.cjs writes to it. This module
+ * is the git underneath both. It knows nothing about tickets and nothing about
+ * where the clone lives.
  *
  * CORE AND STORAGE REMAIN PROCESS- AND GIT-FREE. Everything here runs one
  * binary: git, through argument arrays with no shell — native git with
- * shell:false, never bash, never WSL. Reads go through the local CLI alone
- * and need nothing in this module.
+ * shell:false, never bash, never WSL. Reads go through backlog-cli.cjs and the
+ * board module; none of it needs a write primitive.
  *
- * THE DURABLE RECOVERY CONTRACT. Every commit prepared for publication gets
- * a recovery ref `refs/codeadd/backlog-recovery/<sha>` created atomically
- * (expected-absent) BEFORE any rebase or cleanup, and the invocation
- * remembers exactly which refs IT created. A ref that already matched
- * protects the commit but is not owned. After a verified push, only owned
- * refs whose value still matches are deleted; a moved ref stays and is
- * reported. A rebased commit is protected at its new sha before any
- * discard. An unchecked-out base advances only through a verified
- * fast-forward (compare-and-swap update-ref); a checked-out base is never
- * advanced out-of-band. The caller tree's unrelated staged and unstaged
- * changes survive every commit — an isolated index carries only the board
- * operation's delta, never the caller's index — and a dirty caller tree degrades the rebase
- * instead of stashing anything away.
+ * THE DURABLE RECOVERY CONTRACT. Every commit prepared for publication gets a
+ * recovery ref `refs/codeadd/backlog-recovery/<sha>` created atomically
+ * (expected-absent) BEFORE any rebase, and the invocation remembers exactly
+ * which refs IT created. A ref that already matched protects the commit but is
+ * not owned. After a verified push, only owned refs whose value still matches
+ * are deleted; a moved ref stays and is reported. A rebased commit is
+ * protected at its new sha. The refs live in the clone.
  *
- * THE OLD CONTRACT IS PRESERVED: ROUTE / BASE_BRANCH / TICKET_ID / SHA /
- * PUSHED / DEGRADED keep their names and meanings, the named old degradation
- * reasons keep their spellings (not-a-git-repo, no-base-branch,
- * worktree-failed, no-remote, push-refused, rebase-conflict,
- * base-checked-out-elsewhere), and new failure classes get specific new
- * reasons (fetch-failed, caller-worktree-dirty, base-advance-failed,
- * recovery-ref-failed, recovery-ref-moved, recovery-ref-delete-failed,
- * worktree-lock-failed) rather than claiming a push that did not happen.
- *
- * THIS MODULE IS NOT ALL-FROM-SCRATCH SAFE FOR EVERY COMBINATION — the
- * combinations route through backlog-commit.cjs, which owns the
- * orchestration: parse once, capture the record once, choose an operation
- * root, call the same domain operation as the local CLI, and render the
- * publication result. The functions here are the git primitives it composes.
+ * Failures that are answers rather than crashes come back as `{ ok: false,
+ * reason }` or `{ fetched|pushed: false, reason }`: clone-failed,
+ * remote-unreachable, fetch-failed, not-fast-forward, rebase-conflict,
+ * abort-failed, push-refused, recovery-ref-failed, recovery-ref-moved,
+ * recovery-ref-delete-failed.
  *
  * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL, no stdin.
  */
@@ -50,11 +34,9 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 
 const BACKLOG_FILE = 'docs/backlog.jsonl';
 const DEFS_FILE = 'docs/backlog.definitions.json';
-const WORKTREE = '.worktrees/backlog';
 const RECOVERY_NS = 'refs/codeadd/backlog-recovery';
 const ZERO_SHA = '0'.repeat(40);
 
@@ -75,16 +57,29 @@ class GitError extends Error {
  * Throws GitError on a non-zero exit; `{ allowFailure: true }` returns a
  * { status, stdout, stderr } result instead, for the probes that treat a
  * failure as an answer.
+ *
+ * `net: true` marks a command that talks to the remote (clone, fetch, ls-remote,
+ * push). It never waits on a terminal prompt (GIT_TERMINAL_PROMPT=0) and is cut
+ * off after CODEADD_GIT_NET_TIMEOUT_MS (default 30000), so a stalled remote or a
+ * missing credential is a failed answer ("fetch-failed") rather than a hang in
+ * every command that resolves the board.
  */
-function run(args, cwd, { allowFailure = false, input, env } = {}) {
+function run(args, cwd, { allowFailure = false, input, env, net = false } = {}) {
   let proc;
+  const netTimeout = Number(process.env.CODEADD_GIT_NET_TIMEOUT_MS) > 0 ? Number(process.env.CODEADD_GIT_NET_TIMEOUT_MS) : 30000;
+  const childEnv = net ? { GIT_TERMINAL_PROMPT: '0', ...(env || {}) } : env;
   try {
     proc = execFileSync('git', args, {
       cwd,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
+      ...(net ? { timeout: netTimeout, killSignal: 'SIGKILL' } : {}),
+      // stderr is captured, never inherited: the probes that treat a failure as an
+      // answer (a missing ref, an untracked path) must not print git's "fatal:" line
+      // into the caller's output.
+      stdio: ['pipe', 'pipe', 'pipe'],
       input,
-      env: env ? { ...process.env, ...env } : process.env,
+      env: childEnv ? { ...process.env, ...childEnv } : process.env,
     });
   } catch (e) {
     const outcome = {
@@ -104,88 +99,8 @@ function run(args, cwd, { allowFailure = false, input, env } = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Discovery and routing probes
+// Working-tree conditions
 // ---------------------------------------------------------------------------
-
-/**
- * Mirror of get-main-branch.sh: origin/HEAD, then origin/main, then
- * origin/master, then local main, then local master. Nothing else.
- */
-function discoverBase(root) {
-  const repo = run(['rev-parse', '--git-dir'], root, { allowFailure: true });
-  if (repo.status !== 0) return { ok: false, reason: 'not-a-git-repo' };
-
-  const originHead = run(['symbolic-ref', 'refs/remotes/origin/HEAD'], root, { allowFailure: true });
-  if (originHead.status === 0) {
-    const branch = originHead.stdout.trim().replace(/^refs\/remotes\/origin\//, '');
-    if (branch) return { ok: true, branch };
-  }
-  for (const remote of ['main', 'master']) {
-    if (run(['show-ref', '--verify', `refs/remotes/origin/${remote}`], root, { allowFailure: true }).status === 0) {
-      return { ok: true, branch: remote };
-    }
-  }
-  for (const local of ['main', 'master']) {
-    if (run(['show-ref', '--verify', `refs/heads/${local}`], root, { allowFailure: true }).status === 0) {
-      return { ok: true, branch: local };
-    }
-  }
-  return { ok: false, reason: 'no-base-branch' };
-}
-
-/** The current branch name, or '' when HEAD is detached. */
-function currentBranch(root) {
-  const out = run(['rev-parse', '--abbrev-ref', 'HEAD'], root, { allowFailure: true });
-  if (out.status !== 0) return '';
-  const name = out.stdout.trim();
-  return name === 'HEAD' ? '' : name;
-}
-
-/** `worktree list --porcelain`, parsed. */
-function listWorktrees(root) {
-  const listing = run(['worktree', 'list', '--porcelain', '-z'], root, { allowFailure: true });
-  if (listing.status !== 0) return [];
-  const trees = [];
-  let tree = {};
-  const flush = () => {
-    if (Object.keys(tree).length) { trees.push(tree); tree = {}; }
-  };
-  for (const line of (listing.stdout || '').split('\0')) {
-    const sep = line.indexOf(' ');
-    const key = sep === -1 ? line : line.slice(0, sep);
-    const value = sep === -1 ? '' : line.slice(sep + 1);
-    if (key === 'worktree') { flush(); tree.worktree = value; }
-    else if (key === 'head' || key === 'branch') tree[key] = value;
-    else if (key === 'locked') tree.locked = value || true;
-    else if (key === 'prunable') tree.prunable = value || true;
-    else if (key === 'bare') tree.bare = true;
-    else if (key === 'detached') tree.detached = true;
-  }
-  flush();
-  return trees;
-}
-
-/** Our fixed capture worktree's registration, or null when absent. */
-function findOurWorktree(root) {
-  const canonical = (file) => {
-    let resolved;
-    try { resolved = fs.realpathSync.native(file); } catch { resolved = path.resolve(file); }
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-  };
-  const abs = canonical(path.join(root, WORKTREE));
-  for (const tree of listWorktrees(root)) {
-    if (canonical(tree.worktree) === abs) return tree;
-  }
-  return null;
-}
-
-/**
- * Names for the base branch across every registered worktree — the one test
- * that decides whether the base may move out-of-band.
- */
-function worktreesCheckedOutAt(root, baseBranch) {
-  return listWorktrees(root).filter((t) => t.branch === `refs/heads/${baseBranch}`);
-}
 
 /**
  * The working-tree conditions that decide safety. `staged` counts index-only
@@ -257,61 +172,12 @@ function releaseOwnedRef(root, ref, expected) {
 }
 
 // ---------------------------------------------------------------------------
-// The verified fast-forward: the only way a base branch moves here
+// Ancestry
 // ---------------------------------------------------------------------------
 
 /** merge-base --is-ancestor, as a plain boolean probe. */
 function isAncestor(root, a, b) {
   return run(['merge-base', '--is-ancestor', a, b], root, { allowFailure: true }).status === 0;
-}
-
-/**
- * Advance an UNCHECKED-OUT base branch to newSha only when that is a
- * fast-forward from expectedOld, through one compare-and-swap update-ref.
- * Divergence moves nothing and answers why — the caller keeps a recovery
- * ref and reports the degradation.
- */
-function advanceBaseIfUnlocked(root, baseBranch, newSha, expectedOld) {
-  if (worktreesCheckedOutAt(root, baseBranch).length) {
-    return { advanced: false, reason: 'base-checked-out-elsewhere' };
-  }
-  if (!isAncestor(root, expectedOld, newSha)) {
-    return { advanced: false, reason: 'base-advance-failed' };
-  }
-  const updated = run(['update-ref', `refs/heads/${baseBranch}`, newSha, expectedOld], root, { allowFailure: true });
-  if (updated.status !== 0) return { advanced: false, reason: 'base-advance-failed' };
-  return { advanced: true, reason: null };
-}
-
-// ---------------------------------------------------------------------------
-// Fetch / rebase / push
-// ---------------------------------------------------------------------------
-
-/** Fetch the base branch; every failure is an answer, never a rebase trigger. */
-function fetchBase(root, baseBranch) {
-  const fetch = run(['fetch', 'origin', baseBranch], root, { allowFailure: true });
-  if (fetch.status !== 0) return { fetched: false, reason: 'fetch-failed' };
-  const head = run(['rev-parse', '--verify', '--quiet', 'FETCH_HEAD'], root, { allowFailure: true });
-  if (head.status !== 0) return { fetched: false, reason: 'fetch-failed' };
-  return { fetched: true, fetchHead: head.stdout.trim() };
-}
-
-/**
- * Rebase the operation root onto FETCH_HEAD. A conflict is ABORTED, never
- * resolved, and the abort is verified: a repository left mid-rebase is
- * worse than an unpushed commit. An abort failure moves nothing and names
- * the recovery state it left.
- */
-function rebaseOntoFetchHead(root) {
-  const rebase = run(['rebase', 'FETCH_HEAD'], root, { allowFailure: true });
-  if (rebase.status === 0) return { ok: true, sha: headSha(root) };
-  const cond = conditionsAt(root);
-  const abort = run(['rebase', '--abort'], root, { allowFailure: true });
-  const scan = conditionsAt(root);
-  if (abort.status !== 0 || !scan.readable || scan.rebasing || scan.unmerged) {
-    return { ok: false, reason: 'abort-failed', conflicted: true, cond: scan, preCond: cond };
-  }
-  return { ok: false, reason: 'rebase-conflict', conflicted: true };
 }
 
 function headSha(root) {
@@ -320,244 +186,157 @@ function headSha(root) {
   return out.stdout.trim().toLowerCase();
 }
 
-/** push HEAD:refs/heads/<base>; a refusal is an answer. */
-function pushToBase(root, baseBranch) {
-  const push = run(['push', 'origin', `HEAD:refs/heads/${baseBranch}`], root, { allowFailure: true });
-  if (push.status !== 0) return { pushed: false, reason: 'push-refused' };
-  return { pushed: true };
-}
-
 // ---------------------------------------------------------------------------
-// Commit: the two board paths by name, never the caller's index
+// The board clone: primitives for ONE named branch of a single-branch clone
 // ---------------------------------------------------------------------------
+// backlog-board.cjs composes these. Every failure is an answer (`ok: false`
+// plus a reason), never a throw, because the callers degrade instead of dying.
 
-/** Normalize working bytes through Git's path-specific clean filters. */
-function workingContent(root, rel) {
-  const file = path.join(root, rel);
-  if (!fs.existsSync(file)) return null;
-  const blob = run(['hash-object', '-w', '--path', rel, '--stdin'], root, {
-    input: fs.readFileSync(file),
-  }).stdout.trim();
-  return run(['cat-file', 'blob', blob], root).stdout;
+/**
+ * `git clone --single-branch --branch <branch> <url> <dir>`. The clone is made
+ * with core.autocrlf=false and keeps it: the board's bytes in the working tree
+ * are the bytes in the commit, whatever the machine's global line-ending setting.
+ */
+function cloneBranch(url, dir, branch) {
+  const parent = path.dirname(dir);
+  fs.mkdirSync(parent, { recursive: true });
+  const out = run(['clone', '--quiet', '-c', 'core.autocrlf=false', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true, net: true });
+  return out.status === 0 ? { ok: true } : { ok: false, reason: 'clone-failed', detail: out.stderr.trim() };
 }
 
-/** Capture BEFORE the domain mutation, without modifying the caller index. */
-function snapshotBoard(root) {
-  try {
-    const cond = conditionsAt(root);
-    if (!cond.readable || cond.rebasing || cond.unmerged) return { ok: false };
-    const files = {};
-    for (const rel of [BACKLOG_FILE, DEFS_FILE]) {
-      const head = run(['show', `HEAD:${rel}`], root, { allowFailure: true });
-      const index = run(['show', `:${rel}`], root, { allowFailure: true });
-      const entry = run(['ls-files', '--stage', '--', rel], root);
-      files[rel] = {
-        head: head.status === 0 ? head.stdout : null,
-        index: index.status === 0 ? index.stdout : null,
-        working: workingContent(root, rel),
-        mode: entry.stdout.match(/^(\d+) /)?.[1] || '100644',
-      };
-    }
-    return { ok: true, sha: headSha(root), files };
-  } catch {
-    return { ok: false };
-  }
+/** Does `<branch>` exist on `url`? `unknown` when the remote cannot be asked. */
+function remoteHasBranch(url, branch, cwd) {
+  const out = run(['ls-remote', '--exit-code', '--heads', url, `refs/heads/${branch}`], cwd, { allowFailure: true, net: true });
+  if (out.status === 0) return { ok: true, exists: true };
+  if (out.status === 2) return { ok: true, exists: false };
+  return { ok: false, reason: 'remote-unreachable' };
 }
 
-/** Three-way merge; conflicts produce no file/index edits in the caller. */
-function mergeContent(root, temp, current, base, incoming) {
-  if (current === base) return { ok: true, content: incoming };
-  if (incoming === base || current === incoming) return { ok: true, content: current };
-  // Creation/deletion overlap cannot be safely inferred from an empty file.
-  if ([current, base, incoming].some((value) => value === null)) return { ok: false };
-  const names = ['current', 'base', 'incoming'].map((name) => path.join(temp, name));
-  [current, base, incoming].forEach((value, i) => fs.writeFileSync(names[i], value));
-  const merge = run(['merge-file', '-p', ...names], root, { allowFailure: true });
-  return merge.status === 0 ? { ok: true, content: merge.stdout } : { ok: false };
+/** Fetch one branch into `refs/remotes/origin/<branch>`. */
+function fetchBranch(clone, branch) {
+  const out = run(['fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], clone, { allowFailure: true, net: true });
+  return out.status === 0 ? { fetched: true } : { fetched: false, reason: 'fetch-failed' };
 }
 
-function setIndexContent(root, indexFile, rel, content, mode) {
-  const env = { GIT_INDEX_FILE: indexFile };
-  if (content === null) {
-    run(['update-index', '--force-remove', '--', rel], root, { env });
-  } else {
-    const blob = run(['hash-object', '-w', '--stdin'], root, { input: content }).stdout.trim();
-    run(['update-index', '--add', '--cacheinfo', `${mode},${blob},${rel}`], root, { env });
-  }
+/** Commits HEAD has that `origin/<branch>` lacks (ahead) and the reverse (behind). */
+function aheadBehind(clone, branch) {
+  const out = run(['rev-list', '--left-right', '--count', `HEAD...refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  if (out.status !== 0) return { ok: false };
+  const [ahead, behind] = out.stdout.trim().split(/\s+/).map(Number);
+  return { ok: true, ahead, behind };
+}
+
+/** Move the checked-out branch to `origin/<branch>`; only a fast-forward. */
+function fastForward(clone, branch) {
+  const out = run(['merge', '--ff-only', '--quiet', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  return out.status === 0 ? { ok: true, sha: headSha(clone) } : { ok: false, reason: 'not-fast-forward' };
 }
 
 /**
- * Publish only the operation delta onto HEAD through a temporary index.
- * A second index keeps all caller entries, with staged board changes merged
- * onto the new board HEAD. Both merges are verified BEFORE committing.
- * The real index lock is held throughout, then replaced atomically on success.
- * Neither the caller working bytes nor its unrelated index entries are edited.
+ * Rebase the clone's commits onto `origin/<branch>`, once. A conflict is
+ * aborted and verified, as in rebaseOntoFetchHead.
  */
-function commitBoard(root, paths, message, snapshot) {
-  if (!snapshot?.ok || headSha(root) !== snapshot.sha) {
-    return { committed: false, degraded: 'caller-worktree-dirty', sha: headSha(root) };
+function rebaseOnBranch(clone, branch) {
+  // A rebase re-commits, so it needs an identity even on a machine with none.
+  const rebase = run([...identityArgs(clone), 'rebase', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  if (rebase.status === 0) return { ok: true, sha: headSha(clone) };
+  const abort = run(['rebase', '--abort'], clone, { allowFailure: true });
+  const scan = conditionsAt(clone);
+  if (abort.status !== 0 || !scan.readable || scan.rebasing || scan.unmerged) {
+    return { ok: false, reason: 'abort-failed', conflicted: true };
   }
-  let temp; let lock; let lockFd; let committed = false;
-  try {
-    const cond = conditionsAt(root);
-    if (!cond.readable || cond.rebasing || cond.unmerged) {
-      return { committed: false, degraded: 'caller-worktree-dirty', sha: headSha(root) };
-    }
-    temp = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-backlog-index-'));
-    const updates = [];
-    for (const rel of paths) {
-      const before = snapshot.files[rel];
-      const after = workingContent(root, rel);
-      if (before.working === after) continue;
-      const publication = mergeContent(root, temp, before.head, before.working, after);
-      if (!publication.ok) return { committed: false, degraded: 'caller-worktree-dirty' };
-      if (publication.content === before.head) continue;
-      const staged = mergeContent(root, temp, before.index, before.head, publication.content);
-      if (!staged.ok) return { committed: false, degraded: 'caller-worktree-dirty' };
-      updates.push({ rel, content: publication.content, staged: staged.content, mode: before.mode });
-    }
-    if (!updates.length) return { committed: false, sha: headSha(root) };
-
-    const indexPath = path.resolve(root, run(['rev-parse', '--git-path', 'index'], root).stdout.trim());
-    const lockPath = indexPath + '.lock';
-    lockFd = fs.openSync(lockPath, 'wx');
-    lock = lockPath; // Only a lock created by this invocation is ever removed.
-    const publishIndex = path.join(temp, 'publication-index');
-    const callerIndex = path.join(temp, 'caller-index');
-    if (fs.existsSync(indexPath)) fs.copyFileSync(indexPath, callerIndex);
-    else run(['read-tree', 'HEAD'], root, { env: { GIT_INDEX_FILE: callerIndex } });
-    run(['read-tree', 'HEAD'], root, { env: { GIT_INDEX_FILE: publishIndex } });
-    for (const update of updates) {
-      setIndexContent(root, publishIndex, update.rel, update.content, update.mode);
-      setIndexContent(root, callerIndex, update.rel, update.staged, update.mode);
-    }
-    const commit = run(['commit', '-m', message], root, {
-      allowFailure: true, env: { GIT_INDEX_FILE: publishIndex },
-    });
-    if (commit.status !== 0) return { committed: false, sha: headSha(root), failed: true };
-    committed = true;
-    fs.writeFileSync(lockFd, fs.readFileSync(callerIndex));
-    fs.closeSync(lockFd); lockFd = undefined;
-    fs.renameSync(lock, indexPath); lock = undefined;
-    return { committed: true, sha: headSha(root) };
-  } catch {
-    return { committed, sha: headSha(root), failed: true };
-  } finally {
-    if (lockFd !== undefined) fs.closeSync(lockFd);
-    if (lock) fs.rmSync(lock, { force: true });
-    if (temp) fs.rmSync(temp, { recursive: true, force: true });
-  }
+  return { ok: false, reason: 'rebase-conflict', conflicted: true };
 }
 
-// ---------------------------------------------------------------------------
-// The capture worktree: set up, inspect, tear down
-// ---------------------------------------------------------------------------
-
-/** Our tree's absolute path. */
-function ourWorktreePath(root) {
-  return path.resolve(path.join(root, WORKTREE));
+/** push HEAD:refs/heads/<branch> of the clone; a refusal is an answer. */
+function pushBranch(clone, branch) {
+  const out = run(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`], clone, { allowFailure: true, net: true });
+  return out.status === 0 ? { pushed: true } : { pushed: false, reason: 'push-refused' };
 }
 
-/** The leftover tree's own HEAD, when it carries one — the SHA the recovery
- *  refusal names, so the data can be reached by sha after the tree is gone. */
-function leftOverSha(abs) {
-  const head = run(['rev-parse', 'HEAD'], abs, { allowFailure: true });
-  return head.status === 0 ? head.stdout.trim().toLowerCase() : null;
+/** `git show <sha>:<file>` — the file's text at a commit, or null when absent. */
+function showAt(clone, sha, file) {
+  const out = run(['show', `${sha}:${file}`], clone, { allowFailure: true });
+  return out.status === 0 ? out.stdout : null;
+}
+
+/** The sha a ref resolves to, or null. */
+function resolveSha(clone, ref) {
+  return readRef(clone, ref);
+}
+
+/** The first root commit reachable from `ref`, or null. */
+function rootCommit(clone, ref) {
+  const out = run(['rev-list', '--max-parents=0', ref], clone, { allowFailure: true });
+  if (out.status !== 0) return null;
+  const roots = out.stdout.trim().split('\n').filter(Boolean);
+  return roots.length ? roots[roots.length - 1] : null;
 }
 
 /**
- * Everything the sweep-and-create step needs, BEFORE any write happens:
- * - a LOCKED registration refuses: a live capture or a crash holding the
- *   lock — nothing here removes it;
- * - an unlocked registration carrying unsafe conditions refuses with its
- *   path/sha so the data is recoverable the way the run says;
- * - an unlocked clean registration with durably reachable HEAD is swept,
- *   then the tree is created
- *   DETACHED at the base and LOCKED for the whole capture;
- * - `.worktrees/` lands in .gitignore only when absent, matching
- *   build-setup.sh's convention.
+ * The trailers of one commit message as { Key: value }, last one winning.
+ * A trailer is a `Key: value` line in the final paragraph.
  */
-function setupWorktree(root, baseBranch) {
-  const abs = ourWorktreePath(root);
-  const existing = findOurWorktree(root);
-  if (existing) {
-    if (existing.locked) {
-      return { ok: false, refusal: 'worktree-locked', path: abs };
-    }
-    const cond = conditionsAt(abs);
-    const sha = leftOverSha(abs);
-    const refs = sha ? run(['for-each-ref', '--contains', sha, '--format=%(refname)',
-      'refs/heads', 'refs/remotes', RECOVERY_NS], root, { allowFailure: true }) : null;
-    const protectedHead = refs?.status === 0 && Boolean(refs.stdout.trim());
-    const unsafe = !cond.readable || cond.rebasing || cond.unmerged || cond.dirty || cond.staged || !protectedHead;
-    if (unsafe) {
-      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond, sha: leftOverSha(abs) };
-    }
-    run(['worktree', 'remove', abs], root, { allowFailure: true });
-    if (findOurWorktree(root)) run(['worktree', 'prune'], root, { allowFailure: true });
-    if (findOurWorktree(root)) {
-      return { ok: false, refusal: 'worktree-recovery-required', path: abs, cond, sha: leftOverSha(abs) };
-    }
+function commitTrailers(clone, ref) {
+  const out = run(['log', '-1', '--format=%B', ref], clone, { allowFailure: true });
+  if (out.status !== 0) return null;
+  const paragraphs = out.stdout.replace(/\s+$/, '').split(/\n\s*\n/);
+  const last = paragraphs[paragraphs.length - 1] || '';
+  const trailers = {};
+  for (const line of last.split('\n')) {
+    const m = /^([A-Za-z][A-Za-z0-9-]*):\s*(.*)$/.exec(line);
+    if (m) trailers[m[1]] = m[2];
   }
-
-  const gitignore = path.join(root, '.gitignore');
-  if (!fs.existsSync(gitignore)) {
-    fs.writeFileSync(gitignore, '.worktrees/\n', 'utf8');
-  } else if (!fs.readFileSync(gitignore, 'utf8').split('\n').some((l) => l.trim() === '.worktrees/')) {
-    const current = fs.readFileSync(gitignore, 'utf8');
-    fs.writeFileSync(gitignore, (current.endsWith('\n') || current === '' ? current : current + '\n') + '.worktrees/\n', 'utf8');
-  }
-
-  if (run(['worktree', 'add', '--detach', abs, baseBranch], root, { allowFailure: true }).status !== 0) {
-    return { ok: false, degraded: 'worktree-failed', path: abs };
-  }
-  const lock = run(['worktree', 'lock', abs], root, { allowFailure: true });
-  if (lock.status !== 0) {
-    return { ok: true, path: abs, locked: false, degraded: 'worktree-lock-failed' };
-  }
-  return { ok: true, path: abs, locked: true };
+  return trailers;
 }
 
 /**
- * Tear the capture down. Normal exit releases the active capture lock;
- * unsafe retained data is refused by the next sweep. Removal is
- * never forced: a tree that carries anything is retained and reported.
- * `canRemove` is the caller's verified answer, not an assumption.
+ * Commit identity fallback for a clone made on a machine with no git user:
+ * `-c` arguments to put before the subcommand, empty when one is configured.
  */
-function teardownWorktree(root, canRemove) {
-  const abs = ourWorktreePath(root);
-  const unlock = run(['worktree', 'unlock', abs], root, { allowFailure: true });
-  if (!canRemove) {
-    return { removed: false, path: abs, unlocked: unlock.status === 0 };
-  }
-  const removed = run(['worktree', 'remove', abs], root, { allowFailure: true }).status === 0;
-  return { removed, path: abs };
+function identityArgs(clone) {
+  const name = run(['config', 'user.name'], clone, { allowFailure: true });
+  const email = run(['config', 'user.email'], clone, { allowFailure: true });
+  const args = [];
+  if (name.status !== 0 || !name.stdout.trim()) args.push('-c', 'user.name=codeadd-board');
+  if (email.status !== 0 || !email.stdout.trim()) args.push('-c', 'user.email=board@codeadd.invalid');
+  return args;
+}
+
+/** Stage the named files and commit them in the clone. */
+function commitFiles(clone, files, message) {
+  const id = identityArgs(clone);
+  const add = run(['add', '--', ...files], clone, { allowFailure: true });
+  if (add.status !== 0) return { committed: false, failed: true, sha: headSha(clone) };
+  const staged = run(['diff', '--cached', '--quiet'], clone, { allowFailure: true });
+  if (staged.status === 0) return { committed: false, sha: headSha(clone) };
+  const commit = run([...id, 'commit', '--quiet', '-m', message], clone, { allowFailure: true });
+  if (commit.status !== 0) return { committed: false, failed: true, sha: headSha(clone) };
+  return { committed: true, sha: headSha(clone) };
 }
 
 module.exports = {
   GitError,
   run,
-  discoverBase,
-  currentBranch,
-  listWorktrees,
-  findOurWorktree,
-  worktreesCheckedOutAt,
   conditionsAt,
   readRef,
   protectCommit,
   releaseOwnedRef,
   isAncestor,
-  advanceBaseIfUnlocked,
-  fetchBase,
-  rebaseOntoFetchHead,
   headSha,
-  pushToBase,
-  snapshotBoard,
-  commitBoard,
-  ourWorktreePath,
-  setupWorktree,
-  teardownWorktree,
-  WORKTREE,
+  cloneBranch,
+  remoteHasBranch,
+  fetchBranch,
+  aheadBehind,
+  fastForward,
+  rebaseOnBranch,
+  pushBranch,
+  showAt,
+  resolveSha,
+  rootCommit,
+  commitTrailers,
+  identityArgs,
+  commitFiles,
   RECOVERY_NS,
   BACKLOG_FILE,
   DEFS_FILE,

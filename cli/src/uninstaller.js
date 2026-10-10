@@ -37,6 +37,9 @@ function walkDir(dir, cwd) {
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
       const full = path.join(d, entry.name);
       if (entry.isDirectory()) {
+        // A git clone under an ADD directory (the board clones in ~/.codeadd) is the
+        // user's data, with commits that may not be pushed: never listed, never removed.
+        if (fs.existsSync(path.join(full, '.git'))) continue;
         walk(full);
       } else {
         results.push(path.relative(cwd, full).replace(/\\/g, '/'));

@@ -214,7 +214,7 @@ F-block complete, whatever STEP 9 answered. The product's add-build writes it on
 `in-review` as "a pull request is open", which is no longer always true of this repository's board.
 -->
 
-**A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
+**A ticket on the project board travels through the four stages and moves on the board as the work
 does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
 What each status MEANS — the nine names, the seven columns, the pairs of a running and a parked status —
 is the product's phase model, `add--backlog/references/phases.md`; this section is the internal procedure.
@@ -272,8 +272,10 @@ IF THE OPERATOR SAYS "DO NOT PUSH":
   ✅ DO: Name each write's `SHA` in the stage's report
 ```
 
-**What reaches `main` is only `docs/backlog.jsonl`**, and `backlog-commit.cjs` carries it by its own route, described under **How a write is made**. Under a
-"do not push" instruction the branch is not pushed and no PR is opened.
+**A board write reaches only the `board` branch**, never `main` and never the branch being built, and
+`backlog-commit.cjs` carries it by its one route, described under **How a write is made**. Under a
+"do not push" instruction the code branch is not pushed and no PR is opened; the board write still
+pushes `board`, which is not a code branch.
 
 **The product's `feature` field has no internal counterpart.** There is no feature id here; it stays `null`.
 
@@ -285,14 +287,14 @@ both come from the detail, never from a summary. No match (`TICKETS_RETURNED=0`,
 is not on the board: report it and continue with no ticket.
 
 ```bash
-git fetch origin main
-node framwork/.codeadd/scripts/backlog-cli.cjs get <id> --ref origin/main
+node framwork/.codeadd/scripts/backlog-cli.cjs get <id>
 ```
 
-**The read comes from `origin/main`, never from the checked-out copy.** Every board write lands on `main`
-and never on the branch being built, so the branch's own `docs/backlog.jsonl` is as old as the branch: it
-still says `planned` after the `doing` and `in-review` writes landed. The fetch is part of the read — a
-stale `origin/main` answers stale. `--ref` is the same read for `list` and `search`.
+**The read comes from the board clone, never from the checked-out copy.** The board lives on its own
+`board` branch, in one clone per project outside every worktree, so every branch reads the same board and
+none is as old as itself. `get` syncs the clone on its own (at most once per 30 s): there is no
+`git fetch` to run and no `--ref`, which was removed. `SYNC=degraded` or `SYNC=skipped` in the output means
+the answer came from the clone without a fresh fetch.
 
 A subject, not an id, is resolved with `search`, which runs over every status and also answers an
 exact id; a `list --all` summary remains the board view for choosing, never the source of ticket
@@ -338,10 +340,10 @@ The Node entry also supports stdin when `--record-file` is absent; agents use th
 product procedure does, and the stage reports the `work_id` it replaced. **`doing` and `work_id` travel in ONE
 write**, so the two can never disagree about whether the work started.
 
-The entry picks its own route: on `main` it commits directly, on a feature branch it writes through a
-locked worktree, so the ticket reaches `main` without touching the branch being built. **That is why the
-brainstorm and the plan can write the board**: they write no file on the branch, and the board write never
-touches it either.
+The entry has ONE route, whatever branch or worktree it runs in: it takes the board clone's lock, brings
+the clone level with the remote, writes, commits and pushes `board`, and reports `ROUTE=board` and
+`BOARD_DIR`. **That is why the brainstorm and the plan can write the board**: they write no file on the
+branch, and the board write never touches it either.
 
 ### Degradations — none of them is a stop
 
@@ -351,10 +353,11 @@ relationship between the work and the note about the work.
 | State | Do |
 |---|---|
 | No `ticket:` / no `> **Ticket:**` | Nothing. Most work never came from a ticket |
-| `BACKLOG_PRESENT=no` | Nothing |
+| `BACKLOG_PRESENT=no`, or `REFUSED=board-not-configured` on a write | Nothing. This project has no board |
+| `ERROR=board-migration-required`, `ERROR=board-branch-missing`, `ERROR=board-checkout-missing` or `ERROR=board-locked` | Report the error and which write it stopped, continue with no ticket. Never create the branch, the clone or the config by hand |
 | The id is not on the board | Report it, continue with no ticket |
 | `REFUSED=unknown-status` — this repository's definitions file does not define the status | Report which status, continue. Never pick another status by its `order` |
-| `DEGRADED=<reason>` | Report what did not happen and the local `SHA`, continue. Never push or rebase by hand |
+| `DEGRADED=<reason>` | Report what did not happen and the local `SHA` (it is in the board clone, ref-protected, and the next write pushes it), continue. Never push or rebase by hand |
 
 ```
 IF A TICKET READ OR WRITE FAILS:

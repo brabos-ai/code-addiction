@@ -174,6 +174,23 @@ describe('uninstall', () => {
     expect(fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8')).toBe('node_modules/\n');
   });
 
+  it('global corrupted-manifest fallback never touches a board clone under ~/.codeadd', async () => {
+    // The board clones live at ~/.codeadd/<project-key>/board/ and may hold commits that
+    // are not pushed yet: they are the user's data, not an ADD file.
+    const clone = path.join(tmpDir, '.codeadd', 'github.com', 'org', 'repo', 'board');
+    fs.mkdirSync(path.join(clone, '.git'), { recursive: true });
+    fs.mkdirSync(path.join(clone, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(clone, '.git', 'HEAD'), 'ref: refs/heads/board\n');
+    fs.writeFileSync(path.join(clone, 'docs', 'backlog.jsonl'), '{"id":"0001B"}\n');
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'not json{{{', 'utf8');
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true, 'global');
+
+    expect(fs.readFileSync(path.join(clone, 'docs', 'backlog.jsonl'), 'utf8')).toBe('{"id":"0001B"}\n');
+    expect(fs.existsSync(path.join(clone, '.git', 'HEAD'))).toBe(true);
+  });
+
   it('global manifest-driven uninstall does not remove a .gitignore block', async () => {
     const ocDir = path.join(tmpDir, '.config', 'opencode', 'skills', 'add');
     fs.mkdirSync(ocDir, { recursive: true });
