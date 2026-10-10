@@ -184,7 +184,7 @@ describe('install command e2e', () => {
     expect(manifest.source).toBe('tag');
   });
 
-  // The six canonical backlog modules are what let an installed project's
+  // The seven canonical backlog modules are what let an installed project's
   // agents reach the shared core, run the local needs natively, and publish
   // (plan 2026-10-04T004044-PLAN--native-node-backlog, F4). They are packaged
   // as ordinary scripts siblings, so this proves the entry point actually
@@ -193,7 +193,7 @@ describe('install command e2e', () => {
   describe('backlog canonical modules (L4.2)', () => {
     const CANONICAL = [
       'backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs',
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs', 'backlog-board.cjs',
     ];
     const WRAPPERS = ['backlog.sh', 'backlog-commit.sh'];
     const SCRIPTS_DIR = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
@@ -245,7 +245,7 @@ describe('install command e2e', () => {
       expect(result).toContain('BACKLOG_PRESENT=no');
     });
 
-    it('ships only the six Node modules, preserving their bytes and retiring shell entries', async () => {
+    it('ships only the seven Node modules, preserving their bytes and retiring shell entries', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
 
@@ -291,6 +291,9 @@ describe('install command e2e', () => {
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
 
+      // The board is read from a clone: the installed project is both the code
+      // repository and the clone here (CODEADD_BOARD_DIR points at it).
+      execFileSync('git', ['init', '-q'], { cwd: tmpDir });
       fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
       fs.writeFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'),
         JSON.stringify({
@@ -302,7 +305,7 @@ describe('install command e2e', () => {
 
       const { spawnSync } = await import('node:child_process');
       const run = (args) => spawnSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', ...args], {
-        cwd: tmpDir, encoding: 'utf8',
+        cwd: tmpDir, encoding: 'utf8', env: { ...process.env, CODEADD_BOARD_DIR: tmpDir },
       });
 
       const summary = run(['list', '--all']);
@@ -332,14 +335,15 @@ describe('install command e2e', () => {
       expect(result.stdout).toContain('ERROR=read-mode');
     });
 
-    it('an installed project runs the native PUBLICATION entry — a local write lands', async () => {
+    it('an installed project runs the native PUBLICATION entry — a write lands on the board clone', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
 
       // The installed project runs git + the installed publication entry,
-      // with no source checkout anywhere on the import path. No remote: the
-      // write lands locally and the report says it did.
+      // with no source checkout anywhere on the import path. The project is the
+      // board clone (CODEADD_BOARD_DIR) with no remote: the write is committed
+      // in the clone and the report says the fetch could not happen.
       execFileSync('git', ['init', '-b', 'main', '.'], { cwd: tmpDir });
       execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmpDir });
       execFileSync('git', ['config', 'user.name', 'test'], { cwd: tmpDir });
@@ -351,17 +355,17 @@ describe('install command e2e', () => {
       const { spawnSync } = await import('node:child_process');
       const result = spawnSync(process.execPath, [
         '.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', path.join('installed-publish.json'),
-      ], { cwd: tmpDir, encoding: 'utf8' });
+      ], { cwd: tmpDir, encoding: 'utf8', env: { ...process.env, CODEADD_BOARD_DIR: tmpDir } });
       expect(result.status).toBe(0);
-      expect(result.stdout).toContain('ROUTE=direct');
+      expect(result.stdout).toContain('ROUTE=board');
       expect(result.stdout).toContain('COMMITTED=yes');
-      expect(result.stdout).toContain('DEGRADED=no-remote');
+      expect(result.stdout).toContain('DEGRADED=fetch-failed');
       expect(result.stdout).toContain('TICKET_ID=0001B');
       const board = fs.readFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'), 'utf8');
       expect(board).toContain('"title":"installed write"');
     });
 
-    it('a solved-native write in the installed project lands through its own files', async () => {
+    it('a write through the installed read-only CLI is refused and names the publication entry', async () => {
       mocks.getLatestTag.mockResolvedValue('v1.0.0');
       mocks.downloadReleaseAsset.mockResolvedValue(buildBacklogZip());
       await install(tmpDir);
@@ -376,10 +380,10 @@ describe('install command e2e', () => {
       ], {
         cwd: tmpDir, encoding: 'utf8',
       });
-      expect(result.status).toBe(0);
-      expect(result.stdout).toContain('TICKET_ID=0001B');
-      const board = fs.readFileSync(path.join(tmpDir, 'docs', 'backlog.jsonl'), 'utf8');
-      expect(board).toContain('"title":"installed native write"');
+      expect(result.status).toBe(2);
+      expect(result.stdout).toContain('ERROR=write-mode');
+      expect(result.stdout).toContain('backlog-commit.cjs');
+      expect(fs.existsSync(path.join(tmpDir, 'docs', 'backlog.jsonl'))).toBe(false);
     });
 
     it('refreshes every module together on update, never one at a time', async () => {
