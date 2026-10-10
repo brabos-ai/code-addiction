@@ -150,7 +150,9 @@ IF `--ticket` WAS GIVEN WITHOUT `--fix`:
 
 **Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
-When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding — as a numbered item with a RECOMMENDED line, in the same batch as any other open question (`add-interaction`).
+When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
+
+That confirmation is one numbered item with a RECOMMENDED line, in the same batch as any other open question (`add-interaction`).
 
 **With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
 
