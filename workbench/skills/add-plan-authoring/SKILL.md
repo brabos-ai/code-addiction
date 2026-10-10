@@ -251,7 +251,7 @@ link costs one manual update; a wrong one costs the board's credibility.
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
 | | STEP 10, before the report | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
 | `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` |
-| `add-framework--release` (stable only) | its ticket-closing sub-step of STEP 7, after the tag is pushed | lists `awaiting-release` and writes each ticket | `release` = the tag name and `done`, one write per ticket |
+| `add-framework--release` (stable only) | its ticket-closing sub-step of STEP 7, after the tag is pushed | one `release <tag>` write closes every `awaiting-release` ticket | `release` = the tag name and `done`, one write for all of them |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
 | | STEP 8, first, before any deletion | — | `awaiting-release` or `done`, by the same rule |
 
