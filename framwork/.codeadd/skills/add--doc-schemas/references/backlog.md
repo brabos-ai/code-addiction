@@ -3,9 +3,10 @@
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes **two
 machine-readable files**: `docs/backlog.jsonl`, one JSON object per line, and `docs/backlog.definitions.json`,
-its status vocabulary. **The canonical writer is the backlog Node core.** The local entry
-(`.codeadd/scripts/backlog-cli.cjs`) and the publication entry (`.codeadd/scripts/backlog-commit.cjs`) read
-and write both files. Local operations need Node >= 22.19.0; publication also needs Git.
+its status vocabulary. **Both live on the project's `board` branch, in the board clone, not in the code
+checkout.** **The canonical writer is the backlog Node core.** The read entry (`.codeadd/scripts/backlog-cli.cjs`)
+only reads them; the publication entry (`.codeadd/scripts/backlog-commit.cjs`) is the only writer. Reads need
+Node >= 22.19.0 and Git; publication needs Git and the remote.
 Invoke the entries directly with Node — no Bash or WSL bridge.
 Neither file has a frontmatter
 template, an `id:` under the skill's ID convention, a TL;DR, a depth floor or a Decision Log, because none
@@ -243,8 +244,8 @@ Each is testable, and each has a `REFUSED=` name below.
    `move --after`.
 
 Two further promises are structural rather than submittable, so they carry no `REFUSED=` name:
-**the local CLI never commits**, and **`docs/backlog.definitions.json` is never rewritten once it exists**.
-The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
+**the CLI only reads** (a write mode exits 2 with `ERROR=write-mode`), and **`docs/backlog.definitions.json`
+is never rewritten once it exists**. The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
 `backlog.bats` proves definitions preservation.
 
 ## `REFUSED=` vocabulary
@@ -272,8 +273,10 @@ consumer branch once.
 ## Exit codes
 
 The backlog follows the script family's three-code doctrine, with the same single departure
-`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the local
-`backlog-cli.cjs` and the publication `backlog-commit.cjs`.
+`delivered.cjs` makes — and it is the backlog Node core that owns it, through every entry: the read
+`backlog-cli.cjs` and the publication `backlog-commit.cjs`. The board states add `ERROR=board-migration-required`,
+`ERROR=board-branch-missing`, `ERROR=board-checkout-missing` and `ERROR=board-locked` at exit **1**, and
+`REFUSED=board-not-configured` at exit **2**.
 
 | Exit | Means |
 |---|---|

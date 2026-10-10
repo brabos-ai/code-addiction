@@ -150,7 +150,7 @@ Other doc types (`AUDIT-<date>`, `DIAG-<slug>`, `COPY-<slug>`, `LAND-<slug>`, `B
 
 **`{{skill:add--id-convention/SKILL.md}}` is the owner of the `[NNNN][L]` shape, the counter, and the
 allocation command.** Load it before allocating, allocate through `status.cjs next-id <LETTER>` (or, for
-a backlog ticket, through the native `backlog-cli.cjs add` itself), and never hand-roll an id — one
+a backlog ticket, through the native `backlog-commit.cjs add` itself), and never hand-roll an id — one
 manual grep here and the manual copy could hand out a number second, under an old allocator that stays
 open instead of the shipped one. Never reuse an ID even if the doc is deleted.
 
