@@ -247,12 +247,12 @@ The script tags whatever branch is CHECKED OUT. Checkout the right one first:
 
 Tagging `main` on a stable release produces a tag that does not point at the released production merge. This happened on v0.7.0.
 
-After the tag is pushed, checkout `main` to restore the working branch.
-
 Run:
 ```bash
 node scripts/create-release-tag.cjs
 ```
+
+After the tag is pushed, checkout `main` to restore the working branch.
 
 The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, hard-fails while `cli/package-lock.json` is out of sync (the v0.8.0 lesson: the CI smoke gate fires only after the tag is pushed), fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
 
@@ -288,10 +288,10 @@ For EACH id it prints, make one write through `backlog-commit.cjs`, with the rec
 
 ```bash
 node framwork/.codeadd/scripts/backlog-commit.cjs update <id> --record-file docs/.tmp-ticket.json
-# record: {"release":"v<STEP 3 version>","status":"done"}
+# record: {"release":"<NEXT_VERSION>","status":"done"}
 ```
 
-`release` is the tag name: `v` plus the version STEP 3 chose. `status` and `release` travel in the same write.
+`release` is the tag name: `NEXT_VERSION` exactly as STEP 3 stored it, which already starts with `v` (for example `v0.9.0`). `status` and `release` travel in the same write.
 
 ```
 IF THE LIST PRINTS `BACKLOG_PRESENT=no`, `TICKETS_RETURNED=0`, OR AN ERROR:
@@ -307,8 +307,7 @@ IF A TICKET IS NOT IN `awaiting-release`:
   ✅ DO: Leave it — only the status names a ticket here, never a guess from the commits or the changelog
 ```
 
-The degradations in **The Ticket** of `add-plan-authoring` apply to every write here. **The board is a side-record:
-a failure here never undoes the release.** The tickets close when the tag is pushed, not when the pipeline goes green.
+The degradations in **The Ticket** of `add-plan-authoring` apply to every write here.
 
 ---
 

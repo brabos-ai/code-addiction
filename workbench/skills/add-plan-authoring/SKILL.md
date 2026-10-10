@@ -205,13 +205,12 @@ nonexistent internal/script/ node and fail the graph gate. This
 repository is those scripts' source and calls them by repository path, as
 add-framework--done calls delivered.cjs.
 
-The eight statuses written (the seven writes, where `done` becomes `awaiting-release` for a project that opted in) and the two rules below are held equal to the product's by
+The statuses written (seven writes; `done` becomes `awaiting-release` for a project that opted in, so eight names) and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
 
 The one deliberate difference: the internal `in-review` condition is the build reaching STEP 10 with every
 F-block complete, whatever STEP 9 answered. The product's add-build writes it on `Publish:` `pr-opened` or
-`pr-updated` only (lifecycle.md). The product side is not changed — and `add--backlog/references/phases.md` still reads
-`in-review` as "a pull request is open", which is no longer always true of this repository's board.
+`pr-updated` only (lifecycle.md). The product side is not changed. `add--backlog/references/phases.md` says the board shows `in-review` as written and does not check that a PR is open.
 -->
 
 **A ticket on the project board travels through the four stages and moves on the board as the work
@@ -252,6 +251,7 @@ link costs one manual update; a wrong one costs the board's credibility.
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
 | | STEP 10, before the report | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
 | `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` |
+| `add-framework--release` (stable only) | its ticket-closing sub-step of STEP 7, after the tag is pushed | lists `awaiting-release` and writes each ticket | `release` = the tag name and `done`, one write per ticket |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
 | | STEP 8, first, before any deletion | — | `awaiting-release` or `done`, by the same rule |
 

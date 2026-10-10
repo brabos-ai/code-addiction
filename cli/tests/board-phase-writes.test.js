@@ -3,7 +3,7 @@
  * checkpoint 3). Every write is a step an agent reads, so what this suite can
  * hold is the TEXT that tells the agent: which section carries which write,
  * that each one points at the lifecycle reference instead of restating it, and
- * that the product and internal pipelines name the same seven statuses.
+ * that the product and internal pipelines name the same writes (seven writes, eight status names).
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -59,7 +59,7 @@ describe('L11.2/L11.3 -- lifecycle.md carries the procedure', () => {
   });
 
   // The per-command section, not the whole file: The Status Names already lists
-  // all nine, so a whole-file check would pass without a single write declared.
+  // all ten, so a whole-file check would pass without a single write declared.
   it('declares every one of the seven writes in its per-command section', () => {
     const s = lifecycle();
     const a = s.indexOf('## Per Command');
@@ -193,7 +193,7 @@ describe('L2.2 -- the add-done write parks a merged ticket when the project opte
     const sub = rel.slice(a, rel.indexOf('\n## ', a + 5));
     expect(sub).toContain('list --status awaiting-release');
     expect(sub).toContain('backlog-commit.cjs');
-    expect(sub).toContain('"release":"v');
+    expect(sub).toContain('"release":"<NEXT_VERSION>"');
     expect(sub).toContain('"status":"done"');
     expect(rel).toMatch(/STEP 7: Push tag[^\n]*awaiting-release/);
     expect(rel).toMatch(/IF release type = beta, OR the tag was not pushed:\n[^\n]*backlog-commit\.cjs/);
