@@ -301,7 +301,7 @@ function installScripts(p) {
 
 const runLone = (file, p, args = []) => h.runNode([file, ...args], { cwd: p.repo, env: p.env });
 const sameDir = (a, b) => fs.realpathSync(a) === fs.realpathSync(b);
-const ignored = (p) => h.git(p.repo, ['check-ignore', '-q', '.codeadd/board.json']).status === 0;
+const ignored = (p) => h.git(p.repo, ['check-ignore', '--no-index', '-q', '.codeadd/board.json']).status === 0;
 
 test('migrate-board#013 — L1.6: the script downloaded ALONE runs with the project\'s own .codeadd/scripts', (t) => {
   const p = project(t);
