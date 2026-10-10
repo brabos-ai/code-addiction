@@ -534,6 +534,130 @@ function teardownWorktree(root, canRemove) {
   return { removed, path: abs };
 }
 
+// ---------------------------------------------------------------------------
+// The board clone: primitives for ONE named branch of a single-branch clone
+// ---------------------------------------------------------------------------
+// backlog-board.cjs composes these. Every failure is an answer (`ok: false`
+// plus a reason), never a throw, because the callers degrade instead of dying.
+
+/** `git clone --single-branch --branch <branch> <url> <dir>`. */
+function cloneBranch(url, dir, branch) {
+  const parent = path.dirname(dir);
+  fs.mkdirSync(parent, { recursive: true });
+  const out = run(['clone', '--quiet', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true });
+  return out.status === 0 ? { ok: true } : { ok: false, reason: 'clone-failed', detail: out.stderr.trim() };
+}
+
+/** Does `<branch>` exist on `url`? `unknown` when the remote cannot be asked. */
+function remoteHasBranch(url, branch, cwd) {
+  const out = run(['ls-remote', '--exit-code', '--heads', url, `refs/heads/${branch}`], cwd, { allowFailure: true });
+  if (out.status === 0) return { ok: true, exists: true };
+  if (out.status === 2) return { ok: true, exists: false };
+  return { ok: false, reason: 'remote-unreachable' };
+}
+
+/** Fetch one branch into `refs/remotes/origin/<branch>`. */
+function fetchBranch(clone, branch) {
+  const out = run(['fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  return out.status === 0 ? { fetched: true } : { fetched: false, reason: 'fetch-failed' };
+}
+
+/** Commits HEAD has that `origin/<branch>` lacks (ahead) and the reverse (behind). */
+function aheadBehind(clone, branch) {
+  const out = run(['rev-list', '--left-right', '--count', `HEAD...refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  if (out.status !== 0) return { ok: false };
+  const [ahead, behind] = out.stdout.trim().split(/\s+/).map(Number);
+  return { ok: true, ahead, behind };
+}
+
+/** Move the checked-out branch to `origin/<branch>`; only a fast-forward. */
+function fastForward(clone, branch) {
+  const out = run(['merge', '--ff-only', '--quiet', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  return out.status === 0 ? { ok: true, sha: headSha(clone) } : { ok: false, reason: 'not-fast-forward' };
+}
+
+/**
+ * Rebase the clone's commits onto `origin/<branch>`, once. A conflict is
+ * aborted and verified, as in rebaseOntoFetchHead.
+ */
+function rebaseOnBranch(clone, branch) {
+  const rebase = run(['rebase', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  if (rebase.status === 0) return { ok: true, sha: headSha(clone) };
+  const abort = run(['rebase', '--abort'], clone, { allowFailure: true });
+  const scan = conditionsAt(clone);
+  if (abort.status !== 0 || !scan.readable || scan.rebasing || scan.unmerged) {
+    return { ok: false, reason: 'abort-failed', conflicted: true };
+  }
+  return { ok: false, reason: 'rebase-conflict', conflicted: true };
+}
+
+/** push HEAD:refs/heads/<branch> of the clone; a refusal is an answer. */
+function pushBranch(clone, branch) {
+  const out = run(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`], clone, { allowFailure: true });
+  return out.status === 0 ? { pushed: true } : { pushed: false, reason: 'push-refused' };
+}
+
+/** `git show <sha>:<file>` — the file's text at a commit, or null when absent. */
+function showAt(clone, sha, file) {
+  const out = run(['show', `${sha}:${file}`], clone, { allowFailure: true });
+  return out.status === 0 ? out.stdout : null;
+}
+
+/** The sha a ref resolves to, or null. */
+function resolveSha(clone, ref) {
+  return readRef(clone, ref);
+}
+
+/** The first root commit reachable from `ref`, or null. */
+function rootCommit(clone, ref) {
+  const out = run(['rev-list', '--max-parents=0', ref], clone, { allowFailure: true });
+  if (out.status !== 0) return null;
+  const roots = out.stdout.trim().split('\n').filter(Boolean);
+  return roots.length ? roots[roots.length - 1] : null;
+}
+
+/**
+ * The trailers of one commit message as { Key: value }, last one winning.
+ * A trailer is a `Key: value` line in the final paragraph.
+ */
+function commitTrailers(clone, ref) {
+  const out = run(['log', '-1', '--format=%B', ref], clone, { allowFailure: true });
+  if (out.status !== 0) return null;
+  const paragraphs = out.stdout.replace(/\s+$/, '').split(/\n\s*\n/);
+  const last = paragraphs[paragraphs.length - 1] || '';
+  const trailers = {};
+  for (const line of last.split('\n')) {
+    const m = /^([A-Za-z][A-Za-z0-9-]*):\s*(.*)$/.exec(line);
+    if (m) trailers[m[1]] = m[2];
+  }
+  return trailers;
+}
+
+/**
+ * Commit identity fallback for a clone made on a machine with no git user:
+ * `-c` arguments to put before the subcommand, empty when one is configured.
+ */
+function identityArgs(clone) {
+  const name = run(['config', 'user.name'], clone, { allowFailure: true });
+  const email = run(['config', 'user.email'], clone, { allowFailure: true });
+  const args = [];
+  if (name.status !== 0 || !name.stdout.trim()) args.push('-c', 'user.name=codeadd-board');
+  if (email.status !== 0 || !email.stdout.trim()) args.push('-c', 'user.email=board@codeadd.invalid');
+  return args;
+}
+
+/** Stage the named files and commit them in the clone. */
+function commitFiles(clone, files, message) {
+  const id = identityArgs(clone);
+  const add = run(['add', '--', ...files], clone, { allowFailure: true });
+  if (add.status !== 0) return { committed: false, failed: true, sha: headSha(clone) };
+  const staged = run(['diff', '--cached', '--quiet'], clone, { allowFailure: true });
+  if (staged.status === 0) return { committed: false, sha: headSha(clone) };
+  const commit = run([...id, 'commit', '--quiet', '-m', message], clone, { allowFailure: true });
+  if (commit.status !== 0) return { committed: false, failed: true, sha: headSha(clone) };
+  return { committed: true, sha: headSha(clone) };
+}
+
 module.exports = {
   GitError,
   run,
@@ -557,6 +681,19 @@ module.exports = {
   ourWorktreePath,
   setupWorktree,
   teardownWorktree,
+  cloneBranch,
+  remoteHasBranch,
+  fetchBranch,
+  aheadBehind,
+  fastForward,
+  rebaseOnBranch,
+  pushBranch,
+  showAt,
+  resolveSha,
+  rootCommit,
+  commitTrailers,
+  identityArgs,
+  commitFiles,
   WORKTREE,
   RECOVERY_NS,
   BACKLOG_FILE,
