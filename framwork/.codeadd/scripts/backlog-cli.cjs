@@ -36,6 +36,7 @@
  */
 
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const core = require('./backlog-core.cjs');
 const idc = require('./backlog-id.cjs');
@@ -338,7 +339,8 @@ function renderOperation(result, view = 'summary') {
  */
 function boardForRead() {
   const res = board.resolve(process.cwd());
-  if (res.state === 'none') return { root: res.codeRoot || process.cwd(), header: [] };
+  // No board: answer from a root that does not exist, never from the checkout.
+  if (res.state === 'none') return { root: path.join(os.tmpdir(), 'codeadd-no-board'), header: [] };
   if (res.state !== 'ready') {
     process.stdout.write('ERROR=board-' + res.state + '\n');
     if (res.state === 'migration-required') {

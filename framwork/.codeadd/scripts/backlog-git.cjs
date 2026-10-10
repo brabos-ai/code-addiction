@@ -220,7 +220,8 @@ function fastForward(clone, branch) {
  * aborted and verified, as in rebaseOntoFetchHead.
  */
 function rebaseOnBranch(clone, branch) {
-  const rebase = run(['rebase', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  // A rebase re-commits, so it needs an identity even on a machine with none.
+  const rebase = run([...identityArgs(clone), 'rebase', `refs/remotes/origin/${branch}`], clone, { allowFailure: true });
   if (rebase.status === 0) return { ok: true, sha: headSha(clone) };
   const abort = run(['rebase', '--abort'], clone, { allowFailure: true });
   const scan = conditionsAt(clone);
