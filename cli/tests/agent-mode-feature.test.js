@@ -428,3 +428,30 @@ describe('F25 -- add-interaction is the one internal rule for a stop that asks',
     expect(text).toMatch(/no structured-question tool|never call a structured-question tool/i);
   });
 });
+
+describe('F26 -- the internal brainstorm asks in batches', () => {
+  const text = () => wb('skills', 'add-framework--brainstorm', 'SKILL.md');
+
+  it('points at add-interaction and declares it', () => {
+    expect(text()).toContain('`add-interaction`');
+    expect(text()).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+
+  it('no longer asks one at a time or through a structured-question tool', () => {
+    const t = text();
+    expect(t).not.toMatch(/Ask questions one per message/);
+    expect(t).not.toMatch(/Ask ONE clarifying question/);
+    expect(t).not.toMatch(/Ask one question at a time/);
+    expect(t).not.toMatch(/Ask through the provider.s structured-question tool/);
+    expect(t).not.toMatch(/Present it through the provider's\s+structured-question tool/);
+    expect(t).not.toMatch(/The workbench no longer ships to one provider/);
+  });
+
+  it('8.1 stays without a recommendation and says so', () => {
+    const t = text();
+    const at = t.indexOf('\n### 8.1 ');
+    expect(at).toBeGreaterThan(-1);
+    const slice = t.slice(at, at + 5000);
+    expect(slice).toMatch(/no RECOMMENDED line, on purpose/);
+  });
+});

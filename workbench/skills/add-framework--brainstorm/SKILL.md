@@ -15,6 +15,7 @@ description: "Use when an idea for the framework itself needs shaping before any
 - mention: add-framework--done
 - handoff: add-framework--plan
 - skill: add-plan-authoring
+- skill: add-interaction
 - skill: building-commands/references/agent-dispatch.md
 - mention: building-commands
 -->
@@ -182,7 +183,7 @@ IF STARTING STEP 2:
   ⛔ DO NOT: Ask "what is your objective?" and wait — someone who could state it cold would have
   ⛔ DO NOT: Hand back the request as the objective — "you want X" names the thing, not what it achieves
   ⛔ DO NOT: Continue to 2.1.2 or 2.2 with the objective still unstated
-  ✅ DO: Propose the draft, then let them correct it
+  ✅ DO: Propose the draft as item 1 of the first question batch (`add-interaction`), then let them correct it
 ```
 
 **Drafting it is the work, not a courtesy.** A user brings a problem, a symptom or a half-formed idea;
@@ -197,7 +198,7 @@ plan.
 
 #### 2.1.2 Then refine it
 
-Ask questions one per message. Each one sharpens the objective or the shape of the work:
+Put every question the objective still needs into one batch, with the draft as its item 1 (`add-interaction`). Each one sharpens the objective or the shape of the work:
 
 - Purpose: "What problem does this solve?"
 - Users: "Who benefits from this?"
@@ -338,15 +339,15 @@ If idea involves:
 
 If umbrella-worthy:
 
-Present: "This idea breaks into N topics: [Topic 1], [Topic 2], [Topic 3]. Should we:
-- A) Explore all together in an umbrella spec + refine each topic separately later?
-- B) Start with just [Topic 1] first, then add the others?"
+Ask it as one numbered item with a RECOMMENDED line (`add-interaction`): "This idea breaks into N topics: [Topic 1], [Topic 2], [Topic 3]. Should we:
+- a) Explore all together in an umbrella spec + refine each topic separately later?
+- b) Start with just [Topic 1] first, then add the others?"
 
-Wait for response → adjust approach.
+Put it in the same batch as the other open questions, then apply the answer → adjust approach.
 
 ### 3.3 Confirm Approach With User
 
-Before proceeding to exploration, confirm:
+Before proceeding to exploration, state and confirm — as an item of the same batch (`add-interaction`):
 - Simple idea → single design doc
 - Complex idea → umbrella spec + subtopic refinement flow
 
@@ -379,13 +380,13 @@ full set.
 
 ### 4.2 Question Loop
 
-For each section:
-1. Ask ONE clarifying question related to the section, **and say which answer you would give**
-2. User responds
-3. Check: Is this section 100% clear and validated?
-   - If NO → ask follow-up question (return to step 2 of this loop)
+For each round:
+1. Put every clarifying question the open sections need into ONE batch (`add-interaction`), **each with the answer you would give**
+2. User answers the batch
+3. Check: Is each section 100% clear and validated?
+   - If NO → the follow-up questions go out as the next batch (return to step 2 of this loop)
    - If YES → move to next section
-4. When all sections complete → confirm with user: "Does this summary match your vision?"
+4. When all sections complete → confirm with user, as a numbered item: "Does this summary match your vision?"
 
 **Every question carries a recommendation (MANDATORY).** Name the option you would take and why.
 Never a generic "it depends".
@@ -425,15 +426,8 @@ IF ASKING A QUESTION WITH OPTIONS:
 **A command that exists to help someone decide, and refuses to say what it would do, has handed the
 work back.** The user still chooses — they now choose against a position.
 
-**Ask through the provider’s structured-question tool** where the `structuredQuestions` capability
-declares one, marking the recommended option. Where it declares none, present the same content as an
-option table with the recommendation stated below it.
-
-⛔ **The workbench no longer ships to one provider, and that sentence used to say it did.** It built
-to Claude Code alone, so this step could assume a structured-question tool and keep no fallback.
-`workbench/provider-map.json` now targets opencode too, which declares `structuredQuestions: false` —
-and the option table is not a downgrade: it carries the same options and the same marked
-recommendation, in text.
+**Questions go out through `add-interaction`** — one numbered batch, the recommended option marked
+RECOMMENDED. No structured-question tool, and no separate option table.
 
 **Close what you can close.** A question carried to the handoff lands in the intent file’s `## Open`
 and becomes a question `/add-framework--plan` has to ask instead — which is the redundancy this whole
@@ -676,7 +670,7 @@ reviewer runs, and what you owe a report you receive. `ok` and `fix-then-ok` bot
 
 ### 6.2 User decisions required [STOP]
 
-Present only the blockers that need a user decision. DO NOT present the design as delivered. WAIT.
+Present only the blockers that need a user decision, all in one numbered batch (`add-interaction`). DO NOT present the design as delivered. WAIT.
 After answers: apply them and go to STEP 7.
 
 **Exploration is the one thing that reopens.** If the answers show the design space was never closed,
@@ -730,9 +724,8 @@ layer is a note in the document, not a question to the user.**
 
 #### Ask for the one approval — `bounded` and `architectural`
 
-**This is the only approval the pipeline asks for by default.** Present it through the provider's
-structured-question tool where the `structuredQuestions` capability declares one — otherwise as an
-option table with the recommendation marked — with these three options and nothing else:
+**This is the only approval the pipeline asks for by default.** Ask it as one numbered item of the
+batch (`add-interaction`), with a RECOMMENDED line, and with these three options and nothing else:
 
 | Option | What happens |
 |---|---|
@@ -864,6 +857,11 @@ which of the two readings applies — the command does not pick between them:
 | The subtopic belongs elsewhere | It is real work, on a different objective | It becomes its own brainstorm, not a member here. The umbrella's Decomposition Map drops the row |
 | The umbrella's objective is too narrow | The subtopic serves the actual goal; the objective was written smaller than the goal | The **umbrella** is corrected first, and every sibling re-checked against the wider objective |
 
+Ask it as one numbered item (`add-interaction`) with the two readings as its options. **This is the one
+question in the pipeline that carries no RECOMMENDED line, on purpose:** the command does not pick
+between the readings, and a recommendation would bias a decision this skill deliberately leaves open.
+Say so in one line inside the item.
+
 **Both readings have been true at once, which is why neither is assumed.** A set shipped here had a
 subtopic that did not serve the objective **and** an umbrella whose objective was written too narrowly
 to see it — the subtopic was refined, planned, reviewed and reworked before anyone read the two side
@@ -927,7 +925,7 @@ ALWAYS:
 - Dispatch `@framework-discovery-agent` silently before any exploration
 - State the classified effort path in one line and continue in the same turn — never ask the user to confirm it
 - End every path with the user approving the intent before anything is implemented
-- Ask one question at a time during exploration
+- Put every open question of a stop in one numbered batch, each with a recommendation (`add-interaction`); brainstorm 8.1 is the one stated exception
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
 - Store outputs in `docs/brainstorming/` only
