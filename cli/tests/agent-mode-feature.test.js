@@ -512,3 +512,29 @@ describe('F30-F32 -- the shared internal skills point their stops at add-interac
     expect(t).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
   });
 });
+
+describe('F33-F37 -- release, backlog, commit, building-commands and the schema text', () => {
+  it.each([
+    ['commands', 'add-framework--release.md', /ONE numbered batch \(`add-interaction`\)/],
+    ['commands', 'add-framework--backlog.md', /one numbered item \(`add-interaction`\)/],
+    ['skills', 'add-commit/SKILL.md', /one numbered item with a RECOMMENDED line \(`add-interaction`\)/],
+    ['skills', 'building-commands/SKILL.md', /### A Stop That Asks/],
+  ])('%s/%s asks through add-interaction and declares it', (dir, file, phrase) => {
+    const t = wb(dir, file);
+    expect(t).toMatch(phrase);
+    expect(t).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+
+  it('the release merges the type and the bump into one batch', () => {
+    const t = wb('commands', 'add-framework--release.md');
+    expect(t).not.toMatch(/Ask user: "Release type/);
+    expect(t).not.toMatch(/Ask user to choose\. Store as/);
+  });
+
+  it('the workbench schema mirror says question batch, and the product schema is untouched', () => {
+    const mirror = wb('skills', 'add-final-report', 'references', 'result-block.schema.json');
+    expect(mirror).toMatch(/numbered question batch/);
+    const product = readNorm(path.join(CODEADD, 'agent-mode', 'result.schema.json'));
+    expect(product).not.toMatch(/numbered question batch/);
+  });
+});
