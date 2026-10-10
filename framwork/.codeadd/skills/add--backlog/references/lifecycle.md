@@ -72,14 +72,13 @@ node .codeadd/scripts/backlog-cli.cjs get <ticket id>
 
 **The read comes from the board clone, never from the checked-out copy.** The board lives on its own
 `board` branch, in one clone per project on the machine, so a read is the same from every branch and
-worktree. `get` syncs that clone on its own (at most once per 30 s): no `git fetch`, and no `--ref`,
-which no longer exists. `SYNC=degraded` or `SYNC=skipped` in the output means the answer came from the
-clone without a fresh fetch.
+worktree. `get` syncs that clone on its own (at most once per 30 s), so there is no `git fetch` to run.
+`SYNC=degraded` or `SYNC=skipped` in the output means the answer came from the clone without a fresh fetch.
 
 Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
 the id. No matching row means the id is not on the board.
 
-**A subject, not an id**, is resolved by `search`, which runs on every status and now also answers an
+**A subject, not an id**, is resolved by `search`, which runs on every status and also answers an
 exact id — never by scanning a `list --all` for the matching line. `list` (and `search`) print a
 seven-field summary by default and `--full` restores the raw rows; the summary is for choosing a
 candidate, and the detail is `get`.
@@ -96,10 +95,8 @@ as one JSON object into a scratch file (anything in the working tree the caller 
 node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <record.json>
 ```
 
-**The file is read in the caller's cwd BEFORE any board resolution, allocation or persistence**, so the
-record's bytes are captured before the entry touches the clone — and a failed read exits 1 with
-`ERROR=record-read-failed` while nothing at all has happened on disk. The Node entry also
-accepts stdin when `--record-file` is absent; agents use the file recipe above.
+The entry reads the record file before it touches the clone (`add--backlog`, "The Two Entry Points", owns
+the grammar and the `ERROR=record-read-failed` exit); agents use the file recipe above.
 
 **The entry writes to the `board` branch, never to the caller's.** From any branch or worktree it takes
 the clone's lock, brings the clone level with the remote, writes, commits and pushes `board` — so the

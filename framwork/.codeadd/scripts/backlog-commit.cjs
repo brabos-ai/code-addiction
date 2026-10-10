@@ -23,7 +23,8 @@
  *      write is rebased once). `add` allocates AFTER this, inside the lock,
  *      so two writers on one machine never compute the same id: the ticket
  *      ids are counted in the clone, the feature directories in the code repo.
- *   6. Only then is stdin captured, once, and the domain operation runs —
+ *   6. Only then does the domain operation run (stdin, when there is no record file,
+ *      was read once BEFORE the lock so a slow producer never holds other writers) —
  *      the same executeBacklog the local CLI uses, never a second validation.
  *   7. Commit to the clone, protect the commit with a recovery ref, push.
  *      A rejected push re-fetches, rebases once and retries; a second
@@ -48,7 +49,9 @@
  * ERROR=board-migration-required (the checkout still holds docs/backlog.jsonl
  * and no config), ERROR=board-branch-missing (config, but the remote has no
  * such branch), ERROR=board-checkout-missing (no clone and no network),
- * ERROR=board-locked. 2 for caller error: a bad mode, a READ mode, the domain
+ * ERROR=board-locked, ERROR=board-lock-failed (the lock file could not be made),
+ * ERROR=commit-failed (the commit failed; the bytes are in the clone, RECOVERY_PATH
+ * names it), ERROR=id-allocation-failed. 2 for caller error: a bad mode, a READ mode, the domain
  * REFUSED= values, and REFUSED=board-not-configured (this project has no
  * board).
  *
@@ -205,6 +208,12 @@ function main(argv) {
   report.set('ROUTE', 'board');
   report.set('BOARD_DIR', boardDir);
 
+  // stdin is read BEFORE the lock, once: a slow producer must not hold every other writer.
+  let stdinRaw = '';
+  if (!fileCaptured && parsed.recordSource && parsed.recordSource.kind === 'stdin') {
+    stdinRaw = cli.captureRecord(parsed.recordSource).raw || '';
+  }
+
   // ── 3. The lock: the writer waits, then gives up having written nothing ──
   const lock = board.acquireLock(boardDir, { waitMs: board.writerWaitMs() });
   if (!lock.ok) {
@@ -236,14 +245,8 @@ function main(argv) {
     newId = resolved.id;
   }
 
-  // ── 5. stdin capture: once, only now ─────────────────────────────────────
-  let rawRecord = '';
-  if (fileCaptured) {
-    rawRecord = fileCaptured.raw;
-  } else if (parsed.recordSource && parsed.recordSource.kind === 'stdin') {
-    const captured = cli.captureRecord(parsed.recordSource);
-    rawRecord = captured.raw || '';
-  }
+  // ── 5. The record: the file captured in step 1, or the stdin read before the lock ──
+  const rawRecord = fileCaptured ? fileCaptured.raw : stdinRaw;
 
   // ── 6. The domain operation — the same one the local CLI calls ───────────
   const result = core.executeBacklog({

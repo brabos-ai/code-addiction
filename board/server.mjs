@@ -32,7 +32,9 @@
 // THE BOARD IS A CLONE, KEPT FRESH. /api/board runs the same throttled read sync
 // the CLI runs (at most once per 30 s), which is what a window-focus refetch
 // triggers; a 60 s timer syncs under the clone's lock WITHOUT waiting and skips
-// the tick when a writer holds it. The server never writes the board: GET only.
+// the tick when a writer holds it. The server answers GET only and takes no ticket
+// write; its sync only brings the clone level with the remote, which can push a commit
+// a writer left unpushed.
 //
 // ROUTES: GET /api/board, GET /api/changes?since=<sha> (the ticket ids added,
 // updated and removed since a sha, with HEAD = the remote tip as the next

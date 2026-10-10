@@ -230,6 +230,7 @@ this project has no board, or no ticket has ever been written — say that; it i
 | `ERROR=board-branch-missing` | exit 1 | exit 1 | the config names a branch the remote does not have |
 | `ERROR=board-checkout-missing` | exit 1 | exit 1 | the board clone is not on this machine and the remote could not be reached |
 | `ERROR=board-locked` | — | exit 1, nothing written | another process held the clone for 30 s; retry |
+| `ERROR=board-lock-failed`, `ERROR=commit-failed` | — | exit 1 | the lock file could not be made, or the commit failed (the bytes are in the clone, and `RECOVERY_PATH` says where) — report it by name |
 
 None of these is fixed by hand: do not create the branch, the clone or the config yourself.
 

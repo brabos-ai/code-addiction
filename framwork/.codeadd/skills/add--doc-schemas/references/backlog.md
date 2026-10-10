@@ -197,7 +197,7 @@ they are entitled to make, so the two directions differ:
   hand-edited board is expected, not an anomaly — the delivery index's own reader already treats a damaged
   line this way, and `references/delivery-index.md` states it there.
 - **The allocators read this file, and how they read it is owned by `{{skill:add--id-convention/SKILL.md}}`**
-  — see its "One counter, two sources, two implementations" section. What matters here is only the
+  — see its "One counter, two sources, one implementation" section. What matters here is only the
   consequence for the format: a ticket's id must stay recoverable from the raw text of its line, which is
   why `id` is written first and is never omitted.
 - **`list` defaults to open tickets.** `--all` returns every one, `--status <name>` filters to one.
@@ -228,6 +228,16 @@ they are entitled to make, so the two directions differ:
 | `READ_VIEW` | every read | `summary`, `full` or `ids` — which projection the payload carries |
 | `STATUS_COUNTS` | every read | One JSON object counting the whole board before any filter, statuses in first-occurrence order |
 | `TICKET_ID` | every write | The id written, allocated or targeted |
+| `BOARD_DIR` | every read and write | The board clone the entry read or wrote |
+| `SYNC` | every read | `fresh`, `synced`, `skipped` or `degraded` — how current the clone is |
+| `SYNC_REASON` | a `degraded` read | `fetch-failed`, `push-refused`, `rebase-conflict` or `lock-failed` |
+| `LOCK_RECLAIMED` | when it happens | The PID of a dead or very old lock that was taken over |
+| `ROUTE` | every write | Always `board` |
+| `PERSISTED`, `COMMITTED`, `PUSHED` | every write | `yes` or `no` — whether the bytes landed, were committed, and reached the remote |
+| `SHA` | a committed write | The commit on the `board` branch of the clone |
+| `DEGRADED` | a degraded write | `rebase-conflict`, `fetch-failed`, `push-refused` or a `recovery-ref-*` name |
+| `RECOVERY_REF`, `RECOVERY_PATH` | when a commit is only ref-protected, or the commit failed | The ref in the clone, or the clone path |
+| `HEAD`, `UNPUSHED`, `ADDED`, `UPDATED`, `REMOVED` | `changes` | The remote tip as the next cursor, the commits the clone is ahead by, and the ticket ids that changed since `--since <sha>` (comma-separated, empty when none) |
 
 ## Hard bans
 
@@ -268,6 +278,7 @@ two cannot drift.
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
 | `duplicate-id` | 4 | the id is already on the board |
 | `unknown-id` | 7 | the id named is not on the board, including a `move --after` anchor |
+| `board-not-configured` | — | the project has no board (no `.codeadd/board.json` and no board file), so there is nowhere to write; this is not a record ban |
 
 The name is shared with `delivery-index.md` where the meaning is the same: `invalid-json` and
 `missing-field` mean there exactly what they mean here. One spelling across both logs is what lets a
@@ -283,9 +294,9 @@ The backlog follows the script family's three-code doctrine, with the same singl
 
 | Exit | Means |
 |---|---|
-| `0` | A probe result, whatever it says. `list` and `search` always exit 0, **including on an absent board** |
-| `1` | **The filesystem refused a write.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie |
-| `2` | Caller error — a bad mode, bad arguments or a hard ban (`REFUSED=<name>`) |
+| `0` | A probe result, whatever it says. `list` and `search` exit 0 **on a project with no board or no ticket**. A write whose push was refused or whose fetch failed also exits 0 and says so in `DEGRADED` |
+| `1` | **A write could not land, or the board needs a person.** The departure: the always-0 rule governs probe *results*, and a ticket that silently fails to land is the one case where exit 0 would be a lie. Also `ERROR=board-migration-required`, `board-branch-missing`, `board-checkout-missing`, `board-locked`, `board-lock-failed`, `commit-failed`, and `ERROR=cursor-unknown` on `changes` |
+| `2` | Caller error — a bad mode, bad arguments, a hard ban (`REFUSED=<name>`), a write sent to the CLI (`ERROR=write-mode`), a read sent to the publication entry (`ERROR=read-mode`), or `REFUSED=board-not-configured` |
 
 **Exit-2 causes are distinguished by output, not by code.** If Node itself is unavailable, the host
 reports the launch failure; the Node entries cannot emit a runtime-missing diagnostic before startup.

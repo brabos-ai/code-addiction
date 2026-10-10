@@ -38,7 +38,7 @@ const TYPE_LETTER_RE = /^[A-Z]$/;
 const REFUSAL_MESSAGE = {
   'id-exhausted': 'ERROR: ID sequence exhausted (no number above 9999)',
   'features-unreadable': 'ERROR: docs/features is unreadable',
-  'backlog-unreadable': 'ERROR: docs/backlog.jsonl is unreadable',
+  'backlog-unreadable': 'ERROR: the board file docs/backlog.jsonl in the board clone is unreadable',
 };
 
 /**

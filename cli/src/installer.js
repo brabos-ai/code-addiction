@@ -169,6 +169,21 @@ function dirExists(dir) {
 }
 
 /**
+ * Does .codeadd/ hold an installation? A fresh clone of a project whose board has moved
+ * carries exactly one tracked file there, board.json, and that is not something an
+ * install would overwrite.
+ * @param {string} dir
+ * @returns {boolean}
+ */
+function addDirHoldsInstall(dir) {
+  try {
+    return fs.existsSync(dir) && fs.readdirSync(dir).some((name) => name !== 'board.json');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * What the install menu shows about the installation already in `targetDir`.
  * @param {string} targetDir
  * @param {object} manifest
@@ -208,7 +223,7 @@ function preflightWithoutTty(targetDir, scope, flags) {
 
   if (!flags.force) {
     const clashes = [];
-    if (dirExists(path.join(targetDir, '.codeadd'))) clashes.push('.codeadd/');
+    if (addDirHoldsInstall(path.join(targetDir, '.codeadd'))) clashes.push('.codeadd/');
     for (const p of resolveSelected(flags.providers, scope)) {
       if (dirExists(path.join(targetDir, p.dest))) clashes.push(`${p.dest}/`);
     }
@@ -293,7 +308,7 @@ export async function install(cwd, options = {}) {
   // --force answers both overwrite questions. Without a TTY the preflight already refused
   // any clash that --force did not cover, so no prompt is reachable there.
   const addDir = path.join(targetDir, '.codeadd');
-  if (dirExists(addDir) && !flags.force) {
+  if (addDirHoldsInstall(addDir) && !flags.force) {
     await promptConfirm('.codeadd/ already exists. Overwrite with latest version?');
   }
 

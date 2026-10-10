@@ -165,6 +165,17 @@ describe('install with no TTY (L2.1-L2.5, L2.9)', () => {
     expect(promptsCalled()).toEqual([]);
   });
 
+  it('a .codeadd/ holding only the committed board.json is a fresh clone, not a clash', async () => {
+    fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(path.join(dir, '.codeadd', 'board.json'), '{"remote":"x","branch":"board"}');
+
+    await install(dir, { args: ['--providers', 'none'] });
+
+    expect(promptsCalled()).toEqual([]);
+    expect(exists('.codeadd/manifest.json')).toBe(true);
+    expect(fs.readFileSync(path.join(dir, '.codeadd', 'board.json'), 'utf8')).toBe('{"remote":"x","branch":"board"}');
+  });
+
   it('L2.4 an existing .codeadd/ needs --force', async () => {
     fs.mkdirSync(path.join(dir, '.codeadd'), { recursive: true });
     fs.writeFileSync(path.join(dir, '.codeadd', 'other.txt'), 'x');

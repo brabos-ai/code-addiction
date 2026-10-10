@@ -57,20 +57,29 @@ class GitError extends Error {
  * Throws GitError on a non-zero exit; `{ allowFailure: true }` returns a
  * { status, stdout, stderr } result instead, for the probes that treat a
  * failure as an answer.
+ *
+ * `net: true` marks a command that talks to the remote (clone, fetch, ls-remote,
+ * push). It never waits on a terminal prompt (GIT_TERMINAL_PROMPT=0) and is cut
+ * off after CODEADD_GIT_NET_TIMEOUT_MS (default 30000), so a stalled remote or a
+ * missing credential is a failed answer ("fetch-failed") rather than a hang in
+ * every command that resolves the board.
  */
-function run(args, cwd, { allowFailure = false, input, env } = {}) {
+function run(args, cwd, { allowFailure = false, input, env, net = false } = {}) {
   let proc;
+  const netTimeout = Number(process.env.CODEADD_GIT_NET_TIMEOUT_MS) > 0 ? Number(process.env.CODEADD_GIT_NET_TIMEOUT_MS) : 30000;
+  const childEnv = net ? { GIT_TERMINAL_PROMPT: '0', ...(env || {}) } : env;
   try {
     proc = execFileSync('git', args, {
       cwd,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
+      ...(net ? { timeout: netTimeout, killSignal: 'SIGKILL' } : {}),
       // stderr is captured, never inherited: the probes that treat a failure as an
       // answer (a missing ref, an untracked path) must not print git's "fatal:" line
       // into the caller's output.
       stdio: ['pipe', 'pipe', 'pipe'],
       input,
-      env: env ? { ...process.env, ...env } : process.env,
+      env: childEnv ? { ...process.env, ...childEnv } : process.env,
     });
   } catch (e) {
     const outcome = {
@@ -191,13 +200,13 @@ function headSha(root) {
 function cloneBranch(url, dir, branch) {
   const parent = path.dirname(dir);
   fs.mkdirSync(parent, { recursive: true });
-  const out = run(['clone', '--quiet', '-c', 'core.autocrlf=false', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true });
+  const out = run(['clone', '--quiet', '-c', 'core.autocrlf=false', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true, net: true });
   return out.status === 0 ? { ok: true } : { ok: false, reason: 'clone-failed', detail: out.stderr.trim() };
 }
 
 /** Does `<branch>` exist on `url`? `unknown` when the remote cannot be asked. */
 function remoteHasBranch(url, branch, cwd) {
-  const out = run(['ls-remote', '--exit-code', '--heads', url, `refs/heads/${branch}`], cwd, { allowFailure: true });
+  const out = run(['ls-remote', '--exit-code', '--heads', url, `refs/heads/${branch}`], cwd, { allowFailure: true, net: true });
   if (out.status === 0) return { ok: true, exists: true };
   if (out.status === 2) return { ok: true, exists: false };
   return { ok: false, reason: 'remote-unreachable' };
@@ -205,7 +214,7 @@ function remoteHasBranch(url, branch, cwd) {
 
 /** Fetch one branch into `refs/remotes/origin/<branch>`. */
 function fetchBranch(clone, branch) {
-  const out = run(['fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], clone, { allowFailure: true });
+  const out = run(['fetch', '--quiet', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`], clone, { allowFailure: true, net: true });
   return out.status === 0 ? { fetched: true } : { fetched: false, reason: 'fetch-failed' };
 }
 
@@ -241,7 +250,7 @@ function rebaseOnBranch(clone, branch) {
 
 /** push HEAD:refs/heads/<branch> of the clone; a refusal is an answer. */
 function pushBranch(clone, branch) {
-  const out = run(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`], clone, { allowFailure: true });
+  const out = run(['push', '--quiet', 'origin', `HEAD:refs/heads/${branch}`], clone, { allowFailure: true, net: true });
   return out.status === 0 ? { pushed: true } : { pushed: false, reason: 'push-refused' };
 }
 

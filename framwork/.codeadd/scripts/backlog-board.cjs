@@ -227,9 +227,23 @@ function acquireLock(boardDir, { waitMs = 0 } = {}) {
       if (e.code !== 'EEXIST') return { ok: false, reason: 'lock-failed' };
     }
     let holder = null;
-    try { holder = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* unreadable: treat as stale */ }
-    const stale = !holder || !pidAlive(holder.pid) || (Date.now() - Number(holder.ts || 0)) > LOCK_MAX_AGE_MS;
+    let text = '';
+    try { text = fs.readFileSync(file, 'utf8'); holder = JSON.parse(text); } catch { /* empty, half-written or gone */ }
+    // A lock file that is not readable YET is a lock being made: the creator opens it
+    // exclusively and writes its PID a moment later. Only an unreadable file that has
+    // sat there for seconds is a corpse.
+    let young = false;
+    if (!holder) {
+      try { young = Date.now() - fs.statSync(file).mtimeMs < 5000; } catch { young = false; }
+      if (!fs.existsSync(file)) continue;
+    }
+    const stale = !young && (!holder || !pidAlive(holder.pid) || (Date.now() - Number(holder.ts || 0)) > LOCK_MAX_AGE_MS);
     if (stale) {
+      // Re-read just before removing: if the file changed since we judged it, somebody else
+      // reclaimed it first and what is there now is THEIR fresh lock.
+      let again = '';
+      try { again = fs.readFileSync(file, 'utf8'); } catch { continue; }
+      if (again !== text) continue;
       reclaimed = holder && holder.pid ? holder.pid : 0;
       try { fs.rmSync(file, { force: true }); } catch { /* the other reclaimer won */ }
       continue;
