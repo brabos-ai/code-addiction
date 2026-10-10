@@ -102,6 +102,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: backlog-cli.cjs
 - mention: backlog-id.cjs
 - mention: backlog-git.cjs
+- mention: backlog-board.cjs
 - mention: backlog-commit.cjs
 - mention: migrate-context-files.cjs
 - mention: init.cjs
@@ -300,6 +301,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | backlog-cli.cjs | add--backlog — the native local entry: the positional grammar, `--record-file` records and native allocation (through `backlog-id.cjs` at the operation root), calling the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app. Reads print a seven-field summary (`--full`/`--ids` opt-in) and `get <id>` answers the exact detail read |
 | backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs plus the raw backlog text, anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
 | backlog-commit.cjs | add--backlog — the git route for a backlog write: the ticket reaches the BASE branch whatever branch the caller stood on, direct when already there and through a detached locked worktree otherwise, with durable recovery refs on every failed publication |
+| backlog-board.cjs | add--backlog — the one module that knows where the board lives: the resolver (`CODEADD_BOARD_DIR`, then `.codeadd/board.json`), the project key, the clone on first use, the lock and the throttled read sync. Every backlog reader and writer goes through it |
 | backlog-git.cjs | add--backlog — the git primitives the publication entry composes: base discovery, the path-scoped commit, fetch/rebase/push with verified aborts, and the recovery refs |
 | migrate-context-files.cjs | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
