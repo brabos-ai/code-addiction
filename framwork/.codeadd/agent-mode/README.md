@@ -135,6 +135,10 @@ With it on, in the twelve commands it covers:
 
 The feature changes how the commands talk, not the result: the schema is the same.
 
+It takes effect on Claude Code, Cursor and OpenCode. Codex, Antigravity and ZCode install the commands
+as skills and cannot receive feature injection, so the flag changes nothing there: their commands keep
+the human wording.
+
 ## 8. Answer a stop
 
 A stop that waits ends the call with `needs-approval`, and `next_step` holds the numbered questions.
@@ -147,3 +151,7 @@ Answer all of them in the next call, in the same session:
 | `2: use the shared helper` | Free text for question 2 |
 
 A partial answer is applied, and only the questions left are asked again, with the same numbers.
+
+With `--output-format stream-json`, a run that dispatches a subagent can print more than one result
+event. The last one is the run's result; an earlier one can be written while the subagent is still
+working.

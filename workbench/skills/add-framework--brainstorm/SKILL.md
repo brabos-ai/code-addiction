@@ -325,7 +325,7 @@ to `/add-framework--plan` and writes an intent file; an architectural one writes
 already calls its follow-up a new request. What never changes is that the user approves.
 
 The `⛔ HARD GATE — ROLE BOUNDARY` applies unchanged on all three paths: no path may invoke another command,
-and **only the architectural path writes a file**. The one-question-at-a-time cadence applies on all three.
+and **only the architectural path writes a file**. The batch cadence (`### 2.1`, `### 4.2`) applies on all three.
 If the conversation reveals hidden complexity, apply STEP 2.2.3's one-way ratchet before continuing.
 
 ### 3.1 Detect Scope

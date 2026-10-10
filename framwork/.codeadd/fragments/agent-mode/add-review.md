@@ -16,7 +16,9 @@
 on any delivery mode. Print one line naming what is being staged and stage it as "If user agrees (Yes)"
 below does — `/add-build` commits per task, so what is left unstaged is this delivery's own work.
 
-**If there are unstaged changes:** take the consent as given and go on to "If user agrees (Yes)".
+**If there are unstaged changes:** take the consent as given and go on to "If user agrees (Yes)". This
+overrides the Rules line "Stage files without explicit user permission" and the setup note that says to
+ask.
 
 <!-- /section:staging-consent -->
 

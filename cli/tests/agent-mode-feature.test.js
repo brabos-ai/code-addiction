@@ -14,6 +14,7 @@ import { createRequire } from 'node:module';
 import { PROVIDERS } from '../src/providers.js';
 import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { treeFixture } from './helpers/tree-fixture.js';
+import { agentModePoints as agentModePointsForTest } from './helpers/agent-mode-points.js';
 import { composeSlot, resolvePlaceholders, parseFragmentSections } from '../src/injection-core.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
@@ -692,10 +693,28 @@ describe('L4.2 -- no internal stage still says one-at-a-time', () => {
       ['skills', 'add-review-discipline', 'SKILL.md'], ['skills', 'add-commit', 'SKILL.md'],
       ['commands', 'add-framework--release.md'], ['commands', 'add-framework--backlog.md'],
     ];
-    const banned = /one (?:question )?(?:at a time|per (?:turn|message))|ONE clarifying|AskUserQuestion|structured-question tool/i;
+    const banned = /one[- ](?:question[- ])?(?:at[- ]a[- ]time|per[- ](?:turn|message))|ONE clarifying|AskUserQuestion|structured-question tool/i;
     // A prohibition of the tool ("No structured-question tool") is the rule, not a leftover of the old one.
     const withoutProhibitions = (t) => t.replace(/(?:\bno|never call a|DO NOT USE: A) structured-question tool/gi, '');
     const hits = files.filter((f) => banned.test(withoutProhibitions(wb(...f)))).map((f) => f.join('/'));
     expect(hits).toEqual([]);
+  });
+});
+
+describe('review fixes -- pins the plan listed as gaps', () => {
+  it('the derived totals equal the slot map of this file, not just each other', () => {
+    const slots = Object.values(AGENT_SLOTS).reduce((n, ids) => n + ids.length, 0);
+    expect(agentModePointsForTest()).toBe(slots);
+  });
+
+  it('the agent skill tells a bot where the invocation goes, and the staging member overrides the Rules line', () => {
+    expect(readNorm(path.join(SKILLS, 'add--agent-interaction', 'SKILL.md'))).toMatch(/hold the next command's invocation behind an offer or a question/);
+    expect(memberBody('add-review', 'staging-consent')).toMatch(/overrides the Rules line/);
+  });
+
+  it('the guide says the flag changes nothing on codex, antigravity and zcode, and which result event counts', () => {
+    const text = readNorm(path.join(CODEADD, 'agent-mode', 'README.md'));
+    expect(text).toMatch(/Codex, Antigravity and ZCode[\s\S]{0,160}cannot receive feature injection/);
+    expect(text).toMatch(/The last one is the run's result/);
   });
 });

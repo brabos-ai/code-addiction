@@ -38,7 +38,8 @@ means `confirm`".
 ## Asking
 
 **One question per turn.** A list of questions is asked one at a time, and the next waits for the
-answer. What to ask belongs to the command, or to `add--feature-specification` when it is writing a
+answer — unless the step states its own question format (`add-plan`'s clarification does), which it
+keeps. What to ask belongs to the command, or to `add--feature-specification` when it is writing a
 spec.
 
 **Every question carries a concrete recommendation** — which option this skill would take and why,

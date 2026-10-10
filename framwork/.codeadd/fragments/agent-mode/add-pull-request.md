@@ -22,7 +22,8 @@
 
 Finish the report and its metadata, then end on the next command as the last line, on the second and
 third rows only. A PR waiting on a human reviewer is the no-activity case and ends with no next command —
-naming "/add-done" before the merge would send the bot into a command whose gates cannot pass yet. Offer
-no continuation and ask no yes/no question.
+naming "/add-done" before the merge would send the bot into a command whose gates cannot pass yet. The
+post-merge guidance line in the report is information for whoever merges, not the next command. Offer no
+continuation and ask no yes/no question.
 
 <!-- /section:offer -->

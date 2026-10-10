@@ -117,8 +117,9 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 ## Commands
 
 The Skills Loaded column below also includes `add--delivery-mode` for `add-audit`, `add-diagnose`,
-`add-done`, `add-hotfix`, `add-pull-request`, `add-qa-setup` and `add-wiki`: each now resolves
-continuation eligibility through it. Diagnosis hotfix routes reserve the full `@report` invocation
+`add-done`, `add-hotfix`, `add-pull-request`, `add-qa-setup` and `add-wiki`: it still owns the delivery
+modes and the stopping rule for them, while the continuation offer is owned by `add--human-interaction`.
+Diagnosis hotfix routes reserve the full `@report` invocation
 for accepted manual instructions; the route itself remains unchanged.
 
 | Command | Purpose | Skills Loaded |

@@ -104,11 +104,17 @@ call next without reading the failure text.
 
 Close in this order, and nothing after it:
 
-1. The seven blocks of `{{skill:add--final-report/SKILL.md}}` — what changed, how it works, what was
-   touched, where it plugs in, what was left out, what needs attention.
+1. The seven blocks of `{{skill:add--final-report/SKILL.md}}`, then the command's own mandatory
+   artefact and its metadata, as that skill orders them.
 2. One line per **open decision** — what is still undecided and the question that settles it. Write
    none when nothing is open; do not invent one.
-3. The next command, as the last line, in the form that skill's continuation line gives.
+3. The next command, as the last line — the form the command's closing step states it in.
+
+On an `automatic` delivery the command follows the next command in the same session, as
+`{{skill:add--delivery-mode/SKILL.md}}` says; this order is for a closing that ends the call.
+
+**Where a command's text says to hold the next command's invocation behind an offer or a question, there
+is none in this mode:** print the invocation as the last line.
 
 **No continuation offer.** Do not ask whether the user wants instructions for a fresh context, and ask
 no yes/no question at the end. The bot starts its next session from the next command by itself, so
