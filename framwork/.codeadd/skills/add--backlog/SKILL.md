@@ -47,15 +47,17 @@ and without bash or WSL.
 | Intent | Entry | Why |
 |---|---|---|
 | **read** — list, search, get | `node .codeadd/scripts/backlog-cli.cjs <mode>` | A read commits nothing. It syncs the project's board clone (at most once per 30 s) and reads the clone, never the checkout, so it is never stale because of the branch it ran on |
-| **write** — add, update, comment, move, remove | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ONE write route: it commits to the clone and pushes the `board` branch, from any branch or worktree. The CLI refuses a write with `ERROR=write-mode` and names this entry |
+| **write** — add, update, comment, move, remove, release, release-flow | `node .codeadd/scripts/backlog-commit.cjs <mode>` | The ONE write route: it commits to the clone and pushes the `board` branch, from any branch or worktree. The CLI refuses a write with `ERROR=write-mode` and names this entry |
 
 ```
-IF THE INTENT IS add, update, comment, move OR remove:
+IF THE INTENT IS add, update, comment, move, remove, release OR release-flow:
   ⛔ DO NOT USE: the shell tool to run backlog-cli.cjs for a write — it only reads and
                  refuses with ERROR=write-mode, exit 2
   ⛔ DO NOT USE: the shell tool to run git add, git commit, git push or git worktree yourself
   ⛔ DO NOT: Write docs/backlog.jsonl or docs/backlog.definitions.json with Write or Edit, in the
-             checkout or in the clone — the board is read and written only through the two entries
+             checkout or in the clone — the board is read and written only through the two entries.
+             To turn the release step on or off, run `backlog-commit.cjs release-flow on|off`; to close
+             the tickets waiting for a release, run `backlog-commit.cjs release <version>`
   ✅ DO: Run the publication entry with the record on a file, which owns the whole
          git route and cleans up after itself
 

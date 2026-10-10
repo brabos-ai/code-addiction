@@ -43,7 +43,7 @@ at for. The pair keeps them apart without spending a column on each.
 | `planned` | The plan is approved and waiting to be built |
 | `doing` | The build is running |
 | `in-review` | The work is built and waiting for review. `add-build` writes it when it opens or updates a PR; the board shows the status as written and does not check that a PR is open |
-| `awaiting-release` | Merged, and waiting for a release to name its version. Only a project that opted in with `release_flow` uses it; every other project goes from `in-review` straight to `done`. The framework ships no release command: whoever releases (a person, or a script the project owns) moves it to `done` and fills `release` |
+| `awaiting-release` | Merged, and waiting for a release to name its version. Only a project that opted in with `release_flow` uses it; every other project goes from `in-review` straight to `done`. Whoever releases (a person, or a script the project owns) runs `backlog-commit.cjs release <version>`, which moves every waiting ticket to `done` and fills `release` with the version |
 | `done` | Delivered |
 | `dropped` | Decided against. Nobody moves a ticket here but a person |
 
@@ -57,7 +57,7 @@ because the one before it was skipped, and the model offers no "next" status to 
 within its column and a column's `order` sorts the columns. Neither is a phase, and a status is read by its
 name. Reorder the statuses and nothing about what they mean changes.
 
-**Existing projects are not migrated.** A project whose definitions file predates `awaiting-release` keeps its file as it is. It opts in by adding the `release` column, the status and `release_flow: true` to its own file; until then a merged ticket is written `done`.
+**Existing projects are not migrated.** A project whose definitions file predates `awaiting-release` keeps its file as it is. It opts in with one write, `backlog-commit.cjs release-flow on`, which adds the `release` column and the status when they are missing and sets `release_flow: true`; until then a merged ticket is written `done`.
 
 **The names are a contract, not an enforcement.** They are the ones the pipeline writes, and the format
 reference says so. A project may rename one, and every write naming it is then refused — loudly, one refusal
