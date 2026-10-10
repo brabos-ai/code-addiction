@@ -103,6 +103,29 @@ describe('backlog-cli — the exit-code contract (unchanged)', () => {
     expect(result).toContain('TICKETS_RETURNED=');
   });
 
+  it('every read prints RELEASE_FLOW right after BACKLOG_PRESENT: no by default, yes only on release_flow true', () => {
+    seeded(root, '0001B');
+    const flow = (out) => out.split('\n').filter((l) => l.startsWith('BACKLOG_PRESENT=') || l.startsWith('RELEASE_FLOW='));
+    for (const args of [['list', '--all'], ['list', '--ids'], ['list', '--all', '--full'], ['search', 't-0001B'], ['get', '0001B']]) {
+      expect(flow(run(args, { cwd: root })), args.join(' ')).toEqual(['BACKLOG_PRESENT=yes', 'RELEASE_FLOW=no']);
+    }
+    const defsFile = path.join(root, 'docs', 'backlog.definitions.json');
+    const defs = (extra) => JSON.stringify({ statuses: [{ name: 'open', order: 1 }], ...extra });
+    fs.writeFileSync(defsFile, defs({ release_flow: true }));
+    expect(flow(run(['get', '0001B'], { cwd: root }))).toEqual(['BACKLOG_PRESENT=yes', 'RELEASE_FLOW=yes']);
+    fs.writeFileSync(defsFile, defs({ release_flow: 'true' }));
+    expect(flow(run(['get', '0001B'], { cwd: root }))).toEqual(['BACKLOG_PRESENT=yes', 'RELEASE_FLOW=no']);
+    fs.writeFileSync(defsFile, 'not json');
+    expect(flow(run(['get', '0001B'], { cwd: root }))).toEqual(['BACKLOG_PRESENT=yes', 'RELEASE_FLOW=no']);
+  });
+
+  it('a project with no board prints RELEASE_FLOW=no', () => {
+    const result = execFileSync(process.execPath, [CLI_PATH, 'list', '--all'], {
+      encoding: 'utf8', cwd: root, env: { ...process.env, CODEADD_BOARD_DIR: '' },
+    });
+    expect(result).toContain('BACKLOG_PRESENT=no\nRELEASE_FLOW=no');
+  });
+
   it('exits 2 on unknown-id refusal', () => {
     const r = fail(['update', '0000B'], { input: JSON.stringify({ title: 'Nope' }), cwd: root });
     expect(r.status).toBe(2);

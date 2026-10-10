@@ -22,6 +22,9 @@ const fragment = (cmd) => parseFragmentSections(read('framwork', '.codeadd', 'fr
 
 const NINE = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
 const SEVEN = ['backlog', 'shaping', 'planning', 'building', 'review', 'done', 'dropped'];
+// The seed in the core. NINE/SEVEN above stay what phases.md names until F2 adds the status there.
+const TEN = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
+const EIGHT = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 const WRITTEN = ['refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done'];
 const tick = (s) => '`' + s + '`';
 
@@ -144,14 +147,14 @@ describe('L11.5 -- the product and internal pipelines name the same seven writes
   });
 });
 
-describe('L11.6 -- a project starts on the nine', () => {
+describe('L11.6 -- a project starts on the ten', () => {
   // The board lives on its own branch, outside the checkout, so no test opens
   // this repository's board. What a new board starts with is the seed in the core.
-  it('the seeded definitions hold the nine statuses and seven columns, and every status sits in a column', () => {
+  it('the seeded definitions hold the ten statuses and eight columns, and every status sits in a column', () => {
     const { DEFAULT_DEFS: d } = createRequire(import.meta.url)(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-core.cjs'));
-    expect(d.statuses.map((s) => s.name)).toEqual(NINE);
-    expect(d.columns.map((c) => c.name)).toEqual(SEVEN);
-    const columns = new Set(SEVEN);
+    expect(d.statuses.map((s) => s.name)).toEqual(TEN);
+    expect(d.columns.map((c) => c.name)).toEqual(EIGHT);
+    const columns = new Set(EIGHT);
     expect(d.statuses.filter((s) => !columns.has(s.column))).toEqual([]);
   });
 });

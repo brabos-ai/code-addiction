@@ -10,6 +10,11 @@
  * fresh | synced | skipped | degraded; a degraded or skipped sync still
  * answers from the clone.
  *
+ * RELEASE_FLOW. Every read prints RELEASE_FLOW=yes|no right after BACKLOG_PRESENT.
+ * yes only when the definitions file is usable and carries release_flow: true;
+ * seeded, default, fallback and no-board reads print no. A command reads this
+ * key and never parses the definitions file itself.
+ *
  * BOARD STATES. A project with no board reads as BACKLOG_PRESENT=no, exit 0.
  * ERROR=board-migration-required, ERROR=board-branch-missing and
  * ERROR=board-checkout-missing exit 1 and name what to do.
@@ -324,6 +329,7 @@ function renderOperation(result, view = 'summary') {
 
   if (result.read) {
     key('BACKLOG_PRESENT', result.present ? 'yes' : 'no');
+    key('RELEASE_FLOW', result.releaseFlow ? 'yes' : 'no');
     key('TICKETS_TOTAL', String(result.total));
     key('TICKETS_RETURNED', String(result.returned));
     key('DAMAGED_LINES', String(result.damaged.length));

@@ -218,8 +218,55 @@ describe('executeBacklog', () => {
     expect(result.damaged).toEqual([1]);
   });
 
-  it('DEFAULT_DEFS has nine statuses', () => {
-    expect(DEFAULT_DEFS.statuses).toHaveLength(9);
+  it('DEFAULT_DEFS has ten statuses and eight columns, and every status sits in a column', () => {
+    expect(DEFAULT_DEFS.statuses.map(s => s.name)).toEqual([
+      'open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'
+    ]);
+    expect(DEFAULT_DEFS.columns.map(c => c.name)).toEqual([
+      'backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'
+    ]);
+    const columns = new Set(DEFAULT_DEFS.columns.map(c => c.name));
+    expect(DEFAULT_DEFS.statuses.filter(s => !columns.has(s.column))).toEqual([]);
+    expect(DEFAULT_DEFS.statuses.find(s => s.name === 'awaiting-release').column).toBe('release');
+  });
+
+  it('DEFAULT_DEFS suggests five labels and ships with release_flow off', () => {
+    expect(DEFAULT_DEFS.labels.map(l => l.name)).toEqual(['feature', 'bug', 'improvement', 'docs', 'chore']);
+    for (const l of DEFAULT_DEFS.labels) {
+      expect(typeof l.label).toBe('string');
+      expect(typeof l.means).toBe('string');
+    }
+    expect(DEFAULT_DEFS.release_flow).toBe(false);
+  });
+
+  it('add keeps a string release and stores null without one', () => {
+    const base = { title: 'Test', tldr: 'TLDR', done_when: 'Done' };
+    executeBacklog({ root: tmpDir, mode: 'add', newId: '0001B', rawRecord: JSON.stringify({ ...base, release: 'v1.2.3' }) });
+    executeBacklog({ root: tmpDir, mode: 'add', newId: '0002B', rawRecord: JSON.stringify(base) });
+    const got = (id) => JSON.parse(executeBacklog({ root: tmpDir, mode: 'get', targetId: id }).rows[0]);
+    expect(got('0001B').release).toBe('v1.2.3');
+    expect(got('0002B').release).toBeNull();
+  });
+
+  it('a label outside the suggested list is written, never refused', () => {
+    const add = executeBacklog({
+      root: tmpDir, mode: 'add', newId: '0001B',
+      rawRecord: JSON.stringify({ title: 'Test', tldr: 'TLDR', done_when: 'Done', labels: ['not-in-the-list'] })
+    });
+    expect(add.ok).toBe(true);
+    const upd = executeBacklog({ root: tmpDir, mode: 'update', targetId: '0001B', rawRecord: JSON.stringify({ labels: ['also-new'] }) });
+    expect(upd.ok).toBe(true);
+  });
+
+  it('a ticket moves to awaiting-release, then to done with its release', () => {
+    executeBacklog({ root: tmpDir, mode: 'add', newId: '0001B', rawRecord: JSON.stringify({ title: 'T', tldr: 'L', done_when: 'D' }) });
+    const park = executeBacklog({ root: tmpDir, mode: 'update', targetId: '0001B', rawRecord: JSON.stringify({ status: 'awaiting-release' }) });
+    expect(park.ok).toBe(true);
+    const close = executeBacklog({ root: tmpDir, mode: 'update', targetId: '0001B', rawRecord: JSON.stringify({ release: 'v9.9.9', status: 'done' }) });
+    expect(close.ok).toBe(true);
+    const t = JSON.parse(executeBacklog({ root: tmpDir, mode: 'get', targetId: '0001B' }).rows[0]);
+    expect(t.status).toBe('done');
+    expect(t.release).toBe('v9.9.9');
   });
 });
 
