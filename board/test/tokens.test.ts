@@ -150,3 +150,30 @@ describe('L2 — the scheme is chosen on <html>, not only by the OS', () => {
     expect(CSS).toMatch(/@custom-variant dark \(&:where\(\[data-theme="dark"\]/);
   });
 });
+
+describe('L3 — awaiting-release has its own hue and its own shape', () => {
+  const UI = readFileSync(join(ROOT, 'src/components/ui.tsx'), 'utf8');
+
+  it('declares the release hue and its soft chip in both schemes', () => {
+    for (const map of [LIGHT, DARK]) {
+      expect(map.has('--s-release')).toBe(true);
+      expect(map.has('--s-release-soft')).toBe(true);
+    }
+  });
+
+  it('gives the status and the release lane that hue, and no other status shares it', () => {
+    expect(CSS).toMatch(/\[data-status="awaiting-release"\]\s*\{[^}]*--st:\s*var\(--s-release\)/);
+    expect(CSS).toMatch(/\[data-phase="release"\]\s*\{\s*--ph:\s*var\(--s-release\)/);
+  });
+
+  it('draws a shape of its own, not an alias of the in-review, done or waiting shapes', () => {
+    expect(UI).toMatch(/'awaiting-release':\s*\(/);
+    expect(UI).not.toMatch(/SHAPES\['awaiting-release'\]\s*=\s*SHAPES\./);
+  });
+
+  it('shows the release in the ticket detail when set', () => {
+    const sheet = readFileSync(join(ROOT, 'src/views/ticket-sheet.tsx'), 'utf8');
+    expect(sheet).toMatch(/ticket\.release/);
+    expect(readFileSync(join(ROOT, 'src/api/types.ts'), 'utf8')).toMatch(/release\?:\s*string \| null/);
+  });
+});

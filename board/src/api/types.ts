@@ -19,6 +19,8 @@ export type Ticket = {
   updated_at: string;
   comments: Comment[];
   work_id: string | null;
+  /** The version that shipped this ticket (`v1.2.3`), set when a release closes it. */
+  release?: string | null;
   /** The feature id add.new created for this ticket — an id, never a path. */
   feature: string | null;
 };
