@@ -23,4 +23,13 @@ describe('legacy command document paths', () => {
     const row = src.split('\n').find((l) => l.startsWith('| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX'));
     expect(row).toContain('discovery.md');
   });
+
+  it('add-new re-entry with a validated about.md lands on decompose in both places', () => {
+    const lines = read('add-new').split('\n');
+    const entry = lines.find((l) => l.startsWith('- [CONTINUE MODE]'));
+    const skip = lines.find((l) => l.startsWith('- If `about.md` exists AND carries its validated decisions'));
+    expect(entry).toContain('proceed to STEP add-new.decompose');
+    expect(entry).not.toContain('proceed to STEP add-new.confirm');
+    expect(skip).toContain('proceed to STEP add-new.decompose');
+  });
 });

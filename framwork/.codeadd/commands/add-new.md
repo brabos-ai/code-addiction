@@ -95,7 +95,7 @@ file is never read a second time.
 
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate and STEP add-new.discover, proceed to STEP add-new.confirm.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate, STEP add-new.discover and STEP add-new.confirm, proceed to STEP add-new.decompose.
 - [NEW FEATURE] If no existing feature docs match, proceed to STEP add-new.allocate.
 
 ---
