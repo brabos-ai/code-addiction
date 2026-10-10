@@ -22,13 +22,16 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 | `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through the canonical core | never in normal operation |
 | `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
 
-Both are tracked in git, flat directly under `docs/`, UTF-8, **LF**. The location is settled the same way
-`docs/delivered.jsonl`'s is: the installer always gitignores `.codeadd/`, and these must survive a fresh
-clone. `cli/src/installer.js` never touches `docs/` at all, which is what protects a user's edited
-definitions from a reinstall — a structural guarantee rather than a rule someone must remember.
+Both are tracked in git, on the project's `board` branch, flat directly under `docs/` of the **board
+clone** (`~/.codeadd/<project-key>/board/`; `CODEADD_BOARD_DIR` overrides the path), UTF-8, **LF**. They are
+not in the code checkout, so they never differ between branches and never trigger code CI. The only file
+the code repository tracks for the board is `.codeadd/board.json` (`{ "remote": ..., "branch": "board" }`).
+`cli/src/installer.js` never touches the board, which is what protects a user's edited definitions from
+a reinstall — a structural guarantee rather than a rule someone must remember.
 
-Neither is scaffolded empty. They appear on the first backlog `add`, and their absence means "no ticket
-has ever been written", which is information an empty file would destroy.
+Neither is scaffolded empty. The first backlog `add` on a `board` branch that does not have them creates
+them, and an empty board means "no ticket has ever been written", which is information an empty file
+would destroy.
 
 ## Line order is the priority
 

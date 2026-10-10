@@ -150,7 +150,7 @@ IF CHANGING HOW AN ID IS ALLOCATED:
 
 **The core reads the backlog by raw-text anchor, never by parse.** A line whose JSON is damaged
 still yields its id, so a hand-broken board can never block an allocation. An absent board is a
-no-op: a project with no `docs/backlog.jsonl` gets exactly the id it got before.
+no-op: a project with no board gets exactly the id it got before.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 

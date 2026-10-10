@@ -306,7 +306,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | File | Describes | Read it when |
 |------|-----------|--------------|
 | `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.cjs` |
-| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the six-module family |
+| `references/backlog.md` | `docs/backlog.jsonl` and `docs/backlog.definitions.json` - the project backlog: one JSONL line per ticket with line order as the priority, the ticket fields, the user-owned status vocabulary, the seven hard bans and the `REFUSED=` vocabulary | authoring or reading a ticket, or changing the shipped backlog entries — `backlog-cli.cjs`, `backlog-commit.cjs` and the rest of the seven-module family |
 
 ## Validation Gate Block
 
