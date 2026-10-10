@@ -682,3 +682,20 @@ describe('providers without feature injection (codex, antigravity, zcode) render
     },
   );
 });
+
+describe('L4.2 -- no internal stage still says one-at-a-time', () => {
+  it('the internal pipeline artefacts carry no one-at-a-time, structured-tool or option-table instruction', () => {
+    const files = [
+      ['skills', 'add-framework--brainstorm', 'SKILL.md'], ['skills', 'add-framework--plan', 'SKILL.md'],
+      ['skills', 'add-framework--build', 'SKILL.md'], ['skills', 'add-framework--done', 'SKILL.md'],
+      ['skills', 'add-plan-authoring', 'SKILL.md'], ['skills', 'add-build-ledger', 'SKILL.md'],
+      ['skills', 'add-review-discipline', 'SKILL.md'], ['skills', 'add-commit', 'SKILL.md'],
+      ['commands', 'add-framework--release.md'], ['commands', 'add-framework--backlog.md'],
+    ];
+    const banned = /one (?:question )?(?:at a time|per (?:turn|message))|ONE clarifying|AskUserQuestion|structured-question tool/i;
+    // A prohibition of the tool ("No structured-question tool") is the rule, not a leftover of the old one.
+    const withoutProhibitions = (t) => t.replace(/(?:\bno|never call a|DO NOT USE: A) structured-question tool/gi, '');
+    const hits = files.filter((f) => banned.test(withoutProhibitions(wb(...f)))).map((f) => f.join('/'));
+    expect(hits).toEqual([]);
+  });
+});

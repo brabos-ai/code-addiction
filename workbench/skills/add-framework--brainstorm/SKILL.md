@@ -170,7 +170,7 @@ IF the agent returned "no strong matches" → say: "This looks like novel territ
 
 ## STEP 2: Understand the Idea
 
-### 2.1 Clarifying Questions (One at a Time)
+### 2.1 Clarifying Questions (One Batch)
 
 #### 2.1.1 Draft the objective FIRST, and have the user correct it
 
