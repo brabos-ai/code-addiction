@@ -7,6 +7,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 
 <!-- uses:
 - mention: add--agents-md-style
+- mention: add--agent-interaction
 - mention: add--architecture-discovery
 - mention: add--backend-architecture
 - mention: add--backend-development
@@ -27,6 +28,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--frontend-development
 - mention: add--gitnexus
 - mention: add--health-check
+- mention: add--human-interaction
 - mention: add--id-convention
 - mention: add--investigation
 - mention: add--knowledge-discovery
@@ -140,6 +142,7 @@ for accepted manual instructions; the route itself remains unchanged.
 
 | Skill | Purpose | Used By |
 |-------|---------|---------|
+| add--agent-interaction | How a command talks when a bot drives it — every question in one numbered batch with a recommendation, deciding stops that end the turn, confirming stops that print and continue, a closing that ends on the next command, no continuation offer. Loaded through the `agent-mode.interaction` slot when the `agent-mode` feature is on | the 12 commands of the `agent-mode` feature |
 | add--agents-md-style | AGENTS.md generation guide: migrates legacy context files, content rules, format (JSON/markdown), line budget — load before any AGENTS.md write | add-wiki |
 | add--architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki | add-wiki |
 | add--backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | (none) |
@@ -149,7 +152,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add-build, add-pull-request, add-review |
 | add--cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` | add-build, add-plan |
 | add--database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add-build, add-plan |
-| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, optional manual continuation eligibility, same-session automatic handoff, and its publish-question terminus | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
+| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, same-session automatic handoff, and its publish-question terminus | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
 | add--delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | (none) |
 | add--dev-environment-setup | Detect OS, diagnose missing tools, install Node/git/gh and verify the Node floor | add-help, add-qa-setup |
 | add--doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (incl. the `setup-receipt` schema) — single source of truth for all generated docs | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
@@ -162,6 +165,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic | add-build, add-plan |
 | add--gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` | (plugin-bound) |
 | add--health-check | Health check of environment and project dependencies | add-audit |
+| add--human-interaction | How a command talks to a person — one question per turn, the structured-question tool where the provider has one, confirming stops that wait, and the optional fresh-context continuation offer (`chat-continuation-eligibility-v1`, `chat-continuation-output-v1`). The default every command loads through the `agent-mode.interaction` slot | the 12 commands of the `agent-mode` feature, by default |
 | add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) | add-build, add-done, add-hotfix, add-new, add-plan, add-pull-request |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add-audit, add-diagnose, add-hotfix, add-review |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm | add-brainstorm, add-diagnose, add-hotfix, add-new, add-plan, add-review |
@@ -221,6 +225,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | qa-pipeline | disabled | add-plan, add-build, add-review | E2E spec authoring + routed QA correction + the agent QA judgement in add-review |
 | docs-pruning | disabled | add-done | Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written |
 | board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app ships as a separate release asset, so a fresh install has neither the board nor `docs/backlog.jsonl` |
+| agent-mode | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki | Commands for a bot that drives them headless — every question in one numbered batch with a recommendation, no interactive tool, no continuation offer, a closing that ends on the next command. Off by default: the commands keep their human wording |
 
 Enable/disable via `codeadd features enable|disable|list <name>` — fragments are injected into the installed commands post-install. The split is canonical in add--qa's *Feature vs plugin* statement and is not restated here: `qa-pipeline` decides whether the QA flow exists at all, and the `playwright` plugin below only adds live driving to a judge the feature already supplied — enabling the plugin does not enable the pipeline.
 
@@ -259,6 +264,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
 | add--investigation | add-diagnose (primary, agent-dispatched mode), add-hotfix (STEP 6.1 escalation, agent-dispatched mode), add-review (STEP 5.1 ambiguous findings), add-audit (STEP 7.1 ambiguous findings) |
 | add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
+| add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
+| add--agent-interaction | the same 12 commands, when `agent-mode` is enabled |
 | add--commit | add-build, add-pull-request, add-review — every command that commits mid-workflow |
 | add--cross-sf-consistency | add-plan (STEP add-plan.cross-sf-review consumes its findings), add-plan (STEP add-plan.consistency, FULL pass) and add-build (Loop End, DELTA pass) via consistency-agent |
 | add--dev-environment-setup | add-help (environment triage), add-qa-setup (runner install) |
@@ -319,9 +326,9 @@ Conditions evaluated top-to-bottom — use FIRST match.
 
 **This table resolves a NEXT ACTIVITY. It does not decide how that activity is delivered to the
 user.** On a manual run the finishing command offers optional fresh-context instructions rather than
-printing an invocation — `chat-continuation-eligibility-v1` in `add--delivery-mode` owns when that
-offer is made, and `chat-continuation-output-v1` in `add--final-report` owns what an accepted answer
-contains. This skill names the rows and stays out of both.
+printing an invocation — `chat-continuation-eligibility-v1` and `chat-continuation-output-v1` are owned
+by `add--human-interaction`, which owns when that offer is made and what an accepted answer contains.
+This skill names the rows and stays out of both.
 
 **Read the Next activity column as routing, not as text to paste.** A row whose value is `none`, or
 which names a wait (`none — wait for review`) or staying put (`continue brainstorm`), is the absence of

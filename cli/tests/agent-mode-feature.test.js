@@ -332,3 +332,25 @@ describe('L1.4(b) (F5-F7) -- the moved sections are gone from their old owners',
     expect(text).not.toContain('ask ONCE whether');
   });
 });
+
+describe('L1.4(c) (F23) -- nothing names the old owners for the continuation contracts', () => {
+  const walkMd = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) return walkMd(p);
+    return e.name.endsWith('.md') ? [p] : [];
+  });
+
+  it('no product artefact or fallback ties a chat-continuation id to add--delivery-mode or add--final-report', () => {
+    // Within one paragraph and one table cell: a table row that merely says "as add--delivery-mode
+    // describes" is not an owner claim.
+    const id = /chat-continuation-(?:eligibility|output)-v1/.source;
+    const old = /(?:add--delivery-mode|add--final-report)/.source;
+    const gap = /(?:(?!\n\n|\|)[\s\S]){0,260}?/.source;
+    const owner = new RegExp(`${id}${gap}${old}|${old}${gap}${id}`);
+    const bad = walkMd(CODEADD)
+      .filter((f) => !f.includes(`${path.sep}add--human-interaction${path.sep}`))
+      .filter((f) => owner.test(readNorm(f)))
+      .map((f) => path.relative(ROOT, f));
+    expect(bad).toEqual([]);
+  });
+});
