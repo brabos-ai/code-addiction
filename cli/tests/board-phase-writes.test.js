@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { parseFragmentSections } from '../src/injection-core.js';
 import { FEATURES } from '../src/features.js';
 
@@ -143,14 +144,15 @@ describe('L11.5 -- the product and internal pipelines name the same seven writes
   });
 });
 
-describe('L11.6 -- this repository runs on the nine', () => {
-  it('its definitions file holds the nine statuses and seven columns, and every ticket status is defined', () => {
-    const d = JSON.parse(read('docs', 'backlog.definitions.json'));
+describe('L11.6 -- a project starts on the nine', () => {
+  // The board lives on its own branch, outside the checkout, so no test opens
+  // this repository's board. What a new board starts with is the seed in the core.
+  it('the seeded definitions hold the nine statuses and seven columns, and every status sits in a column', () => {
+    const { DEFAULT_DEFS: d } = createRequire(import.meta.url)(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-core.cjs'));
     expect(d.statuses.map((s) => s.name)).toEqual(NINE);
     expect(d.columns.map((c) => c.name)).toEqual(SEVEN);
-    const defined = new Set(NINE);
-    const used = read('docs', 'backlog.jsonl').trim().split('\n').map((l) => JSON.parse(l).status);
-    expect(used.filter((s) => !defined.has(s))).toEqual([]);
+    const columns = new Set(SEVEN);
+    expect(d.statuses.filter((s) => !columns.has(s.column))).toEqual([]);
   });
 });
 
