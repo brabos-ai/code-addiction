@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import { writeFixture } from './e2e/fixture';
 import fs from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import testContext from '../scripts/test-context.cjs';
 
 // Refuse before fixtures are written or any test server starts.
@@ -23,7 +23,7 @@ const NATIVE_PROJECTS = ['mobile-360', 'tablet-768', 'desktop-1080'].map((name, 
 if (process.env.TEST_WORKER_INDEX === undefined) writeFixture(FIXTURE);
 
 /** The native spec's own fixture. Entirely separate from the read-only one:
- *  ONLY this mutable fixture ever sees a CLI mutation, and only its server
+ *  ONLY this mutable fixture ever sees a write through the publication entry, and only its server
  *  serves it, so parallel projects never observe a file changing under them. */
 function writeNativeFixture(root: string): void {
   writeFixture(root);
@@ -54,13 +54,13 @@ export default defineConfig({
     url: `http://127.0.0.1:${PORT}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,
-    env: { NODE_OPTIONS: '' },
+    env: { NODE_OPTIONS: '', CODEADD_BOARD_DIR: resolve(FIXTURE) },
   }, {
     command: `node server.mjs --root ${FIXTURE} --port ${LAYERS_PORT} --no-open --layers`,
     url: `http://127.0.0.1:${LAYERS_PORT}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,
-    env: { NODE_OPTIONS: '' },
+    env: { NODE_OPTIONS: '', CODEADD_BOARD_DIR: resolve(FIXTURE) },
   }, ...NATIVE_PROJECTS.map((project) => ({
     // Every viewport owns its mutable fixture/server: native add is not a
     // concurrent reservation protocol, so tests must not share its files.
@@ -68,7 +68,7 @@ export default defineConfig({
     url: `http://127.0.0.1:${project.port}/api/board`,
     reuseExistingServer: false,
     timeout: 30000,
-    env: { NODE_OPTIONS: '' },
+    env: { NODE_OPTIONS: '', CODEADD_BOARD_DIR: resolve(project.fixture) },
   }))],
   projects: [
     { name: 'mobile-360', use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 800 }, hasTouch: true } },

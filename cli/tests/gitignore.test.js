@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { getInstalledDirs, writeGitignoreBlock } from '../src/gitignore.js';
 
 let tmpDir;
@@ -19,9 +20,11 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('getInstalledDirs', () => {
-  it('always includes .codeadd/', () => {
+  it('always includes the .codeadd/* pair that keeps board.json committable', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toContain('.codeadd/');
+    expect(dirs).toContain('.codeadd/*');
+    expect(dirs).toContain('!.codeadd/board.json');
+    expect(dirs).not.toContain('.codeadd/');
   });
 
   it('includes provider dest dirs for selected keys', () => {
@@ -30,14 +33,14 @@ describe('getInstalledDirs', () => {
     expect(dirs).toContain('.agents/');
   });
 
-  it('returns only .codeadd/ when no providers selected', () => {
+  it('returns only the .codeadd pair when no providers selected', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toEqual(['.codeadd/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json']);
   });
 
   it('includes all known providers when all are selected', () => {
     const dirs = getInstalledDirs(['claude', 'codex', 'antigrav', 'cursor']);
-    expect(dirs).toContain('.codeadd/');
+    expect(dirs).toContain('.codeadd/*');
     expect(dirs).toContain('.claude/');
     expect(dirs).toContain('.agents/');
     expect(dirs).toContain('.agent/');
@@ -46,12 +49,12 @@ describe('getInstalledDirs', () => {
 
   it('silently ignores unknown provider keys', () => {
     const dirs = getInstalledDirs(['unknown-provider']);
-    expect(dirs).toEqual(['.codeadd/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json']);
   });
 
-  it('all returned entries have trailing slash', () => {
+  it('every provider entry has a trailing slash (the .codeadd pair is a pattern)', () => {
     const dirs = getInstalledDirs(['claude', 'codex']);
-    for (const dir of dirs) {
+    for (const dir of dirs.filter((d) => !d.startsWith('.codeadd/') && !d.startsWith('!'))) {
       expect(dir).toMatch(/\/$/);
     }
   });
@@ -210,5 +213,46 @@ describe('writeGitignoreBlock', () => {
     expect(content).toContain('.claude/');
     expect(content).toContain(qaBlock.trim());
     expect((content.match(/# ADD QA evidence - managed by add-qa-setup/g) || [])).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F7 — board.json is the one tracked file under .codeadd/
+// ---------------------------------------------------------------------------
+
+describe('the .codeadd pair (board.json stays committable)', () => {
+  const gitIgnored = (cwd, rel) => spawnSync('git', ['check-ignore', '-q', rel], { cwd }).status === 0;
+
+  it('writes the pair in place of .codeadd/, and git agrees', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
+    const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
+    expect(content).toContain('.codeadd/*\n!.codeadd/board.json');
+    expect(content.split('\n')).not.toContain('.codeadd/');
+    fs.mkdirSync(path.join(tmpDir, '.codeadd'));
+    expect(gitIgnored(tmpDir, '.codeadd/board.json')).toBe(false);
+    expect(gitIgnored(tmpDir, '.codeadd/manifest.json')).toBe(true);
+  });
+
+  it('rewrites an existing bare .codeadd/ line outside the block into the pair, once', () => {
+    const gitignorePath = path.join(tmpDir, '.gitignore');
+    fs.writeFileSync(gitignorePath, 'node_modules/\n.codeadd/\ndist/\n', 'utf8');
+    writeGitignoreBlock(tmpDir, getInstalledDirs([]));
+    writeGitignoreBlock(tmpDir, getInstalledDirs([]));
+    const lines = fs.readFileSync(gitignorePath, 'utf8').split('\n');
+    expect(lines).not.toContain('.codeadd/');
+    expect(lines.filter((l) => l === '.codeadd/*')).toHaveLength(1);
+    expect(lines.filter((l) => l === '!.codeadd/board.json')).toHaveLength(1);
+    expect(lines).toContain('node_modules/');
+    expect(lines).toContain('dist/');
+  });
+
+  it('an old block that held .codeadd/ is replaced by the pair', () => {
+    const gitignorePath = path.join(tmpDir, '.gitignore');
+    fs.writeFileSync(gitignorePath, '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n# END ADD\n', 'utf8');
+    writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
+    const content = fs.readFileSync(gitignorePath, 'utf8');
+    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n.claude/');
+    expect(content.split('\n')).not.toContain('.codeadd/');
   });
 });

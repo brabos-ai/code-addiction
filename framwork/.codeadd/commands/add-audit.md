@@ -1,15 +1,16 @@
 # Tech Audit - Complete Technical Project Audit
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--ecosystem
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--final-report
 - skill: add--health-check
 - skill: add--investigation
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
-- command: /add-new
+- command: /add-new (conditional)
 -->
 
 > **DOCUMENTATION STYLE:** Follow standards defined in skill `add--doc-schemas`
@@ -21,6 +22,11 @@ Execute complete technical analysis of the project, identifying security, archit
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -237,22 +243,10 @@ Then, after the seven blocks, present the overall scorecard, issue counts by sev
 
 ### STEP add-audit.handoff Offer the continuation
 
-**This command is advisory — it changes no code and fixes nothing.** So the next activity exists only
-when there is a finding to act on.
-
-| Audit result | Next activity |
-|---|---|
-| Critical findings | `/add-new` per critical issue — each becomes a feature |
-| Findings below critical | none — the report is the deliverable |
-| Healthy project | none — there is nothing to continue into |
-
-Finish the report and its metadata, then ask ONCE for instructions only on the first row. A healthy
-audit ends normally with no offer; do not invent a feature to have somewhere to point.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
-activity and its documents.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-audit.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

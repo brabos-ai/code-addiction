@@ -8,6 +8,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 <!-- uses:
 - agent: plan-review-agent
 - skill: add-review-discipline
+- skill: add-interaction
 - skill: add-final-report
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
@@ -204,13 +205,17 @@ nonexistent internal/script/ node and fail the graph gate. This
 repository is those scripts' source and calls them by repository path, as
 add-framework--done calls delivered.cjs.
 
-The seven statuses and the two rules below are held equal to the product's by
+The statuses written (seven writes; `done` becomes `awaiting-release` for a project that opted in, so eight names) and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
+
+The one deliberate difference: the internal `in-review` condition is the build reaching STEP 10 with every
+F-block complete, whatever STEP 9 answered. The product's add-build writes it on `Publish:` `pr-opened` or
+`pr-updated` only (lifecycle.md). The product side is not changed. `add--backlog/references/phases.md` says the board shows `in-review` as written and does not check that a PR is open.
 -->
 
-**A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
+**A ticket on the project board travels through the four stages and moves on the board as the work
 does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
-What each status MEANS — the nine names, the seven columns, the pairs of a running and a parked status —
+What each status MEANS — the ten names, the eight columns, the pairs of a running and a parked status —
 is the product's phase model, `add--backlog/references/phases.md`; this section is the internal procedure.
 
 ⛔ **The internal pipeline has no feature system.** The product gates its ticket instructions behind the
@@ -244,20 +249,33 @@ link costs one manual update; a wrong one costs the board's credibility.
 | | STEP 5 | `> **Ticket:**` in the plan header, the ticket's `done_when` as `**Ticket done when:**` | — |
 | | STEP 7, before the report — the plan is written and reviewed | — | `planned` |
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
-| | STEP 10, before the report, reading STEP 9's answer | — | `in-review` — **only when a PR was opened or already existed** |
-| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `done` |
+| | STEP 10, before the report | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
+| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` |
+| `add-framework--release` (stable only) | its ticket-closing sub-step of STEP 7, after the tag is pushed | lists `awaiting-release` and writes each ticket | `release` = the tag name and `done`, one write per ticket |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
-| | STEP 8, first, before any deletion | — | `done` |
+| | STEP 8, first, before any deletion | — | `awaiting-release` or `done`, by the same rule |
 
 **On the fix track the fix record is the carrier.** Its `> **Ticket:**` line is written only from `--ticket` — an id is never inferred from the branch or the commits — and every rule in this section then applies to it unchanged.
 
 **After the plan, the plan header is the only carrier.** Build and done read `> **Ticket:**` from the plan
 and never from the intent file. A direct build has no plan, so it carries no ticket and touches no board.
 
-**`in-review` depends on STEP 9's answer, and one answer never writes it.** On "yes" the build opens the PR,
-and when a PR already exists it pushes to it: both write `in-review`. On "no" the close-out opens the PR and
-merges it in one run, so `in-review` would exist for seconds — the ticket goes `doing` → `done`, the same jump
-a product hotfix makes.
+**`in-review` depends on the work, not on STEP 9's answer.** The build writes it whenever it reaches STEP 10 with
+every F-block of the plan complete — PR opened, PR updated, or the operator said "no". On "no" the close-out may
+run days later, and until then the work is finished and waiting on review; a ticket left in `doing` says the
+opposite. A build that stopped before its last F-block writes no `in-review`.
+
+```
+IF THE OPERATOR SAYS "DO NOT PUSH":
+  ⛔ DO NOT: Read it as covering the board — skip `doing` at STEP 5.1 or `in-review` at STEP 10
+  ✅ DO: Make both writes. The instruction covers the branch and the PR; it never skips a board write
+  ✅ DO: Name each write's `SHA` in the stage's report
+```
+
+**A board write reaches only the `board` branch**, never `main` and never the branch being built, and
+`backlog-commit.cjs` carries it by its one route, described under **How a write is made**. Under a
+"do not push" instruction the code branch is not pushed and no PR is opened; the board write still
+pushes `board`, which is not a code branch.
 
 **The product's `feature` field has no internal counterpart.** There is no feature id here; it stays `null`.
 
@@ -272,6 +290,12 @@ is not on the board: report it and continue with no ticket.
 node framwork/.codeadd/scripts/backlog-cli.cjs get <id>
 ```
 
+**The read comes from the board clone, never from the checked-out copy.** The board lives on its own
+`board` branch, in one clone per project outside every worktree, so every branch reads the same board and
+none is as old as itself. `get` syncs the clone on its own (at most once per 30 s): there is no
+`git fetch` to run and no `--ref`, which was removed. `SYNC=degraded` or `SYNC=skipped` in the output means
+the answer came from the clone without a fresh fetch.
+
 A subject, not an id, is resolved with `search`, which runs over every status and also answers an
 exact id; a `list --all` summary remains the board view for choosing, never the source of ticket
 detail.
@@ -284,10 +308,10 @@ detail.
   reads that phase's entry status or its exit status — two string comparisons against the two names of one
   phase.
 - **The `work_id` stop, for every write before the build:** once the ticket's `work_id` equals this run's
-  plan basename, only `in-review` and `done` may still be written. `refining`, `shaped`, `planning`,
+  plan basename, only `in-review` and `done` may still be written — and `awaiting-release`, the `done` of a project that opted in. `refining`, `shaped`, `planning`,
   `planned` and `doing` are skipped.
 
-**An exit write keeps the plain rule** — written unless the ticket already reads it.
+**An exit write keeps the plain rule** — written unless the ticket already reads it. The close-out write is the one exception to "the target": it targets `awaiting-release` when the ticket read printed `RELEASE_FLOW=yes` and `done` otherwise, and it is skipped when the ticket already reads `done` **or** `awaiting-release`, so a resumed close-out never pulls back a ticket a release already closed. `RELEASE_FLOW` comes from the exact read (`get <id>`); never open the definitions file for it. The `--fix` track follows the same rule.
 
 **Every write reads the ticket first** and does nothing when it already holds the target. That is what makes
 a resumed close-out, a re-run build or a re-run plan safe with no guard of its own.
@@ -316,10 +340,10 @@ The Node entry also supports stdin when `--record-file` is absent; agents use th
 product procedure does, and the stage reports the `work_id` it replaced. **`doing` and `work_id` travel in ONE
 write**, so the two can never disagree about whether the work started.
 
-The entry picks its own route: on `main` it commits directly, on a feature branch it writes through a
-locked worktree, so the ticket reaches `main` without touching the branch being built. **That is why the
-brainstorm and the plan can write the board**: they write no file on the branch, and the board write never
-touches it either.
+The entry has ONE route, whatever branch or worktree it runs in: it takes the board clone's lock, brings
+the clone level with the remote, writes, commits and pushes `board`, and reports `ROUTE=board` and
+`BOARD_DIR`. **That is why the brainstorm and the plan can write the board**: they write no file on the
+branch, and the board write never touches it either.
 
 ### Degradations — none of them is a stop
 
@@ -329,10 +353,11 @@ relationship between the work and the note about the work.
 | State | Do |
 |---|---|
 | No `ticket:` / no `> **Ticket:**` | Nothing. Most work never came from a ticket |
-| `BACKLOG_PRESENT=no` | Nothing |
+| `BACKLOG_PRESENT=no`, or `REFUSED=board-not-configured` on a write | Nothing. This project has no board |
+| `ERROR=board-migration-required`, `ERROR=board-branch-missing`, `ERROR=board-checkout-missing` or `ERROR=board-locked` | Report the error and which write it stopped, continue with no ticket. Never create the branch, the clone or the config by hand |
 | The id is not on the board | Report it, continue with no ticket |
 | `REFUSED=unknown-status` — this repository's definitions file does not define the status | Report which status, continue. Never pick another status by its `order` |
-| `DEGRADED=<reason>` | Report what did not happen and the local `SHA`, continue. Never push or rebase by hand |
+| `DEGRADED=<reason>` | Report what did not happen and the local `SHA` (it is in the board clone, ref-protected, and the next write pushes it), continue. Never push or rebase by hand |
 
 ```
 IF A TICKET READ OR WRITE FAILS:
@@ -608,6 +633,9 @@ neither, so it passes through unchanged. This is what lets the continuation line
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
 - **No match** → list `docs/plans/` and STOP.
 
+The question "which" goes out as one numbered item with a RECOMMENDED line (`add-interaction`), in the same
+message as any other open question.
+
 **`--fix <slug>` resolves `*-FIX--<slug>` through three sources, in this order, and stops at the first that answers:**
 
 1. `docs/delivered.jsonl` on the current branch — an entry whose `id` ends `-FIX--<slug>`. Tracked, so it survives a fresh clone or another worktree.
@@ -625,7 +653,8 @@ to adjust, update it with a changelog row, then review and complete it the same 
 An update is not delivered before review — and it gets the same single pass a new plan gets, not an
 extra one for having been revised.
 
-**List Mode** (no argument): list the plans with their status and ask which to work on.
+**List Mode** (no argument): list the plans with their status and ask which to work on, as one numbered item
+with a RECOMMENDED line (`add-interaction`).
 
 ## Common Rationalizations (BLOCKED)
 

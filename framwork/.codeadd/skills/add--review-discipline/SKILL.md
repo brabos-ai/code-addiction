@@ -1,6 +1,6 @@
 ---
 name: add--review-discipline
-description: "Use when a command dispatches a reviewer or a cold reader over a document, or when /add-build runs its final review over a delivery unit — how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk."
+description: "Use when a command dispatches a reviewer or a cold reader over a document, or when /add-build runs its final review over a delivery unit — how many times each runs, what makes a second dispatch legal, how a divergence is handled at the one site that dispatches a readback, and where a verdict may reach disk."
 ---
 
 # Review Discipline
@@ -96,30 +96,26 @@ changed, and a deterministic schema gate re-approved it. Without that gate a
 second read produces new opinions over lightly edited text, and new opinions are
 indistinguishable from progress while costing another full read.
 
-⛔ `@reviewer-agent` in `MODE: re-review` is counted **per fix round**, not per
-subject, and its cap is `MAX_ATTEMPTS = 3` in
+⛔ `@reviewer-agent` in `MODE: re-review` is counted **per fix round that carries a
+reviewer-sourced row**, not per subject — a build-only round in `/add-build` has none, because its
+gate is the build and the tests and the Final Review reads its diff later. Its cap is `MAX_ATTEMPTS = 3` in
 `{{skill:add--subagent-driven-development/SKILL.md}}`. That skill owns the loop;
 this one only names where the boundary is.
 
-⛔ **One site gets a single dispatch and no re-dispatch at all:**
-`/add-build`'s readback at 10.0.4. Its divergence becomes a ruling rather
-than an edit, so no document changes and there is no re-gate to earn a second
-read.
-
 ## A Readback Divergence, by Site
 
-Two sites, two behaviours, one reason each. **Both are correct.** Left
+One site dispatches a readback. **Its behaviour is correct as written.** Left
 unwritten, the next caller copies whichever site it happens to read.
 
-⛔ **`/add-new` and `/add-brainstorm` are absent from this table because neither
-dispatches a readback any more.** `/add-plan` runs the only one in the flow, and
+⛔ **`/add-new`, `/add-brainstorm` and `/add-build` are absent from this table because
+none of them dispatches a readback.** `/add-plan` runs the only one in the flow, and
 its target is the whole feature folder, so nothing goes unread — it is read once
-instead of twice.
+instead of three times. The build starts from a plan the user already approved after
+that readback, so a second cold read of the same document answers a question already answered.
 
 | Site | On divergence | Why |
 |---|---|---|
 | `/add-plan` | Apply the fix, re-run the gate, then **present the divergence and STOP** | A human is in the session and the document is still being written. Stopping is cheap and the answer is authoritative — on an automatic delivery this is still a deciding stop, per `add--delivery-mode` |
-| `/add-build` | Record a **ruling** naming the divergence and which reading was built. Continue | Execution is starting on a plan the user already approved. A stop costs a command round-trip on a decision already taken |
 
 ⛔ **A divergent restatement is a defect in the DOCUMENT, never in the reader.**
 The reader is the instrument. A gap it marked that turns out to be real is a gap
@@ -173,7 +169,7 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    ```
 
    Exit 2 means an empty range: nothing was built, so there is nothing to review. Record
-   `Final review: passed (after review-NNN)` and stop here.
+   `Final review: passed (after review-NNN)` and its `Final review head: <sha>` line, and stop here.
 2. **DISPATCH AGENT: `@reviewer-agent`** [read-only] with `MODE: feature`, the package path and the
    unit's `about.md` / `plan.md` paths. **In the same parallel batch**, and only when the package
    touches a sensitive area — authentication, payment, file upload, input handling or validation,
@@ -182,7 +178,7 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    pass's findings join this list.
 3. **Number the findings** `FR-1`, `FR-2`, … in report order — the reviewer returns none — then
    **judge every one**; see What the Caller Owes the Report below. Record each discard.
-4. **One `@fix-agent` wave** carrying every accepted finding, then `/add-build` STEP 12.2's scoped
+4. **One `@fix-agent` wave** carrying every accepted finding, then `/add-build` STEP add-build.re-review's scoped
    re-review of the fix diff only. There is no second wave.
 5. **Sort what is still open.**
    - Not Critical → one `Ruling:` ledger line each; the delivery continues.
@@ -196,7 +192,17 @@ writes is the one `converge-gates.cjs` reads when no newer review exists.
    ```
 
    `NNN` is the highest `review-NNN.md` in the feature folder at this moment, `000` when there is
-   none. On `blocked`, write one line per open blocker right after it:
+   none. **Right after the verdict, write the commit it covers on its own line**, through the same script:
+
+   ```
+   Final review head: <sha>
+   ```
+
+   `<sha>` is `git rev-parse HEAD` at that moment. `/add-review` reads it to tell whether the tree still
+   matches what this review covered. It is a separate line on purpose: `converge-gates.cjs` reads the
+   verdict line end-anchored, so a suffix on it would read as malformed.
+
+   On `blocked`, write one line per open blocker after the head line:
 
    ```
    Blocker suggestion: <finding id> — <ready-to-paste command>
@@ -249,7 +255,7 @@ Apply it and continue.
 
 `review-NNN.md` and `qa-validation-NNN.md` are written on purpose, and so is the build's
 `Final review:` line in `build-ledger.md`, which `converge-gates.cjs` reads as gate 1's verdict when
-no newer review exists.
+no newer review exists. The `Final review head:` line beside it is read by `/add-review` alone.
 `qa-evidence.cjs` promotes immutable run snapshots keyed to their report numbers,
 and `converge-gates.cjs` reads the review's `| **Overall** |` row and its
 `> **QA baseline:**` line. Neither is a stored opinion a human must find; both
@@ -278,7 +284,6 @@ two gates read it.
 | "I dropped the weak findings, no need to say which" | The discard IS the evidence of judgement. Unrecorded, it looks like you never read them |
 | "The readback found a gap, so the readback failed" | The document failed. The reader is the instrument |
 | "The readback diverged, so this subfeature is BLOCKED" | It issues no verdict. A blocker comes from the reviewer, never from a restatement |
-| "add-build's readback diverged, I'll stop and ask" | That site rules and continues. The approval already happened |
 | "No script reads it, but the file is useful to keep" | That is the gate this boundary exists to refuse |
 
 ## Rules

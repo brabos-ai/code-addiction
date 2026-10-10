@@ -1,15 +1,14 @@
 # Wiki Knowledge Base Generator
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--architecture-discovery
 - skill: add--agents-md-style
 - skill: add--doc-schemas
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--ecosystem
 - skill: add--final-report
 - skill: add--wiki-maintenance
-- mention: /add-audit
-- mention: /add-new
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
 - script: migrate-context-files.cjs
@@ -20,6 +19,11 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -56,7 +60,7 @@ IF invoked as `/add-wiki update`:
   ⛔ DO NOT: Regenerate the Technical Spec section
   ⛔ DO NOT: Recompute the app table, the layer hierarchy or the import rules
   ⛔ DO NOT: Dispatch the STEP add-wiki.agents-md agent for anything beyond items 1, 4, 5 and 6
-  ✅ DO: Migrate (6.1), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
+  ✅ DO: Migrate (STEP add-wiki.run-migration), replace-or-append the managed blocks, then verify per STEP add-wiki.verify
 ```
 
 Update mode is surgical everywhere else, and it stays surgical here.
@@ -218,7 +222,7 @@ IF tiny:
     (primary classification first); every other area → Backlog entry
   - The spine analyzer runs in FOLD mode (returns sections instead of
     writing files — see STEP add-wiki.spine-analyzer-new); no spine files are written
-ELSE: standard — full plan as built in 2.3.
+ELSE: standard — full plan as built in STEP add-wiki.build-dispatch-plan.
 ```
 
 ### STEP add-wiki.create-output-directory Create Output Directory
@@ -618,6 +622,7 @@ IF WRITING THE RUNTIME POLICY:
 ## Runtime policy
 Run shipped framework entries with Node (>=22.19.0), e.g. `node .codeadd/scripts/status.cjs`.
 No Bash, WSL or Git Bash is required; the entries are native CommonJS.
+Headless callers (claude -p): read .codeadd/agent-mode/README.md.
 
 [//]: # (codeadd-shell:end)
 ```
@@ -745,7 +750,7 @@ landed once.
 IF A CHECK BELOW FAILS:
   ⛔ DO NOT: Write a CLAUDE.md or a GEMINI.md to make up for it
   ⛔ DO NOT: Proceed to STEP add-wiki.meta
-  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (6.1 for a leftover file, STEP add-wiki.dispatch-updater for a block), then check again
+  ✅ DO: Re-run the failing part of STEP add-wiki.agents-md (STEP add-wiki.run-migration for a leftover file, STEP add-wiki.dispatch-updater for a block), then check again
 ```
 
 - [ ] AGENTS.md exists at the project root
@@ -810,22 +815,10 @@ grep -ri "<term>" .codeadd/wiki/**/*.md
 
 ### STEP add-wiki.handoff Offer the continuation
 
-**A standalone wiki run is the no-activity case.** Nothing about generating a knowledge base creates
-work for an agent, so it ends normally with no offer. The offer appears only when the run found
-something to act on.
-
-| Run | Next activity |
-|---|---|
-| Standalone generation, no issues found | none — the wiki is the deliverable |
-| Issues found in the tree | `/add-audit` — a deep health check on what the run surfaced |
-| Context mapped and the user asked to build | `/add-new` — start building with that context |
-
-Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
-⛔ **Never propose a feature on a standalone run.** The user asked for a wiki, not for a backlog.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-wiki.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

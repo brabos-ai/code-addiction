@@ -7,6 +7,7 @@ description: "Use when a plan in docs/plans/ is ready to execute, or for a direc
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-interaction
 - skill: add-artefact-graph
 - skill: add-plan-authoring
 - skill: add-final-report
@@ -212,7 +213,8 @@ the user to see it before execution starts.
 
 **Direct mode:** what changes, why, its layer, and the impact on dependents.
 
-**STOP AND WAIT.** Proceed only on explicit approval or requested adjustments.
+**STOP AND WAIT.** Ask the approval as one numbered item with a RECOMMENDED line (`add-interaction`). Proceed only on
+explicit approval or requested adjustments.
 
 **Stop kind — decided by the plan's state:**
 
@@ -302,6 +304,7 @@ Read the ledger BEFORE deciding anything, every entry, not only after a crash.
 `doing` write. `add-plan-authoring` owns when it is skipped, how it is made and every degradation, under
 **The Ticket** — load it rather than acting from memory. Not before this point:
 a ticket marked `doing` for a build that stopped at STEP 2 is a claim the board cannot take back.
+A "do not push" instruction covers the branch and the PR and never skips this write.
 
 ### 5.2 One F-Block at a Time
 
@@ -523,7 +526,8 @@ any other. Each rejected one gets a ruling saying why.
 ```
 IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
   ⛔ DO NOT: Invent the decision to clear it
-  ✅ DO: Present that finding alone and WAIT
+  ✅ DO: Present every such finding together, in one numbered batch with a RECOMMENDED line each
+         (`add-interaction`), and WAIT
 ```
 
 **Stop kind — deciding, in every state.** The decision was not in the plan, so no approval covered it.
@@ -585,6 +589,31 @@ Nothing else in `AGENTS.md` is written here. The rest of the file changes only w
 - **A PR exists.** The push was decided when that PR was opened. Push without asking, and say the
   existing PR was updated.
 
+**The test-loss guard runs first, in both states and on `main` too.** Run `git fetch origin main`,
+then `node scripts/test-loss-guard.cjs`. The script never fetches, and a stale `origin/main` can make
+a test that `main` itself deleted read as lost. Its header owns the output and the exit codes.
+
+```
+IF THE GUARD PRINTS GUARD=fail:
+  ⛔ DO NOT USE: Bash to run git push, gh pr create, or git commit --amend
+  ⛔ DO NOT: Ask the publish question
+  ⛔ DO NOT: Add a `Test-Removed:` trailer for a test the plan never decided to remove
+  ✅ DO: Restore each LOST_TEST, as a new commit
+  ✅ DO: Add the trailer only when an F-block of the plan decided that removal — record a ruling
+         naming the F-block, make one empty commit (`git commit --allow-empty`) carrying
+         `Test-Removed: <path>::<name> — <reason>`, and run the guard again
+  ✅ DO: STOP when neither fits — a removal the plan never decided is a ruling this build may not
+         make alone, because a trailer written by the agent the guard watches is no guard
+```
+
+**A restore or a trailer commit belongs to no F-block.** It gets no `complete` line. Validate it like any
+other commit (`node scripts/build.js` clean) and record the ruling in the ledger. **A guard STOP is a
+red validation, not a fifth hard stop:** the run ends at STEP 9, STEP 10 is not reached and no
+`in-review` is written, and the report says the guard failed.
+
+On `main` the guard still runs and its result goes in the report; the publish rules below are
+unchanged.
+
 ```
 IF THE CURRENT BRANCH IS main:
   ⛔ DO NOT USE: Bash to run git push
@@ -601,7 +630,8 @@ IF THE BRANCH HAS NO PR AND THE USER HAS NOT ANSWERED:
 recommends one — so a direct build can be sitting on `main`, and offering to push there would put
 work past every gate `/add-framework--done` exists to enforce.
 
-On the first push, ask whether to push the branch and open the PR. Then:
+On the first push, ask whether to push the branch and open the PR, as one numbered item with a RECOMMENDED line
+(`add-interaction`). Then:
 
 | Answer | Do |
 |---|---|
@@ -631,10 +661,10 @@ The close-out runs only when the operator invokes it.
 
 ## STEP 10: Completion
 
-**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**`, read
-STEP 9's answer. A PR opened, or one that already existed and was pushed to, writes `in-review`. **"No"
-writes nothing:** the close-out then opens the PR and merges it in one run, and the ticket goes `doing` →
-`done`. **The Ticket** in `add-plan-authoring` owns the rules.
+**Ticket — before the report, the review write.** When the plan header carries `> **Ticket:**` and every
+F-block of the plan has its `complete` line, write `in-review` — whatever STEP 9 answered, "no" included. The
+close-out may run days later, and the work is finished and waiting. A build that stopped before the last
+F-block writes none. **The Ticket** in `add-plan-authoring` owns the rules.
 
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST — the ledger path, the commit ranges and the rulings come after it, never in front
@@ -657,11 +687,12 @@ Then, after the seven blocks and before the metadata, report always:
   **`docs/plans/` is gitignored, so this report is the only way a ruling reaches a human while the
   work is still changeable.** Zero rulings is stated, never omitted.
 - Which validations ran per layer, and their result.
+- **The test-loss guard** — its `GUARD` result, and every `NOTED_TEST` line it printed, each with the F-block that decided the removal. "None" is stated, never omitted.
 - **Whether the inventory block changed**, and the commit that carried it. Say "already current" when
   it did not — silence is indistinguishable from not having run it.
 - **Whether a PR was opened**, with its URL — or that the user declined and the branch is local.
 - **The ticket, when the plan carried one** — the id, and for EACH of its two writes (`doing` at 5.1,
-  `in-review` here) the `SHA`, that it was already there, that STEP 9's answer skipped it, or what did not
+  `in-review` here) the `SHA`, that it was already there, that the build stopped before its last F-block or at STEP 9, or what did not
   happen.
 
 Metadata last: the ledger path, and the `BASE..HEAD` range of every committed F-block. Then, as the

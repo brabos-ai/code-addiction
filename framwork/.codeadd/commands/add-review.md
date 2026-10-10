@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add--commit
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--final-report
 - skill: add--investigation
@@ -42,6 +43,11 @@ Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backe
 
 ---
 
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
+
 ## Yolo Mode
 
 If argument contains `--yolo`: Skip STEP add-review.setup, auto-stage all, execute to completion, log all auto-decisions. It does **not** re-enable auto-correction — this command has none.
@@ -67,7 +73,7 @@ delivery mode.
 ```
 STEP add-review.setup: Pre-Review Setup        → CHECK unstaged, ASK user
 STEP add-review.bootstrap: Bootstrap Context       → status.cjs, load docs, load AGENTS.md, read changed files
-STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review)
+STEP add-review.spec-audit: Spec Compliance Audit   → Deep plan.md vs code (BEFORE technical review); SKIPPED when BUILD_REVIEW_COVERS=yes
 <!-- slot:tdd-pipeline.step-list fallback="fallbacks/empty.md" -->
 <!-- feature:tdd-pipeline:step-list -->
 <!-- /feature:tdd-pipeline:step-list -->
@@ -136,7 +142,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 - `PENDING`: Tick `[ ]` (not implemented)
 - `STALE TICK`: Tick `[x]` but code missing → reopen, block delivery
 
-**Success Criteria:** `SPEC_AUDIT_STATUS = COMPLIANT` (>80% items compliant, no STALE_TICK, no UNCOVERED RF/RN).
+**Success Criteria:** `SPEC_AUDIT_STATUS = COMPLIANT` (>80% items compliant, no STALE_TICK, no UNCOVERED RF/RN). With `BUILD_REVIEW_COVERS=yes` (STEP add-review.build-coverage) the gate is met by the build's Final review and its status is `SKIPPED`.
 **Failure:** Audit status = `DIVERGENT` or `INCOMPLETE`. Report findings; do NOT dispatch reviewers until resolved.
 
 **Special Cases:**
@@ -234,7 +240,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 6) |
 | Do NOT skip review silently | AGENTS.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add--commit skill instead |
-| Do NOT stage files silently | Pre-Review Setup (STEP add-review.setup) | Ask user permission first via AskUserQuestion |
+| Do NOT stage files silently | Pre-Review Setup (STEP add-review.setup) | Follow STEP add-review.check-unstaged: ask first, or on a confirming stop print what is being staged |
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add-build` applies it |
 | Do NOT instruct a dispatched agent to fix anything | Reviewer or judge dispatch | Dispatch read-only; collect findings |
 | Do NOT dispatch the QA judges | the `qa-pipeline` preflight has a failed `block` row (that row exists only when the feature is enabled) | Report the consolidated diagnosis and its remedy |
@@ -248,23 +254,10 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 
 Check working directory for unstaged/untracked changes.
 
-**Stop kind — confirming.** On `DELIVERY=automatic`, do not ask: print one line naming what is being
-staged and stage it as "If user agrees (Yes)" below does — `/add-build` commits per task, so what is left
-unstaged on an automatic delivery is this delivery's own work. On `confirm`, ask.
-
-**If there are unstaged changes:**
-
-Use AskUserQuestion tool to ask the user:
-
-```
-Detected uncommitted changes in your working directory.
-
-To include the changes in the next commit along with review corrections, I can stage them (git add).
-
-Can I stage your changes?
-- Yes: I stage and proceed with the review
-- No: I keep as-is and proceed (changes remain unstaged)
-```
+<!-- slot:agent-mode.staging-consent fallback="fallbacks/agent-mode.add-review.staging-consent.md" -->
+<!-- feature:agent-mode:staging-consent -->
+<!-- /feature:agent-mode:staging-consent -->
+<!-- /slot:agent-mode.staging-consent -->
 
 **If user agrees (Yes):**
 
@@ -357,11 +350,35 @@ From `status.cjs` output, read ALL files in `FILES_TO_REVIEW`.
 
 **IMPORTANT:** Review must cover ALL changed files (committed, staged, unstaged, untracked).
 
+### STEP add-review.build-coverage Does the Build's Final Review Still Cover This Tree?
+
+Decide `BUILD_REVIEW_COVERS` (`yes` | `no`) once, here, before the spec audit. The build's Final review already ran
+the spec audit and the OWASP pass on the finished unit; repeating them on the same code costs two dispatches and finds
+nothing new. It is `yes` only when, for EVERY in-scope ledger — `docs/features/${FEATURE_ID}/build-ledger.md`, or each
+`build-ledger.md` of `REVIEW_SCOPE` on an epic — all four hold:
+
+1. The last `Final review:` line reads `passed` or `ruled N` (`blocked N` never skips anything).
+2. A `Final review head: <sha>` line follows it.
+3. `git diff --name-only <sha>..HEAD` prints nothing once `docs/features/${FEATURE_ID}` is left out.
+4. `git status --porcelain` prints nothing once the same folder is left out.
+
+```
+IF ANY LEDGER IS MISSING, HAS NO HEAD LINE, OR ANY CONDITION FAILS:
+  ⛔ DO NOT: Skip the spec audit or the OWASP pass "because the build reviewed it" — an older ledger or a later commit means it did not review THIS tree
+  ✅ DO: Set BUILD_REVIEW_COVERS=no and run the review in full
+```
+
+On an epic every in-scope ledger must qualify, so the skip rarely fires there: a later subfeature's source commit fails condition 3 for the earlier ones. That is intended — the earlier Final review never read that code.
+
+The area reviewers, the build, the validation gates, the test-spec coverage slot and the QA steps run in both cases.
+
 ---
 
 ## STEP add-review.spec-audit: Spec Compliance Audit (BEFORE technical review)
 
 **Deep audit of plan.md spec vs implemented code. Catches gaps the code review does not.**
+
+**IF `BUILD_REVIEW_COVERS=yes`:** skip the four sub-steps below and write `Spec audit: SKIPPED — covered by Final review: <verdict> at <sha>` as the content of this report's `## Spec Compliance Audit`, with `⊘ SKIPPED` in the Quality Gate Report. Gate 3 counts as met. The `tdd-pipeline.spec-audit` slot still runs.
 
 ### STEP add-review.load-contracts-acceptance Load Contracts and Acceptance Checklist
 
@@ -468,7 +485,7 @@ the evidence this command just captured.
 **If only ONE area exists:**
 - Dispatch single reviewer
 
-**If the owasp trigger fired (STEP add-review.scope):**
+**If the owasp trigger fired (STEP add-review.scope):** the OWASP pass is skipped when `BUILD_REVIEW_COVERS=yes`, because the Final review ran it on this tree. Otherwise:
 - Dispatch `@reviewer-agent` (owasp) in the SAME parallel batch as the area reviewer(s) — never
   instead of them, never as a later round.
 
@@ -762,7 +779,7 @@ Collect results from all previous steps:
 | Gate | Status | Details |
 |------|--------|---------|
 | Build | ✅ PASSED / ❌ BLOCKED | build command — X errors |
-| Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED | X/Y items compliant |
+| Spec Compliance | ✅ PASSED / ⚠️ DIVERGENT / ❌ BLOCKED / ⊘ SKIPPED | X/Y items compliant, or `covered by Final review: <verdict> at <sha>` |
 | Code Review Score | ✅ PASSED / ❌ BLOCKED | X.X/10 (threshold: ≥ 7) |
 | Product Validation | ✅ PASSED / ❌ BLOCKED | RF: X/X, RN: Y/Y |
 | Validation Gates | ✅ PASSED / ⚠️ KNOWN ISSUES / ❌ BLOCKED | One row per gate from STEP add-review.gates with `<command> → exit <code>` (omit row if AGENTS.md has no validation_gates) |
@@ -845,7 +862,7 @@ status: open
 [table from 11.1]
 
 ## Spec Compliance Audit
-[output from STEP add-review.spec-audit]
+[output from STEP add-review.spec-audit, or the `Spec audit: SKIPPED — …` line]
 
 ## Code Review Summary
 [aggregated findings from STEP add-review.consolidate]
@@ -916,21 +933,10 @@ line becomes the verdict.
 
 ### STEP add-review.handoff Offer the continuation
 
-**A review never inherits the automatic path — but a review can be run inside one.** Nothing hands a
-delivery to `/add-review`, so the review itself never gains automatic execution: it always stops, and
-the user always runs the next command. What the carrier changes is only whether a person is there to
-answer.
-
-| How the review was invoked | Ending |
-|---|---|
-| By hand, no automatic carrier | `confirm` — finish the report, then ask ONCE for fresh-context instructions, then wait |
-| From inside an automatic delivery | Stop under the rule above. **No offer** — there is no one at the keyboard to answer it, and a question the delivery cannot answer is noise |
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. The
-`BLOCKED`-with-only-manual-routes row is the no-activity case: it offers nothing, because the
-remaining work is the user's to do by hand.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-review.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **On a correction, the block carries the CURRENT review and never a superseded one.** Name this
 `review-NNN.md` and its `## Fix Routing`, keep each finding's identity and the decision that
@@ -942,7 +948,7 @@ so.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/reviews/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
+| `docs/features/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
 | `docs/features/${FEATURE_ID}/plan.md` | The requirements the findings are judged against |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 

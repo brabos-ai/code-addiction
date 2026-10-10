@@ -16,6 +16,7 @@ graph LR
   REVIEW(add-review)
   DONE(add-done)
 
+  AGIN{{add--agent-interaction}}
   BADE{{add--backend-development}}
   BA{{add--backlog}}
   CORE{{add--code-review}}
@@ -29,6 +30,7 @@ graph LR
   FESP{{add--feature-specification}}
   FIRE{{add--final-report}}
   FRDE{{add--frontend-development}}
+  HUIN{{add--human-interaction}}
   IDCO{{add--id-convention}}
   IN{{add--investigation}}
   KNDI{{add--knowledge-discovery}}
@@ -43,20 +45,26 @@ graph LR
   UXDE{{add--ux-design}}
   WIMA{{add--wiki-maintenance}}
 
-  BRAINSTORM --> DEMO & DOSC & FIRE & KNDI
+  BRAINSTORM --> DEMO & DOSC & FIRE & HUIN & KNDI
+  BRAINSTORM -->|agent-mode| AGIN
   BRAINSTORM -->|board| BA
-  NEW --> DEMO & DOSC & FESP & FIRE & IDCO & KNDI & PLRE & REDI & SUDRDE
+  NEW --> DEMO & DOSC & FESP & FIRE & HUIN & IDCO & KNDI & PLRE & REDI & SUDRDE
+  NEW -->|agent-mode| AGIN
   NEW -->|board| BA
-  PLAN --> BADE & CRSFCO & DADE & DEMO & DOSC & FEDI & FIRE & FRDE & IDCO & KNDI & PLRE & REDI & SUDRDE & TACH & UXDE
+  PLAN --> BADE & CRSFCO & DADE & DEMO & DOSC & FEDI & FIRE & FRDE & HUIN & IDCO & KNDI & PLRE & REDI & SUDRDE & TACH & UXDE
+  PLAN -->|agent-mode| AGIN
   PLAN -->|board| BA
   PLAN -->|qa-pipeline| QASP
   PLAN -->|tdd-pipeline| TESP
-  BUILD --> BADE & CORE & CO & CRSFCO & DADE & DEMO & DOSC & FIRE & FRDE & IDCO & REDI & SUDRDE & TACH & UXDE
+  BUILD --> BADE & CORE & CO & CRSFCO & DADE & DEMO & DOSC & FIRE & FRDE & HUIN & IDCO & REDI & SUDRDE & TACH & UXDE
+  BUILD -->|agent-mode| AGIN
   BUILD -->|board| BA
   BUILD -->|tdd-pipeline| TD
-  REVIEW --> CO & DEMO & DOSC & FIRE & IN & KNDI & SUDRDE & TACH
+  REVIEW --> CO & DEMO & DOSC & FIRE & HUIN & IN & KNDI & SUDRDE & TACH
+  REVIEW -->|agent-mode| AGIN
   REVIEW -->|qa-pipeline| QA
-  DONE --> DOSC & EC & FIRE & IDCO & WIMA
+  DONE --> DOSC & EC & FIRE & HUIN & IDCO & WIMA
+  DONE -->|agent-mode| AGIN
   DONE -->|board| BA
 ```
 
@@ -64,7 +72,7 @@ graph LR
 
 ```mermaid
 graph LR
-  ADD(add)
+  HELP(add-help)
   AUDIT(add-audit)
   DIAGNOSE(add-diagnose)
   HOTFIX(add-hotfix)
@@ -73,6 +81,7 @@ graph LR
   UX(add-ux)
   WIKI(add-wiki)
 
+  AGIN{{add--agent-interaction}}
   AGMDST{{add--agents-md-style}}
   ARDI{{add--architecture-discovery}}
   BA{{add--backlog}}
@@ -82,6 +91,7 @@ graph LR
   EC{{add--ecosystem}}
   FIRE{{add--final-report}}
   HECH{{add--health-check}}
+  HUIN{{add--human-interaction}}
   IDCO{{add--id-convention}}
   IN{{add--investigation}}
   KNDI{{add--knowledge-discovery}}
@@ -93,16 +103,22 @@ graph LR
   UXDE{{add--ux-design}}
   WIMA{{add--wiki-maintenance}}
 
-  ADD --> DEENSE & EC
-  AUDIT --> DOSC & EC & FIRE & HECH & IN & SUDRDE
-  DIAGNOSE --> DOSC & EC & FIRE & IN & KNDI & SUDRDE
-  HOTFIX --> DOSC & EC & FIRE & IDCO & IN & KNDI & SUDRDE & UXDE
+  HELP --> DEENSE & EC
+  AUDIT --> DOSC & EC & FIRE & HECH & HUIN & IN & SUDRDE
+  AUDIT -->|agent-mode| AGIN
+  DIAGNOSE --> DOSC & EC & FIRE & HUIN & IN & KNDI & SUDRDE
+  DIAGNOSE -->|agent-mode| AGIN
+  HOTFIX --> DOSC & EC & FIRE & HUIN & IDCO & IN & KNDI & SUDRDE & UXDE
+  HOTFIX -->|agent-mode| AGIN
   HOTFIX -->|board| BA
   HOTFIX -->|tdd-pipeline| TD
-  PULLREQUEST --> CO & DOSC & FIRE & IDCO
-  QASETUP --> DEENSE & DOSC & FIRE & QA & QAMI & SECO & SUDRDE
+  PULLREQUEST --> CO & DOSC & FIRE & HUIN & IDCO
+  PULLREQUEST -->|agent-mode| AGIN
+  QASETUP --> DEENSE & DOSC & FIRE & HUIN & QA & QAMI & SECO & SUDRDE
+  QASETUP -->|agent-mode| AGIN
   UX --> UXDE
-  WIKI --> AGMDST & ARDI & DOSC & EC & FIRE & SUDRDE & WIMA
+  WIKI --> AGMDST & ARDI & DOSC & EC & FIRE & HUIN & SUDRDE & WIMA
+  WIKI -->|agent-mode| AGIN
 ```
 
 ## Graph 3 - Agent Dispatch

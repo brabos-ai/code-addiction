@@ -80,13 +80,27 @@ export const FEATURES = {
   },
   // OFF by default because there is nothing to preserve: no project uses the
   // board yet, and the board app ships as a separate release asset, so a fresh
-  // install has no board and no docs/backlog.jsonl. EVERY ticket instruction the
+  // install has no board and no .codeadd/board.json. EVERY ticket instruction the
   // pipeline commands carry lives in fragments/board/ -- with this off, none of
   // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
   board: {
     description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
     default: false,
     commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
+  },
+  // OFF by default because it changes how a command TALKS, and a person at a
+  // terminal is who the commands were written for. On, the human-only passages
+  // (one question per turn, the structured-question tool, the yes/no
+  // continuation offer, confirming stops that wait) are swapped for bot ones
+  // through the agent-mode.* slots, and every command loads
+  // add--agent-interaction instead of add--human-interaction. Off, the slot
+  // fallbacks hold today's text. `commands` lists the commands whose slots and
+  // fragment have landed; the plan (0038B) ends it at the twelve of its design,
+  // docs/brainstorming/2026-10-09T145554-agent-mode-feature.md.
+  'agent-mode': {
+    description: 'Agent mode (commands ask in one numbered batch with a recommendation, call no interactive tool, and close on the next command) for bots that drive them headless',
+    default: false,
+    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-review', 'add-done', 'add-diagnose', 'add-hotfix', 'add-qa-setup', 'add-pull-request', 'add-audit', 'add-wiki'],
   },
 };
 
@@ -254,6 +268,13 @@ export async function features(cwd, args, scope = 'project') {
       if (legacyKey) {
         log.warn(`Manifest still carries the retired key "${legacyKey}". It resolves to "${name}" and is normalised on the next update.`);
       }
+    }
+
+    // Nobody to answer the multiselect: print the states and stop, as `plugins list` does.
+    if (!process.stdin.isTTY) {
+      log.message(states.map((f) => `${f.enabled ? '●' : '○'} ${f.name} — ${f.description}`).join('\n'));
+      outro('Change with: codeadd features enable|disable <name>');
+      return;
     }
 
     const selected = await promptFeatures(currentlyEnabled);

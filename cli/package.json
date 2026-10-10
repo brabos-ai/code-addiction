@@ -1,6 +1,6 @@
 {
   "name": "codeadd",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "CLI for Code Addiction framework - AI-powered development workflows",
   "type": "module",
   "repository": {

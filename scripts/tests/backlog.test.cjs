@@ -32,16 +32,28 @@ const LIFECYCLE = path.join(h.SCRIPTS_DIR, '..', 'skills', 'add--backlog', 'refe
 // made through `node -e 'require(...).DEFAULT_DEFS'`, with no child process.
 const core = require(CORE);
 
-const NINE_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
-const SEVEN_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'done', 'dropped'];
+const TEN_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
+const EIGHT_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 
 // ─── Fixture helpers ─────────────────────────────────────────────────────────
 
-/** A throwaway project root used as the child's cwd; cleaned via t.after. */
+/**
+ * A throwaway project: ONE directory that is both the code repository and the
+ * board clone (CODEADD_BOARD_DIR points at it). The board is never read from a
+ * checkout, so the old fixtures keep their shape and the resolver finds the
+ * clone through the override. There is no remote, so every sync reports
+ * SYNC=degraded (fetch-failed) and every write commits locally.
+ */
 function project(t, prefix = 'codeadd-backlog-') {
   const dir = h.mkTmp(prefix);
   t.after(() => h.rmrf(dir));
+  h.git(dir, ['init', '-q']);
   return dir;
+}
+
+/** Run a script in a project dir with the board clone pointed at it. */
+function run(name, args, opts = {}) {
+  return h.runScript(name, args, { ...opts, env: { CODEADD_BOARD_DIR: opts.cwd, ...(opts.env || {}) } });
 }
 
 /** docs/features/<slug>/ with an about.md, the allocator's first source. */
@@ -85,7 +97,10 @@ function validTicket() {
   });
 }
 
-const backlog = (dir, args, opts = {}) => h.runScript('backlog-cli', args, { ...opts, cwd: dir });
+const WRITES = ['add', 'update', 'comment', 'move', 'remove'];
+// Reads go through the CLI; the writes go through the one write route, over a
+// clone that has no remote.
+const backlog = (dir, args, opts = {}) => run(WRITES.includes(args[0]) ? 'backlog-commit' : 'backlog-cli', args, { ...opts, cwd: dir });
 const tickets = (stdout) => String(stdout).split('\n').filter((l) => l.startsWith('{'));
 const key = (stdout, name) => h.parseKV(stdout)[name];
 const lines = (file) => h.read(file).replace(/\n$/, '').split('\n');
@@ -104,7 +119,7 @@ test('backlog#001 — L1.1: next-id.cjs B exceeds every id in docs/features AND 
   const dir = project(t);
   featureDir(dir, '0003F-login');
   backlogLine(dir, '0007B', 'cache the provider map');
-  const res = h.runScript('next-id', ['B'], { cwd: dir });
+  const res = run('next-id', ['B'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0008B');
 });
@@ -113,7 +128,7 @@ test('backlog#002 — L1.1b: next-id.cjs F is raised by a backlog id too, one co
   const dir = project(t);
   featureDir(dir, '0002F-login');
   backlogLine(dir, '0009B', 'something');
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0010F');
 });
@@ -121,14 +136,14 @@ test('backlog#002 — L1.1b: next-id.cjs F is raised by a backlog id too, one co
 test('backlog#003 — L1.2: status.cjs next-id B exits 0 and returns an id', (t) => {
   const dir = project(t);
   featureDir(dir, '0004F-login');
-  const res = h.runScript('status', ['next-id', 'B'], { cwd: dir });
+  const res = run('status', ['next-id', 'B'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0005B');
 });
 
 test('backlog#004 — L1.3: status.cjs next-id Z still exits 2, B joins the allowlist', (t) => {
   const dir = project(t);
-  const res = h.runScript('status', ['next-id', 'Z'], { cwd: dir });
+  const res = run('status', ['next-id', 'Z'], { cwd: dir });
   assert.equal(res.status, 2, res.output);
 });
 
@@ -136,7 +151,7 @@ test('backlog#005 — L1.3b: the four original prefixes still resolve', (t) => {
   const dir = project(t);
   featureDir(dir, '0001F-x');
   for (const p of ['F', 'H', 'PRD', 'CHG']) {
-    const res = h.runScript('status', ['next-id', p], { cwd: dir });
+    const res = run('status', ['next-id', p], { cwd: dir });
     assert.equal(res.status, 0, res.output);
     assert.equal(res.stdout.trim(), `0002${p}`);
   }
@@ -162,26 +177,26 @@ test('backlog#007 — L1.4b: the documented vocabulary and the emittable one are
   }
 });
 
-test('backlog#008 — L1.4c: the nine reserved statuses and seven columns are the same set', () => {
+test('backlog#008 — L1.4c: the ten reserved statuses and eight columns are the same set', () => {
   const ref = h.read(REF);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(core.DEFAULT_DEFS.statuses.some((s) => s.name === n), `core status ${n}`);
     assert.ok(ref.includes(`{ "name": "${n}",`), `reference status ${n}`);
   }
-  for (const c of SEVEN_COLUMNS) {
+  for (const c of EIGHT_COLUMNS) {
     assert.ok(core.DEFAULT_DEFS.columns.some((s) => s.name === c), `core column ${c}`);
     assert.ok(ref.includes(`{ "name": "${c}",`), `reference column ${c}`);
   }
 });
 
-test('backlog#009 — L1.4d: lifecycle.md names all nine reserved statuses', () => {
+test('backlog#009 — L1.4d: lifecycle.md names all ten reserved statuses', () => {
   const lc = h.read(LIFECYCLE);
   const start = lc.indexOf('## The Status Names');
   assert.notEqual(start, -1, 'section missing');
   const rest = lc.slice(start);
   const nextH2 = rest.indexOf('\n## ', 1);
   const section = nextH2 === -1 ? rest : rest.slice(0, nextH2);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(section.includes('`' + n + '`'), `lifecycle names ${n}`);
   }
 });
@@ -308,9 +323,9 @@ test('backlog#018 — F2.L1c: STATUS_COUNTS counts the whole board, before the f
 
 /** Run both future native allocators and return the agreed id for `prefix`. */
 function agree(dir, prefix) {
-  const next = h.runScript('next-id', [prefix], { cwd: dir });
+  const next = run('next-id', [prefix], { cwd: dir });
   assert.equal(next.status, 0, next.output);
-  const status = h.runScript('status', ['next-id', prefix], { cwd: dir });
+  const status = run('status', ['next-id', prefix], { cwd: dir });
   assert.equal(status.status, 0, status.output);
   assert.equal(status.stdout.trim(), next.stdout.trim(), `allocators disagree on ${prefix}`);
   return next.stdout.trim();
@@ -402,19 +417,19 @@ test('backlog#027 — L3.1c: add is a PURE APPEND, a new ticket lands last', (t)
   assert.match(all[1], /second thing/);
 });
 
-test('backlog#028 — L3.1d: a first write seeds NINE statuses and SEVEN columns', (t) => {
+test('backlog#028 — L3.1d: a first write seeds TEN statuses and EIGHT columns', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
-  assert.equal(defs.statuses.length, 9);
-  assert.equal(defs.columns.length, 7);
+  assert.equal(defs.statuses.length, 10);
+  assert.equal(defs.columns.length, 8);
 });
 
-test('backlog#029 — L3.1e: the nine status names are exactly the reserved set, in phase order', (t) => {
+test('backlog#029 — L3.1e: the ten status names are exactly the reserved set, in phase order', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
-  assert.equal(defs.statuses.map((s) => s.name).join(','), NINE_STATUSES.join(','));
+  assert.equal(defs.statuses.map((s) => s.name).join(','), TEN_STATUSES.join(','));
 });
 
 test('backlog#030 — L3.1f: EVERY seeded status carries an explicit column and label', (t) => {
@@ -427,13 +442,13 @@ test('backlog#030 — L3.1f: EVERY seeded status carries an explicit column and 
   assert.equal(bad.length, 0);
 });
 
-test('backlog#031 — L3.1g: the seven columns are the expected set and ONLY dropped is hidden', (t) => {
+test('backlog#031 — L3.1g: the eight columns are the expected set and ONLY dropped is hidden', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
   const names = defs.columns.map((c) => c.name).join(',');
   const hidden = defs.columns.filter((c) => c.hidden === true).map((c) => c.name).join(',');
-  assert.equal(`${names}|${hidden}`, 'backlog,shaping,planning,building,review,done,dropped|dropped');
+  assert.equal(`${names}|${hidden}`, `${EIGHT_COLUMNS.join(',')}|dropped`);
 });
 
 test('backlog#032 — L3.1h: two statuses share a column where a phase has running and parked', (t) => {
@@ -608,7 +623,7 @@ test('backlog#043 — L3.5e: an id is NEVER reused after a remove', (t) => {
   assert.equal(removed.status, 0, removed.output);
 
   featureDir(dir, '0002F-y');
-  const next = h.runScript('next-id', ['B'], { cwd: dir });
+  const next = run('next-id', ['B'], { cwd: dir });
   assert.equal(next.status, 0, next.output);
   assert.equal(next.stdout.trim(), '0003B');
 });
@@ -859,4 +874,195 @@ test('backlog#067 — L4.8: update sets status and feature in ONE write, leaving
   backlog(dir, ['update', '0001B'], { input: '{"status":"refining","feature":"0042F"}' });
   const ticket = lastTicket(dir);
   assert.equal(`${ticket.status} ${ticket.feature} ${ticket.work_id}`, 'refining 0042F null');
+});
+
+// ─── F5 — the CLI only reads, and reads the board clone ──────────────────────
+
+const WRITE_MODES = [
+  ['add'], ['update', '0001B'], ['comment', '0001B'], ['move', '0001B', '--top'], ['remove', '0001B'],
+];
+
+/** A board fixture whose remote board branch already holds one ticket. */
+function boardWith(t, id, title, status = 'open') {
+  const row = JSON.stringify({
+    id, title, theme: 'general', tldr: title, notes: [], done_when: 'it works', paths: [], grounded: false,
+    status, created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z', comments: [], work_id: null,
+  });
+  const b = h.makeBoard({ files: { [BACKLOG]: row + '\n' } });
+  t.after(() => b.cleanup());
+  return b;
+}
+
+test('backlog#068 — L2.5: every write mode is refused with ERROR=write-mode, exit 2, naming backlog-commit.cjs, writing nothing', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const warm = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(warm.status, 0, warm.output);
+  const before = h.read(path.join(b.boardDir, BACKLOG));
+  for (const args of WRITE_MODES) {
+    const res = run('backlog-cli', args, { cwd: b.repo, env: b.env, input: validTicket() });
+    assert.equal(res.status, 2, args[0] + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=write-mode/);
+    assert.match(res.stdout, /backlog-commit\.cjs/);
+  }
+  assert.equal(h.read(path.join(b.boardDir, BACKLOG)), before);
+  assert.equal(h.git(b.boardDir, ['status', '--porcelain']).stdout, '');
+});
+
+test('backlog#069 — L2.6: get from a stale feature branch answers the clone, and --ref is an unknown argument', (t) => {
+  const b = boardWith(t, '0012B', 'ticket', 'in-review');
+  // The checkout carries an old copy of the board: it must never be read.
+  h.git(b.repo, ['checkout', '-q', '-b', 'feat/x']);
+  const stale = JSON.stringify({ id: '0012B', title: 'stale', status: 'planned' });
+  h.write(path.join(b.repo, BACKLOG), stale + '\n');
+
+  const res = backlog(b.repo, ['get', '0012B'], { env: b.env });
+  assert.equal(res.status, 0, res.output);
+  assert.equal(key(res.stdout, 'BOARD_DIR'), b.boardDir);
+  assert.match(key(res.stdout, 'SYNC'), /^(synced|fresh)$/);
+  assert.equal(key(res.stdout, 'TICKETS_RETURNED'), '1');
+  assert.match(tickets(res.stdout)[0], /"status":"in-review"/);
+
+  const ref = backlog(b.repo, ['get', '0012B', '--ref', 'main'], { env: b.env });
+  assert.equal(ref.status, 2, ref.output);
+  assert.match(ref.stdout, /ERROR=bad-argument/);
+});
+
+test('backlog#070 — L2.7: a project with no board reads as BACKLOG_PRESENT=no; the three bad states exit 1', (t) => {
+  const plain = project(t);
+  const none = backlog(plain, ['list'], { env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(none.status, 0, none.output);
+  assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
+  assert.equal(key(none.stdout, 'BOARD_DIR'), undefined);
+
+  const b = boardWith(t, '0001B', 'first');
+  h.write(path.join(b.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: b.bare, branch: 'nope' }));
+  const missing = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(missing.status, 1, missing.output);
+  assert.match(missing.stdout, /ERROR=board-branch-missing/);
+
+  const c = boardWith(t, '0001B', 'first');
+  h.write(path.join(c.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: path.join(c.base, 'gone.git'), branch: 'board' }));
+  const offline = backlog(c.repo, ['list'], { env: c.env });
+  assert.equal(offline.status, 1, offline.output);
+  assert.match(offline.stdout, /ERROR=board-checkout-missing/);
+
+  const d = boardWith(t, '0001B', 'first');
+  h.git(d.repo, ['rm', '-q', '-f', '.codeadd/board.json']);
+  h.write(path.join(d.repo, BACKLOG), '{"id":"0001B"}\n');
+  const old = backlog(d.repo, ['list'], { env: { ...d.env, CODEADD_BOARD_DIR: '' } });
+  assert.equal(old.status, 1, old.output);
+  assert.match(old.stdout, /ERROR=board-migration-required/);
+});
+
+test('backlog#071 — L1.4: a read prints BOARD_DIR and SYNC first, and a failed sync still answers', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const first = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(first.status, 0, first.output);
+  assert.deepEqual(first.stdout.split('\n').slice(0, 2), ['BOARD_DIR=' + b.boardDir, 'SYNC=synced']);
+  assert.equal(key(first.stdout, 'TICKETS_RETURNED'), '1');
+
+  const again = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(key(again.stdout, 'SYNC'), 'fresh');
+
+  h.git(b.boardDir, ['remote', 'set-url', 'origin', path.join(b.base, 'gone.git')]);
+  const offline = backlog(b.repo, ['list'], { env: { ...b.env, CODEADD_BOARD_SYNC_TTL_MS: '0' } });
+  assert.equal(offline.status, 0, offline.output);
+  assert.equal(key(offline.stdout, 'SYNC'), 'degraded');
+  assert.equal(key(offline.stdout, 'SYNC_REASON'), 'fetch-failed');
+  assert.equal(key(offline.stdout, 'TICKETS_RETURNED'), '1');
+});
+
+// ─── F22 — the changes read ─────────────────────────────────────────────────
+
+const csv = (value) => (value === undefined || value === '' ? [] : value.split(','));
+const commitTo = (b, args, input) => h.runScript('backlog-commit', args, { cwd: b.repo, env: b.env, input });
+
+test('backlog#072 — L2.10: no --since lists every ticket as added, with the remote tip as HEAD', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const res = backlog(b.repo, ['changes'], { cwd: b.repo, env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const out = h.parseKV(res.stdout);
+  assert.equal(out.BOARD_DIR, b.boardDir);
+  assert.equal(out.HEAD, h.git(b.bare, ['rev-parse', 'board']).stdout.trim());
+  assert.deepEqual(csv(out.ADDED), ['0001B']);
+  assert.equal(out.UPDATED, '');
+  assert.equal(out.REMOVED, '');
+  assert.equal(out.UNPUSHED, undefined);
+});
+
+test('backlog#073 — L2.10: after adds, an update and a remove the ids land under ADDED, UPDATED and REMOVED', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const cursor = h.parseKV(backlog(b.repo, ['changes'], { cwd: b.repo, env: b.env }).stdout).HEAD;
+
+  const secondId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  const thirdId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  assert.deepEqual([secondId, thirdId], ['0002B', '0003B']);
+  const mid = h.parseKV(backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: b.env }).stdout);
+  assert.deepEqual(csv(mid.ADDED), [secondId, thirdId]);
+
+  assert.equal(commitTo(b, ['update', '0001B'], '{"title":"first, edited"}').status, 0);
+  assert.equal(commitTo(b, ['remove', secondId]).status, 0);
+  const fourthId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  assert.equal(fourthId, '0004B');
+  const tip = h.git(b.bare, ['rev-parse', 'board']).stdout.trim();
+
+  // from the first cursor: the ticket added and removed since then shows nowhere
+  const all = h.parseKV(backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: b.env }).stdout);
+  assert.equal(all.HEAD, tip);
+  assert.deepEqual(csv(all.ADDED), [thirdId, fourthId]);
+  assert.deepEqual(csv(all.UPDATED), ['0001B']);
+  assert.deepEqual(csv(all.REMOVED), []);
+
+  // from the middle cursor: the removed one shows once
+  const later = h.parseKV(backlog(b.repo, ['changes', '--since', mid.HEAD], { cwd: b.repo, env: b.env }).stdout);
+  assert.deepEqual(csv(later.ADDED), [fourthId]);
+  assert.deepEqual(csv(later.UPDATED), ['0001B']);
+  assert.deepEqual(csv(later.REMOVED), [secondId]);
+
+  // the same cursor again: nothing
+  const quiet = h.parseKV(backlog(b.repo, ['changes', '--since', tip], { cwd: b.repo, env: b.env }).stdout);
+  assert.equal(quiet.ADDED, '');
+  assert.equal(quiet.UPDATED, '');
+  assert.equal(quiet.REMOVED, '');
+});
+
+test('backlog#074 — L2.10: an unpushed local commit is UNPUSHED=1 and not in the lists; HEAD stays the remote tip', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  assert.equal(backlog(b.repo, ['list'], { env: b.env }).status, 0);
+  const cursor = h.git(b.bare, ['rev-parse', 'board']).stdout.trim();
+  fs.writeFileSync(path.join(b.bare, 'hooks', 'pre-receive'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+  const refused = commitTo(b, ['add'], validTicket());
+  assert.equal(key(refused.stdout, 'PUSHED'), 'no');
+  const localId = key(refused.stdout, 'TICKET_ID');
+
+  const res = backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: { ...b.env, CODEADD_BOARD_SYNC_TTL_MS: '0' } });
+  assert.equal(res.status, 0, res.output);
+  const out = h.parseKV(res.stdout);
+  assert.equal(out.UNPUSHED, '1');
+  assert.equal(out.HEAD, cursor);
+  assert.equal(out.ADDED, '');
+  assert.ok(!res.stdout.includes(localId));
+});
+
+test('backlog#075 — L2.10: a sha that is not on the board branch is ERROR=cursor-unknown, exit 1', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const foreign = h.git(b.repo, ['rev-parse', 'HEAD']).stdout.trim();
+  for (const since of [foreign, 'deadbeef', '0'.repeat(40)]) {
+    const res = backlog(b.repo, ['changes', '--since', since], { cwd: b.repo, env: b.env });
+    assert.equal(res.status, 1, since + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=cursor-unknown/);
+  }
+});
+
+test('backlog#076 — F22: the changes grammar takes at most one --since pair; a project with no board reads as BACKLOG_PRESENT=no', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  for (const args of [['changes', '--since'], ['changes', 'abc'], ['changes', '--since', 'a', 'b'], ['changes', '--full']]) {
+    const res = backlog(b.repo, args, { cwd: b.repo, env: b.env });
+    assert.equal(res.status, 2, args.join(' ') + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=bad-argument/);
+  }
+  const plain = project(t);
+  const none = run('backlog-cli', ['changes'], { cwd: plain, env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(none.status, 0, none.output);
+  assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
 });

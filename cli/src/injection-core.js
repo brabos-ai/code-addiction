@@ -368,7 +368,17 @@ export function renderSlotRegion(content, anchor, text) {
   return lines.join('\n');
 }
 
-export function composeSlot(slot, memberStates) {
+/**
+ * Compose one slot: the contributing members in source order, or the fallback
+ * when none contributes. A member body arrives already resolved (memberState).
+ * The fallback is authored text, so it is resolved here, per provider, by the
+ * same rule -- a fallback may carry {{skill:}} or {{cmd:}} like any member.
+ * Without a provider the fallback is returned as authored.
+ * @param {object} slot
+ * @param {Array<object>} memberStates
+ * @param {object} [provider]  the provider the text is rendered for
+ */
+export function composeSlot(slot, memberStates, provider) {
   const warnings = [];
   const parts = [];
   for (let i = 0; i < slot.members.length; i++) {
@@ -385,10 +395,14 @@ export function composeSlot(slot, memberStates) {
     if (state.contribute && state.text) parts.push(state.text.endsWith('\n') ? state.text : `${state.text}\n`);
   }
   return {
-    text: parts.length ? parts.join('') : (slot.fallback || ''),
+    text: parts.length ? parts.join('') : resolveFallback(slot.fallback || '', provider),
     usedFallback: parts.length === 0,
     warnings,
   };
+}
+
+function resolveFallback(text, provider) {
+  return provider && text ? resolvePlaceholders(text, provider) : text;
 }
 
 export function renderSlots(baseline, slots) {
@@ -468,7 +482,7 @@ export function renderInstalledResource(cwd, resource, slots, providerKey) {
   }
   const baseline = fs.readFileSync(basePath, 'utf8');
   const prepared = slots.map((slot) => {
-    const composed = composeSlot(slot, slot.memberStates || []);
+    const composed = composeSlot(slot, slot.memberStates || [], target.provider);
     return { ...slot, text: composed.text, warnings: composed.warnings };
   });
   const rendered = renderSlots(baseline, prepared);
@@ -540,7 +554,7 @@ export function reconcileSlots(cwd, options = {}) {
     for (const target of resolveResourceTargets(cwd, group.resource)) {
       const prepared = group.slots.map((slot) => {
         const states = slot.members.map((m) => memberState(cwd, m, group.resource, manifest, target.provider, options.pluginActive));
-        const composed = composeSlot(slot, states);
+        const composed = composeSlot(slot, states, target.provider);
         warnings.push(...composed.warnings);
         return { ...slot, text: composed.text };
       });

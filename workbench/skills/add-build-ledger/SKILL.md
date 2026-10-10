@@ -7,6 +7,7 @@ description: "Use when executing a plan's F-blocks — the build ledger, the res
 
 <!-- uses:
 - skill: add-commit
+- skill: add-interaction
 - mention: add-framework--done
 - mention: add-artefact-graph
 -->
@@ -154,6 +155,9 @@ Four things stop the session and ask the human, and only these:
    a shared branch, a publish.
 4. **A plan so broken that every path forward is a guess.** Not "a decision I would rather not make" —
    one where no reading of the plan supports any option over the others.
+
+**A hard stop asks through `add-interaction`:** one numbered batch holding every question the stop needs
+answered, each with a RECOMMENDED line.
 
 Everything else is a ruling. **"I am not sure" is not a fifth stop.**
 

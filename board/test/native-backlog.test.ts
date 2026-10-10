@@ -1,7 +1,12 @@
 // board/test/native-backlog.test.ts — the native route in vitest depth (L6):
-// a CLI mutation through the REAL server surfaces in the SSE stream and the
-// API, and the relocated server is a standalone closure of server.mjs and
-// the generated runtime alone. (plan F7, L6.)
+// a write through the publication entry, with the REAL server watching the board
+// clone, surfaces in the SSE stream and the API, and the relocated server is a
+// standalone closure of server.mjs and the generated runtime alone. (plan F7, L6.)
+//
+// The board is read from a clone: project() makes the temp directory both the code
+// repository and the clone (git init), and every process gets CODEADD_BOARD_DIR
+// pointing at it. The CLI only reads now; writes go through backlog-commit.cjs.
+import { execFileSync } from 'node:child_process';
 import { spawnSync, spawn, type ChildProcess } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -12,7 +17,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const BOARD = resolve(__dirname, '..');
 const REPO = resolve(BOARD, '..');
 const SERVER = join(BOARD, 'server.mjs');
-const CLI = join(REPO, 'framwork', '.codeadd', 'scripts', 'backlog-cli.cjs');
+const COMMIT = join(REPO, 'framwork', '.codeadd', 'scripts', 'backlog-commit.cjs');
 const RUNTIME = join(BOARD, 'runtime');
 
 type Running = { proc: ChildProcess | null };
@@ -29,6 +34,7 @@ function project(): string {
   const root = mkdtempSync(join(tmpdir(), 'board-native-'));
   temps.push(root);
   mkdirSync(join(root, 'docs'));
+  execFileSync('git', ['init', '-q'], { cwd: root });
   writeFileSync(join(root, 'docs/backlog.jsonl'), `${ticket('0001B', 'seed')}\n`);
   mkdirSync(join(root, 'dist'));
   writeFileSync(join(root, 'dist/index.html'), '<!doctype html>');
@@ -45,7 +51,7 @@ function dist(): string {
 /** Run the board server and read its URL from the startup line. */
 function boot(serverFile: string, root: string, portFlag: string[] = []): Promise<string> {
   const proc = spawn(process.execPath, [serverFile, '--root', root, '--dist', dist(), '--no-open', ...portFlag], {
-    env: { ...process.env, NODE_OPTIONS: '' },
+    env: { ...process.env, NODE_OPTIONS: '', CODEADD_BOARD_DIR: root },
   });
   running.push({ proc });
   return new Promise<string>((ok, fail) => {
@@ -108,9 +114,9 @@ describe('L6 — the native CLI drives the served board', () => {
     })();
 
     await sleep(300);
-    // PATH: '' on the CLI child: no bash, no shell, nothing else reachable.
-    const run = spawnSync(process.execPath, [CLI, 'add', '--record-file', record], {
-      cwd: root, encoding: 'utf8', env: { ...process.env, PATH: '', NODE_OPTIONS: '' },
+    // The one write route, over a clone with no remote: committed in the clone.
+    const run = spawnSync(process.execPath, [COMMIT, 'add', '--record-file', record], {
+      cwd: root, encoding: 'utf8', env: { ...process.env, NODE_OPTIONS: '', CODEADD_BOARD_DIR: root },
     });
     expect(run.status, run.stdout + run.stderr).toBe(0);
     expect(run.stdout).toContain('TICKET_ID=0002B');
@@ -132,8 +138,8 @@ describe('L6 — the native CLI drives the served board', () => {
 
     const bad = join(root, 'bad.json');
     writeFileSync(bad, JSON.stringify({ tldr: 'no title' }));
-    const refused = spawnSync(process.execPath, [CLI, 'add', '--record-file', bad], {
-      cwd: root, encoding: 'utf8', env: { ...process.env, PATH: '', NODE_OPTIONS: '' },
+    const refused = spawnSync(process.execPath, [COMMIT, 'add', '--record-file', bad], {
+      cwd: root, encoding: 'utf8', env: { ...process.env, NODE_OPTIONS: '', CODEADD_BOARD_DIR: root },
     });
     expect(refused.status).toBe(2);
     expect(refused.stdout).toContain('REFUSED=missing-field');
@@ -146,7 +152,9 @@ describe('L6 — the native CLI drives the served board', () => {
 
 describe('L6 — the relocated standalone closure', () => {
   it('server + generated runtime alone answer the API with no CLI and no source checkout', async () => {
-    expect(existsSync(join(RUNTIME, 'backlog-core.cjs'))).toBe(true);
+    for (const name of ['backlog-core.cjs', 'backlog-storage.cjs', 'backlog-board.cjs', 'backlog-git.cjs']) {
+      expect(existsSync(join(RUNTIME, name)), name).toBe(true);
+    }
 
     // The moved copy carries ONLY the server and its generated runtime.
     const moved = mkdtempSync(join(tmpdir(), 'board-reloc-'));
@@ -157,9 +165,9 @@ describe('L6 — the relocated standalone closure', () => {
     const root = project();
     writeFileSync(join(root, 'docs/backlog.jsonl'), `${ticket('0001B', 'first')}\n${ticket('0002B', 'second')}\n`);
 
-    // INVARIANT: the source tree's own CLI stays out — the moved directory
+    // INVARIANT: the source tree's own scripts stay out — the moved directory
     // holds no scripts directory at all, and the served API needs nothing
-    // from it anyway.
+    // from it anyway: the board module it resolves through is in runtime/.
     expect(existsSync(join(moved, 'scripts'))).toBe(false);
 
     // The move server imports its own ./runtime by dirname — proven by
@@ -175,7 +183,9 @@ describe('L6 — the relocated standalone closure', () => {
 });
 
 describe('L6 — the board route never forks a bash process', () => {
-  it('server.mjs and the generated runtime carry no child_process in their code bytes', () => {
+  it('the process-free runtime modules carry no child_process in their code bytes', () => {
+    // backlog-board.cjs and backlog-git.cjs run git through argument arrays — that
+    // is their job, asserted in the publication suite — so they are not on this list.
     for (const file of [
       ...['backlog-core.cjs', 'backlog-storage.cjs'].map((n) => join(RUNTIME, n)),
     ]) {

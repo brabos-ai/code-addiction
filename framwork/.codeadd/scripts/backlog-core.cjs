@@ -16,8 +16,9 @@ const DEFAULT_DEFS = {
     { name: 'planning', order: 3, label: 'Planning' },
     { name: 'building', order: 4, label: 'Building' },
     { name: 'review',   order: 5, label: 'Review'   },
-    { name: 'done',     order: 6, label: 'Done'     },
-    { name: 'dropped',  order: 7, label: 'Dropped', hidden: true }
+    { name: 'release',  order: 6, label: 'Release'  },
+    { name: 'done',     order: 7, label: 'Done'     },
+    { name: 'dropped',  order: 8, label: 'Dropped', hidden: true }
   ],
   statuses: [
     { name: 'open',      order: 1, column: 'backlog',  label: 'Open',       means: 'decided, nobody picked it up' },
@@ -26,10 +27,19 @@ const DEFAULT_DEFS = {
     { name: 'planning',  order: 4, column: 'planning', label: 'Planning',   means: 'add-plan running' },
     { name: 'planned',   order: 5, column: 'planning', label: 'Planned',    means: 'plan approved, waiting to build' },
     { name: 'doing',     order: 6, column: 'building', label: 'Doing',      means: 'add-build running' },
-    { name: 'in-review', order: 7, column: 'review',   label: 'In review',  means: 'PR open' },
-    { name: 'done',      order: 8, column: 'done',     label: 'Done',       means: 'delivered' },
-    { name: 'dropped',   order: 9, column: 'dropped',  label: 'Dropped',    means: 'decided against' }
-  ]
+    { name: 'in-review', order: 7, column: 'review',   label: 'In review',  means: 'build finished, PR may not exist yet; waiting for review and merge' },
+    { name: 'awaiting-release', order: 8, column: 'release', label: 'Awaiting release', means: 'merged, waiting for a release' },
+    { name: 'done',      order: 9, column: 'done',     label: 'Done',       means: 'delivered' },
+    { name: 'dropped',   order: 10, column: 'dropped', label: 'Dropped',    means: 'decided against' }
+  ],
+  labels: [
+    { name: 'feature',     label: 'Feature',     means: 'new capability' },
+    { name: 'bug',         label: 'Bug',         means: 'something broken' },
+    { name: 'improvement', label: 'Improvement', means: 'better version of what exists' },
+    { name: 'docs',        label: 'Docs',        means: 'documentation only' },
+    { name: 'chore',       label: 'Chore',       means: 'upkeep with no user-facing change' }
+  ],
+  release_flow: false
 };
 
 const RESERVED = ['id', 'created_at', 'updated_at'];
@@ -148,7 +158,8 @@ function executeBacklog(params) {
       updated_at: ts,
       comments: [],
       feature: typeof record.feature === 'string' ? record.feature : null,
-      work_id: typeof record.work_id === 'string' ? record.work_id : null
+      work_id: typeof record.work_id === 'string' ? record.work_id : null,
+      release: typeof record.release === 'string' ? record.release : null
     };
 
     board.rows.push({ n: board.rows.length + 1, text: JSON.stringify(ticket), ticket });
@@ -288,7 +299,8 @@ function executeBacklog(params) {
     diagnostics,
     defsProvenance,
     defsStatus: defsResult.status,
-    defs: defsResult.status === 'usable' ? defsResult.defs : null
+    defs: defsResult.status === 'usable' ? defsResult.defs : null,
+    releaseFlow: defsResult.status === 'usable' && defsResult.defs.release_flow === true
   };
 }
 

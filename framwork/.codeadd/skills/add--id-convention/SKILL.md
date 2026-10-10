@@ -15,7 +15,7 @@ description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs 
 - script: done.cjs
 - script: get-branch-metadata.cjs
 - script: next-id.cjs
-- script: backlog-cli.cjs
+- script: backlog-commit.cjs
 - script: backlog-id.cjs
 - mention: init.cjs
 - script: qa-evidence.cjs
@@ -111,26 +111,28 @@ node .codeadd/scripts/status.cjs next-id <LETTER>
 Examples: `status.cjs next-id F` → `0001F`, `status.cjs next-id H` → `0001H`.
 
 **A BACKLOG TICKET is the exception: allocation is native.** `backlog-id.cjs`, invoked through
-`node .codeadd/scripts/backlog-cli.cjs add --record-file <ticket.json>`, computes the same global
-counter at the operation root — the `status.cjs` call above stays valid for B (the wrapper keeps answering),
-but the route the agent runs for a ticket is the CLI add, and `10000B` refuses like the wrapper's
-filter always did.
+`node .codeadd/scripts/backlog-commit.cjs add --record-file <ticket.json>`, computes the same global
+counter — the feature directories in the code repository, the ticket ids in the board clone — inside the
+write lock, after the clone is brought level with the remote. The `status.cjs` call above stays valid for B,
+but the route the agent runs for a ticket is the publication entry's add, and `10000B` refuses like the
+wrapper's filter always did.
 
 Never hand-roll IDs. Never reuse an ID from another namespace.
 
 ### One counter, two sources, one implementation
 
 The number is global across every letter. It is the max over **both** the
-`docs/features/[NNNN][L]-*/` directories **and** the ids already on the backlog board,
-`docs/backlog.jsonl` — counting only the first would hand out a number a ticket already holds.
+`docs/features/[NNNN][L]-*/` directories of the code repository **and** the ids already on the backlog
+board, `docs/backlog.jsonl` in the board clone (`boardRoot`) — counting only the first would hand out a
+number a ticket already holds. A project with no usable board counts the feature directories alone.
 
 **`backlog-id.cjs` is the one allocator, and it is native.** It computes the max+1 from both
 sources, anchored on the raw text, and every route delegates to it: `next-id.cjs` (one uppercase
 A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
-prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), `backlog-cli.cjs add` and the `init.cjs` seed are
-thin adapters that retain their public argument validation, exit codes and exhaustion policy. The local CLI
-allocates for you
-when `add` runs — `node .codeadd/scripts/backlog-cli.cjs add --record-file <ticket.json>` needs no
+prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), `backlog-commit.cjs add` and the `init.cjs` seed are
+thin adapters that retain their public argument validation, exit codes and exhaustion policy. The
+publication entry allocates for you
+when `add` runs — `node .codeadd/scripts/backlog-commit.cjs add --record-file <ticket.json>` needs no
 allocator call. Backlog allocation refuses `10000` (`ERROR=id-allocation-failed`). The public
 `next-id`, `status next-id` and `init` adapters preserve the old minimum-width formatting and
 can emit a five-digit number at the boundary; this does not expand the four-digit backlog schema.
@@ -148,7 +150,7 @@ IF CHANGING HOW AN ID IS ALLOCATED:
 
 **The core reads the backlog by raw-text anchor, never by parse.** A line whose JSON is damaged
 still yields its id, so a hand-broken board can never block an allocation. An absent board is a
-no-op: a project with no `docs/backlog.jsonl` gets exactly the id it got before.
+no-op: a project with no board gets exactly the id it got before.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 

@@ -7,6 +7,7 @@ description: Use when designing command workflows or refactoring existing comman
 
 <!-- uses:
 - skill: add-final-report
+- skill: add-interaction
 - skill: add-artefact-graph
 - skill: add-framework--build
 - skill: add-framework-injection
@@ -17,10 +18,10 @@ description: Use when designing command workflows or refactoring existing comman
 -->
 
 <!--
-`add.md` and `add-ux` below are PRODUCT commands and are named in prose on
+`add-help.md` and `add-ux` below are PRODUCT commands and are named in prose on
 purpose. They are deliberately NOT declared: `uses:` targets resolve inside the
-declaring artefact's own layer (scripts/build.js), so `- command: /add.md` from
-here would resolve to `internal/command/add.md`, which does not exist, and the
+declaring artefact's own layer (scripts/build.js), so `- command: /add-help.md` from
+here would resolve to `internal/command/add-help.md`, which does not exist, and the
 dangling gate would fail the build. The prose sniff skips cross-layer names.
 
 The same applies to the product `add-final-report`. `- skill: add-final-report`
@@ -180,6 +181,21 @@ IF [condition]:
   ✅ DO: [correct action]
 ```
 
+### A Stop That Asks
+
+**An internal stop that asks the user anything sends every question at once, through `add-interaction`.** A command or
+skill written here states the stop in this shape, and leaves the format of the question to that skill:
+
+```
+IF A STEP ASKS THE USER ONE OR MORE QUESTIONS:
+  ⛔ DO NOT USE: A structured-question tool, or an option table printed apart from the numbered question
+  ⛔ DO NOT: Write "ask one question, wait, then ask the next"
+  ✅ DO: Collect every question the step needs, number them, give each a RECOMMENDED option and the reason,
+         and WAIT once
+```
+
+A product command takes its question format from the interaction skill it loads, not from this block.
+
 ### Top-of-File Placement
 
 Prohibitions must come BEFORE instructions. If they're in the middle or end, the agent has already started executing wrong. Agent reads top-down — prohibitions at the top are processed before any action.
@@ -318,7 +334,7 @@ IF WRITING OR REVISING A COMMAND'S CLOSING STEP:
   ✅ DO: Load add-final-report at that step and fill its blocks
 ```
 
-**Two commands are exempt, and only these two.** `add.md` routes to another command and `add-ux`
+**Two commands are exempt, and only these two.** `add-help.md` routes to another command and `add-ux`
 rewrites an instruction. Neither finishes work, so a delivery report on either is noise. A command
 that writes a file, changes state, or opens a PR is not exempt.
 

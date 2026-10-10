@@ -11,7 +11,7 @@
       "const": 1
     },
     "status": {
-      "description": "The outcome. done: the command finished its work. stopped: a gate or a hard stop ended the run on purpose. needs-approval: the run is waiting on the user. failed: an error the command did not plan for.",
+      "description": "The outcome. done: the command finished its work. stopped: a gate or a hard stop ended the run on purpose. needs-approval: the run reached a stop that waits on the user - a numbered question batch, an approval or a push - and nothing is wrong or finished; the caller answers in the same session with claude -c or --resume. failed: an error the command did not plan for.",
       "type": "string",
       "enum": ["done", "stopped", "needs-approval", "failed"]
     },
@@ -86,7 +86,7 @@
       }
     },
     "next_step": {
-      "description": "The Continuation Line verbatim, or null when the command prints none.",
+      "description": "The Continuation Line verbatim, or null when the command prints none. On needs-approval it carries the numbered question batch the user must answer.",
       "type": ["string", "null"]
     },
     "needs_approval": {
@@ -94,7 +94,7 @@
       "type": "boolean"
     },
     "reason": {
-      "description": "The gate, stop or question, in one line; null when there is none.",
+      "description": "The gate, stop or question batch, in one line; null when there is none.",
       "type": ["string", "null"]
     }
   }

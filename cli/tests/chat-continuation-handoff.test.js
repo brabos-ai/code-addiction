@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withFallbacks } from './helpers/with-fallbacks.js';
 
 /**
  * Plan 2026-10-04T185331 -- optional chat continuation handoff.
@@ -41,9 +42,11 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const SRC = path.join(ROOT, 'framwork', '.codeadd');
 
-const read = (rel) => fs.readFileSync(path.join(SRC, rel), 'utf8');
+const read = (rel) => withFallbacks(fs.readFileSync(path.join(SRC, rel), 'utf8'));
 
 const FINAL_REPORT = 'skills/add--final-report/SKILL.md';
+// The owner of both contract ids since plan 2026-10-09T184411-PLAN--agent-mode-feature (F9): the human rule set.
+const HUMAN = 'skills/add--human-interaction/SKILL.md';
 const DELIVERY_MODE = 'skills/add--delivery-mode/SKILL.md';
 const ECOSYSTEM = 'skills/add--ecosystem/SKILL.md';
 
@@ -87,7 +90,7 @@ const CARRIES_DELIVERY_MODE = Object.keys(F3);
 const NEEDS_DELIVERY_MODE = Object.keys(F4);
 
 /** R7: the two router/transformer roles the plan exempts by name. */
-const EXEMPT = ['add.md', 'add-ux.md'];
+const EXEMPT = ['add-help.md', 'add-ux.md'];
 
 /**
  * The unconditional manual print the plan replaces, one exact string per site.
@@ -132,9 +135,10 @@ const SURVIVORS = [
   },
 ];
 
-/** The scoped closings: the twelve adapters plus the two owners. */
+/** The scoped closings: the twelve adapters plus the three skills that carried the offer. */
 const SCOPED = [
   ...Object.keys(ADAPTERS).map((f) => path.join('commands', f)),
+  HUMAN,
   FINAL_REPORT,
   DELIVERY_MODE,
 ];
@@ -142,11 +146,11 @@ const SCOPED = [
 describe('optional chat continuation handoff', () => {
   describe('F1 -- the output owner', () => {
     it('declares the two-response output contract', () => {
-      expect(read(FINAL_REPORT)).toContain(OUTPUT);
+      expect(read(HUMAN)).toContain(OUTPUT);
     });
 
     it('keeps the initial response on the seven blocks and exempts only the accepted one', () => {
-      const src = read(FINAL_REPORT);
+      const src = read(HUMAN);
       // Both halves of the contract have to be present, or the file describes a
       // one-response output that the plan replaced.
       expect(src).toContain('seven blocks');
@@ -154,21 +158,21 @@ describe('optional chat continuation handoff', () => {
     });
 
     it('states that the accepted response carries no execution', () => {
-      expect(read(FINAL_REPORT)).toMatch(/execut/i);
+      expect(read(HUMAN)).toMatch(/execut/i);
     });
 
     it('names the official-document rule the block content is built from', () => {
-      expect(read(FINAL_REPORT)).toMatch(/official document/i);
+      expect(read(HUMAN)).toMatch(/official document/i);
     });
 
     it('explicitly places the complete invocation on the accepted block first line', () => {
       // The original L3 accepted turn put an introduction before the invocation.
       // This guard protects the authored correction; live conversations remain L3.
-      expect(read(FINAL_REPORT)).toContain("Start the block's first line with the complete next-command invocation");
+      expect(read(HUMAN)).toContain("Start the block's first line with the complete next-command invocation");
     });
 
     it('binds the offer to a top-level finishing command, not a worker', () => {
-      const src = read(FINAL_REPORT);
+      const src = read(HUMAN);
       expect(src).toMatch(/top-level/i);
       expect(src).toMatch(/subagent|worker/i);
     });
@@ -176,19 +180,19 @@ describe('optional chat continuation handoff', () => {
 
   describe('F2 -- the eligibility owner', () => {
     it('declares the eligibility contract and consumes the output one', () => {
-      const src = read(DELIVERY_MODE);
+      const src = read(HUMAN);
       expect(src).toContain(ELIGIBILITY);
       expect(src).toContain(OUTPUT);
     });
 
     it('declares its dependency on the output owner in its uses block', () => {
-      const uses = read(DELIVERY_MODE).match(/<!-- uses:[\s\S]*?-->/);
+      const uses = read(HUMAN).match(/<!-- uses:[\s\S]*?-->/);
       expect(uses).not.toBeNull();
       expect(uses[0]).toMatch(/add--final-report/);
     });
 
     it('makes the manual outcome an offer rather than a printed invocation', () => {
-      const src = read(DELIVERY_MODE);
+      const src = read(HUMAN);
       expect(src).not.toContain('Print the next command as text and stop');
       expect(src).toMatch(/offer/i);
     });
@@ -324,8 +328,8 @@ describe('optional chat continuation handoff', () => {
       // SCOPED is built from ADAPTERS plus the two owners. If an adapter is ever
       // added to the plan and not here, the class check silently stops covering
       // it -- so the count is pinned rather than trusted.
-      expect(SCOPED).toHaveLength(Object.keys(ADAPTERS).length + 2);
-      expect(SCOPED).toHaveLength(14);
+      expect(SCOPED).toHaveLength(Object.keys(ADAPTERS).length + 3);
+      expect(SCOPED).toHaveLength(15);
     });
   });
 

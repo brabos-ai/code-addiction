@@ -7,6 +7,7 @@ description: "Use when a delivered branch is ready to close out — gates it on 
 
 <!-- uses:
 - skill: add-commit
+- skill: add-interaction
 - skill: add-final-report
 - skill: add-plan-authoring
 - skill: add-build-ledger
@@ -36,7 +37,7 @@ Closes out a delivered plan in **either layer** — or, with `--fix`, a plan-les
 
 **STEPS IN ORDER:**
 STEP 1: Collect context           → branch, plan (the fix record with --fix), ledger, diff, `gh auth status`
-STEP 2: Gates                     → ledger complete (the fix gate with --fix) + CI green on THIS sha [HARD STOP]
+STEP 2: Gates                     → ledger complete (the fix gate with --fix) + test-loss guard + CI green on THIS sha [HARD STOP]
 STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
 STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
@@ -104,7 +105,7 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 ## Operation Mode
 
 /add-framework--done [plan]     → Close out the branch implementing that plan (full basename, unique slug substring, or a plain path)
-/add-framework--done            → Resolve the plan from the branch, or ask
+/add-framework--done            → Resolve the plan from the branch, or ask (as one numbered batch)
 /add-framework--done --fix <slug> [--ticket <id>]   → Close out a plan-less fix: no plan, no ledger. The fix record is generated from git and CI facts
 
 **Examples:**
@@ -150,6 +151,8 @@ IF `--ticket` WAS GIVEN WITHOUT `--fix`:
 **Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
+
+That confirmation is one numbered item with a RECOMMENDED line, in the same batch as any other open question (`add-interaction`).
 
 **With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
 
@@ -241,6 +244,19 @@ IF `--fix` WAS GIVEN:
 
 A fix is what its commits are, so the gate asks only that there is something to close out, and that the record is about this head; CI at 2.3 is its real validation.
 
+**The test-loss gate — last in 2.2, on the normal path and on `--fix`.** Run `git fetch origin main`, then `node scripts/test-loss-guard.cjs`. The script never fetches, and a stale `origin/main` can make a test that `main` itself deleted read as lost. Its header owns the output and the exit codes.
+
+```
+IF THE GUARD PRINTS GUARD=fail:
+  ⛔ DO NOT: Continue to 2.3
+  ⛔ DO NOT: Restore a test or write a `Test-Removed:` trailer here — which removals were decided belongs to the build and the operator
+  ✅ DO: Report each LOST_TEST line and STOP
+```
+
+On `--fix` there is no build to answer it either. Say so in the report: the operator restores the test, or adds a `Test-Removed:` trailer in an empty commit, and runs this close-out again.
+
+It does not run on the recovery path (2.4): the work is already merged and there is no branch left to compare. It runs on the resume path (2.5). A loss that a `Test-Removed:` trailer covers prints as `NOTED_TEST` and does not stop the gate; STEP 9 names each one.
+
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
 CI runs the framework and board gates, on Ubuntu with Node 22.19.0.
@@ -268,7 +284,7 @@ one machine is still one machine.
 1. **Sync the `AGENTS.md` inventory block — run it, commit it, push it.** `node scripts/inventory.js`. If it reports the block updated, `git add AGENTS.md` (that path alone, never `-A`), commit it with a message per `{{skill:add-commit/SKILL.md}}`, and push. If it reports the block already current, say so and make no commit. **Exit 2 means an absent or malformed marker → report it and STOP.** A missing marker is a defect in `AGENTS.md`, not permission to skip the sync.
 
    **`already current` is the expected outcome, not a sign this step is redundant.** `/add-framework--build` STEP 8 syncs before it offers to open the PR, so the block normally arrives here correct. This is the net under three cases where it cannot have: a build that hard-stopped before STEP 8, a hotfix that never ran a full build, and the recovery path at 2.4 where the merge came first.
-2. **The working tree must be clean.** If it is not → report the dirty paths and STOP. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
+2. **No tracked file may have uncommitted changes.** Check with `git status --porcelain --untracked-files=no`. If it prints anything, or anything is staged → report those paths and STOP. Untracked paths that are neither staged nor part of the delivery do not block the gate; mention them in the report and go on. A green run proves something about a commit; it proves nothing about uncommitted edits to tracked files sitting beside it. A green run proves something about a commit; it proves nothing about uncommitted edits sitting beside it.
 3. **Push the branch** if `git rev-parse HEAD` and `git rev-parse origin/<branch>` disagree. Item 1 already pushed when the block changed, so this finds them in sync — that is the expected outcome, not a redundancy to remove.
 4. **`gh pr view`** → if no PR exists, `gh pr create`.
 5. **Wait for the run**, e.g. `gh pr checks --watch --fail-fast`.
@@ -291,7 +307,7 @@ one machine is still one machine.
 
 ### 2.4 The Recovery Path — merged, never indexed
 
-Reached only from 2.1's bottom row. **Every gate above still applies in full** — a delivery is not
+Reached only from 2.1's bottom row. **Every gate above still applies in full, except the test-loss gate in 2.2** — a delivery is not
 exempt from them because someone merged early. What changes is where the evidence lives and what is
 left to do:
 
@@ -300,6 +316,7 @@ left to do:
 | 1.2 | Refuses to run on `main` | Runs on `main`; the branch is merged and may be gone |
 | 1.3 | `git diff --name-status main...HEAD` | `git diff --name-status <merge-commit>^1 <merge-commit>` — the first-parent diff, which is the whole delivery |
 | 2.2 | The ledger gate | Unchanged. It still hard-stops |
+| 2.2 | The test-loss gate | Skipped — the work is merged and no branch is left to compare |
 | 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
 | 6 | Commit on the branch, push | Commit on `main`, push |
@@ -432,7 +449,7 @@ A deleted artefact matching an existing entry's item is a **deletion, proven by 
 
 Match key, in order: **by `node` id when the item has one** (stable across file moves, exact), **by `find` presence when it does not**.
 
-Ask the user, per deletion: *replaced by this delivery*, or *removed*?
+Ask the user, for every deletion in ONE numbered batch (`add-interaction`), each item with a RECOMMENDED line: *replaced by this delivery*, or *removed*?
 
 - **Replaced** → the old entry gains `status: superseded` and `superseded_by: <this id>`
 - **Removed** → the old entry gains `status: gone`, no `superseded_by`
@@ -579,13 +596,15 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 
 ### The ticket — first, before any deletion
 
-**When the plan header carries `> **Ticket:**`, make the `done` write now.** `add-plan-authoring` owns when
+**When the plan header carries `> **Ticket:**`, make the close-out write now — `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, `done` otherwise.** `add-plan-authoring` owns when
 it is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting
 from memory.
 
+The read is the exact `get <id>` one, and the write is skipped when the ticket already reads `done` or `awaiting-release`. The `--fix` track follows the same rule.
+
 It runs here because this is the first point every route shares with the delivery already on `main`: the
 normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
-before the merge — a ticket reading `done` for work that never landed is a lie a refused merge would
+before the merge — a ticket reading `done` or `awaiting-release` for work that never landed is a lie a refused merge would
 leave behind. It reads the plan before the third removal below deletes the local copy.
 
 **On the fix track the ticket is read from the fix record's `> **Ticket:**` line**, which exists only when `--ticket` was passed — no line, no write. When no local copy exists, read it from `docs/deliveries/<id>/fix.md`.
@@ -702,10 +721,11 @@ Then, after the seven blocks and before the metadata, report always:
   STEP 8 composed — as text the operator runs, never as something this skill ran
 - What STEP 8 removed, and what it skipped and why. **When the worktree and its branch were skipped, print the two commands that finish the job from the primary checkout** — a skip reported without its remedy leaves the operator to work out what to run
 - Every gate that ran, and its result
+- **The test-loss gate** — its `GUARD` result, and every `NOTED_TEST` line it printed. "None" is stated, never omitted
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
-- **The ticket, when the plan carried one** — the id, and the `done` write's `SHA`, that it was already
+- **The ticket, when the plan carried one** — the id, which status was written (`awaiting-release` or `done`) with the write's `SHA`, that it was already
   there, or what did not happen
 - **The track, when `--fix` was given** — name it: `fix`. Say the fix record and the fix gate stood in for the plan and the ledger gate. If STEP 3 refused with `REFUSED=no-items`, say that a fix with no nameable behaviour has no index entry to write, and that this is the cause.
 

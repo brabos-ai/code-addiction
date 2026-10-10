@@ -1,0 +1,1 @@
+- Offer continuation when no real next activity exists, or from a worker or nested step

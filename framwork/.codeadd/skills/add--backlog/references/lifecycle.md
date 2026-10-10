@@ -6,7 +6,7 @@ those instructions points at its own row here. None restates any of it: six copi
 places for it to drift.
 
 **This file is the procedure — who writes which status, at which step, and when a write is skipped.** What
-each status MEANS, and how nine of them fit in seven columns, is
+each status MEANS, and how ten of them fit in eight columns, is
 `{{skill:add--backlog/references/phases.md}}`. A reader who only wants to know what a column means reads
 that file and never this one.
 
@@ -70,10 +70,15 @@ status filter and one argument.
 node .codeadd/scripts/backlog-cli.cjs get <ticket id>
 ```
 
+**The read comes from the board clone, never from the checked-out copy.** The board lives on its own
+`board` branch, in one clone per project on the machine, so a read is the same from every branch and
+worktree. `get` syncs that clone on its own (at most once per 30 s), so there is no `git fetch` to run.
+`SYNC=degraded` or `SYNC=skipped` in the output means the answer came from the clone without a fresh fetch.
+
 Exit 0 with `TICKETS_RETURNED=0` means the id is not on the board; the exit code is never a parse of
 the id. No matching row means the id is not on the board.
 
-**A subject, not an id**, is resolved by `search`, which runs on every status and now also answers an
+**A subject, not an id**, is resolved by `search`, which runs on every status and also answers an
 exact id — never by scanning a `list --all` for the matching line. `list` (and `search`) print a
 seven-field summary by default and `--full` restores the raw rows; the summary is for choosing a
 candidate, and the detail is `get`.
@@ -90,18 +95,17 @@ as one JSON object into a scratch file (anything in the working tree the caller 
 node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <record.json>
 ```
 
-**The file is read in the caller's cwd BEFORE any git routing, allocation or persistence**, so the
-record's bytes are captured before the entry chooses a worktree — and a failed read exits 1 with
-`ERROR=record-read-failed` while nothing at all has happened on disk. The Node entry also
-accepts stdin when `--record-file` is absent; agents use the file recipe above.
+The entry reads the record file before it touches the clone (`add--backlog`, "The Two Entry Points", owns
+the grammar and the `ERROR=record-read-failed` exit); agents use the file recipe above.
 
-**The entry writes to the BASE branch, never to the caller's.** On the base branch it commits directly;
-anywhere else it writes through a detached, locked worktree of its own, so the ticket reaches the base
-branch without touching the tree or the branch the command is working in.
+**The entry writes to the `board` branch, never to the caller's.** From any branch or worktree it takes
+the clone's lock, brings the clone level with the remote, writes, commits and pushes `board` — so the
+ticket never touches the tree or the branch the command is working in, and never reaches `main` or a
+code CI run. The report carries `ROUTE=board` and `BOARD_DIR`.
 
 **That is why a command that makes no git writes of its own can still move a ticket.** `add-new` and
-`add-plan` promise to leave the repository's tree untouched, and they do: the board write lands on another
-branch, through another tree.
+`add-plan` promise to leave the repository's tree untouched, and they do: the board write lands on the
+`board` branch, through the board clone.
 
 ---
 
@@ -123,7 +127,7 @@ already shaped it: both commands belong to the shaping phase, and the second fin
 
 ### The `work_id` stop — for every write before the build
 
-**Once the ticket's `work_id` equals this run's work id, ONLY `in-review` AND `done` may still be written.**
+**Once the ticket's `work_id` equals this run's work id, ONLY `in-review` AND `done` may still be written** — and `awaiting-release`, which is the `done` of a project that opted in (`RELEASE_FLOW=yes`), so it is an exit write like `done`.
 One equality test. `refining`, `shaped`, `planning`, `planned` and `doing` are all skipped.
 
 **`work_id` is set in the same write as `doing`, and it is the whole work item's id — an epic's, not a
@@ -149,7 +153,7 @@ move a ticket backwards, so only the entry write needs the phase check.
 | `add-plan` | `planned` | its completion, before the report — the plan is written and reviewed | `status` |
 | `add-build` | `doing` and `work_id` | right after `build-setup.cjs` returns | `status`, `work_id` |
 | `add-build` | `in-review` | its completion report, reading the `Publish:` outcome it recorded — **only** `pr-opened` or `pr-updated` | `status` |
-| `add-done` | `done` | after the merge | `status` |
+| `add-done` | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` | after the merge | `status` |
 | `add-hotfix` | `doing` and `work_id` | once its branch is confirmed | `status`, `work_id` |
 
 **Every row is subject to the two rules above.** The table says where a write stands; the rules say whether
@@ -253,15 +257,21 @@ Only two outcomes write it:
 **It reads the recorded outcome rather than sitting beside the publish question** because the report is
 reached on every path, and the write then sits next to the line that has to report it.
 
-### `add-done` — `done`, after the merge
+### `add-done` — `done` or `awaiting-release`, after the merge
 
 **After the merge**, and not before. Before it, the ticket would read `done` for work that has not landed,
-and a failed merge would leave it lying. Skipped when the ticket already reads `done` — the Resume route
-reaches this step again.
+and a failed merge would leave it lying.
+
+**Which status is decided by the ticket read.** The read that precedes the write prints `RELEASE_FLOW=yes|no`.
+`yes` writes `awaiting-release` (the work is merged and waits for a release to name its version); `no` writes
+`done`, exactly as a project without releases always did. The command never opens the definitions file.
+
+**Skipped when the ticket already reads `done` or `awaiting-release`** — the Resume route reaches this step
+again, and a ticket a release already closed must not be pulled back.
 
 ```bash
 node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <scratch.json>
-# scratch.json: {"status":"done"}
+# scratch.json: {"status":"awaiting-release"} when RELEASE_FLOW=yes, else {"status":"done"}
 ```
 
 ### `add-hotfix` — the jump
@@ -303,14 +313,14 @@ a second planning pass run without a guard of its own.
 
 ## The Status Names
 
-**The nine names a command writes:** `open`, `refining`, `shaped`, `planning`, `planned`, `doing`,
-`in-review`, `done` and `dropped`. What each means, and which column holds it, is `phases.md`.
+**The ten names a command writes:** `open`, `refining`, `shaped`, `planning`, `planned`, `doing`,
+`in-review`, `awaiting-release`, `done` and `dropped`. What each means, and which column holds it, is `phases.md`.
 
-**The vocabulary belongs to the user, and they are entitled to rename any of the nine.** Nothing enforces
+**The vocabulary belongs to the user, and they are entitled to rename any of the ten.** Nothing enforces
 them: the names are a contract this file and the record format both state, not a mechanism.
 
 **When a name has been renamed or removed, the write is refused with `REFUSED=unknown-status`.** Report it
-and continue. With nine names in play a single rename can produce **several** refusals in one run — one per
+and continue. With ten names in play a single rename can produce **several** refusals in one run — one per
 write that names it — and each gets its own line.
 
 ```
@@ -339,7 +349,8 @@ relationship between the work and the note about the work.
 | State | What the command does |
 |---|---|
 | No `ticket:` in the document, no id in the invocation | Nothing. Most work never came from a ticket |
-| `docs/backlog.jsonl` absent (`BACKLOG_PRESENT=no`) | Nothing, silently |
+| This project has no board (`BACKLOG_PRESENT=no` on a read, `REFUSED=board-not-configured` on a write) | Nothing, silently |
+| The board cannot be resolved (`ERROR=board-migration-required`, `board-branch-missing`, `board-checkout-missing`) or is locked (`ERROR=board-locked`) | Report the error, and continue — never create the branch, the clone or the config by hand |
 | The id is not on the board | Report it, and continue with no ticket |
 | A write is refused (`REFUSED=unknown-status`) | Report which status, and continue |
 | The publication entry reports a `DEGRADED=` write | Report what did not happen, and continue |

@@ -5,14 +5,22 @@ import { PROVIDERS } from './providers.js';
 const BLOCK_START = '# ADD - managed by code-addiction';
 const BLOCK_END = '# END ADD';
 
+// .codeadd/ holds the installed framework AND one committed file, board.json,
+// which says where the project's board lives. git cannot re-include a file
+// inside an ignored DIRECTORY, so the directory line becomes a contents line
+// plus an exception.
+const CODEADD_DIR_LINE = '.codeadd/';
+const CODEADD_PAIR = ['.codeadd/*', '!.codeadd/board.json'];
+
 /**
  * Get the list of directories to add to .gitignore.
- * Always includes .codeadd/. Adds provider dest dirs for each selected key.
+ * Always includes the .codeadd pair (`.codeadd/*` + `!.codeadd/board.json`).
+ * Adds provider dest dirs for each selected key.
  * @param {string[]} selectedKeys
  * @returns {string[]}
  */
 export function getInstalledDirs(selectedKeys) {
-  const dirs = new Set(['.codeadd/']);
+  const dirs = new Set(CODEADD_PAIR);
   for (const key of selectedKeys) {
     if (PROVIDERS[key]) {
       const { dest, agentsDest } = PROVIDERS[key];
@@ -40,19 +48,32 @@ export function writeGitignoreBlock(cwd, dirs) {
     existing = fs.readFileSync(gitignorePath, 'utf8');
   }
 
-  const blockContent = [BLOCK_START, ...dirs, BLOCK_END].join('\n');
+  // A bare `.codeadd/` line, in the caller's list or left in the file by an
+  // older install or a hand edit, is the same thing as the pair: write the pair
+  // once and drop the bare line, which would hide board.json again.
+  const wanted = [];
+  for (const dir of dirs) {
+    const lines = dir === CODEADD_DIR_LINE ? CODEADD_PAIR : [dir];
+    for (const line of lines) if (!wanted.includes(line)) wanted.push(line);
+  }
+  const blockContent = [BLOCK_START, ...wanted, BLOCK_END].join('\n');
 
   const startIdx = existing.indexOf(BLOCK_START);
   const endIdx = existing.indexOf(BLOCK_END);
 
+  const hasBlock = startIdx !== -1 && endIdx !== -1 && endIdx > startIdx;
+  const dropBareLine = (text) =>
+    text.split('\n').filter((line) => line.trim() !== CODEADD_DIR_LINE).join('\n');
+
   let newContent;
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+  if (hasBlock) {
     // Replace existing block in-place
     newContent =
-      existing.slice(0, startIdx) +
+      dropBareLine(existing.slice(0, startIdx)) +
       blockContent +
-      existing.slice(endIdx + BLOCK_END.length);
+      dropBareLine(existing.slice(endIdx + BLOCK_END.length));
   } else {
+    existing = dropBareLine(existing);
     // Append block to end of file
     const trailingNewlines = existing.length === 0 ? '' : existing.endsWith('\n\n') ? '' : existing.endsWith('\n') ? '\n' : '\n\n';
     newContent = existing + trailingNewlines + blockContent + '\n';

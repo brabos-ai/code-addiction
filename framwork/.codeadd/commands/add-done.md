@@ -2,7 +2,8 @@
 
 <!-- uses:
 - skill: add--doc-schemas
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--ecosystem
 - skill: add--final-report
@@ -56,7 +57,7 @@ IF BRANCH_TYPE = unknown:
   ⛔ DO NOT USE: Bash for git operations
   ✅ DO: Show error and stop
 
-IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed:
+IF BRANCH_TYPE = feature AND QA promotion is unresolved or failed (`QA_PROMOTION_STATUS=skipped` is resolved: the user chose it at branch 5):
   ⛔ DO NOT USE: Write to create changelog.md
   ⛔ DO NOT USE: Bash for done.cjs --merge
   ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
@@ -70,6 +71,11 @@ ALWAYS:
 ```
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -293,8 +299,12 @@ or `skipped`.**
 5. IF `GATE_QA_BASELINE=skipped` (`REVIEW_SOURCE=build`, `BASELINE=none`): no review judged QA.
    Resolve `QA_FEATURE_STATE`, the `qa-pipeline` feature — `true` is enabled; `false`, `unset` and `no-manifest` are disabled,
    the feature's default. **Disabled → proceed. Enabled → STOP — deciding, in every state:** "QA was
-   not judged for this feature — close it out without a QA judgement?" Yes → proceed with
-   `BASELINE=none`. No → print `/add-review ${FEATURE_ID}` and STOP.
+   not judged for this feature — close it out without a QA judgement? Working QA evidence left in
+   `_tests/` will not be promoted to `_tests/final/`." Yes → proceed with `BASELINE=none`.
+   No → print `/add-review ${FEATURE_ID}` and STOP.
+   **Whenever this branch proceeds, set `QA_PROMOTION_STATUS=skipped`.** No review judged the working
+   evidence, so there is no baseline to validate it against: STEP add-done.promote-qa runs neither
+   `validate` nor `promote` on this path.
 6. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: show `GATE_QA_BASELINE_DETAIL` →
    BLOCKED. `missing` means the review carries no `> **QA baseline:**` line; `broken` means
    `qa-evidence.cjs validate` rejected it. Both send the user to `/add-review ${FEATURE_ID}` — never
@@ -303,7 +313,7 @@ or `skipped`.**
 
 ⛔ **Reading `GATE_QA_BASELINE` is MANDATORY.** The preflight emits it and it is the gate whose silent loss let a feature whose evidence no longer matched its review reach the merge. Ignoring a computed gate is worse than never computing it.
 
-**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.cjs validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.cjs validate` again immediately before `promote`, and that second run remains the one that gates finalization.
+**This is the EARLY, read-only check, NOT a replacement for STEP add-done.promote-qa.** The preflight's own `qa-evidence.cjs validate` runs read-only and proves nothing about promotion; STEP add-done.promote-qa STILL runs `qa-evidence.cjs validate` again immediately before `promote`, and that second run remains the one that gates finalization — except on `GATE_QA_BASELINE=skipped`, where branch 5 already set `QA_PROMOTION_STATUS=skipped` and the STEP runs neither call.
 
 `GATE_REVIEW` not `ok`, or `GATE_QA_BASELINE` neither `ok` nor `skipped` → **BLOCKED**. Never infer a baseline or compare dates. STEP add-done.promote-qa performs the exact filesystem equality and promotion checks through `qa-evidence.cjs`.
 
@@ -506,6 +516,8 @@ here would record a relationship nobody can reproduce.
 ## STEP add-done.promote-qa: Validate and Promote Reviewed QA Evidence
 
 **SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP add-done.document.
+
+**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no review judged the working evidence). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
 
 For a feature branch, `QA_BASELINE` from STEP add-done.validate is the only promotion manifest. Run in this exact order:
 
@@ -910,9 +922,10 @@ STEP add-done.document's documents land on the branch and CI is re-triggered on 
 **That commit has not been tested yet**, which is the whole reason the next two
 items exist.
 
-```bash
-gh pr checks --watch --fail-fast
-```
+<!-- slot:agent-mode.ci-watch fallback="fallbacks/agent-mode.add-done.ci-watch.md" -->
+<!-- feature:agent-mode:ci-watch -->
+<!-- /feature:agent-mode:ci-watch -->
+<!-- /slot:agent-mode.ci-watch -->
 
 Then, **before reading the verdict**, compare the SHA:
 
@@ -1047,31 +1060,10 @@ Then, after the seven blocks, state:
 
 ### STEP add-done.handoff Offer the continuation
 
-**Every stop in this command is deciding, and none of them is this one.** The merge already happened
-by the time this runs, so the offer is a question about what comes next — never a substitute for a
-gate, and never a merge consent.
-
-**The FIRST row is the test for whether there is a next activity at all, so it is evaluated first.**
-A merged branch carries no goal of its own; the branch type only says what the delivery *was*. Read
-the rows top-to-bottom and stop at the first match, exactly as `add--ecosystem` Main Flows does.
-
-| State after the merge | Next activity |
-|---|---|
-| **No next goal was stated for this work** | none — the delivery is closed |
-| Feature branch, back on main, next feature stated | `/add-new` — start that feature |
-| Epic, subfeatures still pending, next one stated | `/add-build feature N` — the next subfeature |
-| Hotfix, and the user has said what comes next | `/add-new` — return to feature work |
-
-Finish the report and its metadata, then ask ONCE for instructions only on rows 2 to 4.
-
-⛔ **Never propose a new feature the user did not ask for.** "Back on main" and "was an epic" are
-facts about what shipped, not intentions about what comes next. Reading either as a reason to start
-something is how a close-out launches an epic its user never requested, and it is why row 1 is
-evaluated before all three.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-done.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

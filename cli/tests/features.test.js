@@ -466,8 +466,16 @@ describe('getFeatureStates', () => {
 });
 
 describe('features() CLI interactive mode', () => {
+  const realIsTTY = process.stdin.isTTY;
+
   beforeEach(() => {
+    // The multiselect only opens on a terminal; under vitest stdin is not a TTY.
+    process.stdin.isTTY = true;
     mockPromptFeatures.mockReset();
+  });
+
+  afterEach(() => {
+    process.stdin.isTTY = realIsTTY;
   });
 
   it('enables a previously disabled feature when user selects it', async () => {

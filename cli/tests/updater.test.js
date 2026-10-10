@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -167,7 +167,7 @@ describe('update command', () => {
   it.each([true, false])('native backlog update retires only tracked wrappers (tracked=%s)', async (tracked) => {
     const wrappers = ['backlog.sh', 'backlog-commit.sh'];
     const canonical = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs'];
+      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs', 'backlog-board.cjs'];
     const scripts = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
     const installed = path.join(tmpDir, '.codeadd', 'scripts');
     fs.mkdirSync(installed, { recursive: true });
@@ -194,9 +194,11 @@ describe('update command', () => {
       { cwd: tmpDir, encoding: 'utf8' });
     expect(result).toContain('BACKLOG_PRESENT=no');
     fs.writeFileSync(path.join(tmpDir, 'ticket.json'), JSON.stringify({ title: 'after update', tldr: 't', done_when: 't' }));
-    const publication = execFileSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', 'ticket.json'],
+    // No board config: the publication entry refuses, it never writes the checkout.
+    const publication = spawnSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', 'ticket.json'],
       { cwd: tmpDir, encoding: 'utf8', input: '' });
-    expect(publication).toContain('PERSISTED=yes');
+    expect(publication.status).toBe(2);
+    expect(publication.stdout).toContain('REFUSED=board-not-configured');
   });
 
   it('preserves history and .local.json files even if listed in old manifest', async () => {
@@ -465,7 +467,7 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
 
     const m = readManifest(tmpDir);
     expect(m.migrations).toEqual(allMigrationIds());
-    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false });
+    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false, 'agent-mode': false });
     expect(m.plugins).toEqual({ gitnexus: true });
   });
 

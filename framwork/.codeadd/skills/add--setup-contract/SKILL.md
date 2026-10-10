@@ -1,6 +1,6 @@
 ---
 name: add--setup-contract
-description: Use when a state-materializing command starts — compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP 1.5 and STEP 12.
+description: Use when a state-materializing command starts — compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP add-qa-setup.classify-receipt and STEP add-qa-setup.receipt.
 ---
 
 # Setup Shape Comparison

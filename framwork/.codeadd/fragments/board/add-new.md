@@ -24,7 +24,7 @@ IF STEP add-new.intent READ A ticket:
 <!-- /section:ticket-skeleton -->
 
 <!-- section:ticket-board-write -->
-- ✅ MAY: Make the board writes the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` describes — the native publication entry (`node .codeadd/scripts/backlog-commit.cjs`) commits them to the base branch through its own worktree, so this tree and this branch stay untouched
+- ✅ MAY: Make the board writes the `add-new` row of `{{skill:add--backlog/references/lifecycle.md}}` describes — the native publication entry (`node .codeadd/scripts/backlog-commit.cjs`) writes them to the project's `board` branch through the board clone, so this tree and this branch stay untouched
 <!-- /section:ticket-board-write -->
 
 <!-- section:ticket-shaped -->

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { withFallbacks } from './helpers/with-fallbacks.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const CODEADD = path.join(ROOT, 'framwork', '.codeadd');
-const read = (...parts) => fs.readFileSync(path.join(CODEADD, ...parts), 'utf8');
+const read = (...parts) => withFallbacks(fs.readFileSync(path.join(CODEADD, ...parts), 'utf8'));
 
 describe('hotfix diagnosis and review contracts', () => {
   it('defines the exact diagnose hotfix handoff and working-tree baseline', () => {

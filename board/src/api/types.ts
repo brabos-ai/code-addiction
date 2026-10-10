@@ -19,6 +19,8 @@ export type Ticket = {
   updated_at: string;
   comments: Comment[];
   work_id: string | null;
+  /** The version that shipped this ticket (`v1.2.3`), set when a release closes it. */
+  release?: string | null;
   /** The feature id add.new created for this ticket — an id, never a path. */
   feature: string | null;
 };
@@ -47,7 +49,12 @@ export type BoardData = {
  * gone: a read that fails is `backlog-read-failed`. `| string` stays so a name
  * added server-side reaches the UI instead of failing the type check.
  */
-export type BoardError = { error: 'backlog-read-failed' | 'not-found' | 'host-not-allowed' | 'method-not-allowed' | string; detail?: string };
+export type BoardError = {
+  error: 'backlog-read-failed' | 'not-found' | 'host-not-allowed' | 'method-not-allowed' | `board-${string}` | string;
+  /** The board state when the board is not ready: none, migration-required, branch-missing, checkout-missing, unavailable. */
+  state?: string;
+  detail?: string;
+};
 
 export type BoardResponse = BoardData | BoardError;
 

@@ -293,8 +293,8 @@ import "../styles/global.css";
             <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Utilities</h3>
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add</code>
-                <p class="text-muted text-xs mt-0.5">Smart gateway — answers questions, guides flow</p>
+                <code class="text-accent font-mono text-sm">/add-help</code>
+                <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-ux</code>
@@ -594,6 +594,8 @@ import "../styles/global.css";
             { name: "add--cross-sf-consistency", desc: "Use when judging contract consistency across an epic's subfeature plans - the five-dimension rubric, dedupe rules, and finding routes." },
             { name: "add--doc-schemas", desc: "Documentation schemas and conventions for ADD projects" },
             { name: "add--plan-review", desc: "Pre-delivery executability review for freshly generated about.md and plan.md - verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback." },
+            { name: "add--human-interaction", desc: "How a command talks to a person (default interaction slot)" },
+            { name: "add--agent-interaction", desc: "How a command talks to a bot via claude -p, injected by the agent-mode feature" },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>

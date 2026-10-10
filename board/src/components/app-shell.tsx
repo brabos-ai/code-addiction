@@ -160,7 +160,7 @@ function ThemeSwitch() {
   );
 }
 
-/** "Live": the server pushes changes to docs/backlog.jsonl, so this is never stale for long. */
+/** "Live": the server pushes changes of the board clone and syncs it with the remote every minute, so this is never stale for long. */
 function LiveStamp({ readAt }: { readAt: string }) {
   return (
     <p

@@ -787,10 +787,87 @@ test('NEXT_ID_AGREE: status next-id and next-id.cjs agree Node-to-Node', (t) => 
   const r = repo(t);
   writeIn(r, featurePath('0002F-docs', 'about.md'), '# about\n');
   h.write(path.join(r.repo, 'docs', 'backlog.jsonl'), '{"id":"0005B","title":"board"}\n');
-  const viaStatus = status(r, ['next-id', 'F']);
-  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo });
+  const env = { CODEADD_BOARD_DIR: r.repo };
+  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo, env });
+  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo, env });
   assert.equal(viaStatus.status, 0);
   assert.equal(viaScript.status, 0);
   assert.equal(viaStatus.stdout.trim(), viaScript.stdout.trim());
   assert.equal(viaStatus.stdout.trim(), '0006F');
+});
+
+// ─── F6 — the BOARD= line, and ticket ids counted in the board clone ─────────
+
+/** One ticket row for a board file. */
+const boardRow = (id) => JSON.stringify({
+  id, title: id, theme: 'general', tldr: id, notes: [], done_when: 'it works', paths: [], grounded: false,
+  status: 'open', created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z', comments: [], work_id: null,
+});
+
+/** A board fixture (remote + code repo + clone path) holding the given ticket ids. */
+function boardFixture(t, ids) {
+  const b = h.makeBoard({ files: { 'docs/backlog.jsonl': ids.map(boardRow).join('\n') + (ids.length ? '\n' : '') } });
+  t.after(b.cleanup);
+  return b;
+}
+
+const boardLines = (res) => res.stdout.split('\n').filter((l) => l.startsWith('BOARD='));
+
+test('status#058 prints exactly one BOARD= line in each of the five states and keeps exit 0', (t) => {
+  // none: a repository with neither config nor board file.
+  const plain = repo(t);
+  let res = h.runScript('status', [], { cwd: plain.repo, env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(boardLines(res), ['BOARD=none']);
+
+  // ready.
+  const ready = boardFixture(t, ['0001B']);
+  res = h.runScript('status', [], { cwd: ready.repo, env: ready.env });
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(boardLines(res), ['BOARD=ready']);
+
+  // migration-required: the file in the checkout, no config.
+  const old = repo(t);
+  writeIn(old, 'docs/backlog.jsonl', boardRow('0001B') + '\n');
+  res = h.runScript('status', [], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(boardLines(res), ['BOARD=migration-required']);
+
+  // branch-missing: config names a branch the remote lacks.
+  const missing = boardFixture(t, []);
+  h.write(path.join(missing.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: missing.bare, branch: 'nope' }));
+  res = h.runScript('status', [], { cwd: missing.repo, env: missing.env });
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(boardLines(res), ['BOARD=branch-missing']);
+
+  // checkout-missing: no clone and the remote is gone.
+  const offline = boardFixture(t, []);
+  h.write(path.join(offline.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: path.join(offline.base, 'gone.git'), branch: 'board' }));
+  res = h.runScript('status', [], { cwd: offline.repo, env: offline.env });
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(boardLines(res), ['BOARD=checkout-missing']);
+});
+
+test('status#059 next-id B, next-id.cjs B and init.cjs allocate past a ticket that exists only in the clone', (t) => {
+  const b = boardFixture(t, ['0007B']);
+  const viaStatus = h.runScript('status', ['next-id', 'B'], { cwd: b.repo, env: b.env });
+  assert.equal(viaStatus.status, 0, viaStatus.output);
+  assert.equal(viaStatus.stdout.trim(), '0008B');
+
+  const viaNextId = h.runScript('next-id', ['F'], { cwd: b.repo, env: b.env });
+  assert.equal(viaNextId.status, 0, viaNextId.output);
+  assert.equal(viaNextId.stdout.trim(), '0008F');
+
+  const viaInit = h.runScript('init', [], { cwd: b.repo, env: b.env });
+  assert.equal(viaInit.status, 0, viaInit.output);
+  assert.match(viaInit.stdout, /FEATURES:count=0 next=0008F/);
+});
+
+test('status#060 without a ready board, allocation counts feature directories only', (t) => {
+  const old = repo(t);
+  writeIn(old, 'docs/backlog.jsonl', boardRow('0050B') + '\n');
+  mkdirIn(old, featurePath('0003F-thing'));
+  const res = h.runScript('status', ['next-id', 'B'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(res.status, 0, res.output);
+  assert.equal(res.stdout.trim(), '0004B', 'the checkout file is never read');
 });

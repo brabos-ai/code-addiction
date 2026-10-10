@@ -33,6 +33,27 @@ $schema = (Get-Content workbench/skills/add-final-report/references/result-block
 claude -p "/add-framework--backlog update 9999B" --output-format json --json-schema $schema
 ```
 
+## Resuming a stopped run
+
+A run that ends with `status: needs-approval` stopped at a question, an approval or a push, and is waiting on the user. The schema's `status` description says what each status means; this section only says how to continue.
+
+Read `.session_id` from the envelope, then answer in the same session:
+
+```bash
+claude -p "<answer>" --resume <session_id> --output-format json --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
+```
+
+`claude -c` in place of `--resume <session_id>` continues the most recent session in the same directory. Use it only when no other run started there since.
+
+PowerShell:
+
+```powershell
+$schema = (Get-Content workbench/skills/add-final-report/references/result-block.schema.json -Raw) -replace '"','\"'
+claude -p "<answer>" --resume <session_id> --output-format json --json-schema $schema
+```
+
+Pass `--json-schema` again on every call. The flag belongs to one call, not to the session, so a resumed call without it returns no `structured_output`.
+
 ## Checking a captured stdout
 
 Save stdout to a file, then validate its `structured_output`:

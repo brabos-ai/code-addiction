@@ -5,6 +5,10 @@ description: "Use when committing changes mid-workflow with smart message genera
 
 # add-commit — Smart Commit
 
+<!-- uses:
+- skill: add-interaction
+-->
+
 Smart commit for mid-workflow progress: analyzes the changeset and generates a Conventional Commits message adapted to the number of files changed.
 
 ## When to Use
@@ -53,7 +57,7 @@ Infer the type from the diff content:
 | `test` | Test files only |
 | `style` | Formatting, whitespace, lint fixes |
 
-When ambiguous, show the inferred type and ask the user to confirm.
+When ambiguous, show the inferred type and ask the user to confirm, as one numbered item with a RECOMMENDED line (`add-interaction`).
 
 ## Execution Flow
 
@@ -80,7 +84,7 @@ Scope = the main module/directory affected (optional, use when clear).
 **STEP 3 — Generate message:**
 Apply adaptive logic (≤ 3 vs > 3 files).
 - **Default:** commit immediately with generated message — no confirmation needed.
-- **`--confirm` flag:** show the generated message and wait for confirmation or adjustment before committing.
+- **`--confirm` flag:** show the generated message and wait for confirmation or adjustment before committing — asked as one numbered item (`add-interaction`).
 
 **STEP 4 — Handle staging:**
 - If staged changes exist → use them as-is

@@ -157,7 +157,7 @@ describe('L15 the board by column', () => {
   const phased: BoardData = {
     ...data,
     statuses: [
-      { name: 'in-review', order: 1, means: 'PR open', column: 'review', label: 'In review' },
+      { name: 'in-review', order: 1, means: 'build finished, PR may not exist yet; waiting for review and merge', column: 'review', label: 'In review' },
       { name: 'done', order: 2, means: 'delivered', column: 'review', label: 'Done' },
     ],
     columns: [{ name: 'review', order: 1, label: 'Review' }],

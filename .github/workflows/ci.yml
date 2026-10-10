@@ -60,6 +60,13 @@ jobs:
       - name: Build workbench provider files
         run: node scripts/build-workbench.js
 
+      # The board lives on its own branch. This fails when .codeadd/board.json
+      # and a board file (docs/backlog.jsonl, docs/backlog.definitions.json) are
+      # tracked together, i.e. when a write went through the old route or a merge
+      # brought the files back. A Node script: the CI job rejects Bash.
+      - name: Board files guard
+        run: node scripts/board-files-guard.cjs
+
       # The framework/test boundary rejects Bash on every host, hosted or local.
       # Bash is shadowed and Node subprocess calls are instrumented — Git and npm use `sh`/`cmd`, and the native
       # harness spawns process.execPath with `shell: false` — so transport is
@@ -93,6 +100,7 @@ jobs:
   # native six-job matrix above is what needs the cross-platform expansion.
   board:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: board
@@ -120,6 +128,7 @@ jobs:
         run: npm run build
 
       - name: Install Playwright Chromium
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests (360, 768, 1080)

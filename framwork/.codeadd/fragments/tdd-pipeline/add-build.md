@@ -110,7 +110,7 @@ scenarios.
 ### Test Generation Dispatch (tdd-pipeline)
 
 Dispatch `@test-agent` for an area **AFTER that area's implementation agent has
-returned**, interleaved into the sequential order STEP add-build.order already runs:
+returned**, interleaved into the sequential order STEP add-build.dependency-order already runs:
 
 ```
 DB → test:DB → Backend → test:Backend → Frontend → test:Frontend
@@ -132,7 +132,9 @@ order fixes.** The agent is told to read the source completely and identify ever
 testable export; run alongside the implementer, it reads a moving target and
 writes coverage for a shape that no longer exists by the time the area lands.
 
-**One agent in flight at a time**, implementer or test agent — STEP add-build.order owns that
+**In TASKS MODE the unit of this order is the area, not the task.** Dispatch `@test-agent` after the area's LAST task is committed and BEFORE the area validator, and commit what it writes as one batch of its own with the area name as `Task-Id:`. The validator's `AREA_BASE..HEAD` range then includes the tests.
+
+**One agent in flight at a time**, implementer or test agent — STEP add-build.dependency-order owns that
 rule and this ordering sits inside it.
 
 **DISPATCH AGENT: `@test-agent`** [full-access, standard] — one per area, sequential, after that area's implementer.

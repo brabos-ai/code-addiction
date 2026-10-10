@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { PROVIDERS } from '../src/providers.js';
+import { TOTAL_POINTS, agentModePoints } from './helpers/agent-mode-points.js';
 
 const require = createRequire(import.meta.url);
 const {
@@ -149,12 +150,17 @@ function stepRefFiles() {
 }
 
 describe('slot membership map v2', () => {
-  it('freezes 70 memberships in 63 slots, one nonempty fallback', () => {
-    expect(MAP.membershipCount).toBe(70);
-    expect(MAP.slotCount).toBe(63);
+  it('freezes the slot membership map and its nonempty fallbacks', () => {
+    // 71 memberships in 64 slots before agent-mode; every agent-mode slot holds exactly one member (F10-F21).
+    expect(MAP.membershipCount).toBe(TOTAL_POINTS());
+    expect(MAP.slotCount).toBe(64 + agentModePoints());
     const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
-    expect(members).toHaveLength(70);
-    const nonempty = MAP.resources.flatMap((r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md'));
+    expect(members).toHaveLength(TOTAL_POINTS());
+    // Nonempty fallbacks: plan-specs, plus every agent-mode.* slot (plan 2026-10-09T184411-PLAN--agent-mode-feature, F24).
+    const slotsOf = (r) => r.slots.filter((s) => s.fallback !== 'fallbacks/empty.md');
+    const agentModeSlots = MAP.resources.flatMap((r) => slotsOf(r).filter((s) => s.id.startsWith('agent-mode.')));
+    for (const s of agentModeSlots) expect(s.fallback).toMatch(/^fallbacks\/agent-mode\.[A-Za-z0-9._-]+\.md$/);
+    const nonempty = MAP.resources.flatMap((r) => slotsOf(r).filter((s) => !s.id.startsWith('agent-mode.')));
     expect(nonempty).toEqual([
       expect.objectContaining({
         id: 'plan-specs',
@@ -371,7 +377,9 @@ describe('slot membership map v2', () => {
 
   it('add-plan step-list source order is tdd then qa', () => {
     const slot = MAP.resources.find((r) => r.resource === 'command/add-plan').slots.find((s) => s.id === 'plan-specs');
-    const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots[0];
+    // The slot is found by its members, not by position: agent-mode.interaction now precedes it in source (F12).
+    const derived = deriveSlots().find((r) => r.resource === 'command/add-plan').slots
+      .find((members) => members.some((m) => m.name === 'tdd-pipeline' && m.section === 'step-list'));
     expect(derived).toEqual(slot.expectedOrder);
   });
 });
