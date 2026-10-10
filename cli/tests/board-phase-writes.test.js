@@ -186,6 +186,21 @@ describe('L2.2 -- the add-done write parks a merged ticket when the project opte
     expect(plan).not.toMatch(/nine names|seven columns/);
   });
 
+  it('the release command closes the waiting tickets on a stable release only', () => {
+    const rel = read('workbench', 'commands', 'add-framework--release.md');
+    const a = rel.indexOf('### Close the waiting tickets (stable only)');
+    expect(a, 'no ticket-closing sub-step').toBeGreaterThan(-1);
+    const sub = rel.slice(a, rel.indexOf('\n## ', a + 5));
+    expect(sub).toContain('list --status awaiting-release');
+    expect(sub).toContain('backlog-commit.cjs');
+    expect(sub).toContain('"release":"v');
+    expect(sub).toContain('"status":"done"');
+    expect(rel).toMatch(/STEP 7: Push tag[^\n]*awaiting-release/);
+    expect(rel).toMatch(/IF release type = beta, OR the tag was not pushed:\n[^\n]*backlog-commit\.cjs/);
+    const step8 = rel.slice(rel.indexOf('## STEP 8'));
+    expect(step8).toContain('tickets closed');
+  });
+
   it('the close-out reports which status was written', () => {
     for (const section of ['ticket-carry', 'ticket-report']) {
       expect(fragment('add-done').get(section), section).toContain(tick('awaiting-release'));

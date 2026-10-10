@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add-final-report
 - skill: add-interaction
+- skill: add-plan-authoring
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -22,7 +23,7 @@ STEP 3: Detect version         → fetch tags, choose bump [STOP — one batch w
 STEP 4: Update CLI version     → npm version (package.json + lock) + commit + push
 STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
 STEP 6: Changelog + preview    → generate, confirm [STOP]
-STEP 7: Push tag               → checkout tag source + run script → pipeline takes over
+STEP 7: Push tag               → checkout tag source + run script → pipeline takes over; then, stable only, close the tickets waiting in `awaiting-release`
 STEP 8: Completion             → report the release in the shared shape
 ```
 
@@ -57,6 +58,10 @@ IF release type = stable AND current branch is not production:
 IF preview not approved:
   ⛔ DO NOT USE: Bash for git tag, git push (tag)
   ✅ DO: Wait for confirmation or cancel
+
+IF release type = beta, OR the tag was not pushed:
+  ⛔ DO NOT USE: Bash for `backlog-commit.cjs`
+  ✅ DO: Skip the ticket-closing sub-step of STEP 7 entirely
 
 ---
 
@@ -267,6 +272,44 @@ DO NOT run `git tag` / `git push origin <tag>` by hand — the script handles st
 
 Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
 
+### Close the waiting tickets (stable only)
+
+**Runs after the tag is pushed and `main` is checked out again, and only for a stable release.** A beta never goes
+through `production`, so it ships nothing a ticket waits for.
+
+List the tickets the board holds in `awaiting-release`:
+
+```bash
+node framwork/.codeadd/scripts/backlog-cli.cjs list --status awaiting-release --ids
+```
+
+For EACH id it prints, make one write through `backlog-commit.cjs`, with the record on a scratch file
+(`docs/.tmp-ticket.json`, removed right after):
+
+```bash
+node framwork/.codeadd/scripts/backlog-commit.cjs update <id> --record-file docs/.tmp-ticket.json
+# record: {"release":"v<STEP 3 version>","status":"done"}
+```
+
+`release` is the tag name: `v` plus the version STEP 3 chose. `status` and `release` travel in the same write.
+
+```
+IF THE LIST PRINTS `BACKLOG_PRESENT=no`, `TICKETS_RETURNED=0`, OR AN ERROR:
+  ⛔ DO NOT: Stop the release or undo the tag
+  ✅ DO: Report it in STEP 8 and continue
+
+IF A WRITE FAILS, IS REFUSED, OR COMES BACK DEGRADED:
+  ⛔ DO NOT: Retry by hand, push the board branch, or touch the tag
+  ✅ DO: Keep the id and the reason for STEP 8, and go on to the next id
+
+IF A TICKET IS NOT IN `awaiting-release`:
+  ⛔ DO NOT: Close it, whatever its title says
+  ✅ DO: Leave it — only the status names a ticket here, never a guess from the commits or the changelog
+```
+
+The degradations in **The Ticket** of `add-plan-authoring` apply to every write here. **The board is a side-record:
+a failure here never undoes the release.** The tickets close when the tag is pushed, not when the pipeline goes green.
+
 ---
 
 ## STEP 8: Completion
@@ -287,6 +330,7 @@ Then, after the seven blocks, state:
 - The tag, and which branch it points at — `production` for stable, `main` for beta.
 - Whether STEP 5 merged to production, or was skipped because the release is beta.
 - The pipeline URL, and that nothing is released until it goes green.
+- **The tickets closed**, stable only: the ids written to `done` with `release` set to the tag, and each failure with its reason. Say they were closed when the tag was pushed, not when the pipeline succeeded. A beta states that the step was skipped.
 
 ---
 
