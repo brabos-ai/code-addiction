@@ -596,13 +596,15 @@ By STEP 8 the entry is already on `main`, so nothing here can invalidate the del
 
 ### The ticket — first, before any deletion
 
-**When the plan header carries `> **Ticket:**`, make the `done` write now.** `add-plan-authoring` owns when
+**When the plan header carries `> **Ticket:**`, make the close-out write now — `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, `done` otherwise.** `add-plan-authoring` owns when
 it is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting
 from memory.
 
+The read is the exact `get <id>` one, and the write is skipped when the ticket already reads `done` or `awaiting-release`. The `--fix` track follows the same rule.
+
 It runs here because this is the first point every route shares with the delivery already on `main`: the
 normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
-before the merge — a ticket reading `done` for work that never landed is a lie a refused merge would
+before the merge — a ticket reading `done` or `awaiting-release` for work that never landed is a lie a refused merge would
 leave behind. It reads the plan before the third removal below deletes the local copy.
 
 **On the fix track the ticket is read from the fix record's `> **Ticket:**` line**, which exists only when `--ticket` was passed — no line, no write. When no local copy exists, read it from `docs/deliveries/<id>/fix.md`.
@@ -723,7 +725,7 @@ Then, after the seven blocks and before the metadata, report always:
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
-- **The ticket, when the plan carried one** — the id, and the `done` write's `SHA`, that it was already
+- **The ticket, when the plan carried one** — the id, which status was written (`awaiting-release` or `done`) with the write's `SHA`, that it was already
   there, or what did not happen
 - **The track, when `--fix` was given** — name it: `fix`. Say the fix record and the fix gate stood in for the plan and the ledger gate. If STEP 3 refused with `REFUSED=no-items`, say that a fix with no nameable behaviour has no index entry to write, and that this is the cause.
 

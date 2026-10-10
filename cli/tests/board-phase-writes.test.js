@@ -22,7 +22,7 @@ const fragment = (cmd) => parseFragmentSections(read('framwork', '.codeadd', 'fr
 
 const TEN = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
 const EIGHT = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
-const WRITTEN = ['refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done'];
+const WRITTEN = ['refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done'];
 const tick = (s) => '`' + s + '`';
 
 // The two rules live in lifecycle.md and nowhere else. These are the sentences
@@ -170,6 +170,20 @@ describe('L2.2 -- the add-done write parks a merged ticket when the project opte
     const a = l.indexOf('### The `work_id` stop');
     const stop = l.slice(a, l.indexOf('\n###', a + 5));
     expect(stop).toContain(tick('awaiting-release'));
+  });
+
+  it('the internal close-out (add-framework--done STEP 8 and The Ticket) names the same rule, and the --fix track', () => {
+    const done = read('workbench', 'skills', 'add-framework--done', 'SKILL.md');
+    const a = done.indexOf('### The ticket');
+    const step8 = done.slice(a, done.indexOf('\n## ', a + 5));
+    expect(step8).toContain('RELEASE_FLOW=yes');
+    expect(step8).toContain(tick('awaiting-release'));
+    expect(step8).toMatch(/already reads `done` or `awaiting-release`/);
+    expect(step8).toMatch(/`--fix` track follows the same rule/);
+    const plan = read('workbench', 'skills', 'add-plan-authoring', 'SKILL.md');
+    expect(plan).toContain('RELEASE_FLOW=yes');
+    expect(plan).toMatch(/already reads `done` \*\*or\*\* `awaiting-release`/);
+    expect(plan).not.toMatch(/nine names|seven columns/);
   });
 
   it('the close-out reports which status was written', () => {
