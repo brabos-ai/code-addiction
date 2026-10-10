@@ -230,6 +230,10 @@ IF THE OUTPUT CARRIES DEGRADED=<reason>:
   ⛔ DO NOT: Re-run the write — the ticket is already on disk
   ⛔ DO NOT USE: Bash to push or rebase by hand
   ✅ DO: Report the reason and the local SHA, and say what did not happen
+
+IF THE OUTPUT CARRIES ERROR=<name> (board-locked, board-lock-failed, commit-failed, or a board state):
+  ⛔ DO NOT: Retry in a loop, or create the branch, the clone or .codeadd/board.json by hand
+  ✅ DO: Report the error by name with RECOVERY_PATH or RECOVERY_REF when printed, and STOP
 ```
 
 ---

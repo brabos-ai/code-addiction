@@ -129,7 +129,7 @@ function blobId(root, ref, file) {
 function rowsById(text) {
   const map = new Map();
   if (!text) return map;
-  text.split('\n').filter((l) => l.length > 0).forEach((line, i) => {
+  text.split('\n').map((l) => l.replace(/\r$/, '')).filter((l) => l.length > 0).forEach((line, i) => {
     const m = /"id":"([0-9]{4}[A-Z])"/.exec(line);
     map.set(m ? m[1] : `line-${i + 1}`, line);
   });

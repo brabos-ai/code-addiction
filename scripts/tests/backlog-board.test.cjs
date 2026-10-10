@@ -353,3 +353,49 @@ test('backlog-board#009 — F22: changes diffs against the remote tip, counts un
   assert.deepEqual(board.changes(res, 'f'.repeat(40)), { ok: false, reason: 'cursor-unknown' });
   assert.deepEqual(board.changes(res, 'not-a-sha'), { ok: false, reason: 'cursor-unknown' });
 });
+
+// ─── Review fixes: a lock being made, and a remote that never answers ─────────
+
+test('backlog-board#010 — an empty lock file is a lock being made until it has sat for seconds', (t) => {
+  const remote = remoteWithBoard(t);
+  const clone = cloneOf(t, remote);
+  const lockFile = board.lockPathOf(clone);
+
+  // A creator has opened the file exclusively and not yet written its PID.
+  fs.writeFileSync(lockFile, '');
+  assert.deepEqual(board.acquireLock(clone, { waitMs: 0 }), { ok: false, reason: 'held' });
+  assert.equal(fs.existsSync(lockFile), true, 'the half-made lock was not deleted');
+
+  // The same empty file, left for ten seconds, is a corpse.
+  const old = new Date(Date.now() - 10 * 1000);
+  fs.utimesSync(lockFile, old, old);
+  const taken = board.acquireLock(clone);
+  assert.equal(taken.ok, true);
+  assert.equal(taken.reclaimed, 0);
+  taken.release();
+});
+
+test('backlog-board#011 — a remote that never answers is a failed answer after the timeout, not a hang', (t) => {
+  const net = require('node:net');
+  const server = net.createServer(() => { /* accept and say nothing */ });
+  return new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', () => {
+      t.after(() => server.close());
+      const dir = h.mkTmp('codeadd-hang-');
+      t.after(() => h.rmrf(dir));
+      const saved = process.env.CODEADD_GIT_NET_TIMEOUT_MS;
+      process.env.CODEADD_GIT_NET_TIMEOUT_MS = '700';
+      const started = Date.now();
+      try {
+        const answer = git.remoteHasBranch(`git://127.0.0.1:${server.address().port}/x.git`, 'board', dir);
+        assert.equal(answer.ok, false);
+        assert.ok(Date.now() - started < 8000, 'returned within the timeout, not after minutes');
+        resolve();
+      } catch (e) {
+        reject(e);
+      } finally {
+        if (saved === undefined) delete process.env.CODEADD_GIT_NET_TIMEOUT_MS; else process.env.CODEADD_GIT_NET_TIMEOUT_MS = saved;
+      }
+    });
+  });
+});
