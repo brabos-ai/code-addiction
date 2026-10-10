@@ -1066,3 +1066,132 @@ test('backlog#076 — F22: the changes grammar takes at most one --since pair; a
   assert.equal(none.status, 0, none.output);
   assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
 });
+
+// ─── Release modes: `release <version>` and `release-flow on|off` ────────────
+
+const DEFS_PATH = (dir) => path.join(dir, DEFS);
+
+/** A board of tickets in the given statuses; ids 0001B.. in order. */
+function releaseBoard(t, statuses) {
+  const dir = project(t);
+  statuses.forEach((s, i) => backlogLine(dir, '000' + (i + 1) + 'B', 'ticket ' + (i + 1), s));
+  return dir;
+}
+
+/** The defaults a project seeded before `awaiting-release` existed: no such status, no `release` column. */
+function oldSeed(extra = {}) {
+  const defs = JSON.parse(JSON.stringify(core.DEFAULT_DEFS));
+  defs.statuses = defs.statuses.filter((s) => s.name !== 'awaiting-release');
+  defs.columns = defs.columns.filter((c) => c.name !== 'release');
+  defs.statuses.forEach((s, i) => { s.order = i + 1; });
+  defs.columns.forEach((c, i) => { c.order = i + 1; });
+  return { ...defs, ...extra };
+}
+
+test('backlog#077 — L1.1: core release closes exactly the awaiting-release tickets, in one write', (t) => {
+  const dir = releaseBoard(t, ['awaiting-release', 'in-review', 'awaiting-release', 'done']);
+  const before = lines(path.join(dir, BACKLOG));
+  const res = core.executeBacklog({ root: dir, mode: 'release', version: 'v1.2.3' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.ticketIds, ['0001B', '0003B']);
+  const after = lines(path.join(dir, BACKLOG));
+  assert.equal(after.length, 4);
+  for (const i of [0, 2]) {
+    const tk = JSON.parse(after[i]);
+    assert.equal(tk.release, 'v1.2.3');
+    assert.equal(tk.status, 'done');
+    assert.notEqual(tk.updated_at, '2026-09-20T00:00:00Z');
+  }
+  assert.equal(after[1], before[1], 'the in-review row is byte-identical');
+  assert.equal(after[3], before[3], 'the done row is byte-identical');
+});
+
+test('backlog#078 — L1.2: core release with nothing waiting is a result, and a bad version is refused', (t) => {
+  const dir = releaseBoard(t, ['in-review', 'done']);
+  const before = h.read(path.join(dir, BACKLOG));
+  const res = core.executeBacklog({ root: dir, mode: 'release', version: 'v2' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.deepEqual(res.ticketIds, []);
+  assert.equal(h.read(path.join(dir, BACKLOG)), before, 'the file bytes are unchanged');
+  for (const version of ['', 'v 1', undefined]) {
+    const bad = core.executeBacklog({ root: dir, mode: 'release', version });
+    assert.equal(bad.ok, false);
+    assert.equal(bad.refusal, 'bad-version');
+  }
+  assert.equal(h.read(path.join(dir, BACKLOG)), before);
+});
+
+test('backlog#079 — L1.3: core release-flow on adds the status and the column once, keeps every other key and its order', (t) => {
+  const dir = releaseBoard(t, ['open']);
+  const seed = oldSeed({ custom_key: { keep: true } });
+  h.write(DEFS_PATH(dir), JSON.stringify(seed, null, 2) + '\n');
+  const res = core.executeBacklog({ root: dir, mode: 'release-flow', flag: 'on' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.releaseFlow, 'on');
+  const defs = JSON.parse(h.read(DEFS_PATH(dir)));
+  assert.equal(defs.release_flow, true);
+  assert.deepEqual(Object.keys(defs), Object.keys(seed), 'key order unchanged');
+  assert.deepEqual(defs.custom_key, { keep: true });
+  assert.deepEqual(defs.labels, seed.labels);
+  const status = defs.statuses.find((s) => s.name === 'awaiting-release');
+  const column = defs.columns.find((c) => c.name === 'release');
+  const wantStatus = core.DEFAULT_DEFS.statuses.find((s) => s.name === 'awaiting-release');
+  const wantColumn = core.DEFAULT_DEFS.columns.find((c) => c.name === 'release');
+  assert.deepEqual(status, wantStatus);
+  assert.deepEqual(column, wantColumn);
+  assert.deepEqual(defs.statuses.map((s) => s.name), core.DEFAULT_DEFS.statuses.map((s) => s.name), 'the status sits before done');
+  assert.deepEqual(defs.columns.map((c) => c.name), core.DEFAULT_DEFS.columns.map((c) => c.name), 'the column sits before done');
+
+  // On a seeded file only the flag changes.
+  const seeded = releaseBoard(t, ['open']);
+  h.write(DEFS_PATH(seeded), JSON.stringify(core.DEFAULT_DEFS, null, 2) + '\n');
+  const again = core.executeBacklog({ root: seeded, mode: 'release-flow', flag: 'on' });
+  assert.equal(again.ok, true);
+  assert.deepEqual(JSON.parse(h.read(DEFS_PATH(seeded))), { ...core.DEFAULT_DEFS, release_flow: true });
+});
+
+test('backlog#080 — L1.4: core release-flow never duplicates, never overwrites an unreadable file, off flips only the flag', (t) => {
+  // A status the project already has, in its own place and column, is not added again.
+  const dir = releaseBoard(t, ['open']);
+  const custom = oldSeed();
+  custom.statuses.push({ name: 'awaiting-release', order: 99, column: 'review', label: 'Waiting', means: 'mine' });
+  h.write(DEFS_PATH(dir), JSON.stringify(custom, null, 2) + '\n');
+  const res = core.executeBacklog({ root: dir, mode: 'release-flow', flag: 'on' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  const defs = JSON.parse(h.read(DEFS_PATH(dir)));
+  assert.equal(defs.statuses.filter((s) => s.name === 'awaiting-release').length, 1);
+  assert.equal(defs.statuses.find((s) => s.name === 'awaiting-release').label, 'Waiting');
+  assert.equal(defs.release_flow, true);
+
+  // off flips the flag and removes nothing.
+  const off = core.executeBacklog({ root: dir, mode: 'release-flow', flag: 'off' });
+  assert.equal(off.ok, true);
+  assert.equal(off.releaseFlow, 'off');
+  const offDefs = JSON.parse(h.read(DEFS_PATH(dir)));
+  assert.equal(offDefs.release_flow, false);
+  assert.deepEqual(offDefs.statuses, defs.statuses);
+  assert.deepEqual(offDefs.columns, defs.columns);
+
+  // An unreadable file is refused and left as it was.
+  const broken = releaseBoard(t, ['open']);
+  h.write(DEFS_PATH(broken), '{ not json');
+  const refused = core.executeBacklog({ root: broken, mode: 'release-flow', flag: 'on' });
+  assert.equal(refused.ok, false);
+  assert.equal(refused.refusal, 'definitions-unreadable');
+  assert.equal(h.read(DEFS_PATH(broken)), '{ not json');
+
+  // A wrong flag is refused.
+  const maybe = core.executeBacklog({ root: dir, mode: 'release-flow', flag: 'maybe' });
+  assert.equal(maybe.ok, false);
+  assert.equal(maybe.refusal, 'bad-flag');
+});
+
+test('backlog#081 — L1.5: the read entry refuses release and release-flow with ERROR=write-mode, exit 2', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  for (const args of [['release', 'v1'], ['release-flow', 'on']]) {
+    const res = run('backlog-cli', args, { cwd: b.repo, env: b.env });
+    assert.equal(res.status, 2, args[0] + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=write-mode/);
+    assert.match(res.stdout, /backlog-commit\.cjs/);
+  }
+});

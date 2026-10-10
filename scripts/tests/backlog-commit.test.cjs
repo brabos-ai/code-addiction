@@ -289,3 +289,73 @@ test('backlog-commit#013 — L2.1: an id is allocated after the fast-forward, pa
   assert.equal(key(res.stdout, 'TICKET_ID'), '0004B');
   assert.deepEqual(remoteIds(b), ['0001B', '0002B', '0003B', '0004B']);
 });
+
+// ─── Release modes through the one route ─────────────────────────────────────
+
+const waiting = (id, status) => JSON.stringify({
+  id, title: 't-' + id, theme: 'general', tldr: 't', notes: [], done_when: 'it works', paths: [], grounded: false,
+  status, created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z', comments: [], work_id: null,
+});
+const commitCount = (b) => Number(h.git(b.bare, ['rev-list', '--count', 'board']).stdout);
+const readCli = (b, args) => h.runScript('backlog-cli', args, { cwd: b.repo, env: b.env });
+
+test('backlog-commit#014 — L2.2: release closes every waiting ticket in ONE commit; a second run commits nothing', (t) => {
+  const rows = [waiting('0001B', 'awaiting-release'), waiting('0002B', 'in-review'), waiting('0003B', 'awaiting-release')].join('\n') + '\n';
+  const b = h.makeBoard({ files: { [BACKLOG]: rows } });
+  t.after(() => b.cleanup());
+  const before = commitCount(b);
+
+  const res = commit(b.repo, ['release', 'v9.9.9'], { env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const kv = h.parseKV(res.stdout);
+  assert.equal(kv.ROUTE, 'board');
+  assert.equal(kv.BOARD_DIR, b.boardDir);
+  assert.equal(kv.TICKETS_RELEASED, '0001B,0003B');
+  assert.equal(kv.TICKET_ID, undefined);
+  assert.equal(kv.COMMITTED, 'yes');
+  assert.equal(kv.PUSHED, 'yes');
+  assert.equal(commitCount(b), before + 1);
+  assert.equal(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout, 'backlog: release v9.9.9 (2 tickets)');
+  const done = remoteBoard(b).trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(done.map((x) => [x.id, x.status, x.release]), [['0001B', 'done', 'v9.9.9'], ['0002B', 'in-review', undefined], ['0003B', 'done', 'v9.9.9']]);
+
+  const again = commit(b.repo, ['release', 'v9.9.9'], { env: b.env });
+  assert.equal(again.status, 0, again.output);
+  assert.equal(h.parseKV(again.stdout).COMMITTED, 'no');
+  assert.equal(h.parseKV(again.stdout).TICKETS_RELEASED, undefined);
+  assert.equal(commitCount(b), before + 1, 'no new commit');
+});
+
+test('backlog-commit#015 — L2.3: release-flow on and off are visible to the read entry; on twice commits nothing', (t) => {
+  const b = board(t);
+  const on = commit(b.repo, ['release-flow', 'on'], { env: b.env });
+  assert.equal(on.status, 0, on.output);
+  assert.equal(h.parseKV(on.stdout).RELEASE_FLOW, 'yes');
+  assert.equal(h.parseKV(on.stdout).COMMITTED, 'yes');
+  assert.equal(h.parseKV(on.stdout).TICKET_ID, undefined);
+  assert.equal(h.parseKV(readCli(b, ['list']).stdout).RELEASE_FLOW, 'yes');
+  assert.match(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout, /^backlog: release-flow on$/);
+
+  const before = commitCount(b);
+  const twice = commit(b.repo, ['release-flow', 'on'], { env: b.env });
+  assert.equal(twice.status, 0, twice.output);
+  assert.equal(h.parseKV(twice.stdout).COMMITTED, 'no');
+  assert.equal(commitCount(b), before);
+
+  const off = commit(b.repo, ['release-flow', 'off'], { env: b.env });
+  assert.equal(off.status, 0, off.output);
+  assert.equal(h.parseKV(off.stdout).RELEASE_FLOW, 'no');
+  assert.equal(h.parseKV(readCli(b, ['list']).stdout).RELEASE_FLOW, 'no');
+});
+
+test('backlog-commit#016 — the new modes refuse a bad version or flag with the core REFUSED= value, exit 2', (t) => {
+  const b = board(t);
+  const bad = commit(b.repo, ['release', 'v 1'], { env: b.env });
+  assert.equal(bad.status, 2, bad.output);
+  assert.match(bad.output, /REFUSED=bad-version/);
+  const flag = commit(b.repo, ['release-flow', 'maybe'], { env: b.env });
+  assert.equal(flag.status, 2, flag.output);
+  assert.match(flag.output, /REFUSED=bad-flag/);
+  const missing = commit(b.repo, ['release'], { env: b.env });
+  assert.equal(missing.status, 2, missing.output);
+});
