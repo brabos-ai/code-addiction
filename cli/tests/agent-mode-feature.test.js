@@ -386,3 +386,45 @@ describe('F22 -- the bot guide says how to turn the mode on and how to answer', 
     expect(text).toMatch(/`stage`/);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase E -- the internal pipeline asks in one numbered batch, always (no feature)
+// ---------------------------------------------------------------------------
+const WORKBENCH = path.join(ROOT, 'workbench');
+const wb = (...parts) => readNorm(path.join(WORKBENCH, ...parts));
+
+describe('F25 -- add-interaction is the one internal rule for a stop that asks', () => {
+  it('exists, registered in the workbench provider map only', () => {
+    expect(wb('skills', 'add-interaction', 'SKILL.md')).toMatch(/^---\nname: add-interaction\ndescription: ".+"\n---\n/);
+    const own = JSON.parse(fs.readFileSync(path.join(WORKBENCH, 'provider-map.json'), 'utf8'));
+    expect(own.skills).toHaveProperty('add-interaction');
+    const product = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8'));
+    expect(product.skills).not.toHaveProperty('add-interaction');
+  });
+
+  it('states the batch: all questions at once, numbered, each with a recommendation and why', () => {
+    const text = wb('skills', 'add-interaction', 'SKILL.md');
+    expect(text).toMatch(/all (?:its )?questions? at once|every question[^\n]*one message/i);
+    expect(text).toContain('### 1.');
+    expect(text).toContain('RECOMMENDED');
+    expect(text).toContain('`1a, 2b`');
+    expect(text).toContain('`recommended`');
+    expect(text).toMatch(/free text/i);
+    expect(text).toMatch(/only what is left|only the questions (?:that )?(?:are )?left/i);
+  });
+
+  it('names the one exception: brainstorm 8.1 gives no recommendation, and says why', () => {
+    const text = wb('skills', 'add-interaction', 'SKILL.md');
+    expect(text).toMatch(/8\.1/);
+    expect(text).toMatch(/no recommendation|does not pick|does not recommend/i);
+  });
+
+  it('keeps the single free-text question a single question', () => {
+    expect(wb('skills', 'add-interaction', 'SKILL.md')).toMatch(/What do you want to explore/);
+  });
+
+  it('calls no structured-question tool and no separate option table', () => {
+    const text = wb('skills', 'add-interaction', 'SKILL.md');
+    expect(text).toMatch(/no structured-question tool|never call a structured-question tool/i);
+  });
+});

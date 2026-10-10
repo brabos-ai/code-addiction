@@ -946,7 +946,8 @@ describe('node inventory snapshot', () => {
       // skill 61 -> 62: add--human-interaction, the product owner of how a command talks to a
       // person (plan 2026-10-09T184411-PLAN--agent-mode-feature, F4).
       // skill 62 -> 63: add--agent-interaction, the bot counterpart (F8).
-      skill: 63,
+      // skill 63 -> 64: add-interaction, the internal rule for a stop that asks (F25).
+      skill: 64,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1126,9 +1127,9 @@ describe('node inventory snapshot', () => {
     // retirement (F20 removed the 19 shells) or an addition moves this by
     // exactly the on-disk delta, with no hardcoded total to drift.
     const shippedScriptsCount = shippedScripts();
-    // 226 -> 227 + the agent-mode fragments: the agent-mode feature node (F10), then one fragment node each.
-    expect(nodes).toHaveLength(227 + agentModeFragments() + shippedScriptsCount);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(142 + agentModeFragments());
+    // 226 -> 228 + the agent-mode fragments: the agent-mode feature node (F10) and add-interaction (F25), then one fragment node each.
+    expect(nodes).toHaveLength(228 + agentModeFragments() + shippedScriptsCount);
+    expect(nodes.filter((n) => n.declares)).toHaveLength(143 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {
