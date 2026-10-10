@@ -179,11 +179,15 @@ function headSha(root) {
 // backlog-board.cjs composes these. Every failure is an answer (`ok: false`
 // plus a reason), never a throw, because the callers degrade instead of dying.
 
-/** `git clone --single-branch --branch <branch> <url> <dir>`. */
+/**
+ * `git clone --single-branch --branch <branch> <url> <dir>`. The clone is made
+ * with core.autocrlf=false and keeps it: the board's bytes in the working tree
+ * are the bytes in the commit, whatever the machine's global line-ending setting.
+ */
 function cloneBranch(url, dir, branch) {
   const parent = path.dirname(dir);
   fs.mkdirSync(parent, { recursive: true });
-  const out = run(['clone', '--quiet', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true });
+  const out = run(['clone', '--quiet', '-c', 'core.autocrlf=false', '--single-branch', '--branch', branch, url, dir], parent, { allowFailure: true });
   return out.status === 0 ? { ok: true } : { ok: false, reason: 'clone-failed', detail: out.stderr.trim() };
 }
 

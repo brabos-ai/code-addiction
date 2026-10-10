@@ -114,6 +114,24 @@ test('backlog-board#003 — F2: a conflicting rebase aborts cleanly; a refused p
   assert.equal(git.fetchBranch(path.join(remote.base, 'nowhere'), 'board').fetched, false);
 });
 
+test('backlog-board#003b — F2: a clone keeps the board bytes whatever the global line-ending setting', (t) => {
+  const remote = remoteWithBoard(t);
+  const dir = path.join(remote.base, 'eol-clone');
+  // A machine whose global git config rewrites line endings on checkout.
+  const globalConfig = path.join(remote.base, 'gitconfig');
+  fs.writeFileSync(globalConfig, '[core]\n\tautocrlf = true\n');
+  const saved = process.env.GIT_CONFIG_GLOBAL;
+  process.env.GIT_CONFIG_GLOBAL = globalConfig;
+  try {
+    assert.equal(git.cloneBranch(remote.bare, dir, 'board').ok, true);
+  } finally {
+    if (saved === undefined) delete process.env.GIT_CONFIG_GLOBAL; else process.env.GIT_CONFIG_GLOBAL = saved;
+  }
+  assert.equal(h.git(dir, ['config', '--local', 'core.autocrlf']).stdout.trim(), 'false');
+  assert.equal(fs.readFileSync(path.join(dir, 'docs', 'backlog.jsonl'), 'utf8'), '{"id":"0001B"}\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'docs', 'backlog.jsonl')).includes(13), false, 'no CR byte');
+});
+
 // ─── L1 — the board module ───────────────────────────────────────────────────
 
 /** A code repository whose committed config points at `remote`. */
