@@ -106,3 +106,27 @@ describe('EmptyBoard', () => {
     }
   });
 });
+
+describe('ErrorPanel — a board that is not ready', () => {
+  const STATES = ['none', 'migration-required', 'branch-missing', 'checkout-missing', 'unavailable'];
+
+  it('F25 names the state, in plain words, for every state the server can answer', () => {
+    for (const state of STATES) {
+      const { unmount } = render(<ErrorPanel error={{ error: `board-${state}`, state }} />);
+      const text = panelText();
+      expect(text, state).toContain(`State: ${state}`);
+      expect(text, state).not.toContain('The board could not be read');
+      for (const advice of SHELL_ADVICE) expect(text, state).not.toMatch(advice);
+      unmount();
+    }
+  });
+
+  it('F25 says "board clone", not the project selected with --root, for a failed read and the empty board', () => {
+    render(<ErrorPanel error={{ error: 'backlog-read-failed' }} />);
+    expect(panelText()).toMatch(/board clone/);
+    expect(panelText()).not.toMatch(/selected with --root/);
+    cleanup();
+    render(<EmptyBoard />);
+    expect(document.body.textContent ?? '').toMatch(/board clone/);
+  });
+});

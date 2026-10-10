@@ -9,7 +9,28 @@ const ICON = { strokeWidth: 1.5 } as const;
 const ERRORS: Record<string, { title: string; body: string }> = {
   'backlog-read-failed': {
     title: 'The backlog could not be read',
-    body: 'Check that docs/backlog.jsonl is a readable file in the project selected with --root. The server’s message is below.',
+    body: 'Check that docs/backlog.jsonl is a readable file in the board clone, the project’s own copy of its board branch. The server’s message is below.',
+  },
+  // A board that is not ready: the server names the state, and so does this copy.
+  'board-none': {
+    title: 'This project has no board',
+    body: 'State: none. There is no .codeadd/board.json in the project selected with --root, and no board to show.',
+  },
+  'board-migration-required': {
+    title: 'This project’s board has not been moved yet',
+    body: 'State: migration-required. The project still keeps its board inside the code checkout and has no .codeadd/board.json. Ask the framework maintainer to migrate it to the board branch.',
+  },
+  'board-branch-missing': {
+    title: 'The board branch does not exist',
+    body: 'State: branch-missing. .codeadd/board.json names a branch the remote does not have. Ask the framework maintainer to migrate the project.',
+  },
+  'board-checkout-missing': {
+    title: 'The board is not on this machine yet',
+    body: 'State: checkout-missing. The board clone has not been made and the remote could not be reached. Connect to the network and reload.',
+  },
+  'board-unavailable': {
+    title: 'The board could not be resolved',
+    body: 'State: unavailable. The server could not work out where this project’s board lives. The server’s message is below.',
   },
 };
 
@@ -43,7 +64,7 @@ export function EmptyBoard() {
       </div>
       <h2 className="mt-4 text-lg font-semibold">Nothing on the board yet</h2>
       <p className="mt-2 text-sm text-muted">
-        The board shows docs/backlog.jsonl. Record the first ticket by asking your agent to note something for later —
+        The board shows docs/backlog.jsonl from this project’s board clone. Record the first ticket by asking your agent to note something for later —
         the add-backlog skill in a project, or /add-framework--backlog in the framework repository.
       </p>
     </div>
