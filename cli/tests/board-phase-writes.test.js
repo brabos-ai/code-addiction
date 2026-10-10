@@ -20,9 +20,6 @@ const lifecycle = () => read(...REF, 'lifecycle.md');
 const phases = () => read(...REF, 'phases.md');
 const fragment = (cmd) => parseFragmentSections(read('framwork', '.codeadd', 'fragments', 'board', `${cmd}.md`));
 
-const NINE = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
-const SEVEN = ['backlog', 'shaping', 'planning', 'building', 'review', 'done', 'dropped'];
-// The seed in the core. NINE/SEVEN above stay what phases.md names until F2 adds the status there.
 const TEN = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
 const EIGHT = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 const WRITTEN = ['refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done'];
@@ -33,10 +30,10 @@ const tick = (s) => '`' + s + '`';
 const RULE_SENTINELS = ['entry **or** exit', 'ONLY `in-review` AND `done`'];
 
 describe('L11.1 -- phases.md carries the model, and no write table', () => {
-  it('exists, and names the nine statuses and the seven columns', () => {
+  it('exists, and names the ten statuses and the eight columns', () => {
     expect(exists(...REF, 'phases.md')).toBe(true);
-    for (const s of NINE) expect(phases(), s).toContain(tick(s));
-    for (const c of SEVEN) expect(phases(), c).toContain(tick(c));
+    for (const s of TEN) expect(phases(), s).toContain(tick(s));
+    for (const c of EIGHT) expect(phases(), c).toContain(tick(c));
   });
 
   it('pairs a running status with a parked one where a phase has both', () => {

@@ -32,9 +32,8 @@ const LIFECYCLE = path.join(h.SCRIPTS_DIR, '..', 'skills', 'add--backlog', 'refe
 // made through `node -e 'require(...).DEFAULT_DEFS'`, with no child process.
 const core = require(CORE);
 
+// lifecycle.md names these until F3 adds the tenth.
 const NINE_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
-const SEVEN_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'done', 'dropped'];
-// What a first write seeds. NINE/SEVEN above stay what the reference docs name until the docs gain the status.
 const TEN_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
 const EIGHT_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 
@@ -180,13 +179,13 @@ test('backlog#007 — L1.4b: the documented vocabulary and the emittable one are
   }
 });
 
-test('backlog#008 — L1.4c: the nine reserved statuses and seven columns are the same set', () => {
+test('backlog#008 — L1.4c: the ten reserved statuses and eight columns are the same set', () => {
   const ref = h.read(REF);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(core.DEFAULT_DEFS.statuses.some((s) => s.name === n), `core status ${n}`);
     assert.ok(ref.includes(`{ "name": "${n}",`), `reference status ${n}`);
   }
-  for (const c of SEVEN_COLUMNS) {
+  for (const c of EIGHT_COLUMNS) {
     assert.ok(core.DEFAULT_DEFS.columns.some((s) => s.name === c), `core column ${c}`);
     assert.ok(ref.includes(`{ "name": "${c}",`), `reference column ${c}`);
   }

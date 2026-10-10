@@ -78,7 +78,7 @@ composing a record.
 
 | File | Owns | Read by |
 |---|---|---|
-| `{{skill:add--backlog/references/phases.md}}` | The model: the nine statuses, the seven columns, and what each one means to a person reading the board. Nothing about who writes a status | Anyone reading the board, and the lifecycle reference, which points here instead of restating it |
+| `{{skill:add--backlog/references/phases.md}}` | The model: the ten statuses, the eight columns, and what each one means to a person reading the board. Nothing about who writes a status | Anyone reading the board, and the lifecycle reference, which points here instead of restating it |
 | `{{skill:add--backlog/references/lifecycle.md}}` | The procedure: the `ticket:` field, the two rules that decide whether a write happens, the seven writes and the exact step each one stands at, and why none of it ever stops a command | The `board` feature's fragments for `add-brainstorm`, `add-new`, `add-plan`, `add-build`, `add-done` and `add-hotfix` — each at its own row |
 
 **This skill captures and reads; the reference carries a ticket through the pipeline.** A user reaches
@@ -218,7 +218,7 @@ Metadata on every read: `BOARD_DIR` is the clone it read, and `SYNC=fresh|synced
 says how current it is (`SYNC_REASON=fetch-failed|push-refused|rebase-conflict` on `degraded`, and
 `LOCK_RECLAIMED=<pid>` when a dead lock was taken over). A `degraded` or `skipped` sync still answers
 from the clone — say that the answer may be a little behind. `READ_VIEW=summary|full|ids` names the
-projection, `STATUS_COUNTS` counts the whole board before any filter, and `BACKLOG_PRESENT=no` means
+projection, `RELEASE_FLOW=yes|no` says whether this project parks merged work in `awaiting-release`, `STATUS_COUNTS` counts the whole board before any filter, and `BACKLOG_PRESENT=no` means
 this project has no board, or no ticket has ever been written — say that; it is not an error.
 
 **The board states.** The entries resolve the board before anything else:
