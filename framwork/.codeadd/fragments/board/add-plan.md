@@ -11,7 +11,7 @@ of `{{skill:add--backlog/references/lifecycle.md}}` — read that ticket and rec
 `done_when` is a definition of finished the user already wrote**, so STEP add-plan.assemble writes it into `plan.md`
 under the objective, where the plan reviewer can check the plan against it — a plan that contradicts it
 has re-decided something without saying so. Then write `planning`, per the same row — the write
-reaches the base branch and leaves this tree untouched. No `ticket:`, no ticket.
+reaches the `board` branch and leaves this tree untouched. No `ticket:`, no ticket.
 <!-- /section:ticket-read -->
 
 <!-- section:ticket-done-when -->
