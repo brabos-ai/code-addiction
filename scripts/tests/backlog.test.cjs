@@ -971,3 +971,98 @@ test('backlog#071 — L1.4: a read prints BOARD_DIR and SYNC first, and a failed
   assert.equal(key(offline.stdout, 'SYNC_REASON'), 'fetch-failed');
   assert.equal(key(offline.stdout, 'TICKETS_RETURNED'), '1');
 });
+
+// ─── F22 — the changes read ─────────────────────────────────────────────────
+
+const csv = (value) => (value === undefined || value === '' ? [] : value.split(','));
+const commitTo = (b, args, input) => h.runScript('backlog-commit', args, { cwd: b.repo, env: b.env, input });
+
+test('backlog#072 — L2.10: no --since lists every ticket as added, with the remote tip as HEAD', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const res = backlog(b.repo, ['changes'], { cwd: b.repo, env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const out = h.parseKV(res.stdout);
+  assert.equal(out.BOARD_DIR, b.boardDir);
+  assert.equal(out.HEAD, h.git(b.bare, ['rev-parse', 'board']).stdout.trim());
+  assert.deepEqual(csv(out.ADDED), ['0001B']);
+  assert.equal(out.UPDATED, '');
+  assert.equal(out.REMOVED, '');
+  assert.equal(out.UNPUSHED, undefined);
+});
+
+test('backlog#073 — L2.10: after adds, an update and a remove the ids land under ADDED, UPDATED and REMOVED', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const cursor = h.parseKV(backlog(b.repo, ['changes'], { cwd: b.repo, env: b.env }).stdout).HEAD;
+
+  const secondId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  const thirdId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  assert.deepEqual([secondId, thirdId], ['0002B', '0003B']);
+  const mid = h.parseKV(backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: b.env }).stdout);
+  assert.deepEqual(csv(mid.ADDED), [secondId, thirdId]);
+
+  assert.equal(commitTo(b, ['update', '0001B'], '{"title":"first, edited"}').status, 0);
+  assert.equal(commitTo(b, ['remove', secondId]).status, 0);
+  const fourthId = key(commitTo(b, ['add'], validTicket()).stdout, 'TICKET_ID');
+  assert.equal(fourthId, '0004B');
+  const tip = h.git(b.bare, ['rev-parse', 'board']).stdout.trim();
+
+  // from the first cursor: the ticket added and removed since then shows nowhere
+  const all = h.parseKV(backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: b.env }).stdout);
+  assert.equal(all.HEAD, tip);
+  assert.deepEqual(csv(all.ADDED), [thirdId, fourthId]);
+  assert.deepEqual(csv(all.UPDATED), ['0001B']);
+  assert.deepEqual(csv(all.REMOVED), []);
+
+  // from the middle cursor: the removed one shows once
+  const later = h.parseKV(backlog(b.repo, ['changes', '--since', mid.HEAD], { cwd: b.repo, env: b.env }).stdout);
+  assert.deepEqual(csv(later.ADDED), [fourthId]);
+  assert.deepEqual(csv(later.UPDATED), ['0001B']);
+  assert.deepEqual(csv(later.REMOVED), [secondId]);
+
+  // the same cursor again: nothing
+  const quiet = h.parseKV(backlog(b.repo, ['changes', '--since', tip], { cwd: b.repo, env: b.env }).stdout);
+  assert.equal(quiet.ADDED, '');
+  assert.equal(quiet.UPDATED, '');
+  assert.equal(quiet.REMOVED, '');
+});
+
+test('backlog#074 — L2.10: an unpushed local commit is UNPUSHED=1 and not in the lists; HEAD stays the remote tip', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  assert.equal(backlog(b.repo, ['list'], { env: b.env }).status, 0);
+  const cursor = h.git(b.bare, ['rev-parse', 'board']).stdout.trim();
+  fs.writeFileSync(path.join(b.bare, 'hooks', 'pre-receive'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+  const refused = commitTo(b, ['add'], validTicket());
+  assert.equal(key(refused.stdout, 'PUSHED'), 'no');
+  const localId = key(refused.stdout, 'TICKET_ID');
+
+  const res = backlog(b.repo, ['changes', '--since', cursor], { cwd: b.repo, env: { ...b.env, CODEADD_BOARD_SYNC_TTL_MS: '0' } });
+  assert.equal(res.status, 0, res.output);
+  const out = h.parseKV(res.stdout);
+  assert.equal(out.UNPUSHED, '1');
+  assert.equal(out.HEAD, cursor);
+  assert.equal(out.ADDED, '');
+  assert.ok(!res.stdout.includes(localId));
+});
+
+test('backlog#075 — L2.10: a sha that is not on the board branch is ERROR=cursor-unknown, exit 1', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const foreign = h.git(b.repo, ['rev-parse', 'HEAD']).stdout.trim();
+  for (const since of [foreign, 'deadbeef', '0'.repeat(40)]) {
+    const res = backlog(b.repo, ['changes', '--since', since], { cwd: b.repo, env: b.env });
+    assert.equal(res.status, 1, since + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=cursor-unknown/);
+  }
+});
+
+test('backlog#076 — F22: the changes grammar takes at most one --since pair; a project with no board reads as BACKLOG_PRESENT=no', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  for (const args of [['changes', '--since'], ['changes', 'abc'], ['changes', '--since', 'a', 'b'], ['changes', '--full']]) {
+    const res = backlog(b.repo, args, { cwd: b.repo, env: b.env });
+    assert.equal(res.status, 2, args.join(' ') + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=bad-argument/);
+  }
+  const plain = project(t);
+  const none = run('backlog-cli', ['changes'], { cwd: plain, env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(none.status, 0, none.output);
+  assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
+});

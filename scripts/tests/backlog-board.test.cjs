@@ -312,3 +312,44 @@ test('backlog-board#008 — L1.6: no real ~/.codeadd/ is touched', (t) => {
   const after = fs.existsSync(real) ? fs.readdirSync(real).sort() : null;
   assert.deepEqual(after, before, 'the real ~/.codeadd/ did not change');
 });
+
+// ─── F22 — the changes diff, at module level ─────────────────────────────────
+
+test('backlog-board#009 — F22: changes diffs against the remote tip, counts unpushed commits and refuses a foreign sha', (t) => {
+  const remote = remoteWithBoard(t);
+  const clone = cloneOf(t, remote);
+  const res = { state: 'ready', boardDir: clone, branch: 'board' };
+  const first = git.resolveSha(clone, 'HEAD');
+
+  // no cursor: everything is added, the remote tip is the next cursor
+  let diff = board.changes(res);
+  assert.equal(diff.ok, true);
+  assert.equal(diff.head, first);
+  assert.deepEqual(diff.added, ['0001B']);
+  assert.equal(diff.unpushed, 0);
+
+  // an unpushed commit moves nothing the lists see
+  h.write(path.join(clone, 'docs', 'backlog.jsonl'), '{"id":"0001B"}\n{"id":"0002B"}\n');
+  assert.equal(git.commitFiles(clone, ['docs/backlog.jsonl'], 'local only').committed, true);
+  diff = board.changes(res, first);
+  assert.equal(diff.head, first);
+  assert.equal(diff.unpushed, 1);
+  assert.deepEqual([diff.added, diff.updated, diff.removed], [[], [], []]);
+
+  // pushed, it is a change; an edited row is UPDATED, a dropped one REMOVED
+  assert.equal(git.pushBranch(clone, 'board').pushed, true);
+  git.fetchBranch(clone, 'board');
+  h.write(path.join(clone, 'docs', 'backlog.jsonl'), '{"id":"0002B","x":1}\n');
+  git.commitFiles(clone, ['docs/backlog.jsonl'], 'edit and drop');
+  git.pushBranch(clone, 'board');
+  git.fetchBranch(clone, 'board');
+  diff = board.changes(res, first);
+  assert.equal(diff.ok, true);
+  assert.deepEqual(diff.added, ['0002B']);
+  assert.deepEqual(diff.removed, ['0001B']);
+  assert.deepEqual(diff.updated, []);
+
+  // a sha the branch never had
+  assert.deepEqual(board.changes(res, 'f'.repeat(40)), { ok: false, reason: 'cursor-unknown' });
+  assert.deepEqual(board.changes(res, 'not-a-sha'), { ok: false, reason: 'cursor-unknown' });
+});

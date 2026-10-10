@@ -14,6 +14,14 @@
  * ERROR=board-migration-required, ERROR=board-branch-missing and
  * ERROR=board-checkout-missing exit 1 and name what to do.
  *
+ * CHANGES. `changes [--since <sha>]` syncs, then lists the ticket ids added,
+ * updated and removed on the board branch between <sha> and the REMOTE tip
+ * origin/board. It prints HEAD=<remote tip sha> (the next cursor), UNPUSHED=<n>
+ * when the clone is ahead (those local writes are not in the lists yet), and
+ * ADDED=, UPDATED=, REMOVED= (comma-separated, empty when none). No --since lists
+ * every ticket as added. A sha that is not an ancestor of the tip exits 1 with
+ * ERROR=cursor-unknown: the caller starts again without --since.
+ *
  * WRITES ARE REFUSED. add, update, comment, move and remove exit 2 with
  * ERROR=write-mode and a line naming backlog-commit.cjs, the one write route.
  * The write grammar is still parsed here and exported, because
@@ -51,12 +59,13 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   list    [--all | --status <name>] [--full | --ids]
   search  <query> [--full]
   get     <id>
+  changes [--since <sha>]
 Reads come from the board clone, synced first. add, update, comment, move and remove
 are writes: run backlog-commit.cjs for those.
 Reads print a seven-field summary by default; --full restores the raw rows.
 `;
 
-const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get'];
+const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get', 'changes'];
 const RECORD_MODES = ['add', 'update', 'comment'];
 const RECORD_FILE_FLAG = '--record-file';
 const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove'];
@@ -179,6 +188,13 @@ function parseInvocation(argv) {
       return { ok: false, error: 'bad-argument', usage: true };
     }
     view = rest.length === 2 ? 'full' : 'summary';
+  } else if (mode === 'changes') {
+    // The tickets that changed on the board branch since a commit: at most one
+    // `--since <sha>` pair, nothing else.
+    let since = '';
+    if (rest.length === 2 && rest[0] === '--since' && rest[1] !== '') since = rest[1];
+    else if (rest.length !== 0) return { ok: false, error: 'bad-argument', usage: true };
+    return { ok: true, mode, since, recordSource };
   } else if (mode === 'get') {
     // The exact detail read: the first argument is the literal target, even
     // when it is spelled like an option, and there is nothing else.
@@ -380,7 +396,24 @@ function main(argv) {
   }
 
   const { mode } = invocation;
-  const { root, header } = boardForRead();
+  const { root, header, res } = boardForRead();
+
+  if (mode === 'changes') {
+    if (!res) {
+      process.stdout.write('BACKLOG_PRESENT=no\n');
+      process.exit(0);
+    }
+    const diff = board.changes(res, invocation.since);
+    if (!diff.ok) {
+      process.stdout.write('ERROR=' + diff.reason + '\n');
+      process.exit(1);
+    }
+    const lines = [...header, 'HEAD=' + diff.head];
+    if (diff.unpushed > 0) lines.push('UNPUSHED=' + diff.unpushed);
+    lines.push('ADDED=' + diff.added.join(','), 'UPDATED=' + diff.updated.join(','), 'REMOVED=' + diff.removed.join(','));
+    process.stdout.write(lines.join('\n') + '\n');
+    process.exit(0);
+  }
 
   const result = core.executeBacklog({
     root,

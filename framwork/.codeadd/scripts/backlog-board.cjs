@@ -331,6 +331,63 @@ function allocationRoot(cwd, { sync: doSync = false, env = process.env } = {}) {
   return { state: 'ready', boardRoot: res.boardDir };
 }
 
+// ---------------------------------------------------------------------------
+// The changes read
+// ---------------------------------------------------------------------------
+
+/** Ticket rows of a board file keyed by id, in file order. A row with no id gets a positional key. */
+function rowsById(text) {
+  const map = new Map();
+  if (!text) return map;
+  text.split('\n').map((line) => line.replace(/\r$/, '')).filter((line) => line.length > 0).forEach((line, i) => {
+    const m = /"id":"([0-9]{4}[A-Z])"/.exec(line);
+    map.set(m ? m[1] : `line-${i + 1}`, line);
+  });
+  return map;
+}
+
+/**
+ * Which tickets changed on the board branch since a commit.
+ *
+ * The comparison is between `since` and the REMOTE tip `origin/<branch>` —
+ * never the clone's local HEAD, which may hold an unpushed commit that a later
+ * rebase rewrites. The remote tip is returned as `head`, the next cursor, and
+ * `unpushed` counts the commits the clone is ahead by. No `since` lists every
+ * ticket as added (the bootstrap). A `since` that is not an ancestor of the tip
+ * is `cursor-unknown`. Caller syncs first.
+ *
+ * @param {{boardDir: string, branch?: string}} res a `ready` resolution
+ * @param {string} [since]
+ * @returns {{ok: true, head: string, unpushed: number, added: string[], updated: string[], removed: string[]} |
+ *           {ok: false, reason: 'cursor-unknown'|'board-unreadable'}}
+ */
+function changes(res, since) {
+  const branch = res.branch || DEFAULT_BRANCH;
+  const dir = res.boardDir;
+  const remoteRef = `refs/remotes/origin/${branch}`;
+  const head = git.resolveSha(dir, remoteRef) || git.headSha(dir);
+  if (!head) return { ok: false, reason: 'board-unreadable' };
+  const ab = git.resolveSha(dir, remoteRef) ? git.aheadBehind(dir, branch) : { ok: false };
+  const unpushed = ab.ok ? ab.ahead : 0;
+
+  const tipRows = rowsById(git.showAt(dir, head, git.BACKLOG_FILE));
+  if (since === undefined || since === '') {
+    return { ok: true, head, unpushed, added: [...tipRows.keys()], updated: [], removed: [] };
+  }
+  const base = git.resolveSha(dir, `${since}^{commit}`);
+  if (!base || !git.isAncestor(dir, base, head)) return { ok: false, reason: 'cursor-unknown' };
+
+  const baseRows = rowsById(git.showAt(dir, base, git.BACKLOG_FILE));
+  const added = [];
+  const updated = [];
+  for (const [id, text] of tipRows) {
+    if (!baseRows.has(id)) added.push(id);
+    else if (baseRows.get(id) !== text) updated.push(id);
+  }
+  const removed = [...baseRows.keys()].filter((id) => !tipRows.has(id));
+  return { ok: true, head, unpushed, added, updated, removed };
+}
+
 /** KEY=value lines for a read's header: BOARD_DIR, SYNC, SYNC_REASON, LOCK_RECLAIMED. */
 function syncLines(res, result) {
   const lines = [`BOARD_DIR=${res.boardDir}`, `SYNC=${result.sync}`];
@@ -349,6 +406,8 @@ module.exports = {
   sync,
   syncLines,
   allocationRoot,
+  changes,
+  rowsById,
   touchStamp,
   stampAgeMs,
   lockPathOf,
