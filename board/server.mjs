@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // ============================================
 // BOARD SERVER
-// Serves the board app and a read-only JSON view of the project backlog.
+// Serves the board app and a read-only JSON view of the project board.
 // ============================================
 // Usage: node server.mjs [--root <dir>] [--scripts <dir>] [--port <n>] [--no-open] [--layers]
 //
-//   --root     the project whose docs/ holds the board. Default: the cwd.
+//   --root     the CODE project whose board to show. The board itself is read from
+//              its clone (one per project, on the `board` branch), never from this
+//              project's docs/. Default: the cwd.
 //   --scripts  legacy argument, ignored. The board no longer needs shell scripts.
 //   --port     first port to try. Default 4317; a busy port moves to the next,
 //              up to +10. All eleven busy -> one line and exit 1.
@@ -20,9 +22,23 @@
 // where no node_modules sits on the resolution path — the same reason mcp/
 // takes none.
 //
-// THE SERVER IMPORTS THE GENERATED CORE from runtime/backlog-core.cjs.
-// The core owns the damaged-line and undefined-status rules; the board
-// maps its results through its existing allowlist/sort presentation adapter.
+// THE SERVER IMPORTS THE GENERATED RUNTIME MODULES under runtime/ and nothing
+// else but Node built-ins: backlog-board.cjs resolves, locks and syncs the
+// clone (and answers `changes`); backlog-core.cjs reads it and owns the
+// damaged-line and undefined-status rules; backlog-storage.cjs and
+// backlog-git.cjs sit under them. The board maps the core's results through
+// its existing allowlist/sort presentation adapter.
+//
+// THE BOARD IS A CLONE, KEPT FRESH. /api/board runs the same throttled read sync
+// the CLI runs (at most once per 30 s), which is what a window-focus refetch
+// triggers; a 60 s timer syncs under the clone's lock WITHOUT waiting and skips
+// the tick when a writer holds it. The server never writes the board: GET only.
+//
+// ROUTES: GET /api/board, GET /api/changes?since=<sha> (the ticket ids added,
+// updated and removed since a sha, with HEAD = the remote tip as the next
+// cursor), GET /api/events (server-sent `board-changed`). A board that is not
+// `ready` (no config, migration needed, branch or clone missing) is answered as a
+// JSON error naming the state.
 //
 // 127.0.0.1 ONLY, AND THE HOST HEADER IS CHECKED. Nothing here writes today,
 // but the /api namespace is where writes and agent runs will land, and a page
@@ -35,7 +51,7 @@
 
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync, statSync, watch, createReadStream } from 'node:fs';
+import { existsSync, statSync, watch, createReadStream } from 'node:fs';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -72,24 +88,45 @@ function parseArgs(argv) {
 }
 
 const opts = parseArgs(process.argv.slice(2));
-const DOCS = join(opts.root, 'docs');
 const BOARD_FILE = 'backlog.jsonl';
 const DEFS_FILE = 'backlog.definitions.json';
+const TIMER_MS = Number(process.env.CODEADD_BOARD_TIMER_MS) > 0 ? Number(process.env.CODEADD_BOARD_TIMER_MS) : 60000;
 
 // --- Reading the board ----------------------------------------------------
 
-// Import the generated core directly — no subprocess, no stdout parser.
+// Import the generated runtime modules directly — no subprocess, no stdout parser.
 const require = createRequire(import.meta.url);
 const { executeBacklog } = require(join(HERE, 'runtime', 'backlog-core.cjs'));
+const board = require(join(HERE, 'runtime', 'backlog-board.cjs'));
+
+/**
+ * The board for this request: resolved from the code project, synced (throttled)
+ * when ready. A state other than `ready` comes back as the JSON error to send.
+ */
+function resolveBoard({ sync = true } = {}) {
+  let res;
+  try {
+    res = board.resolve(opts.root);
+  } catch (e) {
+    return { error: { error: 'board-unavailable', state: 'unavailable', detail: String(e).slice(0, 2000) } };
+  }
+  if (res.state !== 'ready') {
+    return { error: { error: `board-${res.state}`, state: res.state, detail: `The board is not ready: ${res.state}.` } };
+  }
+  const synced = sync ? board.sync(res) : { sync: 'fresh' };
+  return { res, synced };
+}
 
 /**
  * Run list --all through the generated core and return the board payload.
  * The core owns damaged-line and undefined-status rules.
  */
 async function boardPayload() {
+  const got = resolveBoard();
+  if (got.error) return got.error;
   let result;
   try {
-    result = executeBacklog({ root: opts.root, mode: 'list', filter: '*' });
+    result = executeBacklog({ root: got.res.boardDir, mode: 'list', filter: '*' });
   } catch (e) {
     return { error: 'backlog-read-failed', detail: String(e).slice(0, 2000) };
   }
@@ -184,25 +221,48 @@ function changed() {
   debounce = setTimeout(() => broadcast('board-changed'), 150);
 }
 
+// The watcher follows the clone's docs/, wherever the resolver put it. The clone
+// may not exist yet (first use, migration pending), so the 60 s timer below
+// retries until it does.
 let docsWatcher = null;
+let watchedDir = null;
 function watchDocs() {
-  if (docsWatcher || !existsSync(DOCS)) return;
+  let res;
+  try { res = board.resolve(opts.root); } catch { return; }
+  if (res.state !== 'ready') return;
+  const dir = join(res.boardDir, 'docs');
+  if (docsWatcher && watchedDir === dir) return;
+  if (docsWatcher) { try { docsWatcher.close(); } catch { /* already closed */ } docsWatcher = null; }
+  if (!existsSync(dir)) return;
   try {
-    docsWatcher = watch(DOCS, (_type, name) => {
+    docsWatcher = watch(dir, (_type, name) => {
       if (!name || name === BOARD_FILE || name === DEFS_FILE) changed();
     });
+    watchedDir = dir;
     docsWatcher.on('error', () => { docsWatcher = null; });
   } catch {
     docsWatcher = null;
   }
 }
-
-try {
-  watch(opts.root, (_type, name) => {
-    if (name === 'docs') { watchDocs(); changed(); }
-  }).on('error', () => {});
-} catch { /* a root that cannot be watched still serves; the client refetches on focus */ }
 watchDocs();
+
+// The timer: bring the clone level with the remote every minute. It takes the
+// clone's lock WITHOUT waiting, so a writer is never delayed by it, and skips the
+// tick when the lock is held. A tick that moved the clone announces itself.
+function tick() {
+  try {
+    watchDocs();
+    const res = board.resolve(opts.root);
+    if (res.state !== 'ready') return;
+    const before = board.changes(res);
+    const result = board.sync(res, { force: true });
+    if (result.sync === 'synced') {
+      const after = board.changes(res);
+      if (before.ok && after.ok && before.head !== after.head) changed();
+    }
+  } catch { /* a failed tick is retried by the next one */ }
+}
+setInterval(tick, TIMER_MS).unref();
 
 // --- Static files ---------------------------------------------------------
 
@@ -260,6 +320,16 @@ function handler(port) {
     const { pathname } = new URL(req.url ?? '/', `http://${HOST}`);
 
     if (pathname === '/api/board') return json(res, 200, await boardPayload());
+
+    if (pathname === '/api/changes') {
+      const got = resolveBoard();
+      if (got.error) return json(res, 200, got.error);
+      const since = new URL(req.url ?? '/', `http://${HOST}`).searchParams.get('since') ?? undefined;
+      const diff = board.changes(got.res, since);
+      if (!diff.ok) return json(res, 400, { error: diff.reason });
+      const { ok, ...payload } = diff;
+      return json(res, 200, payload);
+    }
 
     if (pathname === '/api/events') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });

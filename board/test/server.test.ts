@@ -7,8 +7,14 @@
 // and reads no script at all; the native-backlog suite (native-backlog.test.ts)
 // proves in the same depth that a shipped CLI mutation surfaces through the
 // SSE stream and the API. The --scripts flag is accepted and ignored.
-import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
+//
+// The board is read from a CLONE, never from the project's docs/: project()
+// makes the temp directory both the code repository and the clone
+// (git init, and start() points CODEADD_BOARD_DIR at it). The tests of the
+// board branch itself — a separate remote, /api/changes, the timer — use
+// boardFixture() below.
+import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { get } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -34,6 +40,7 @@ function project(lines: string[] | null, defs?: object): string {
   const root = mkdtempSync(join(tmpdir(), 'board-test-'));
   temps.push(root);
   mkdirSync(join(root, 'docs'));
+  execFileSync('git', ['init', '-q'], { cwd: root });
   if (lines) writeFileSync(join(root, 'docs/backlog.jsonl'), lines.map((l) => `${l}\n`).join(''));
   if (defs) writeFileSync(join(root, 'docs/backlog.definitions.json'), JSON.stringify(defs));
   return root;
@@ -46,11 +53,11 @@ function fakeDist(): string {
   return dir;
 }
 
-async function start(root: string, extra: string[] = []): Promise<Running> {
+async function start(root: string, extra: string[] = [], env: Record<string, string> = { CODEADD_BOARD_DIR: root }): Promise<Running> {
   const proc = spawn(
     process.execPath,
     [join(BOARD, 'server.mjs'), '--root', root, '--scripts', SCRIPTS, '--dist', fakeDist(), '--no-open', ...extra],
-    { env: { ...process.env, NODE_OPTIONS: '' } },
+    { env: { ...process.env, NODE_OPTIONS: '', ...env } },
   );
   const r: Running = { url: '', proc, out: '' };
   running.push(r);
@@ -299,5 +306,151 @@ describe('L1 — live updates', () => {
     const text = await Promise.race([got, new Promise<string>((ok) => setTimeout(() => ok('TIMEOUT'), 5000))]);
     ctrl.abort();
     expect(text).toContain('event: board-changed');
+  });
+});
+
+// ─── L3 — the board branch: the clone, /api/changes, the timer ──────────────────
+
+const GIT_ENV = {
+  GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@test.com',
+  GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@test.com',
+};
+const g = (cwd: string, args: string[]) =>
+  execFileSync('git', ['-c', 'commit.gpgsign=false', ...args], { cwd, encoding: 'utf8', env: { ...process.env, ...GIT_ENV } }).trim();
+
+type Fixture = { base: string; bare: string; repo: string; clone: string; env: Record<string, string> };
+
+/** A bare remote holding the `board` branch, a code repo whose config points at it, and the clone path. */
+function boardFixture(lines: string[], extraEnv: Record<string, string> = {}): Fixture {
+  const base = mkdtempSync(join(tmpdir(), 'board-fx-'));
+  temps.push(base);
+  const bare = join(base, 'remote.git');
+  g(base, ['init', '--bare', '-q', '--initial-branch=main', bare]);
+  const seed = join(base, 'seed');
+  mkdirSync(join(seed, 'docs'), { recursive: true });
+  g(seed, ['init', '-q', '--initial-branch=board']);
+  writeFileSync(join(seed, 'docs/backlog.jsonl'), lines.map((l) => `${l}\n`).join(''));
+  g(seed, ['add', '.']);
+  g(seed, ['commit', '-q', '-m', 'seed board']);
+  g(seed, ['push', '-q', bare, 'board']);
+  const repo = join(base, 'code');
+  mkdirSync(join(repo, '.codeadd'), { recursive: true });
+  g(repo, ['init', '-q', '--initial-branch=main']);
+  writeFileSync(join(repo, '.codeadd/board.json'), JSON.stringify({ remote: bare, branch: 'board' }));
+  g(repo, ['add', '-f', '.codeadd/board.json']);
+  g(repo, ['commit', '-q', '-m', 'init']);
+  const clone = join(base, 'clone');
+  // TTL 0: every /api/board call syncs, so a test sees another machine's push at once.
+  return { base, bare, repo, clone, env: { CODEADD_BOARD_DIR: clone, HOME: base, USERPROFILE: base, CODEADD_BOARD_SYNC_TTL_MS: '0', ...extraEnv } };
+}
+
+/** Another machine pushes one more line to the board branch. */
+function pushLine(fx: Fixture, line: string, name = 'other') {
+  const dir = join(fx.base, name);
+  if (!existsSync(dir)) g(fx.base, ['clone', '-q', '--branch', 'board', fx.bare, dir]);
+  appendFileSync(join(dir, 'docs/backlog.jsonl'), `${line}\n`);
+  g(dir, ['commit', '-q', '-am', 'other machine']);
+  g(dir, ['push', '-q', 'origin', 'board']);
+  return g(dir, ['rev-parse', 'HEAD']);
+}
+
+const changes = async (r: Running, since?: string) => {
+  const res = await fetch(`${r.url}/api/changes${since === undefined ? '' : `?since=${since}`}`);
+  return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+};
+
+describe('L3 — the server reads the board clone', () => {
+  it('L3.1 /api/board reads the clone, not <root>/docs/', async () => {
+    const fx = boardFixture([ticket('0002B', 'on the board branch')]);
+    // The code checkout carries a stale copy of the board: it must never be read.
+    mkdirSync(join(fx.repo, 'docs'));
+    writeFileSync(join(fx.repo, 'docs/backlog.jsonl'), `${ticket('0001B', 'stale in the checkout')}\n`);
+    const r = await start(fx.repo, [], fx.env);
+    const { body } = await board(r);
+    expect((body.tickets as { id: string }[]).map((t) => t.id)).toEqual(['0002B']);
+  });
+
+  it('L3.1b a read syncs the clone first: another machine\'s push shows on the next call', async () => {
+    const fx = boardFixture([ticket('0001B', 'one')]);
+    const r = await start(fx.repo, [], fx.env);
+    expect(((await board(r)).body.tickets as unknown[]).length).toBe(1);
+    pushLine(fx, ticket('0002B', 'two'));
+    expect(((await board(r)).body.tickets as unknown[]).length).toBe(2);
+  });
+
+  it('L3.2 /api/changes?since=<sha> answers the ids added, updated and removed, with HEAD as the next cursor', async () => {
+    const fx = boardFixture([ticket('0001B', 'one')]);
+    const r = await start(fx.repo, [], fx.env);
+
+    const first = await changes(r);
+    expect(first.status).toBe(200);
+    expect(first.body.added).toEqual(['0001B']);
+    expect(first.body.updated).toEqual([]);
+    expect(first.body.removed).toEqual([]);
+    expect(first.body.unpushed).toBe(0);
+    const cursor = first.body.head as string;
+    expect(cursor).toMatch(/^[0-9a-f]{40}$/);
+
+    const tip = pushLine(fx, ticket('0002B', 'two'));
+    const next = await changes(r, cursor);
+    expect(next.body.added).toEqual(['0002B']);
+    expect(next.body.head).toBe(tip);
+
+    const foreign = await changes(r, 'f'.repeat(40));
+    expect(foreign.status).toBe(400);
+    expect(foreign.body.error).toBe('cursor-unknown');
+  });
+
+  it('L3.3 a board that is not ready is a JSON error naming the state, on both routes', async () => {
+    const none = project(null);
+    const bare = await start(none, [], { CODEADD_BOARD_DIR: '', HOME: none, USERPROFILE: none });
+    for (const path of ['/api/board', '/api/changes']) {
+      const res = await fetch(`${bare.url}${path}`);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.error).toBe('board-none');
+      expect(body.state).toBe('none');
+    }
+
+    const old = project([ticket('0001B', 'still in the checkout')]);
+    const migrating = await start(old, [], { CODEADD_BOARD_DIR: '', HOME: old, USERPROFILE: old });
+    const { body } = await board(migrating);
+    expect(body.error).toBe('board-migration-required');
+    expect(body.state).toBe('migration-required');
+  });
+
+  it('L3.3b the timer syncs the clone, and skips the tick while a writer holds the lock', async () => {
+    const fx = boardFixture([ticket('0001B', 'one')], { CODEADD_BOARD_TIMER_MS: '200', CODEADD_BOARD_SYNC_TTL_MS: '30000' });
+    const r = await start(fx.repo, [], fx.env);
+    await board(r); // the clone exists and has been synced once
+    const file = join(fx.clone, 'docs/backlog.jsonl');
+    const lock = join(fx.clone, '.git/codeadd-board.lock');
+
+    // A live holder (this process) owns the lock: the tick skips and the clone stays behind.
+    writeFileSync(lock, JSON.stringify({ pid: process.pid, ts: Date.now() }));
+    pushLine(fx, ticket('0002B', 'two'));
+    await new Promise((ok) => setTimeout(ok, 1200));
+    expect(readFileSync(file, 'utf8')).not.toContain('0002B');
+    expect(existsSync(lock)).toBe(true);
+
+    // Released, the next tick brings the clone level.
+    rmSync(lock);
+    const deadline = Date.now() + 8000;
+    while (Date.now() < deadline && !readFileSync(file, 'utf8').includes('0002B')) {
+      await new Promise((ok) => setTimeout(ok, 200));
+    }
+    expect(readFileSync(file, 'utf8')).toContain('0002B');
+  });
+
+  it('L3.3c the server is GET only: a POST to any route is 405, and a foreign Host is 403', async () => {
+    const fx = boardFixture([ticket('0001B', 'one')]);
+    const r = await start(fx.repo, [], fx.env);
+    for (const path of ['/api/board', '/api/changes', '/api/events']) {
+      const res = await fetch(`${r.url}${path}`, { method: 'POST', body: '{}' });
+      expect(res.status).toBe(405);
+    }
+    const denied = await new Promise<number | undefined>((ok, fail) => {
+      get(`${r.url}/api/changes`, { headers: { host: 'untrusted.example' } }, (res) => { res.resume(); ok(res.statusCode); }).on('error', fail);
+    });
+    expect(denied).toBe(403);
   });
 });
