@@ -37,11 +37,23 @@ const SEVEN_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', '
 
 // ─── Fixture helpers ─────────────────────────────────────────────────────────
 
-/** A throwaway project root used as the child's cwd; cleaned via t.after. */
+/**
+ * A throwaway project: ONE directory that is both the code repository and the
+ * board clone (CODEADD_BOARD_DIR points at it). The board is never read from a
+ * checkout, so the old fixtures keep their shape and the resolver finds the
+ * clone through the override. There is no remote, so every sync reports
+ * SYNC=degraded (fetch-failed) and every write commits locally.
+ */
 function project(t, prefix = 'codeadd-backlog-') {
   const dir = h.mkTmp(prefix);
   t.after(() => h.rmrf(dir));
+  h.git(dir, ['init', '-q']);
   return dir;
+}
+
+/** Run a script in a project dir with the board clone pointed at it. */
+function run(name, args, opts = {}) {
+  return h.runScript(name, args, { ...opts, env: { CODEADD_BOARD_DIR: opts.cwd, ...(opts.env || {}) } });
 }
 
 /** docs/features/<slug>/ with an about.md, the allocator's first source. */
@@ -85,7 +97,10 @@ function validTicket() {
   });
 }
 
-const backlog = (dir, args, opts = {}) => h.runScript('backlog-cli', args, { ...opts, cwd: dir });
+const WRITES = ['add', 'update', 'comment', 'move', 'remove'];
+// Reads go through the CLI; the writes go through the one write route, over a
+// clone that has no remote.
+const backlog = (dir, args, opts = {}) => run(WRITES.includes(args[0]) ? 'backlog-commit' : 'backlog-cli', args, { ...opts, cwd: dir });
 const tickets = (stdout) => String(stdout).split('\n').filter((l) => l.startsWith('{'));
 const key = (stdout, name) => h.parseKV(stdout)[name];
 const lines = (file) => h.read(file).replace(/\n$/, '').split('\n');
@@ -104,7 +119,7 @@ test('backlog#001 — L1.1: next-id.cjs B exceeds every id in docs/features AND 
   const dir = project(t);
   featureDir(dir, '0003F-login');
   backlogLine(dir, '0007B', 'cache the provider map');
-  const res = h.runScript('next-id', ['B'], { cwd: dir });
+  const res = run('next-id', ['B'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0008B');
 });
@@ -113,7 +128,7 @@ test('backlog#002 — L1.1b: next-id.cjs F is raised by a backlog id too, one co
   const dir = project(t);
   featureDir(dir, '0002F-login');
   backlogLine(dir, '0009B', 'something');
-  const res = h.runScript('next-id', ['F'], { cwd: dir });
+  const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0010F');
 });
@@ -121,14 +136,14 @@ test('backlog#002 — L1.1b: next-id.cjs F is raised by a backlog id too, one co
 test('backlog#003 — L1.2: status.cjs next-id B exits 0 and returns an id', (t) => {
   const dir = project(t);
   featureDir(dir, '0004F-login');
-  const res = h.runScript('status', ['next-id', 'B'], { cwd: dir });
+  const res = run('status', ['next-id', 'B'], { cwd: dir });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0005B');
 });
 
 test('backlog#004 — L1.3: status.cjs next-id Z still exits 2, B joins the allowlist', (t) => {
   const dir = project(t);
-  const res = h.runScript('status', ['next-id', 'Z'], { cwd: dir });
+  const res = run('status', ['next-id', 'Z'], { cwd: dir });
   assert.equal(res.status, 2, res.output);
 });
 
@@ -136,7 +151,7 @@ test('backlog#005 — L1.3b: the four original prefixes still resolve', (t) => {
   const dir = project(t);
   featureDir(dir, '0001F-x');
   for (const p of ['F', 'H', 'PRD', 'CHG']) {
-    const res = h.runScript('status', ['next-id', p], { cwd: dir });
+    const res = run('status', ['next-id', p], { cwd: dir });
     assert.equal(res.status, 0, res.output);
     assert.equal(res.stdout.trim(), `0002${p}`);
   }
@@ -308,9 +323,9 @@ test('backlog#018 — F2.L1c: STATUS_COUNTS counts the whole board, before the f
 
 /** Run both future native allocators and return the agreed id for `prefix`. */
 function agree(dir, prefix) {
-  const next = h.runScript('next-id', [prefix], { cwd: dir });
+  const next = run('next-id', [prefix], { cwd: dir });
   assert.equal(next.status, 0, next.output);
-  const status = h.runScript('status', ['next-id', prefix], { cwd: dir });
+  const status = run('status', ['next-id', prefix], { cwd: dir });
   assert.equal(status.status, 0, status.output);
   assert.equal(status.stdout.trim(), next.stdout.trim(), `allocators disagree on ${prefix}`);
   return next.stdout.trim();
@@ -608,7 +623,7 @@ test('backlog#043 — L3.5e: an id is NEVER reused after a remove', (t) => {
   assert.equal(removed.status, 0, removed.output);
 
   featureDir(dir, '0002F-y');
-  const next = h.runScript('next-id', ['B'], { cwd: dir });
+  const next = run('next-id', ['B'], { cwd: dir });
   assert.equal(next.status, 0, next.output);
   assert.equal(next.stdout.trim(), '0003B');
 });
@@ -884,7 +899,7 @@ test('backlog#068 — L2.5: every write mode is refused with ERROR=write-mode, e
   assert.equal(warm.status, 0, warm.output);
   const before = h.read(path.join(b.boardDir, BACKLOG));
   for (const args of WRITE_MODES) {
-    const res = backlog(b.repo, args, { env: b.env, input: validTicket() });
+    const res = run('backlog-cli', args, { cwd: b.repo, env: b.env, input: validTicket() });
     assert.equal(res.status, 2, args[0] + ': ' + res.output);
     assert.match(res.stdout, /ERROR=write-mode/);
     assert.match(res.stdout, /backlog-commit\.cjs/);

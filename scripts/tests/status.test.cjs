@@ -787,8 +787,9 @@ test('NEXT_ID_AGREE: status next-id and next-id.cjs agree Node-to-Node', (t) => 
   const r = repo(t);
   writeIn(r, featurePath('0002F-docs', 'about.md'), '# about\n');
   h.write(path.join(r.repo, 'docs', 'backlog.jsonl'), '{"id":"0005B","title":"board"}\n');
-  const viaStatus = status(r, ['next-id', 'F']);
-  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo });
+  const env = { CODEADD_BOARD_DIR: r.repo };
+  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo, env });
+  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo, env });
   assert.equal(viaStatus.status, 0);
   assert.equal(viaScript.status, 0);
   assert.equal(viaStatus.stdout.trim(), viaScript.stdout.trim());
