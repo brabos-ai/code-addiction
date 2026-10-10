@@ -115,7 +115,7 @@
 
   <rect x="40" y="486" width="270" height="36" class="cmd-box"/>
   <text x="56" y="504" class="cmd-name">/add-help</text>
-  <text x="56" y="516" class="cmd-desc">Help guide — answers questions</text>
+  <text x="56" y="516" class="cmd-desc">Which command, in what order, features, CLI</text>
 
   <rect x="40" y="530" width="270" height="36" class="cmd-box"/>
   <text x="56" y="548" class="cmd-name">/add-ux</text>

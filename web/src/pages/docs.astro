@@ -594,6 +594,8 @@ import "../styles/global.css";
             { name: "add--cross-sf-consistency", desc: "Use when judging contract consistency across an epic's subfeature plans - the five-dimension rubric, dedupe rules, and finding routes." },
             { name: "add--doc-schemas", desc: "Documentation schemas and conventions for ADD projects" },
             { name: "add--plan-review", desc: "Pre-delivery executability review for freshly generated about.md and plan.md - verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback." },
+            { name: "add--human-interaction", desc: "How a command talks to a person (default interaction slot)" },
+            { name: "add--agent-interaction", desc: "How a command talks to a bot via claude -p, injected by the agent-mode feature" },
           ].map(s => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>

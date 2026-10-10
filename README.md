@@ -104,6 +104,8 @@ Step        Command             What happens                        Output
 
 Steps 1-4 can also run unattended: approve `/add-brainstorm` with "deliver automatically" and each stage hands off to the next until `/add-build` runs its own final review and asks whether to open the PR. `/add-done` always waits for you.
 
+Not sure which command to run next? `/add-help` answers which command to use and in what order, what each feature and plugin is and how to enable it, how to run from a bot, and the CLI lifecycle. It is a router and finishes no work.
+
 ### Choose your flow
 
 Pick the shortest path that fits. Less ceremony, same quality.
