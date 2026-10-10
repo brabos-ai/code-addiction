@@ -948,7 +948,7 @@ so.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/reviews/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
+| `docs/features/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
 | `docs/features/${FEATURE_ID}/plan.md` | The requirements the findings are judged against |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 

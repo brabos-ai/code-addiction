@@ -95,7 +95,7 @@ file is never read a second time.
 
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate and STEP add-new.discover, proceed to STEP add-new.confirm.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate, STEP add-new.discover and STEP add-new.confirm, proceed to STEP add-new.decompose.
 - [NEW FEATURE] If no existing feature docs match, proceed to STEP add-new.allocate.
 
 ---
@@ -170,7 +170,7 @@ file, load `{{skill:add--feature-specification/SKILL.md}}` and run its three-fac
 
 | Classification | This STEP |
 |---|---|
-| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered |
+| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered. Then write `docs/features/${FEATURE_ID}/discovery.md` yourself: the `RELATED_WORK` result under a `## Related Features` heading, `none` or `NOT VERIFIED` included — `/add-plan` stops without this file |
 | `architectural`, or any fact flagged | Everything below, as written |
 
 ⛔ **The light path skips the two agent dispatches, never the index and graph queries.** Those are the
