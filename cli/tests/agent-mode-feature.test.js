@@ -12,7 +12,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 import { PROVIDERS } from '../src/providers.js';
-import { FEATURES, enableFeature } from '../src/features.js';
+import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 import { composeSlot, resolvePlaceholders, parseFragmentSections } from '../src/injection-core.js';
 
@@ -571,4 +571,114 @@ describe('F38-F39 -- the injection skill and AGENTS.md carry the new rules', () 
     expect(t).toContain('"add--agent-interaction"');
     expect(t).toMatch(/"fragments":\[[^\]]*"agent-mode"/);
   });
+});
+
+// ---------------------------------------------------------------------------
+// L3 -- combination matrix over the toggles that share commands with agent-mode
+// ---------------------------------------------------------------------------
+describe('L3 -- agent-mode combined with the other features', () => {
+  const matrixFixture = treeFixture({
+    prefix: 'agent-mode-matrix-',
+    copy: [
+      ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest, optional: true })),
+      { src: 'framwork/.codeadd', dest: '.codeadd' },
+    ],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: Object.keys(PROVIDERS), features: {}, plugins: {}, hashes: {} },
+    },
+    normalize: true,
+  });
+  let tmp;
+  beforeEach(() => { tmp = matrixFixture.root(); });
+  afterEach(() => matrixFixture.cleanup());
+  afterAll(() => matrixFixture.dispose());
+
+  const commandDirs = () => CMD_PROVIDERS.map((k) => path.join(tmp, PROVIDERS[k].dest, PROVIDERS[k].commandsSubdir)).filter((d) => fs.existsSync(d));
+  const snapshot = () => Object.fromEntries(commandDirs().flatMap((d) => fs.readdirSync(d).filter((f) => f.endsWith('.md')).map((f) => [path.join(d, f), fs.readFileSync(path.join(d, f), 'utf8')])));
+  const OTHERS = ['tdd-pipeline', 'qa-pipeline', 'docs-pruning', 'board'];
+
+  it('L3.1 with every feature on, each agent-mode member lands exactly once per command and no fallback survives', () => {
+    for (const f of Object.keys(FEATURES)) enableFeature(tmp, f);
+    for (const key of CMD_PROVIDERS) {
+      const dir = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir);
+      if (!fs.existsSync(dir)) continue;
+      for (const command of Object.keys(AGENT_SLOTS)) {
+        const text = fs.readFileSync(path.join(dir, `${command}.md`), 'utf8');
+        for (const s of agentSlotsOf(command)) {
+          const member = resolvePlaceholders(memberBody(command, s.id.slice('agent-mode.'.length)), PROVIDERS[key]).trim();
+          expect(text.split(member).length - 1, `${command} ${s.id} member count on ${key}`).toBe(1);
+          expect(text, `${command} ${s.id} fallback on ${key}`).not.toContain(resolvePlaceholders(s.fallback, PROVIDERS[key]).trim());
+        }
+      }
+    }
+  });
+
+  it('L3.3 disabling another feature leaves agent-mode byte-identical', () => {
+    enableFeature(tmp, 'agent-mode');
+    const before = snapshot();
+    enableFeature(tmp, 'board');
+    expect(snapshot()).not.toEqual(before);
+    disableFeature(tmp, 'board');
+    expect(snapshot()).toEqual(before);
+  });
+
+  it('L3.4 the order the features are enabled in does not change a byte', () => {
+    for (const f of ['agent-mode', ...OTHERS]) enableFeature(tmp, f);
+    const forward = snapshot();
+    for (const f of [...OTHERS, 'agent-mode']) disableFeature(tmp, f);
+    for (const f of [...OTHERS, 'agent-mode']) enableFeature(tmp, f);
+    expect(snapshot()).toEqual(forward);
+  });
+
+  it('L3.5 enabling everything and disabling everything restores the fixture render byte for byte', () => {
+    const pristine = snapshot();
+    for (const f of Object.keys(FEATURES)) enableFeature(tmp, f);
+    for (const f of Object.keys(FEATURES).reverse()) disableFeature(tmp, f);
+    expect(snapshot()).toEqual(pristine);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Providers that never receive feature injection keep today's text
+// ---------------------------------------------------------------------------
+describe('providers without feature injection (codex, antigravity, zcode) render the fallbacks in the build', () => {
+  const NO_INJECTION = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubdir == null).map(([k]) => k);
+
+  it('provider-map.json marks exactly the providers the CLI cannot inject into', () => {
+    const flagged = Object.entries(PROVIDER_MAP).filter(([, p]) => p.featureInjection === false).map(([k]) => k).sort();
+    expect(flagged).toEqual([...NO_INJECTION].sort());
+    for (const k of CMD_PROVIDERS) expect(PROVIDER_MAP[k].featureInjection, k).not.toBe(false);
+  });
+
+  const builtCommand = (key, command) => {
+    const p = PROVIDER_MAP[key];
+    const pattern = p.commands.replace('{name}', command);
+    const file = path.join(ROOT, p.dir, pattern);
+    return fs.existsSync(file) ? readNorm(file) : null;
+  };
+  const resolved = (key, text) => resolveResourcePaths(text, PROVIDER_MAP[key]).trim();
+
+  it.each(NO_INJECTION.flatMap((key) => Object.keys(AGENT_SLOTS).map((command) => [key, command])))(
+    '%s: %s keeps every slot\'s fallback text in the built file',
+    (key, command) => {
+      const text = builtCommand(key, command);
+      expect(text, `${key} built ${command}`).not.toBeNull();
+      expect(agentSlotsOf(command)).toHaveLength(AGENT_SLOTS[command].length);
+      for (const s of agentSlotsOf(command)) {
+        expect(text, `${s.id} on ${key}`).toContain(resolved(key, s.fallback));
+      }
+    },
+  );
+
+  it.each(CMD_PROVIDERS.flatMap((key) => Object.keys(AGENT_SLOTS).map((command) => [key, command])))(
+    '%s: %s leaves the slots empty in the build (the CLI renders them at install)',
+    (key, command) => {
+      const text = builtCommand(key, command);
+      if (text === null) return;
+      for (const s of agentSlotsOf(command)) {
+        expect(text, `${s.id} on ${key}`).not.toContain(resolved(key, s.fallback));
+      }
+    },
+  );
 });

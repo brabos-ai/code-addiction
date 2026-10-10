@@ -423,6 +423,32 @@ function readProductFallback(rel) {
   return readFallbackFile(full);
 }
 
+// A provider the CLI cannot inject into (codex, antigravity, zcode: no commandsSubdir in
+// cli/src/providers.js, flagged `featureInjection: false` in provider-map.json) never runs a slot's
+// renderer, so a slot left empty in its build output would silently drop what the command used to
+// say inline. For those providers the build writes an agent-mode slot's FALLBACK in place, which is
+// what the CLI writes for every other provider when the feature is off. Only agent-mode.* slots are
+// baked: their fallbacks carry text the command held before the feature existed. Every other
+// slot's fallback is empty or an installer-time line, and stays exactly as it was.
+const BAKED_SLOT_RE = /(?<=\n)(?:[ \t]*\n)*[ \t]*<!--\s*slot:(agent-mode\.[A-Za-z0-9.+_-]+)\s+fallback="([^"]+)"\s*-->[\s\S]*?<!--\s*\/slot:\1\s*-->[ \t]*\n(?:[ \t]*\n)*/g;
+
+/**
+ * @param {string} rawContent  the command source, markers included
+ * @param {string} resourceName
+ * @returns {string} the source with every agent-mode slot replaced by its fallback text
+ */
+function bakeSlotFallbacks(rawContent, resourceName) {
+  return rawContent.replace(/\r\n/g, '\n').replace(BAKED_SLOT_RE, (_match, id, rel) => {
+    const text = readProductFallback(rel);
+    const slot = INJECTION_SLOTS.find((x) => x.id === id && x.resource.name === resourceName);
+    if (!slot) throw new Error(`bakeSlotFallbacks: no extracted slot ${id} for ${resourceName}`);
+    if (text === '') return '';
+    const block = text.endsWith('\n') ? text : `${text}\n`;
+    // An insertion-only slot (no `next` anchor line) leaves the pristine blank line in place.
+    return slot.anchor.next == null ? `${block}\n` : block;
+  });
+}
+
 /**
  * Extract + accumulate injection points for one resource body.
  * @param {string} rawContent
@@ -1965,6 +1991,7 @@ function buildResources(map, strategy) {
     // Commands only — skills and agents materialize nothing into a user's project.
     if (strategy.injectionKind === 'command') collectContract(raw, name);
     const cleaned = stripHtmlComments(raw);
+    const baked = strategy.injectionKind === 'command' ? stripHtmlComments(bakeSlotFallbacks(raw, name)) : null;
     const providers = strategy.resolveProviders(entry, map);
 
     for (const key of providers) {
@@ -1979,8 +2006,9 @@ function buildResources(map, strategy) {
         continue;
       }
 
-      // Resolve {{cmd:}}, {{skill:}} variables per provider
-      const withPaths = resolveResourcePaths(cleaned, provider);
+      // Resolve {{cmd:}}, {{skill:}} variables per provider. A provider the CLI cannot inject into
+      // gets the agent-mode fallbacks written in place (see bakeSlotFallbacks).
+      const withPaths = resolveResourcePaths(baked && provider.featureInjection === false ? baked : cleaned, provider);
 
       const resolved = patternStr.replace('{name}', name);
       const outRoot = strategy.outRoot ? strategy.outRoot(provider) : provider.dir;
