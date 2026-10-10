@@ -316,6 +316,21 @@ function sync(res, { force = false, env = process.env } = {}) {
   }
 }
 
+/**
+ * What an id allocator needs: the root the ticket ids are counted under.
+ * `ready` → the clone (synced first when asked, throttled like a read);
+ * any other state → null, so only the feature directories count. There is no
+ * in-repo fallback.
+ *
+ * @returns {{state: string, boardRoot: string|null}}
+ */
+function allocationRoot(cwd, { sync: doSync = false, env = process.env } = {}) {
+  const res = resolve(cwd, { env });
+  if (res.state !== 'ready') return { state: res.state, boardRoot: null };
+  if (doSync) sync(res, { env });
+  return { state: 'ready', boardRoot: res.boardDir };
+}
+
 /** KEY=value lines for a read's header: BOARD_DIR, SYNC, SYNC_REASON, LOCK_RECLAIMED. */
 function syncLines(res, result) {
   const lines = [`BOARD_DIR=${res.boardDir}`, `SYNC=${result.sync}`];
@@ -333,6 +348,7 @@ module.exports = {
   reconcile,
   sync,
   syncLines,
+  allocationRoot,
   touchStamp,
   stampAgeMs,
   lockPathOf,

@@ -90,7 +90,8 @@ const MAX_NUMBER = 9999;
  * (the board clone). `boardRoot` defaults to `root`, today's answer.
  *
  * @param {string} root - absolute path to the project root
- * @param {string} [boardRoot] - where docs/backlog.jsonl lives; defaults to root
+ * @param {string|null} [boardRoot] - where docs/backlog.jsonl lives; defaults to root,
+ *   null counts no tickets at all
  * @returns {{ok: true, ids: Set<string>} |
  *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'}}
  */
@@ -113,9 +114,11 @@ function scanIds(root, boardRoot = root) {
     }
   }
 
-  // Source 2 — the raw backlog text, anchored. Damaged rows included.
-  const backlogFile = path.join(boardRoot, BACKLOG_FILE);
-  if (fs.existsSync(backlogFile)) {
+  // Source 2 — the raw backlog text, anchored. Damaged rows included. A null
+  // boardRoot means there is no board to count (the project has none, or it
+  // cannot be reached): only the feature directories count.
+  const backlogFile = boardRoot === null ? null : path.join(boardRoot, BACKLOG_FILE);
+  if (backlogFile && fs.existsSync(backlogFile)) {
     let raw;
     try {
       raw = fs.readFileSync(backlogFile, 'utf8');
