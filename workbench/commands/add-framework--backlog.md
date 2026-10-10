@@ -19,8 +19,8 @@ add-framework--done calls delivered.cjs.
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Records what the user wants to do next as a ticket on this repository's board, `docs/backlog.jsonl`, and
-gets it to `main` in the same run. Adds a ticket, updates, comments on, reprioritises or closes one.
+Records what the user wants to do next as a ticket on this repository's board, which lives on the
+`board` branch (in one clone on this machine), and gets it there in the same run. Adds a ticket, updates, comments on, reprioritises or closes one.
 Grounds every new ticket in a bounded read of the project so it still means something weeks later.
 
 ---
@@ -89,8 +89,10 @@ Its output is `KEY=VALUE` metadata, then a seven-field summary per ticket (`id, 
 theme, labels, updated_at`). Line order is the priority: the first ticket is the highest.
 `add--doc-schemas/references/backlog.md` owns the fields, the keys and the projections.
 
-- `BACKLOG_PRESENT=no` → the board does not exist yet. That is a result, not an error: the first add
-  creates it. Say so in STEP 5.
+- `BACKLOG_PRESENT=no` → this project has no board, or the board has no ticket yet. That is a result, not
+  an error. A write on a project with no board is refused (`REFUSED=board-not-configured`); say so in STEP 5.
+- `ERROR=board-migration-required`, `ERROR=board-branch-missing` or `ERROR=board-checkout-missing` →
+  report it and STOP. Never create the branch, the clone or `.codeadd/board.json` by hand.
 - `DAMAGED_LINE=<n>` or `UNDEFINED_STATUS=<name>` → carry each into STEP 5's report. Neither stops
   the run.
 
@@ -209,11 +211,12 @@ The Node entry also supports stdin when `--record-file` is absent. Agents use th
 read in the caller's cwd BEFORE any routing, allocation or persistence,
 so a read failure (`ERROR=record-read-failed`, exit 1) happens while nothing else has.
 
-**The entry picks the route itself.** On `main` it commits directly; on any other branch it writes
-through a locked worktree, so the ticket reaches `main` without touching the current branch. Either
-way it rebases onto `origin` and pushes, and a conflicting rebase is aborted, never resolved.
+**There is one route.** From any branch or worktree the entry takes the board clone's lock, brings the
+clone level with `origin`, writes, commits and pushes `board`, so the ticket never touches the current
+branch and never reaches `main`. A rejected push is rebased once; a conflicting rebase is aborted, never
+resolved. If the lock is held for 30 s it exits 1 with `ERROR=board-locked` and writes nothing.
 
-Read its output keys: `ROUTE`, `BASE_BRANCH`, `TICKET_ID`, `SHA`, `PUSHED`, the recovery keys
+Read its output keys: `ROUTE` (always `board`), `BOARD_DIR`, `TICKET_ID`, `SHA`, `PUSHED`, the recovery keys
 `PERSISTED`, `COMMITTED`, `RECOVERY_PATH` and `RECOVERY_REF` when one applies, and `DEGRADED` when one
 applies.
 
@@ -238,16 +241,16 @@ the report FIRST — the sha and the rest of the facts come after it.
 
 This command writes one ticket and pushes it, so most blocks are genuinely small. Fill `What was
 delivered` with the ticket as it now reads, `How it works` with what that ticket commits whoever picks
-it up to, and `⚠️ Needs your attention` with the push to `main`, because it already happened.
+it up to, and `⚠️ Needs your attention` with the push to the `board` branch, because it already happened.
 
 Then, after the seven blocks, state:
 
 - The operation and the ticket it hit, by id and title.
 - On an add, the layer label recorded.
-- `ROUTE` and `PUSHED`, and the `SHA`. **The sha is what makes the change reversible without a
+- `ROUTE`, `BOARD_DIR` and `PUSHED`, and the `SHA`. **The sha is what makes the change reversible without a
   confirmation gate**, so it is never omitted.
 - Whether the ticket is grounded in real paths, or was recorded as stated.
-- Any `DEGRADED`, `DAMAGED_LINE` or `UNDEFINED_STATUS`, and whether this run created the board.
+- Any `DEGRADED`, `DAMAGED_LINE` or `UNDEFINED_STATUS`, and whether the project had no board.
 
 ---
 
