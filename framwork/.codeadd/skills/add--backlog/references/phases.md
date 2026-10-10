@@ -43,7 +43,7 @@ at for. The pair keeps them apart without spending a column on each.
 | `planned` | The plan is approved and waiting to be built |
 | `doing` | The build is running |
 | `in-review` | The work is built and waiting for review. `add-build` writes it when it opens or updates a PR; the board shows the status as written and does not check that a PR is open |
-| `awaiting-release` | Merged, and waiting for a release to name its version. Only a project that opted in with `release_flow` uses it; every other project goes from `in-review` straight to `done`. A release (or a person) moves it to `done` and fills `release` |
+| `awaiting-release` | Merged, and waiting for a release to name its version. Only a project that opted in with `release_flow` uses it; every other project goes from `in-review` straight to `done`. The framework ships no release command: whoever releases (a person, or a script the project owns) moves it to `done` and fills `release` |
 | `done` | Delivered |
 | `dropped` | Decided against. Nobody moves a ticket here but a person |
 

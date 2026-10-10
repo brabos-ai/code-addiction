@@ -77,7 +77,7 @@ one-line-diff promise, and `.codeadd/scripts/tests/backlog.bats` asserts it dire
 | `comments` | yes | `[{"content": "...", "created_at": "..."}]`, append-only, `[]` when none. A ticket picked up weeks later needs what was learnt since it was written |
 | `feature` | yes | The `[NNNN]F` of the feature carrying this ticket, or `null`. Written by `/add-new`, in the **same write** as the status — the feature id is allocated in that step, so the pointer costs no extra commit. **An id, never a path**: `docs/features/0042F-<slug>/` carries a renameable slug and one glob resolves it |
 | `work_id` | yes | The `[NNNN][L]` of the work this ticket became — or, in the framework's own repository, the plan basename — or `null`. Filled when the ticket is picked up |
-| `release` | no | The version that shipped this ticket (`v1.2.3`), or `null`. A string is kept as given; anything else is written as `null`. Filled by whoever closes the ticket on a release, in the same write that sets `done` |
+| `release` | no | The version that shipped this ticket (`v1.2.3`), or `null`. `add` keeps a string as given and writes anything else as `null`; `update` stores what it is sent. Filled by whoever closes the ticket on a release, in the same write that sets `done` |
 
 **There is no `scope: internal|product` field.** The framework's own repository has two layers, and a user's
 project has one, so a dedicated field would be noise on every ticket there. A grouping only some boards need goes
@@ -192,6 +192,9 @@ find out: every read prints `RELEASE_FLOW=yes|no` and the command reads that.
 adds one on a write. A project opts in by adding the `release` column, the `awaiting-release` status and
 `"release_flow": true` to its own file. A project that sets `release_flow: true` without defining the status
 gets `REFUSED=unknown-status` on the write, reported and non-blocking.
+
+**Nothing in the product closes `awaiting-release`.** A project that opts in decides who does: a person, or a script that
+lists the waiting tickets and writes `release` and `done` in one `update`. Until then they stay in the Release column.
 
 `labels` is a suggestion list of `{ name, label, means }`. A project edits it freely. **A write is never refused
 for a label outside it**, and the core never reads it.
