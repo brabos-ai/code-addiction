@@ -65,6 +65,10 @@ function run(args, cwd, { allowFailure = false, input, env } = {}) {
       cwd,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
+      // stderr is captured, never inherited: the probes that treat a failure as an
+      // answer (a missing ref, an untracked path) must not print git's "fatal:" line
+      // into the caller's output.
+      stdio: ['pipe', 'pipe', 'pipe'],
       input,
       env: env ? { ...process.env, ...env } : process.env,
     });
