@@ -48,16 +48,21 @@ and one source has to read the same way in both.
 
 ### Product Layer — `board/`
 
-**The second root product directory: a read-only board over `docs/backlog.jsonl`** — kanban, priority
-list and ticket detail, shaped to grow into activity management. It is `[product]` for the reason
+**The second root product directory: a read-only board over the project's `board` branch** — kanban,
+priority list and ticket detail, shaped to grow into activity management. The board is NOT in the code
+checkout: it lives on an orphan `board` branch, read through one clone per project at
+`~/.codeadd/<project-key>/board/` (`CODEADD_BOARD_DIR` overrides the path). `.codeadd/board.json` is the one
+file tracked under `.codeadd/`: it says where that branch is. `docs/backlog.jsonl` is never read in the
+checkout. It is `[product]` for the reason
 `mcp/` is: it is built to ship to users, as a separate release asset installed under
 `.codeadd/board/` — the distribution half lands with subtopic 004 of the backlog-board set.
 
 ```
 ⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
-  ⛔ DO NOT: Add an import to `server.mjs` beyond the generated core, or read `docs/backlog.jsonl`
-             in it — tickets come from the generated core at `runtime/backlog-core.cjs`, the one
-             reader of that format
+  ⛔ DO NOT: Add an import to `server.mjs` beyond Node built-ins and the generated runtime modules
+             (`runtime/backlog-core.cjs`, `backlog-storage.cjs`, `backlog-board.cjs`,
+             `backlog-git.cjs`), or read `docs/backlog.jsonl` in it — the board module resolves and
+             syncs the clone, and the core is the one reader of the format
   ⛔ DO NOT: Treat `board/src/` like `mcp/` — it is a TypeScript/React/Vite app with its own
              `package.json`, and building it needs `npm ci`
   ✅ DO: Keep `server.mjs` on Node built-ins, bound to 127.0.0.1; ship `server.mjs` + `dist/` +
@@ -112,7 +117,7 @@ as `/<name>` and declares the next with `handoff:`.
 |---------|---------|-------------|
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to `main` through the native publication entry (`backlog-commit.cjs`) | `docs/backlog.jsonl` |
+| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to the `board` branch through the native publication entry (`backlog-commit.cjs`) | the `board` branch |
 
 ## Pipeline
 
@@ -179,9 +184,11 @@ Key files:
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Owns supported test dispatch: framework default, individual suites, all, watch and report export; its header defines execution policy |
+| `scripts/board-files-guard.cjs` | CI step. Fails when `.codeadd/board.json` and a board file (`docs/backlog.jsonl`, `docs/backlog.definitions.json`) are both tracked, i.e. the board came back next to its config. Its header owns usage and exit codes |
+| `scripts/migrations/` | Internal one-time migrations, run by hand in a target project. Never shipped: not under `framwork/`, not in the npm package or the release ZIP, not in `provider-map.json`, the ecosystem map or the inventory |
 | `scripts/test-loss-guard.cjs` | Fails when a test name on the branch is gone without a `Test-Removed:` commit trailer. Build STEP 9 and done 2.2 run it; its header owns usage and exit codes |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
-| `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/` and `/api/board`, importing the generated core at `runtime/backlog-core.cjs`; `src/` is TypeScript/React. `npm run board` opens it here |
+| `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/`, `/api/board` and `/api/changes`, importing the generated runtime modules under `runtime/` (the core and the board module among them); it reads the board clone, never the checkout. `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
