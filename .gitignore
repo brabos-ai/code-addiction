@@ -184,7 +184,14 @@ cli/.vitest/
 #    broke and CI stayed green; what broke was every file added AFTERWARDS. A
 #    new command, skill or reference was invisible to `git add` and to
 #    `git status`, with no error anywhere. Anchor it to the root.
-/.codeadd/
+#
+# ⛔ THE PATTERN IS `/.codeadd/*`, NOT `/.codeadd/`. git never descends into an
+#    excluded directory, so a `!` line cannot re-include a file inside one.
+#    The `*` form ignores the directory's contents instead, which lets
+#    `.codeadd/board.json` — the committed config that says where the board
+#    lives — stay tracked.
+/.codeadd/*
+!/.codeadd/board.json
 
 # Workbench build output — `node scripts/build-workbench.js` compiles
 # workbench/{commands,skills,agents}/ into these. The SOURCE is workbench/,
