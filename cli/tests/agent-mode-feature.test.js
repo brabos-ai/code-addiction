@@ -470,3 +470,18 @@ describe('F27 -- the internal plan asks its questionnaire as one recommended bat
     expect(t).toMatch(/Every question carries a RECOMMENDED option/);
   });
 });
+
+describe('F28 -- the internal build asks its approval, finding and push as numbered items', () => {
+  const text = () => wb('skills', 'add-framework--build', 'SKILL.md');
+
+  it('routes through add-interaction and declares it', () => {
+    expect(text()).toContain('`add-interaction`');
+    expect(text()).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+
+  it('collects the decision findings into one batch instead of presenting each alone', () => {
+    const t = text();
+    expect(t).not.toMatch(/Present that finding alone and WAIT/);
+    expect(t).toMatch(/Present every such finding together, in one numbered batch/);
+  });
+});

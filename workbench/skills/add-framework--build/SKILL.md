@@ -7,6 +7,7 @@ description: "Use when a plan in docs/plans/ is ready to execute, or for a direc
 
 <!-- uses:
 - skill: add-build-ledger
+- skill: add-interaction
 - skill: add-artefact-graph
 - skill: add-plan-authoring
 - skill: add-final-report
@@ -212,7 +213,8 @@ the user to see it before execution starts.
 
 **Direct mode:** what changes, why, its layer, and the impact on dependents.
 
-**STOP AND WAIT.** Proceed only on explicit approval or requested adjustments.
+**STOP AND WAIT.** Ask the approval as one numbered item with a RECOMMENDED line (`add-interaction`). Proceed only on
+explicit approval or requested adjustments.
 
 **Stop kind — decided by the plan's state:**
 
@@ -524,7 +526,8 @@ any other. Each rejected one gets a ruling saying why.
 ```
 IF A FINDING REQUIRES A DECISION THE PLAN NEVER MADE:
   ⛔ DO NOT: Invent the decision to clear it
-  ✅ DO: Present that finding alone and WAIT
+  ✅ DO: Present every such finding together, in one numbered batch with a RECOMMENDED line each
+         (`add-interaction`), and WAIT
 ```
 
 **Stop kind — deciding, in every state.** The decision was not in the plan, so no approval covered it.
@@ -627,7 +630,8 @@ IF THE BRANCH HAS NO PR AND THE USER HAS NOT ANSWERED:
 recommends one — so a direct build can be sitting on `main`, and offering to push there would put
 work past every gate `/add-framework--done` exists to enforce.
 
-On the first push, ask whether to push the branch and open the PR. Then:
+On the first push, ask whether to push the branch and open the PR, as one numbered item with a RECOMMENDED line
+(`add-interaction`). Then:
 
 | Answer | Do |
 |---|---|
