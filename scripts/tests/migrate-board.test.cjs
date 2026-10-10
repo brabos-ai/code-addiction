@@ -280,3 +280,93 @@ test('migrate-board#012 — the script is internal: it ships in no registry, pac
   }
   assert.equal(fs.existsSync(path.join(root, 'framwork', '.codeadd', 'scripts', 'migrate-board.cjs')), false);
 });
+
+// ─── Standalone run: the script alone, the project's own installed modules ───
+
+const FRAMEWORK_SCRIPTS = path.join(h.REPO_ROOT, 'framwork', '.codeadd', 'scripts');
+
+/** The migration copied ALONE into a temp dir — no clone around it. */
+function loneScript(t) {
+  const dir = h.mkTmp('codeadd-lone-');
+  t.after(() => h.rmrf(dir));
+  const file = path.join(dir, 'migrate-board.cjs');
+  fs.copyFileSync(path.join(h.REPO_ROOT, ENTRY), file);
+  return file;
+}
+
+/** Give the project the scripts a codeadd 1.5+ install puts in .codeadd/scripts/. */
+function installScripts(p) {
+  fs.cpSync(FRAMEWORK_SCRIPTS, path.join(p.repo, '.codeadd', 'scripts'), { recursive: true });
+}
+
+const runLone = (file, p, args = []) => h.runNode([file, ...args], { cwd: p.repo, env: p.env });
+const sameDir = (a, b) => fs.realpathSync(a) === fs.realpathSync(b);
+const ignored = (p) => h.git(p.repo, ['check-ignore', '-q', '.codeadd/board.json']).status === 0;
+
+test('migrate-board#013 — L1.6: the script downloaded ALONE runs with the project\'s own .codeadd/scripts', (t) => {
+  const p = project(t);
+  installScripts(p);
+  const res = runLone(loneScript(t), p);
+  assert.equal(res.status, 0, res.output);
+  const out = kv(res);
+  assert.equal(out.MIGRATED, 'done');
+  assert.ok(sameDir(out.MODULES, path.join(p.repo, '.codeadd', 'scripts')), 'MODULES names the project copy: ' + out.MODULES);
+  assert.equal(remoteBoard(p), BOARD_TEXT);
+});
+
+test('migrate-board#014 — L1.7: no modules in the project, or one export missing, is ERROR=board-modules-missing before any change', (t) => {
+  const lone = loneScript(t);
+
+  const bare = project(t);
+  const none = runLone(lone, bare);
+  assert.equal(none.status, 1, none.output);
+  assert.equal(kv(none).ERROR, 'board-modules-missing');
+  assert.match(none.stdout, /1\.5\.0/);
+  assert.equal(fs.existsSync(path.join(bare.repo, '.codeadd', 'board.json')), false);
+  assert.deepEqual(staged(bare), []);
+  assert.equal(h.git(bare.bare, ['ls-remote', '--heads', bare.bare, 'board']).stdout, '', 'no board branch was made');
+
+  const old = project(t);
+  installScripts(old);
+  const boardFile = path.join(old.repo, '.codeadd', 'scripts', 'backlog-board.cjs');
+  fs.renameSync(boardFile, boardFile.replace('.cjs', '-real.cjs'));
+  h.write(boardFile, "const { readConfig, ...rest } = require('./backlog-board-real.cjs');\nmodule.exports = rest;\n");
+  const missing = runLone(lone, old);
+  assert.equal(missing.status, 1, missing.output);
+  assert.equal(kv(missing).ERROR, 'board-modules-missing');
+  assert.match(missing.stdout, /readConfig/);
+  assert.equal(fs.existsSync(path.join(old.repo, '.codeadd', 'board.json')), false);
+  assert.deepEqual(staged(old), []);
+});
+
+for (const [i, form] of ['.codeadd/*', '/.codeadd/*', '.codeadd/**', '.codeadd', '/.codeadd'].entries()) {
+  test(`migrate-board#0${15 + i} — L1.8: an ignore line ${form} leaves .codeadd/board.json tracked`, (t) => {
+    const p = project(t, { ignore: `node_modules/\n${form}\n` });
+    const res = migrate(p);
+    assert.equal(res.status, 0, res.output);
+    assert.equal(ignored(p), false, fs.readFileSync(path.join(p.repo, '.gitignore'), 'utf8'));
+    assert.ok(staged(p).some((l) => l.endsWith('.gitignore')), '.gitignore is staged');
+    assert.equal(kv(res).IGNORE_WARNING, undefined);
+  });
+}
+
+test('migrate-board#020 — L1.9: a rule the script does not recognise gets IGNORE_WARNING, the migration still finishes', (t) => {
+  const p = project(t, { ignore: 'node_modules/\n' });
+  h.write(path.join(p.repo, '.git', 'info', 'exclude'), '.codeadd/\n');
+  const res = migrate(p);
+  assert.equal(res.status, 0, res.output);
+  assert.equal(kv(res).MIGRATED, 'done');
+  assert.equal(kv(res).IGNORE_WARNING, 'board-json-ignored');
+  assert.match(res.stdout, /exclude/);
+});
+
+test('migrate-board#021 — L2.4: after the standalone run, backlog-commit add from the project writes to the new board branch', (t) => {
+  const p = project(t);
+  installScripts(p);
+  const res = runLone(loneScript(t), p);
+  assert.equal(res.status, 0, res.output);
+  const record = h.write(path.join(p.base, 'new.json'), JSON.stringify({ title: 'after the move', tldr: 't', done_when: 'it works' }));
+  const written = h.runNode([path.join(p.repo, '.codeadd', 'scripts', 'backlog-commit.cjs'), 'add', '--record-file', record], { cwd: p.repo, env: p.env });
+  assert.equal(written.status, 0, written.output);
+  assert.match(remoteBoard(p), /after the move/);
+});
