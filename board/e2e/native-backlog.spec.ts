@@ -1,7 +1,8 @@
 // The native backlog route, END TO END in a real browser:
-// a ticket added through the shipped LOCAL CLI on the e2e fixture's own
-// mutable project shows up and refreshes the board without a reload, and
-// the whole route needs neither bash nor any shell.
+// a ticket written through the shipped publication entry on the e2e fixture's
+// own mutable project (both the code repository and the board clone) shows up and
+// refreshes the board without a reload, and the whole route needs neither bash nor
+// any shell.
 // (plan docs/plans/2026-10-04T004044-PLAN--native-node-backlog, F7, L6/L7.)
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -11,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const BOARD_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REMOTE_ROOT = path.resolve(BOARD_DIR, '..');
-const CLI = path.join(REMOTE_ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-cli.cjs');
+const COMMIT = path.join(REMOTE_ROOT, 'framwork', '.codeadd', 'scripts', 'backlog-commit.cjs');
 // Each viewport has its own mutable fixture/server. Tests within a viewport
 // are serial so the HTTP refusal can assert byte-for-byte preservation.
 test.describe.configure({ mode: 'serial' });
@@ -38,7 +39,7 @@ async function waitForCard(page: Page, title: string) {
     .toBeVisible({ timeout: 5000 });
 }
 
-test('L6/R7 a ticket added by the native CLI reaches the board without a reload', async ({ page }) => {
+test('L6/R7 a ticket written by the native publication entry reaches the board without a reload', async ({ page }) => {
   // Each project appends only to its own fixture.
   const project = test.info().project.name;
   const title = `native through the board [${project}]`;
@@ -53,11 +54,11 @@ test('L6/R7 a ticket added by the native CLI reaches the board without a reload'
     paths: [], grounded: true, status: 'open',
   }));
 
-  // PATH: '' — no bash, no shell, nothing reachable. Node is spawned through
-  // process.execPath directly; every process on this route is node + git.
-  const run = spawnSync(process.execPath, [CLI, 'add', '--record-file', record], {
+  // Node is spawned through process.execPath directly, with git on the PATH;
+  // every process on this route is node + git, never a shell.
+  const run = spawnSync(process.execPath, [COMMIT, 'add', '--record-file', record], {
     cwd: nativeFixture(), encoding: 'utf8',
-    env: { ...process.env, PATH: '', NODE_OPTIONS: '' },
+    env: { ...process.env, NODE_OPTIONS: '', CODEADD_BOARD_DIR: nativeFixture() },
   });
   expect(run.status, run.stdout + run.stderr).toBe(0);
   expect(run.stdout).toMatch(/TICKET_ID=[0-9]{4}B/);
