@@ -588,7 +588,6 @@ files, build status.
 | Document | Role in the next activity |
 |---|---|
 | `docs/features/[NNNN]H-<slug>/about.md` | What the hotfix changed, and the root cause it removed |
-| `docs/features/[NNNN]H-<slug>/fix-report.md` | The findings the fix wave resolved |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing a hotfix takes |
 
 ---

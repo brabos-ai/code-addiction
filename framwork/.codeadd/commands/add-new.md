@@ -170,7 +170,7 @@ file, load `{{skill:add--feature-specification/SKILL.md}}` and run its three-fac
 
 | Classification | This STEP |
 |---|---|
-| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered |
+| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered. Then write `docs/features/${FEATURE_ID}/discovery.md` yourself: the `RELATED_WORK` result under a `## Related Features` heading, `none` or `NOT VERIFIED` included — `/add-plan` stops without this file |
 | `architectural`, or any fact flagged | Everything below, as written |
 
 ⛔ **The light path skips the two agent dispatches, never the index and graph queries.** Those are the
