@@ -205,18 +205,17 @@ nonexistent internal/script/ node and fail the graph gate. This
 repository is those scripts' source and calls them by repository path, as
 add-framework--done calls delivered.cjs.
 
-The seven statuses and the two rules below are held equal to the product's by
+The statuses written (seven writes; `done` becomes `awaiting-release` for a project that opted in, so eight names) and the two rules below are held equal to the product's by
 cli/tests/board-phase-writes.test.js L11.5. Change one side and change both.
 
 The one deliberate difference: the internal `in-review` condition is the build reaching STEP 10 with every
 F-block complete, whatever STEP 9 answered. The product's add-build writes it on `Publish:` `pr-opened` or
-`pr-updated` only (lifecycle.md). The product side is not changed — and `add--backlog/references/phases.md` still reads
-`in-review` as "a pull request is open", which is no longer always true of this repository's board.
+`pr-updated` only (lifecycle.md). The product side is not changed. `add--backlog/references/phases.md` says the board shows `in-review` as written and does not check that a PR is open.
 -->
 
 **A ticket on the project board travels through the four stages and moves on the board as the work
 does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
-What each status MEANS — the nine names, the seven columns, the pairs of a running and a parked status —
+What each status MEANS — the ten names, the eight columns, the pairs of a running and a parked status —
 is the product's phase model, `add--backlog/references/phases.md`; this section is the internal procedure.
 
 ⛔ **The internal pipeline has no feature system.** The product gates its ticket instructions behind the
@@ -251,9 +250,10 @@ link costs one manual update; a wrong one costs the board's credibility.
 | | STEP 7, before the report — the plan is written and reviewed | — | `planned` |
 | `add-framework--build` | STEP 5.1, right after the ledger is opened | — | `doing` and `work_id`, one write |
 | | STEP 10, before the report | — | `in-review` — **whenever the build reaches STEP 10 with every F-block of the plan complete, whatever STEP 9 answered** |
-| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `done` |
+| `add-framework--done` | STEP 8, first, before any deletion — the first point the normal, resume and recovery paths share after the merge | — | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` |
+| `add-framework--release` (stable only) | its ticket-closing sub-step of STEP 7, after the tag is pushed | lists `awaiting-release` and writes each ticket | `release` = the tag name and `done`, one write per ticket |
 | `add-framework--done --fix` | STEP 1.2, when the fix record is written | `> **Ticket:** <id>` in the fix record — only from `--ticket` | — |
-| | STEP 8, first, before any deletion | — | `done` |
+| | STEP 8, first, before any deletion | — | `awaiting-release` or `done`, by the same rule |
 
 **On the fix track the fix record is the carrier.** Its `> **Ticket:**` line is written only from `--ticket` — an id is never inferred from the branch or the commits — and every rule in this section then applies to it unchanged.
 
@@ -308,10 +308,10 @@ detail.
   reads that phase's entry status or its exit status — two string comparisons against the two names of one
   phase.
 - **The `work_id` stop, for every write before the build:** once the ticket's `work_id` equals this run's
-  plan basename, only `in-review` and `done` may still be written. `refining`, `shaped`, `planning`,
+  plan basename, only `in-review` and `done` may still be written — and `awaiting-release`, the `done` of a project that opted in. `refining`, `shaped`, `planning`,
   `planned` and `doing` are skipped.
 
-**An exit write keeps the plain rule** — written unless the ticket already reads it.
+**An exit write keeps the plain rule** — written unless the ticket already reads it. The close-out write is the one exception to "the target": it targets `awaiting-release` when the ticket read printed `RELEASE_FLOW=yes` and `done` otherwise, and it is skipped when the ticket already reads `done` **or** `awaiting-release`, so a resumed close-out never pulls back a ticket a release already closed. `RELEASE_FLOW` comes from the exact read (`get <id>`); never open the definitions file for it. The `--fix` track follows the same rule.
 
 **Every write reads the ticket first** and does nothing when it already holds the target. That is what makes
 a resumed close-out, a re-run build or a re-run plan safe with no guard of its own.

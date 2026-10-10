@@ -11,9 +11,9 @@
 is not on the main branch, and a refused merge would leave it lying.
 
 If `${DIR}/about.md`'s frontmatter carries `ticket:`, follow the `add-done` row of
-`{{skill:add--backlog/references/lifecycle.md}}`: read the ticket, and set `status` to `done` **unless
-it already reads `done`** — a Resume run reaches this sub-step again, and the read is what stops it
-writing twice. No `ticket:`, nothing to do.
+`{{skill:add--backlog/references/lifecycle.md}}`: read the ticket, and set `status` to `awaiting-release` when that read prints `RELEASE_FLOW=yes`, else to `done`
+— **unless it already reads `done` or `awaiting-release`**. A Resume run reaches this sub-step again, and the read is
+what stops it writing twice. No `ticket:`, nothing to do.
 
 ```
 IF CLOSING THE TICKET FAILS OR IS REFUSED:
@@ -24,11 +24,11 @@ IF CLOSING THE TICKET FAILS OR IS REFUSED:
 <!-- /section:ticket-close -->
 
 <!-- section:ticket-carry -->
-- **The ticket result from STEP board.close-ticket** — closed, already closed, or what did not happen. Omit the line when `about.md` carries no `ticket:`.
+- **The ticket result from STEP board.close-ticket** — which status was written (`done` or `awaiting-release`), already closed, or what did not happen. Omit the line when `about.md` carries no `ticket:`.
 <!-- /section:ticket-carry -->
 
 <!-- section:ticket-report -->
-- **The ticket result from STEP board.close-ticket** — closed, already closed, or what did not happen. Omit the line when
+- **The ticket result from STEP board.close-ticket** — which status was written (`done` or `awaiting-release`), already closed, or what did not happen. Omit the line when
   `about.md` carries no `ticket:`. A ticket that silently stays open after its work merged is the
   failure STEP board.close-ticket exists to prevent, so a close that did not land reaches the user here or nowhere.
 <!-- /section:ticket-report -->

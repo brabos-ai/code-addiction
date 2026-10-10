@@ -32,8 +32,8 @@ const LIFECYCLE = path.join(h.SCRIPTS_DIR, '..', 'skills', 'add--backlog', 'refe
 // made through `node -e 'require(...).DEFAULT_DEFS'`, with no child process.
 const core = require(CORE);
 
-const NINE_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
-const SEVEN_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'done', 'dropped'];
+const TEN_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
+const EIGHT_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 
 // ─── Fixture helpers ─────────────────────────────────────────────────────────
 
@@ -177,26 +177,26 @@ test('backlog#007 — L1.4b: the documented vocabulary and the emittable one are
   }
 });
 
-test('backlog#008 — L1.4c: the nine reserved statuses and seven columns are the same set', () => {
+test('backlog#008 — L1.4c: the ten reserved statuses and eight columns are the same set', () => {
   const ref = h.read(REF);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(core.DEFAULT_DEFS.statuses.some((s) => s.name === n), `core status ${n}`);
     assert.ok(ref.includes(`{ "name": "${n}",`), `reference status ${n}`);
   }
-  for (const c of SEVEN_COLUMNS) {
+  for (const c of EIGHT_COLUMNS) {
     assert.ok(core.DEFAULT_DEFS.columns.some((s) => s.name === c), `core column ${c}`);
     assert.ok(ref.includes(`{ "name": "${c}",`), `reference column ${c}`);
   }
 });
 
-test('backlog#009 — L1.4d: lifecycle.md names all nine reserved statuses', () => {
+test('backlog#009 — L1.4d: lifecycle.md names all ten reserved statuses', () => {
   const lc = h.read(LIFECYCLE);
   const start = lc.indexOf('## The Status Names');
   assert.notEqual(start, -1, 'section missing');
   const rest = lc.slice(start);
   const nextH2 = rest.indexOf('\n## ', 1);
   const section = nextH2 === -1 ? rest : rest.slice(0, nextH2);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(section.includes('`' + n + '`'), `lifecycle names ${n}`);
   }
 });
@@ -417,19 +417,19 @@ test('backlog#027 — L3.1c: add is a PURE APPEND, a new ticket lands last', (t)
   assert.match(all[1], /second thing/);
 });
 
-test('backlog#028 — L3.1d: a first write seeds NINE statuses and SEVEN columns', (t) => {
+test('backlog#028 — L3.1d: a first write seeds TEN statuses and EIGHT columns', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
-  assert.equal(defs.statuses.length, 9);
-  assert.equal(defs.columns.length, 7);
+  assert.equal(defs.statuses.length, 10);
+  assert.equal(defs.columns.length, 8);
 });
 
-test('backlog#029 — L3.1e: the nine status names are exactly the reserved set, in phase order', (t) => {
+test('backlog#029 — L3.1e: the ten status names are exactly the reserved set, in phase order', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
-  assert.equal(defs.statuses.map((s) => s.name).join(','), NINE_STATUSES.join(','));
+  assert.equal(defs.statuses.map((s) => s.name).join(','), TEN_STATUSES.join(','));
 });
 
 test('backlog#030 — L3.1f: EVERY seeded status carries an explicit column and label', (t) => {
@@ -442,13 +442,13 @@ test('backlog#030 — L3.1f: EVERY seeded status carries an explicit column and 
   assert.equal(bad.length, 0);
 });
 
-test('backlog#031 — L3.1g: the seven columns are the expected set and ONLY dropped is hidden', (t) => {
+test('backlog#031 — L3.1g: the eight columns are the expected set and ONLY dropped is hidden', (t) => {
   const dir = project(t);
   backlog(dir, ['add'], { input: validTicket() });
   const defs = JSON.parse(h.read(path.join(dir, DEFS)));
   const names = defs.columns.map((c) => c.name).join(',');
   const hidden = defs.columns.filter((c) => c.hidden === true).map((c) => c.name).join(',');
-  assert.equal(`${names}|${hidden}`, 'backlog,shaping,planning,building,review,done,dropped|dropped');
+  assert.equal(`${names}|${hidden}`, `${EIGHT_COLUMNS.join(',')}|dropped`);
 });
 
 test('backlog#032 — L3.1h: two statuses share a column where a phase has running and parked', (t) => {

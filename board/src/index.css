@@ -80,6 +80,8 @@
   --s-planning-soft: #e3eefa;
   --s-review: #08706d;
   --s-review-soft: #dcf2f1;
+  --s-release: #a3358c;
+  --s-release-soft: #f9e8f5;
 
   --shadow-card: 0 1px 0 rgb(21 23 28 / 0.04), 0 2px 8px -2px rgb(45 75 224 / 0.06);
   --shadow-lift: 0 1px 0 rgb(21 23 28 / 0.04), 0 10px 28px -10px rgb(45 75 224 / 0.22);
@@ -135,6 +137,8 @@
   --s-planning-soft: #1f3148;
   --s-review: #4fc9c4;
   --s-review-soft: #1d3a39;
+  --s-release: #e68bd0;
+  --s-release-soft: #43263d;
 
   /* Elevation on a dark ground comes from light, not from shadow. The top
      inset is the lit edge of the plane; the sheet's runs down its left side. */
@@ -243,6 +247,10 @@
   --st: var(--s-review);
   --st-soft: var(--s-review-soft);
 }
+[data-status="awaiting-release"] {
+  --st: var(--s-release);
+  --st-soft: var(--s-release-soft);
+}
 [data-status="done"] {
   --st: var(--s-done);
   --st-soft: var(--s-done-soft);
@@ -261,6 +269,7 @@
 [data-phase="planning"] { --ph: var(--s-planning); }
 [data-phase="building"] { --ph: var(--s-doing); }
 [data-phase="review"] { --ph: var(--s-review); }
+[data-phase="release"] { --ph: var(--s-release); }
 [data-phase="done"] { --ph: var(--s-done); }
 [data-phase="dropped"] { --ph: var(--s-dropped); }
 

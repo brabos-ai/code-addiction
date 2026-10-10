@@ -38,7 +38,7 @@ const PLANNED_PATH = [
   },
   {
     "name": "STEP 8 ticket paragraph",
-    "text": "**When the plan header carries `> **Ticket:**`, make the `done` write now.** `add-plan-authoring` owns when\nit is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting\nfrom memory.\n\nIt runs here because this is the first point every route shares with the delivery already on `main`: the\nnormal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not\nbefore the merge — a ticket reading `done` for work that never landed is a lie a refused merge would\nleave behind. It reads the plan before the third removal below deletes the local copy.\n\n"
+    "text": "**When the plan header carries `> **Ticket:**`, make the close-out write now — `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, `done` otherwise.** `add-plan-authoring` owns when\nit is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting\nfrom memory.\n\nThe read is the exact `get <id>` one, and the write is skipped when the ticket already reads `done` or `awaiting-release`. The `--fix` track follows the same rule.\n\nIt runs here because this is the first point every route shares with the delivery already on `main`: the\nnormal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not\nbefore the merge — a ticket reading `done` or `awaiting-release` for work that never landed is a lie a refused merge would\nleave behind. It reads the plan before the third removal below deletes the local copy.\n\n"
   },
   {
     "name": "STEP 8 removal list",

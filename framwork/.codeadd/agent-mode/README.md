@@ -1,13 +1,18 @@
 # Agent mode — running codeadd commands without a person watching
 
-A bot (CI, a script or another agent) can run any installed codeadd command through `claude -p` and
-get a JSON result it can read. **Claude Code only for now.** No other provider supports this yet.
+A bot (CI, a script or another agent) can run any installed codeadd command headless and get a JSON result
+it can read. The calls below use `claude -p` with `--json-schema` as the **example**: the contract is the
+result schema, not the tool. Codex, OpenCode and other providers can run the same flow by consulting their
+own documentation for headless runs and structured output.
 
 The contract is `.codeadd/agent-mode/result.schema.json`. It holds the twelve fields, their types and
-what each status means. This guide does not repeat it. Claude Code itself checks the output against the
-schema you pass, so there is nothing to install and no script to run.
+what each status means. This guide does not repeat it. In the example, Claude Code itself checks the output
+against the schema you pass, so there is nothing to install and no script to run.
 
 ## 1. Call a command
+
+The example is Claude Code. Another provider passes the same schema through its own flags: look them up in
+its documentation.
 
 Pass the schema as **text**, not as a path. `--json-schema` with a path fails with
 `--json-schema is not valid JSON`.
@@ -33,6 +38,9 @@ Stdout is one JSON envelope. The result is its `.structured_output` field. Read 
 `done`, `stopped`, `needs-approval` or `failed`. `needs_approval` repeats the same fact as a boolean.
 
 ## 2. Resume a stopped run
+
+The resume flags below are Claude Code's. Another provider has its own way to continue a session; the rest of
+this section (the fields, and passing the schema on every call) holds for any of them.
 
 A run that ends with `status: needs-approval` is waiting for an answer. Take `.session_id` from the
 envelope and answer in the same session:
@@ -73,8 +81,10 @@ command that ended it, and `next_step` says what to call next.
 
 ## 5. Provider support
 
-Claude Code only for now. Codex, Cursor, Antigravity, OpenCode and ZCode do not use this contract yet.
-That is the slash-command contract above. Section 6 is the `codeadd` CLI, which works for every provider.
+The examples in sections 1 and 2 are Claude Code's, and nothing in the contract ties it to Claude Code. Codex,
+OpenCode and the other providers can run the same flow: read their own documentation for how to run a command
+headless and how to ask for structured output, and pass `.codeadd/agent-mode/result.schema.json` the way they
+take a schema. Section 6 is the `codeadd` CLI, which works for every provider.
 
 ## 6. Install and change the installation from a bot
 
@@ -176,4 +186,15 @@ lists, and `HEAD` is the remote tip, so they arrive in a later call once they ar
 If the call exits 1 with `ERROR=cursor-unknown`, the stored sha is not on the board branch any more. Start
 again without `--since` and treat every ticket as new.
 
-Nothing here names a tracker: the framework ships no tracker code, and the sync itself is the bot's job.
+### Example: Notion
+
+One Notion database, one row per ticket. Map the fields like this:
+
+- `id` to the title, `title` to a text property, `labels` to a multi-select.
+- `status` to a select whose options are the board's statuses, `awaiting-release` included.
+- `release` to a text property, filled once a release closes the ticket (the version, `v1.2.3`).
+
+Step 3 becomes "find the row whose title is the id, then create or update it".
+The same loop works for any project-management app: only the push in step 3 changes.
+
+Nothing here is tracker code: the framework ships no tracker code, and the sync itself is the bot's job.

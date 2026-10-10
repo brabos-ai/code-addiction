@@ -98,6 +98,14 @@ const SHAPES: Record<string, ReactElement> = {
       <circle cx="8" cy="8" r="2" fill="var(--st)" />
     </>
   ),
+  // Merged and waiting for a release: the outline with two bars inside it, a
+  // pause. Not the half of in-review, the check of done or the point of shaped.
+  'awaiting-release': (
+    <>
+      <circle {...RING} />
+      <path d="M6.4 5.6v4.8M9.6 5.6v4.8" fill="none" stroke="var(--st)" strokeWidth="1.8" strokeLinecap="round" />
+    </>
+  ),
   // Abandoned: struck through, the one shape that reads as "not happening".
   dropped: (
     <>
@@ -109,7 +117,7 @@ const SHAPES: Record<string, ReactElement> = {
 
 // A phase's running status shares doing's shape and its waiting status shares
 // shaped's; the hue says which phase. A pipeline read left to right is then
-// ring, half, point, half, point, half, half, check.
+// ring, half, point, half, point, half, half, pause, check.
 SHAPES.refining = SHAPES.doing!;
 SHAPES.planning = SHAPES.doing!;
 SHAPES['in-review'] = SHAPES.doing!;

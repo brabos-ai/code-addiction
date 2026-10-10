@@ -6,7 +6,7 @@ those instructions points at its own row here. None restates any of it: six copi
 places for it to drift.
 
 **This file is the procedure — who writes which status, at which step, and when a write is skipped.** What
-each status MEANS, and how nine of them fit in seven columns, is
+each status MEANS, and how ten of them fit in eight columns, is
 `{{skill:add--backlog/references/phases.md}}`. A reader who only wants to know what a column means reads
 that file and never this one.
 
@@ -127,7 +127,7 @@ already shaped it: both commands belong to the shaping phase, and the second fin
 
 ### The `work_id` stop — for every write before the build
 
-**Once the ticket's `work_id` equals this run's work id, ONLY `in-review` AND `done` may still be written.**
+**Once the ticket's `work_id` equals this run's work id, ONLY `in-review` AND `done` may still be written** — and `awaiting-release`, which is the `done` of a project that opted in (`RELEASE_FLOW=yes`), so it is an exit write like `done`.
 One equality test. `refining`, `shaped`, `planning`, `planned` and `doing` are all skipped.
 
 **`work_id` is set in the same write as `doing`, and it is the whole work item's id — an epic's, not a
@@ -153,7 +153,7 @@ move a ticket backwards, so only the entry write needs the phase check.
 | `add-plan` | `planned` | its completion, before the report — the plan is written and reviewed | `status` |
 | `add-build` | `doing` and `work_id` | right after `build-setup.cjs` returns | `status`, `work_id` |
 | `add-build` | `in-review` | its completion report, reading the `Publish:` outcome it recorded — **only** `pr-opened` or `pr-updated` | `status` |
-| `add-done` | `done` | after the merge | `status` |
+| `add-done` | `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, else `done` | after the merge | `status` |
 | `add-hotfix` | `doing` and `work_id` | once its branch is confirmed | `status`, `work_id` |
 
 **Every row is subject to the two rules above.** The table says where a write stands; the rules say whether
@@ -257,15 +257,21 @@ Only two outcomes write it:
 **It reads the recorded outcome rather than sitting beside the publish question** because the report is
 reached on every path, and the write then sits next to the line that has to report it.
 
-### `add-done` — `done`, after the merge
+### `add-done` — `done` or `awaiting-release`, after the merge
 
 **After the merge**, and not before. Before it, the ticket would read `done` for work that has not landed,
-and a failed merge would leave it lying. Skipped when the ticket already reads `done` — the Resume route
-reaches this step again.
+and a failed merge would leave it lying.
+
+**Which status is decided by the ticket read.** The read that precedes the write prints `RELEASE_FLOW=yes|no`.
+`yes` writes `awaiting-release` (the work is merged and waits for a release to name its version); `no` writes
+`done`, exactly as a project without releases always did. The command never opens the definitions file.
+
+**Skipped when the ticket already reads `done` or `awaiting-release`** — the Resume route reaches this step
+again, and a ticket a release already closed must not be pulled back.
 
 ```bash
 node .codeadd/scripts/backlog-commit.cjs update <ticket id> --record-file <scratch.json>
-# scratch.json: {"status":"done"}
+# scratch.json: {"status":"awaiting-release"} when RELEASE_FLOW=yes, else {"status":"done"}
 ```
 
 ### `add-hotfix` — the jump
@@ -307,14 +313,14 @@ a second planning pass run without a guard of its own.
 
 ## The Status Names
 
-**The nine names a command writes:** `open`, `refining`, `shaped`, `planning`, `planned`, `doing`,
-`in-review`, `done` and `dropped`. What each means, and which column holds it, is `phases.md`.
+**The ten names a command writes:** `open`, `refining`, `shaped`, `planning`, `planned`, `doing`,
+`in-review`, `awaiting-release`, `done` and `dropped`. What each means, and which column holds it, is `phases.md`.
 
-**The vocabulary belongs to the user, and they are entitled to rename any of the nine.** Nothing enforces
+**The vocabulary belongs to the user, and they are entitled to rename any of the ten.** Nothing enforces
 them: the names are a contract this file and the record format both state, not a mechanism.
 
 **When a name has been renamed or removed, the write is refused with `REFUSED=unknown-status`.** Report it
-and continue. With nine names in play a single rename can produce **several** refusals in one run — one per
+and continue. With ten names in play a single rename can produce **several** refusals in one run — one per
 write that names it — and each gets its own line.
 
 ```
