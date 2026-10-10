@@ -189,12 +189,15 @@ absent or `false`, a merged ticket is written `done`, exactly as before. A comma
 find out: every read prints `RELEASE_FLOW=yes|no` and the command reads that.
 
 **Existing projects are not migrated.** A file written before this status existed keeps its statuses; nothing
-adds one on a write. A project opts in by adding the `release` column, the `awaiting-release` status and
-`"release_flow": true` to its own file. A project that sets `release_flow: true` without defining the status
-gets `REFUSED=unknown-status` on the write, reported and non-blocking.
+adds one on a write. A project opts in with one write, `node .codeadd/scripts/backlog-commit.cjs release-flow on`,
+which sets `"release_flow": true` and adds the `awaiting-release` status and the `release` column when the file lacks
+them (`release-flow off` turns the flag back off and removes nothing). A project that sets `release_flow: true` by
+hand without defining the status gets `REFUSED=unknown-status` on the write, reported and non-blocking.
 
-**Nothing in the product closes `awaiting-release`.** A project that opts in decides who does: a person, or a script that
-lists the waiting tickets and writes `release` and `done` in one `update`. Until then they stay in the Release column.
+**A release closes `awaiting-release` with one write**: `node .codeadd/scripts/backlog-commit.cjs release <version>`
+sets `release` to the version and `status` to `done` on every waiting ticket, in one commit, and reports
+`TICKETS_RELEASED=` with the ids (empty when none was waiting). Whoever releases (a person, a CI job, a release
+command the project owns) runs it; the framework does not decide when. Until then the tickets stay in the Release column.
 
 `labels` is a suggestion list of `{ name, label, means }`. A project edits it freely. **A write is never refused
 for a label outside it**, and the core never reads it.
