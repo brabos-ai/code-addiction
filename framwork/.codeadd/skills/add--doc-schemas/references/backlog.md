@@ -310,6 +310,9 @@ two cannot drift.
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
 | `duplicate-id` | 4 | the id is already on the board |
 | `unknown-id` | 7 | the id named is not on the board, including a `move --after` anchor |
+| `bad-version` | — | `release` got an empty version or one containing whitespace; not a record ban |
+| `bad-flag` | — | `release-flow` got something other than `on` or `off`; not a record ban |
+| `definitions-unreadable` | — | `release-flow` found a definitions file the core cannot parse and left it untouched; not a record ban |
 | `board-not-configured` | — | the project has no board (no `.codeadd/board.json` and no board file), so there is nowhere to write; this is not a record ban |
 
 The name is shared with `delivery-index.md` where the meaning is the same: `invalid-json` and
