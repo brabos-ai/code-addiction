@@ -144,6 +144,41 @@ describe('L11.5 -- the product and internal pipelines name the same seven writes
   });
 });
 
+describe('L2.2 -- the add-done write parks a merged ticket when the project opted in', () => {
+  const doneRow = () => lifecycle().split('\n').find((l) => l.startsWith('| `add-done` |'));
+  const closeStep = () => fragment('add-done').get('ticket-close');
+
+  it('the lifecycle row, the lifecycle section and the fragment each name RELEASE_FLOW and awaiting-release', () => {
+    expect(doneRow()).toContain('RELEASE_FLOW');
+    expect(doneRow()).toContain(tick('awaiting-release'));
+    const l = lifecycle();
+    const a = l.indexOf('### `add-done`');
+    const section = l.slice(a, l.indexOf('\n##', a + 5));
+    expect(section).toContain('RELEASE_FLOW=yes');
+    expect(section).toContain(tick('awaiting-release'));
+    expect(closeStep()).toContain('RELEASE_FLOW=yes');
+    expect(closeStep()).toContain(tick('awaiting-release'));
+  });
+
+  it('the Resume skip names both done and awaiting-release', () => {
+    expect(closeStep()).toMatch(/already reads `done` or `awaiting-release`/);
+    expect(lifecycle()).toMatch(/already reads `done` or `awaiting-release`/);
+  });
+
+  it('the work_id stop lets the awaiting-release write through, like done', () => {
+    const l = lifecycle();
+    const a = l.indexOf('### The `work_id` stop');
+    const stop = l.slice(a, l.indexOf('\n###', a + 5));
+    expect(stop).toContain(tick('awaiting-release'));
+  });
+
+  it('the close-out reports which status was written', () => {
+    for (const section of ['ticket-carry', 'ticket-report']) {
+      expect(fragment('add-done').get(section), section).toContain(tick('awaiting-release'));
+    }
+  });
+});
+
 describe('L11.6 -- a project starts on the ten', () => {
   // The board lives on its own branch, outside the checkout, so no test opens
   // this repository's board. What a new board starts with is the seed in the core.

@@ -32,8 +32,6 @@ const LIFECYCLE = path.join(h.SCRIPTS_DIR, '..', 'skills', 'add--backlog', 'refe
 // made through `node -e 'require(...).DEFAULT_DEFS'`, with no child process.
 const core = require(CORE);
 
-// lifecycle.md names these until F3 adds the tenth.
-const NINE_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'done', 'dropped'];
 const TEN_STATUSES = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
 const EIGHT_COLUMNS = ['backlog', 'shaping', 'planning', 'building', 'review', 'release', 'done', 'dropped'];
 
@@ -191,14 +189,14 @@ test('backlog#008 — L1.4c: the ten reserved statuses and eight columns are the
   }
 });
 
-test('backlog#009 — L1.4d: lifecycle.md names all nine reserved statuses', () => {
+test('backlog#009 — L1.4d: lifecycle.md names all ten reserved statuses', () => {
   const lc = h.read(LIFECYCLE);
   const start = lc.indexOf('## The Status Names');
   assert.notEqual(start, -1, 'section missing');
   const rest = lc.slice(start);
   const nextH2 = rest.indexOf('\n## ', 1);
   const section = nextH2 === -1 ? rest : rest.slice(0, nextH2);
-  for (const n of NINE_STATUSES) {
+  for (const n of TEN_STATUSES) {
     assert.ok(section.includes('`' + n + '`'), `lifecycle names ${n}`);
   }
 });
