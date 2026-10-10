@@ -538,3 +538,37 @@ describe('F33-F37 -- release, backlog, commit, building-commands and the schema 
     expect(product).not.toMatch(/numbered question batch/);
   });
 });
+
+describe('F38-F39 -- the injection skill and AGENTS.md carry the new rules', () => {
+  const agents = () => readNorm(path.join(ROOT, 'AGENTS.md'));
+
+  it('add-framework-injection allows the agent-mode fallbacks and states placeholder resolution', () => {
+    const t = wb('skills', 'add-framework-injection', 'SKILL.md');
+    expect(t).toMatch(/Only `add-plan` step-list and the `agent-mode\.\*` slots use a nonempty fallback/);
+    expect(t).not.toMatch(/Only `add-plan` step-list uses the nonempty fallback/);
+    expect(t).toMatch(/placeholders are resolved per provider at install/);
+    expect(t).toMatch(/the anchor has no `next` line and the slot only inserts/);
+  });
+
+  it('AGENTS.md lists board and agent-mode in the feature table, with the 12 commands', () => {
+    const t = agents();
+    const row = t.split('\n').find((l) => l.startsWith('| `agent-mode` |'));
+    expect(row).toBeTruthy();
+    expect(row).toContain('disabled');
+    for (const c of Object.keys(AGENT_SLOTS)) expect(row, c).toContain(c);
+    expect(t).toMatch(/^\| `board` \| disabled \|/m);
+  });
+
+  it('AGENTS.md points to the three interaction skills', () => {
+    const t = agents();
+    expect(t).toContain('| How an internal stop asks the user | `add-interaction` |');
+    expect(t).toMatch(/`add--human-interaction` \/ `add--agent-interaction`/);
+  });
+
+  it('the generated inventory block was not hand-edited (it is current)', () => {
+    const t = agents();
+    expect(t).toContain('"add--human-interaction"');
+    expect(t).toContain('"add--agent-interaction"');
+    expect(t).toMatch(/"fragments":\[[^\]]*"agent-mode"/);
+  });
+});

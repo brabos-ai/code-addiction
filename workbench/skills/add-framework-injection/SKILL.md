@@ -33,7 +33,7 @@ Wrap every standalone feature or plugin marker pair in one slot. A slot is a max
 
 Member order inside the slot is the installed order. It does not follow the order features were enabled.
 
-The fallback path is relative to `framwork/.codeadd/`, starts with `fallbacks/`, and has no `..`. `fallbacks/empty.md` is zero bytes. Only the shared `add-plan` step-list slot uses `fallbacks/plan-specs.md`.
+The fallback path is relative to `framwork/.codeadd/`, starts with `fallbacks/`, and has no `..`. `fallbacks/empty.md` is zero bytes. The nonempty fallbacks are the shared `add-plan` step-list slot (`fallbacks/plan-specs.md`) and the `agent-mode.*` slots, each holding the text its command carried before the feature existed (`fallbacks/agent-mode.<command>.<subject>.md`, or the shared `fallbacks/agent-mode.interaction.md`).
 
 A member pair is empty. The body lives in the fragment file. Only member marker pairs and whitespace may occur between the slot markers. A marker outside a slot fails the build.
 
@@ -41,7 +41,9 @@ A member pair is empty. The body lives in the fragment file. Only member marker 
 
 The installer saves a pristine copy of each slotted provider file before composition. Enable, disable, install, and update re-render that file from the baseline plus the current manifest. They do not append to the previous installed text.
 
-A valid enabled member contributes its section, in source order. A missing file, missing section, or bad payload warns with resource, slot, and member, skips that member, and leaves the manifest flag on. The fallback is used only when zero members contribute. An empty fallback adds no bytes and no blank line.
+A valid enabled member contributes its section, in source order. A missing file, missing section, or bad payload warns with resource, slot, and member, skips that member, and leaves the manifest flag on. The fallback is used only when zero members contribute. An empty fallback adds no bytes and no blank line. A fallback's `{{cmd:}}`, `{{skill:}}` and `{{addpath:}}` placeholders are resolved per provider at install, exactly like a member's.
+
+The slot replaces everything between its two anchor lines, blank lines included, so a fallback and a member carry the blank lines around their text. **When the line below the slot holds a placeholder, the anchor has no `next` line and the slot only inserts** — the blank line already there stays, so the fallback and the member omit the trailing blank line, or the render gains one.
 
 Plugin tool detection stays the gate it already is. A plugin that fails detection does not contribute. Its skills still follow the plugin enable path.
 
@@ -54,6 +56,6 @@ A product step ID is `STEP <owner>.<subject>`. The owner is the command, feature
 ## Validation
 
 - [ ] Every marker pair sits in exactly one slot
-- [ ] Only `add-plan` step-list uses the nonempty fallback
+- [ ] Only `add-plan` step-list and the `agent-mode.*` slots use a nonempty fallback
 - [ ] Reversed enable order produces the same installed bytes
 - [ ] `node scripts/build.js` exits 0 with no new warning

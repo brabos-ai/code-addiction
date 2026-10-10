@@ -214,6 +214,8 @@ Optional features inject content into commands **post-install**, so they can be 
 | `tdd-pipeline` | enabled | add-plan, add-build, add-review, add-hotfix |
 | `qa-pipeline` | disabled | add-plan, add-build, add-review |
 | `docs-pruning` | disabled | add-done |
+| `board` | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix |
+| `agent-mode` | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki |
 
 ## Plugin System
 
@@ -285,4 +287,6 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
 | Setup-contract comparison | `add--setup-contract` |
 | A script's contract and exit codes | that script's own header, plus its native `scripts/tests/<name>.test.cjs` suite |
+| How an internal stop asks the user | `add-interaction` |
+| How a product command talks to a person or to a bot | `add--human-interaction` / `add--agent-interaction`, chosen by each command's `agent-mode.interaction` slot |
 | Injection anchor internals | `cli/src/injection-core.js` |
