@@ -218,6 +218,26 @@ describe('L2 — calculate: exhaustion and unreadable sources', () => {
   });
 });
 
+describe('L2 — calculate: boardRoot splits the two sources', () => {
+  it('feature dirs count under root, ticket ids under boardRoot', () => {
+    const root = fixture('id-split-root-');
+    const board = fixture('id-split-board-');
+    featureDir(root, '0007F-thing');
+    backlogRow(board, ticketRow({ id: '0012B' }));
+    backlogRow(root, ticketRow({ id: '0099B' }));
+    expect(idc.calculate(root, 'B', { boardRoot: board })).toEqual({ ok: true, id: '0013B' });
+    expect(idc.calculate(root, 'B')).toEqual({ ok: true, id: '0100B' });
+  });
+
+  it('boardRoot keeps allowOverflow and the 9999 refusal', () => {
+    const root = fixture('id-split-ovf-root-');
+    const board = fixture('id-split-ovf-board-');
+    backlogRow(board, ticketRow({ id: '9999B' }));
+    expect(idc.calculate(root, 'B', { boardRoot: board })).toEqual({ ok: false, reason: 'id-exhausted' });
+    expect(idc.calculate(root, 'F', { boardRoot: board, allowOverflow: true })).toEqual({ ok: true, id: '10000F' });
+  });
+});
+
 describe('L2 — the allocator requires no import-time I/O', () => {
   it('requiring the module changes nothing anywhere on disk', () => {
     const before = fs.readFileSync(path.join(ROOT, 'docs', 'backlog.jsonl'), 'utf8');

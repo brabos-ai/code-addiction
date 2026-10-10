@@ -38,6 +38,10 @@
  * caller, and no reservation is made here: calculate is max+1 by definition,
  * stateless, with no concurrency protocol.
  *
+ * `calculate(root, letter, { boardRoot })` counts the feature directories under
+ * `root` and the ticket ids under `boardRoot`: the board lives in a clone
+ * outside the code repository, and the one global number still spans both.
+ *
  * Backlog allocation refuses at 9999. Public next-id/status/init adapters opt
  * into allowOverflow to preserve the old printf's minimum-width output: 10000F.
  * The scan remains shared; only the public adapter's exhaustion policy differs.
@@ -81,11 +85,16 @@ const MAX_NUMBER = 9999;
  * source. This is the single implementation of the scan; `calculate` renders
  * its result and every public adapter calls `calculate`.
  *
+ * The two sources may live under different roots: the feature directories
+ * under `root` (the code repository) and the ticket ids under `boardRoot`
+ * (the board clone). `boardRoot` defaults to `root`, today's answer.
+ *
  * @param {string} root - absolute path to the project root
+ * @param {string} [boardRoot] - where docs/backlog.jsonl lives; defaults to root
  * @returns {{ok: true, ids: Set<string>} |
  *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'}}
  */
-function scanIds(root) {
+function scanIds(root, boardRoot = root) {
   const ids = new Set();
 
   // Source 1 — the immediate docs/features/ directory basenames.
@@ -105,7 +114,7 @@ function scanIds(root) {
   }
 
   // Source 2 — the raw backlog text, anchored. Damaged rows included.
-  const backlogFile = path.join(root, BACKLOG_FILE);
+  const backlogFile = path.join(boardRoot, BACKLOG_FILE);
   if (fs.existsSync(backlogFile)) {
     let raw;
     try {
@@ -130,12 +139,14 @@ function scanIds(root) {
  *
  * @param {string} root - absolute path to the project root
  * @param {string} letter - a single uppercase letter (the work type suffix)
- * @param {{allowOverflow?: boolean}} options - preserve a public adapter's minimum-width output
+ * @param {{allowOverflow?: boolean, boardRoot?: string}} options - allowOverflow preserves a
+ *   public adapter's minimum-width output; boardRoot is where the ticket ids are counted
+ *   (default: root)
  * @returns {{ok: true, id: string} |
  *           {ok: false, reason: 'features-unreadable'|'backlog-unreadable'|'id-exhausted'}}
  */
-function calculate(root, letter, { allowOverflow = false } = {}) {
-  const scanned = scanIds(root);
+function calculate(root, letter, { allowOverflow = false, boardRoot = root } = {}) {
+  const scanned = scanIds(root, boardRoot);
   if (!scanned.ok) return { ok: false, reason: scanned.reason };
 
   let max = 0;
