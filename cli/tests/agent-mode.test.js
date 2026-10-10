@@ -90,6 +90,22 @@ describe('product agent mode', () => {
     }
   });
 
+  it('L2.4 the guide presents claude -p as an example other providers can reproduce, and shows a Notion mirror', () => {
+    const guide = fs.readFileSync(GUIDE, 'utf8');
+    expect(guide).not.toMatch(/Claude Code only/i);
+    expect(guide).not.toMatch(/No other provider supports this/i);
+    expect(guide).toMatch(/Codex/);
+    expect(guide).toMatch(/OpenCode/);
+    expect(guide).toMatch(/own documentation/i);
+    const s9 = guide.slice(guide.indexOf('## 9. Mirror the board'));
+    expect(s9).toContain('Notion');
+    expect(s9).toContain('awaiting-release');
+    expect(s9).toMatch(/`release`/);
+    expect(s9).toMatch(/any project-management app/i);
+    expect(s9).toContain('the framework ships no tracker code');
+    expect(s9).not.toMatch(/notion.so|@notionhq|api.notion/i);
+  });
+
   it('L1.7 the codeadd-shell block of add-wiki.md points at the guide', () => {
     const wiki = fs.readFileSync(path.join(SOURCE, 'commands', 'add-wiki.md'), 'utf8');
     const block = wiki.match(/\[\/\/\]: # \(codeadd-shell:start\)([\s\S]*?)\[\/\/\]: # \(codeadd-shell:end\)/);
