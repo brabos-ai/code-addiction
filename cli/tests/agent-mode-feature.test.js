@@ -485,3 +485,18 @@ describe('F28 -- the internal build asks its approval, finding and push as numbe
     expect(t).toMatch(/Present every such finding together, in one numbered batch/);
   });
 });
+
+describe('F29 -- the internal done asks its plan pick and its deletions as one batch', () => {
+  const text = () => wb('skills', 'add-framework--done', 'SKILL.md');
+
+  it('routes through add-interaction and declares it', () => {
+    expect(text()).toContain('`add-interaction`');
+    expect(text()).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+
+  it('asks every deletion in one batch, not per deletion', () => {
+    const t = text();
+    expect(t).not.toMatch(/Ask the user, per deletion/);
+    expect(t).toMatch(/for every deletion in ONE numbered batch/);
+  });
+});
