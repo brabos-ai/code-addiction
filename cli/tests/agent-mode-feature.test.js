@@ -455,3 +455,18 @@ describe('F26 -- the internal brainstorm asks in batches', () => {
     expect(slice).toMatch(/no RECOMMENDED line, on purpose/);
   });
 });
+
+describe('F27 -- the internal plan asks its questionnaire as one recommended batch', () => {
+  const text = () => wb('skills', 'add-framework--plan', 'SKILL.md');
+
+  it('routes STEP 4 through add-interaction and declares it', () => {
+    expect(text()).toContain('`add-interaction`');
+    expect(text()).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+
+  it('makes the recommendation mandatory, not conditional on a clearly better option', () => {
+    const t = text();
+    expect(t).not.toMatch(/Mark the probable option when one is clearly better/);
+    expect(t).toMatch(/Every question carries a RECOMMENDED option/);
+  });
+});

@@ -7,6 +7,7 @@ description: "Use when a framework change needs a plan document — analyses bot
 
 <!-- uses:
 - skill: add-plan-authoring
+- skill: add-interaction
 - skill: add-artefact-graph
 - skill: add-final-report
 - skill: add-review-discipline
@@ -415,12 +416,14 @@ Sections:
 2. **What already exists** — table of related artefacts (extends / conflicts / complements) and which
    layer each is in. Conclude: create new, extend existing, or rethink. **Show the ticked ruler when
    3.4 returned one**, and put any `blocked` item's question in section 3 as a question of its own.
-3. **Strategic analysis** — 2-4 questions with an options table (option, description, trade-offs).
-   Mark the probable option when one is clearly better.
+3. **Strategic analysis** — 2-4 questions with an options table (option, description, trade-offs), sent
+   as one numbered batch through `add-interaction`. **Every question carries a RECOMMENDED option and the
+   reason** — the recommendation is mandatory, not reserved for the case where one option is clearly better.
 4. **Recommendations** — opportunities to include, risks with mitigations, alternatives considered.
 5. **Ecosystem impact** — affected components and the action each needs, tagged by layer.
 
-**STOP AND WAIT.** After the user responds, summarize the confirmed decisions and proceed.
+**STOP AND WAIT** with the five sections and every question in ONE message (`add-interaction`). After the
+user responds, summarize the confirmed decisions and proceed.
 
 ### 4.2 End with the plan preview
 
