@@ -315,14 +315,14 @@ test('backlog-commit#014 — L2.2: release closes every waiting ticket in ONE co
   assert.equal(kv.COMMITTED, 'yes');
   assert.equal(kv.PUSHED, 'yes');
   assert.equal(commitCount(b), before + 1);
-  assert.equal(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout, 'backlog: release v9.9.9 (2 tickets)');
+  assert.equal(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout.trim(), 'backlog: release v9.9.9 (2 tickets)');
   const done = remoteBoard(b).trim().split('\n').map((l) => JSON.parse(l));
   assert.deepEqual(done.map((x) => [x.id, x.status, x.release]), [['0001B', 'done', 'v9.9.9'], ['0002B', 'in-review', undefined], ['0003B', 'done', 'v9.9.9']]);
 
   const again = commit(b.repo, ['release', 'v9.9.9'], { env: b.env });
   assert.equal(again.status, 0, again.output);
   assert.equal(h.parseKV(again.stdout).COMMITTED, 'no');
-  assert.equal(h.parseKV(again.stdout).TICKETS_RELEASED, undefined);
+  assert.equal(h.parseKV(again.stdout).TICKETS_RELEASED, '');
   assert.equal(commitCount(b), before + 1, 'no new commit');
 });
 
@@ -334,7 +334,7 @@ test('backlog-commit#015 — L2.3: release-flow on and off are visible to the re
   assert.equal(h.parseKV(on.stdout).COMMITTED, 'yes');
   assert.equal(h.parseKV(on.stdout).TICKET_ID, undefined);
   assert.equal(h.parseKV(readCli(b, ['list']).stdout).RELEASE_FLOW, 'yes');
-  assert.match(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout, /^backlog: release-flow on$/);
+  assert.match(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout.trim(), /^backlog: release-flow on$/);
 
   const before = commitCount(b);
   const twice = commit(b.repo, ['release-flow', 'on'], { env: b.env });
