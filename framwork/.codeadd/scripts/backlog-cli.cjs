@@ -238,17 +238,18 @@ function captureRecord(recordSource) {
  * fails. When the metadata is absent, the id is calculated natively from the
  * operation root; exhaustion or an unreadable source refuses the allocation.
  *
- * @param {string} root - the operation root
+ * @param {string} root - the code repository root (the feature directories)
+ * @param {string} [boardRoot] - where the ticket ids are counted; defaults to root
  * @returns {{ok: true, id: string}|{ok: false}}
  */
-function resolveNewId(root) {
+function resolveNewId(root, boardRoot = root) {
   const hasMetadata = Object.prototype.hasOwnProperty.call(process.env, 'BACKLOG_NEW_ID');
   if (hasMetadata) {
     const given = process.env.BACKLOG_NEW_ID || '';
     if (!/^[0-9]{4}B$/.test(given)) return { ok: false };
     return { ok: true, id: given };
   }
-  const native = idc.calculate(root, 'B');
+  const native = idc.calculate(root, 'B', { boardRoot });
   if (!native.ok) return { ok: false };
   return { ok: true, id: native.id };
 }

@@ -1,46 +1,58 @@
 /**
- * backlog-commit.cjs — The native publication entry: one parse, one record
- * capture, one operation root, the same domain operation as the local CLI,
- * and the publication report.
+ * backlog-commit.cjs — The native publication entry: ONE write route.
+ *
+ * Resolve the board clone, take its lock, bring it level with the remote,
+ * allocate the id (for `add`), run the same domain operation as the local
+ * CLI, commit, and push the `board` branch. A write from any branch or any
+ * worktree lands on `board` and nowhere else — never on the caller's branch,
+ * never on `main`, so it triggers no code CI.
  *
  * WRITE MODES ONLY. `list`, `search` and `get` commit nothing and are
- * refused by name (ERROR=read-mode), exactly as the wrapper refused them.
+ * refused by name (ERROR=read-mode). backlog-cli.cjs is the read entry, and it
+ * refuses writes in turn (ERROR=write-mode) naming this one.
  *
  * THE ORDER THAT KEEPS DATA RECOVERABLE:
  *   1. Parse once — the local CLI's grammar, verbatim.
- *   2. A record FILE is read in the caller cwd BEFORE any git setup,
- *      allocation or persistence; a failed read exits 1 with
- *      ERROR=record-read-failed before anything else can happen to it.
- *   3. Routing picks the operation root: direct, the locked detached
- *      `.worktrees/backlog`, or the caller tree itself when no base branch
- *      exists. Refused worktree states stop BEFORE any write, naming the
- *      path to recover.
- *   4. `add` allocates at the CHOSEN root — the worktree's board is the
- *      board the ticket lands on, and the id counts from it.
- *   5. Only then is stdin captured, once, and the domain operation runs —
- *      the same executeBacklog the local CLI calls, never a subprocess of
- *      it and never a second validation.
+ *   2. A record FILE is read in the caller cwd BEFORE any git work or
+ *      allocation; a failed read exits 1 with ERROR=record-read-failed.
+ *   3. Resolve the board (backlog-board.cjs). A state other than `ready`
+ *      stops BEFORE any write, see the exit codes.
+ *   4. Take the clone's lock, waiting up to 30 s. Still held after that:
+ *      ERROR=board-locked, exit 1, nothing written.
+ *   5. Fetch and fast-forward (a clone left ahead by an earlier unpushed
+ *      write is rebased once). `add` allocates AFTER this, inside the lock,
+ *      so two writers on one machine never compute the same id: the ticket
+ *      ids are counted in the clone, the feature directories in the code repo.
+ *   6. Only then is stdin captured, once, and the domain operation runs —
+ *      the same executeBacklog the local CLI uses, never a second validation.
+ *   7. Commit to the clone, protect the commit with a recovery ref, push.
+ *      A rejected push re-fetches, rebases once and retries; a second
+ *      failure degrades and keeps the recovery ref. The next write pushes it.
  *
- * THE WRITE IS NEVER DISCARDED. Every failure past it degrades: the report
- * says what did not happen and why. A failed staging or commit keeps the
- * tree with its data and reports RECOVERY_PATH; a safely finishable capture
- * removes its tree after verified protection; the caller's own staged and
- * unstaged work is never staged, committed, stashed or reset by this run.
+ * THE WRITE IS NEVER DISCARDED. Every failure past step 6 degrades: the report
+ * says what did not happen and why. The commit lives in the clone.
  *
- * THE REPORT. Old keys first, unchanged: ROUTE, BASE_BRANCH, TICKET_ID,
- * SHA, PUSHED, and DEGRADED when one applies. New keys, additive: PERSISTED
- * and COMMITTED on every completed write; RECOVERY_PATH when a tree is
- * retained and carries bytes; RECOVERY_REF when a commit is only
- * ref-protected. At most one DEGRADED value is printed, the most fatal one
- * by fixed precedence — a compound reason would break every one-word
- * consumer of today's format.
+ * THE REPORT (KEY=VALUE lines, in this order):
+ *   ROUTE=board           the only value there is
+ *   BOARD_DIR=<clone>     where the board lives
+ *   LOCK_RECLAIMED=<pid>  only when a dead or very old lock was taken over
+ *   TICKET_ID, PERSISTED=yes, COMMITTED=yes|no, SHA, PUSHED=yes|no
+ *   RECOVERY_REF          when a commit is only ref-protected (not pushed)
+ *   DEGRADED=<reason>     at most one, the most fatal by fixed precedence:
+ *                         rebase-conflict, fetch-failed, push-refused,
+ *                         recovery-ref-failed, recovery-ref-moved,
+ *                         recovery-ref-delete-failed
  *
- * Exit: 0 for a result, a DEGRADED one INCLUDED. 1 when the write or the
- * commit itself failed. 2 for caller error: a bad mode, a READ mode, the
- * local CLI's own REFUSED=, or REFUSED=worktree-locked /
- * worktree-recovery-required.
+ * EXIT CODES. 0 for a result, a DEGRADED one INCLUDED. 1 when the write or the
+ * commit itself failed, and for the board states that need a human:
+ * ERROR=board-migration-required (the checkout still holds docs/backlog.jsonl
+ * and no config), ERROR=board-branch-missing (config, but the remote has no
+ * such branch), ERROR=board-checkout-missing (no clone and no network),
+ * ERROR=board-locked. 2 for caller error: a bad mode, a READ mode, the domain
+ * REFUSED= values, and REFUSED=board-not-configured (this project has no
+ * board).
  *
- * Dependencies: node >= 18 built-ins, git; the adjacent local CLI modules.
+ * Dependencies: Node built-ins and git; the adjacent backlog modules.
  * No bash, no WSL, no shell anywhere in between.
  */
 
@@ -49,6 +61,7 @@ const path = require('node:path');
 const core = require('./backlog-core.cjs');
 const cli = require('./backlog-cli.cjs');
 const git = require('./backlog-git.cjs');
+const board = require('./backlog-board.cjs');
 
 const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [args]
   add                       --record-file ticket.json
@@ -57,7 +70,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   move    <id> --top | --after <id> | --bottom
   remove  <id>
 
-\`list\`, \`search\` and \`get\` are reads. Call backlog-cli.cjs directly for those.
+\`list\`, \`search\`, \`get\` and \`changes\` are reads. Call backlog-cli.cjs directly for those.
 Records also accept stdin when --record-file is absent.
 `;
 
@@ -90,11 +103,8 @@ class Report {
 
 /** Downgrade precedence: the first match wins when several landed in one run. */
 const DEGRADED_PRIORITY = [
-  'not-a-git-repo', 'no-base-branch', 'worktree-failed', 'worktree-lock-failed',
-  'worktree-recovery-required', 'caller-worktree-dirty', 'rebase-conflict',
-  'fetch-failed', 'base-advance-failed', 'base-checked-out-elsewhere',
-  'push-refused', 'no-remote', 'recovery-ref-failed', 'recovery-ref-moved',
-  'recovery-ref-delete-failed', 'cleanup-failed',
+  'rebase-conflict', 'fetch-failed', 'push-refused',
+  'recovery-ref-failed', 'recovery-ref-moved', 'recovery-ref-delete-failed',
 ];
 
 function mergeDegraded(current, incoming) {
@@ -114,56 +124,6 @@ function boardPaths(root) {
   return paths;
 }
 
-function baseShaOf(root, branch) {
-  const out = git.run(['rev-parse', 'refs/heads/' + branch], root, { allowFailure: true });
-  return out.status === 0 ? out.stdout.trim().toLowerCase() : null;
-}
-
-/**
- * Routing, before anything is written. `refused` stops the run with the
- * old refusal names; degraded setups fall back to the caller tree, which is
- * the degraded write the wrapper always produced.
- */
-function chooseOperationRoot(callerRoot) {
-  const base = git.discoverBase(callerRoot);
-  if (!base.ok) {
-    return { kind: 'none', opRoot: callerRoot, baseBranch: '', degraded: base.reason };
-  }
-  if (git.currentBranch(callerRoot) === base.branch) {
-    return {
-      kind: 'direct', opRoot: callerRoot, baseBranch: base.branch,
-      degraded: null, baseSha: baseShaOf(callerRoot, base.branch),
-    };
-  }
-
-  const setup = git.setupWorktree(callerRoot, base.branch);
-  if (setup.refusal) {
-    return { kind: 'refused', refusal: setup.refusal, path: setup.path, sha: setup.sha || null };
-  }
-  if (setup.degraded) {
-    return { kind: 'none', opRoot: callerRoot, baseBranch: base.branch, degraded: setup.degraded };
-  }
-  return {
-    kind: 'worktree', opRoot: setup.path, callerRoot,
-    locked: setup.locked, lockDegraded: setup.locked ? null : setup.degraded,
-    baseBranch: base.branch, baseSha: baseShaOf(callerRoot, base.branch),
-  };
-}
-
-/** Refusal shapes the wrapper printed, on stdout, exit 2. */
-function refuse(refusal, absPath, sha) {
-  process.stdout.write('REFUSED=' + refusal + '\n');
-  if (refusal === 'worktree-locked') {
-    process.stdout.write('A capture is holding ' + absPath + ', or one crashed while holding it.\n');
-    process.stdout.write('Clear it with: git worktree unlock ' + absPath + '\n');
-  } else if (refusal === 'worktree-recovery-required') {
-    process.stdout.write('An earlier capture left recoverable work in ' + absPath + ' — it is not safe to discard or reuse.\n');
-    if (sha) process.stdout.write('SHA=' + sha + '\n');
-    process.stdout.write('Recover it, then remove it: git worktree remove ' + absPath + '\n');
-  }
-  process.exit(2);
-}
-
 /** Domain errors, exactly the way the local entry prints them. */
 function domainExit(result) {
   if (result.writeFailure) {
@@ -174,26 +134,45 @@ function domainExit(result) {
   process.exit(2);
 }
 
-/**
- * Protect sha and track ref ownership. Fails loudly as a degradation when
- * the verifier cannot confirm the ref names this commit.
- */
-function protectOrDegrade(callerRoot, sha, report, state) {
-  const protection = git.protectCommit(callerRoot, sha);
-  if (protection.ok) {
-    if (protection.owned) state.owned.push({ ref: protection.ref, value: sha });
-    report.set('RECOVERY_REF', protection.ref);
-    return true;
+/** The board is not usable: print why and exit with the state's own code. */
+function boardStateExit(res) {
+  if (res.state === 'none') {
+    process.stdout.write('REFUSED=board-not-configured\n');
+    process.stdout.write('This project has no board: there is no .codeadd/board.json and no docs/backlog.jsonl.\n');
+    process.exit(2);
   }
-  return false;
+  process.stdout.write('ERROR=board-' + res.state + '\n');
+  if (res.state === 'migration-required') {
+    process.stdout.write('docs/backlog.jsonl is still in the checkout and no .codeadd/board.json says where the board moved. Ask the framework maintainer to migrate this project to the board branch.\n');
+  } else if (res.state === 'branch-missing') {
+    process.stdout.write('.codeadd/board.json names the branch ' + res.branch + ' but the remote has no such branch. Ask the framework maintainer to migrate this project to the board branch.\n');
+  } else if (res.state === 'checkout-missing') {
+    process.stdout.write('The board clone for ' + (res.key || 'this project') + ' is not on this machine and the remote could not be reached. Connect to the network and retry.\n');
+  }
+  process.exit(1);
+}
+
+/**
+ * Bring the locked clone level with the remote before the write: fetch, then
+ * fast-forward when behind, rebase once when an earlier write is still
+ * unpushed. Returns the DEGRADED reason it hit, or null.
+ */
+function levelWithRemote(boardDir, branch) {
+  const fetched = git.fetchBranch(boardDir, branch);
+  if (!fetched.fetched) return 'fetch-failed';
+  if (!git.resolveSha(boardDir, `refs/remotes/origin/${branch}`)) return null;
+  const ab = git.aheadBehind(boardDir, branch);
+  if (!ab.ok || ab.behind === 0) return null;
+  if (ab.ahead === 0) return git.fastForward(boardDir, branch).ok ? null : 'rebase-conflict';
+  return git.rebaseOnBranch(boardDir, branch).ok ? null : 'rebase-conflict';
 }
 
 function main(argv) {
   const args = argv !== undefined ? argv : process.argv.slice(2);
-  // Reads are refused BY NAME before any parsing, exactly as the wrapper
-  // refused them: `list`/`search`/`get` never reach the grammar's argument
-  // rules, so a read with a record-file spelling never captures a file.
-  if (['list', 'search', 'get'].includes((args[0] || ''))) {
+  // Reads are refused BY NAME before any parsing: `list`/`search`/`get` never
+  // reach the grammar's argument rules, so a read with a record-file spelling
+  // never captures a file.
+  if (['list', 'search', 'get', 'changes'].includes((args[0] || ''))) {
     process.stdout.write('ERROR=read-mode\n');
     usage();
     process.exit(2);
@@ -206,11 +185,9 @@ function main(argv) {
     process.exit(2);
   }
   const { mode } = parsed;
-
-  const callerRoot = process.cwd();
   const report = new Report();
 
-  // ── 1. The record FILE, before any git setup ─────────────────────────────
+  // ── 1. The record FILE, before any git work ──────────────────────────────
   let fileCaptured = null;
   if (parsed.recordSource && parsed.recordSource.kind === 'file') {
     fileCaptured = cli.captureRecord(parsed.recordSource);
@@ -220,42 +197,46 @@ function main(argv) {
     }
   }
 
-  // ── 2. Routing ───────────────────────────────────────────────────────────
-  const routing = chooseOperationRoot(callerRoot);
-  if (routing.kind === 'refused') refuse(routing.refusal, routing.path, routing.sha);
+  // ── 2. Resolve the board ─────────────────────────────────────────────────
+  const res = board.resolve(process.cwd());
+  if (res.state !== 'ready') boardStateExit(res);
+  const { boardDir } = res;
+  const branch = res.branch || board.DEFAULT_BRANCH;
+  report.set('ROUTE', 'board');
+  report.set('BOARD_DIR', boardDir);
 
-  let opRoot = routing.opRoot;
-  let isWorktree = routing.kind === 'worktree';
-  let degraded = routing.degraded || null;
-
-  // The lock could not be taken: the capture cannot be marked live, so the
-  // freshly created tree is released and the write falls back to the caller
-  // tree, exactly the shape a failed worktree creation takes.
-  if (isWorktree && !routing.locked) {
-    degraded = mergeDegraded(degraded, 'worktree-lock-failed');
-    git.teardownWorktree(callerRoot, true);
-    opRoot = callerRoot;
-    isWorktree = false;
+  // ── 3. The lock: the writer waits, then gives up having written nothing ──
+  const lock = board.acquireLock(boardDir, { waitMs: board.writerWaitMs() });
+  if (!lock.ok) {
+    process.stdout.write('ERROR=' + (lock.reason === 'held' ? 'board-locked' : 'board-lock-failed') + '\n');
+    process.exit(1);
   }
-  const isDirect = routing.kind === 'direct' && !isWorktree;
-  const isCapture = isWorktree;
+  if (lock.reclaimed !== undefined) report.set('LOCK_RECLAIMED', lock.reclaimed);
+  let degraded = null;
 
-  report.set('ROUTE', isDirect ? 'direct' : isWorktree ? 'worktree' : 'none');
-  if (routing.baseBranch) report.set('BASE_BRANCH', routing.baseBranch);
+  const leave = (code) => {
+    lock.release();
+    if (degraded) report.set('DEGRADED', degraded);
+    const out = report.raw();
+    if (out) process.stdout.write(out + '\n');
+    process.exit(code);
+  };
 
-  // ── 3. Allocation happens at the chosen root ─────────────────────────────
+  // ── 4. Fetch and fast-forward, THEN allocate ─────────────────────────────
+  degraded = mergeDegraded(degraded, levelWithRemote(boardDir, branch));
+
   let newId = '';
   if (mode === 'add') {
-    const resolved = cli.resolveNewId(opRoot);
+    const resolved = cli.resolveNewId(res.codeRoot || process.cwd(), boardDir);
     if (!resolved.ok) {
-      if (isWorktree) git.teardownWorktree(callerRoot, true);
+      lock.release();
       process.stdout.write('ERROR=id-allocation-failed\n');
       process.exit(1);
     }
     newId = resolved.id;
   }
 
-  // ── 4. stdin capture: once, only now ─────────────────────────────────────
+  // ── 5. stdin capture: once, only now ─────────────────────────────────────
   let rawRecord = '';
   if (fileCaptured) {
     rawRecord = fileCaptured.raw;
@@ -264,11 +245,9 @@ function main(argv) {
     rawRecord = captured.raw || '';
   }
 
-  const snapshot = (isDirect || isCapture) ? git.snapshotBoard(opRoot) : null;
-
-  // ── 5. The domain operation — the same one the local CLI calls ───────────
+  // ── 6. The domain operation — the same one the local CLI calls ───────────
   const result = core.executeBacklog({
-    root: opRoot,
+    root: boardDir,
     mode,
     targetId: parsed.targetId,
     moveDir: parsed.moveDir,
@@ -280,9 +259,8 @@ function main(argv) {
   });
 
   if (!result.ok) {
-    // Nothing was persisted; a prepared worktree holds nothing and is
-    // released. Refusals carry no publication keys, as the wrapper's never did.
-    if (isWorktree) git.teardownWorktree(callerRoot, true);
+    // Nothing was persisted. Refusals carry no publication keys.
+    lock.release();
     domainExit(result);
   }
 
@@ -290,177 +268,81 @@ function main(argv) {
   report.set('PERSISTED', 'yes');
   report.set('COMMITTED', 'no');
 
-  const recoveryState = { owned: [] };
-
-  if (isDirect === false && isCapture === false) {
-    // Route none: the caller tree carries the bytes, uncommitted. A result,
-    // with the degradation named and the recovery path pointed at.
-    report.set('RECOVERY_PATH', path.resolve(opRoot));
-    report.set('PUSHED', 'no');
-    // A capture tree created but never marked live is released here, so an
-    // unmarkable leftover is never the sweep's problem.
-    if (degraded === 'worktree-lock-failed') git.teardownWorktree(callerRoot, true);
-    finish(report, degraded, 0);
-  }
-
-  // ── 6. Commit: the two board paths by name, never the caller's index ────
-  const paths = boardPaths(opRoot);
-  const commit = git.commitBoard(opRoot, paths, `chore(backlog): ${mode} ${result.ticketId}`, snapshot);
-
-  if (commit.degraded) {
-    report.set('RECOVERY_PATH', path.resolve(opRoot));
-    report.set('PUSHED', 'no');
-    if (isCapture) git.teardownWorktree(callerRoot, false);
-    finish(report, mergeDegraded(degraded, commit.degraded), 0);
-  }
-
+  // ── 7. Commit to the clone ───────────────────────────────────────────────
+  const commit = git.commitFiles(boardDir, boardPaths(boardDir), `backlog: ${mode} ${result.ticketId}`);
   if (commit.failed) {
-    // The bytes survived. A normal exit releases the capture lock but retains
-    // the data; the next sweep refuses unsafe recovery state.
-    report.set('COMMITTED', commit.committed ? 'yes' : 'no');
-    if (commit.committed) report.set('SHA', commit.sha);
-    report.set('RECOVERY_PATH', path.resolve(opRoot));
+    report.set('RECOVERY_PATH', boardDir);
     report.set('PUSHED', 'no');
-    if (isCapture) git.teardownWorktree(callerRoot, false);
     process.stdout.write('ERROR=commit-failed\n');
-    finish(report, degraded, 1);
+    leave(1);
   }
-
   report.set('COMMITTED', commit.committed ? 'yes' : 'no');
   let sha = commit.sha;
   if (sha) report.set('SHA', sha);
 
-  // ── 7. Protect OUR commit BEFORE any rebase or cleanup ───────────────────
-  let protectionReady = true;
-  if (isCapture && commit.committed && sha) {
-    const held = protectOrDegrade(callerRoot, sha, report, recoveryState);
-    protectionReady = held;
-    if (!held) degraded = mergeDegraded(degraded, 'recovery-ref-failed');
-  }
+  // ── 8. Protect OUR commit BEFORE any rebase, then push ───────────────────
+  const owned = [];
+  const protectNow = (target) => {
+    const protection = git.protectCommit(boardDir, target);
+    if (!protection.ok) {
+      degraded = mergeDegraded(degraded, 'recovery-ref-failed');
+      return false;
+    }
+    if (protection.owned) owned.push({ ref: protection.ref, value: target });
+    return true;
+  };
 
   let pushed = false;
-  let rebaseBlocked = false;
+  let protectedOk = true;
+  if (commit.committed && sha) protectedOk = protectNow(sha);
 
-  const remote = git.run(['remote', 'get-url', 'origin'], opRoot, { allowFailure: true });
-  if (!protectionReady) {
-    // Do not rewrite or publish an unprotected detached commit. Keep its
-    // worktree as the recovery location instead of entering reconciliation.
-    rebaseBlocked = true;
-  } else if (remote.status !== 0) {
-    degraded = mergeDegraded(degraded, 'no-remote');
-  } else {
-    const fetch = git.fetchBase(opRoot, routing.baseBranch);
-    if (!fetch.fetched) {
-      // A fetch must succeed before any of its stale state is used — no
-      // rebase, and no push on top of it.
-      degraded = mergeDegraded(degraded, fetch.reason);
-      rebaseBlocked = true;
-    } else {
-      const needsRebase = !git.isAncestor(opRoot, fetch.fetchHead, git.headSha(opRoot));
-      if (needsRebase) {
-        // Caller bytes and staged intent are preserved, whatever happens.
-        const cond = git.conditionsAt(opRoot);
-        if (!cond.readable || cond.dirty || cond.staged || cond.unmerged || cond.rebasing) {
-          degraded = mergeDegraded(degraded, 'caller-worktree-dirty');
-          rebaseBlocked = true;
+  if (protectedOk && !(degraded === 'fetch-failed')) {
+    let push = git.pushBranch(boardDir, branch);
+    if (!push.pushed) {
+      // Rejected: re-fetch, rebase once, retry once.
+      const refetched = git.fetchBranch(boardDir, branch);
+      if (!refetched.fetched) {
+        degraded = mergeDegraded(degraded, 'fetch-failed');
+      } else {
+        const rebased = git.rebaseOnBranch(boardDir, branch);
+        if (!rebased.ok) {
+          degraded = mergeDegraded(degraded, 'rebase-conflict');
         } else {
-          const rebase = git.rebaseOntoFetchHead(opRoot);
-          if (rebase.ok) {
-            sha = rebase.sha;
-            report.set('SHA', sha);
-            if (isCapture && commit.committed && sha !== commit.sha) {
-              if (!protectOrDegrade(callerRoot, sha, report, recoveryState)) {
-                degraded = mergeDegraded(degraded, 'recovery-ref-failed');
-              }
-            }
-          } else if (rebase.reason === 'abort-failed') {
-            // The repository is mid-rebase and could not be aborted: the
-            // tree stays, the old DEGRADED name stays, and on the DIRECT
-            // route the tree the run is standing in IS the recovery
-            // location — the rebase state and the caller's tree are one.
-            degraded = mergeDegraded(degraded, 'rebase-conflict');
-            rebaseBlocked = true;
-            report.set('RECOVERY_PATH', path.resolve(opRoot));
-          } else {
-            degraded = mergeDegraded(degraded, rebase.reason);
-            rebaseBlocked = true;
-          }
+          sha = rebased.sha;
+          report.set('SHA', sha);
+          if (commit.committed && !protectNow(sha)) protectedOk = false;
+          push = protectedOk ? git.pushBranch(boardDir, branch) : { pushed: false, reason: 'recovery-ref-failed' };
         }
       }
-      if (!rebaseBlocked) {
-        const push = git.pushToBase(opRoot, routing.baseBranch);
-        if (push.pushed) {
-          pushed = true;
-        } else {
-          degraded = mergeDegraded(degraded, push.reason);
-        }
-      }
+      if (!push.pushed && !degraded) degraded = mergeDegraded(degraded, push.reason || 'push-refused');
+      if (!push.pushed && degraded === null) degraded = 'push-refused';
     }
+    pushed = push.pushed === true;
+  } else if (!protectedOk) {
+    // An unprotected commit is never rewritten or published.
+    degraded = mergeDegraded(degraded, 'recovery-ref-failed');
   }
-
   report.set('PUSHED', pushed ? 'yes' : 'no');
+  if (!pushed && !degraded) degraded = 'push-refused';
 
-  // ── 8. Recovery release, base advance, cleanup ───────────────────────────
-  const protectedRef = sha ? git.RECOVERY_NS + '/' + sha : null;
-  const protectedHeld = protectedRef ? git.readRef(callerRoot, protectedRef) === sha : false;
-
-  let baseDiverged = false;
-  if (isCapture && commit.committed && sha && routing.baseSha && protectionReady) {
-    // Advance the local base only once, only through this run's commit:
-    // unchecked-out, verified fast-forward, CAS. Normal commits in the
-    // direct route advance their checked-out branch by construction.
-    const advance = git.advanceBaseIfUnlocked(callerRoot, routing.baseBranch, sha, routing.baseSha);
-    baseDiverged = !advance.advanced && advance.reason === 'base-advance-failed';
-    if (!advance.advanced && ((pushed && baseDiverged) || (!pushed && !degraded))) {
-      degraded = mergeDegraded(degraded, advance.reason);
-    }
-  }
-
-  if (isCapture && pushed && protectedHeld && !baseDiverged) {
-    // After verified push, delete only refs this invocation created, and
-    // only whose value still matches; a moved ref stays and is reported.
-    let releasedAll = true;
-    for (const own of recoveryState.owned) {
-      const release = git.releaseOwnedRef(callerRoot, own.ref, own.value);
+  // ── 9. Release what this run created, once the push is verified ──────────
+  if (pushed) {
+    board.touchStamp(boardDir);
+    for (const own of owned) {
+      const release = git.releaseOwnedRef(boardDir, own.ref, own.value);
       if (!release.deleted) {
-        releasedAll = false;
         degraded = mergeDegraded(degraded, release.reason || 'recovery-ref-delete-failed');
         report.set('RECOVERY_REF', own.ref);
       }
     }
-    if (releasedAll && recoveryState.owned.length) report.clear('RECOVERY_REF');
+  } else if (sha && git.readRef(boardDir, git.RECOVERY_NS + '/' + sha) === sha) {
+    report.set('RECOVERY_REF', git.RECOVERY_NS + '/' + sha);
   }
 
-  if (isCapture) {
-    const cond = git.conditionsAt(opRoot);
-    const safe = cond.readable && !(cond.dirty || cond.staged || cond.unmerged || cond.rebasing);
-    // A no-op write carries no new data; any too-large cleanup false
-    // positive is worse than a retained empty tree, so no data means
-    // removable without the protection question.
-    const carriesData = commit.committed;
-    const verified = !carriesData || pushed || protectedHeld;
-    const canRemove = safe && verified;
-    const teardown = git.teardownWorktree(callerRoot, canRemove);
-    if (!teardown.removed) {
-      report.set('RECOVERY_PATH', path.resolve(teardown.path));
-      if (protectedHeld) report.set('RECOVERY_REF', protectedRef);
-      if (canRemove) degraded = mergeDegraded(degraded, 'cleanup-failed');
-    }
-  }
-
-  finish(report, degraded, 0);
+  leave(0);
 }
 
-/** The closing print. `code` carries the final exit: 0, or 1 for a commit
- *  failure the write itself survived. */
-function finish(report, degraded, code = 0) {
-  if (degraded) report.set('DEGRADED', degraded);
-  const out = report.raw();
-  if (out) process.stdout.write(out + '\n');
-  process.exit(code);
-}
-
-module.exports = { main, Report, mergeDegraded, DEGRADED_PRIORITY, boardPaths };
+module.exports = { main, Report, mergeDegraded, DEGRADED_PRIORITY, boardPaths, levelWithRemote };
 
 if (require.main === module) {
   main();
