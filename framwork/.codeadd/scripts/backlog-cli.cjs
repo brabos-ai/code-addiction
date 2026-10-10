@@ -1,43 +1,45 @@
 /**
- * backlog-cli.cjs — Local backlog entry: positional grammar, record capture,
- * stdout rendering, exit codes.
+ * backlog-cli.cjs — The READ entry of the board: positional grammar, stdout
+ * rendering, exit codes. It never writes.
  *
- * Reads BACKLOG_NEW_ID from the environment for add — the legacy allocation
- * path. When it is absent, the id is calculated natively from the chosen
- * operation root by backlog-id.cjs; at 9999 the sequence is refused with
- * ERROR=id-allocation-failed, exit 1, and never a five-digit ticket. Malformed
- * or empty metadata EXPLICITLY supplied fails with the same error.
+ * Reads (`list`, `search`, `get`) resolve the board through backlog-board.cjs,
+ * sync the clone (throttled to once per 30 s, never blocking the read), and
+ * read the clone — never docs/backlog.jsonl in the code checkout. Before
+ * today's keys it prints BOARD_DIR and SYNC (plus SYNC_REASON when SYNC is
+ * degraded, and LOCK_RECLAIMED when a dead lock was taken over). SYNC is
+ * fresh | synced | skipped | degraded; a degraded or skipped sync still
+ * answers from the clone.
  *
- * For record modes (add/update/comment) only, a trailing `--record-file
- * <path>` pair supplies the record; no pair means stdin. The file is read
- * from the caller's cwd, before allocation, and is authoritative: when one
- * is supplied, stdin is never touched — not inspected, not drained. A
- * file-read failure exits 1 with ERROR=record-read-failed before allocation
- * or any persistence. Non-record modes never consume stdin.
+ * BOARD STATES. A project with no board reads as BACKLOG_PRESENT=no, exit 0.
+ * ERROR=board-migration-required, ERROR=board-branch-missing and
+ * ERROR=board-checkout-missing exit 1 and name what to do.
  *
- * Consumes stdin only for add/update/comment. Renders KEY=VALUE lines then
- * raw JSONL rows. Exit codes: 0 success, 1 write failure, 2 caller error.
+ * WRITES ARE REFUSED. add, update, comment, move and remove exit 2 with
+ * ERROR=write-mode and a line naming backlog-commit.cjs, the one write route.
+ * The write grammar is still parsed here and exported, because
+ * backlog-commit.cjs shares it.
  *
- * Read modes (list/search/get) accept a trailing `--ref <git-ref>`: the board and
- * definitions are read with `git show <ref>:docs/...` into a temp root, so the
- * answer is the ref's, not the checked-out copy's. An unreadable ref or a ref
- * without the board is ERROR=ref-read-failed, exit 1. The caller fetches first.
+ * For record modes (add/update/comment) a trailing `--record-file <path>`
+ * pair supplies the record; no pair means stdin. Non-record modes never
+ * consume stdin.
  *
  * Reusable exports: parseInvocation (argv grammar — never interprets an
  * option-looking target ID or search text as a flag), captureRecord (file
- * capture, authoritative over stdin), and renderOperation (result to the
- * KEY=VALUE/JSONL shape). They are exported as functions and guarded against
- * import-time execution, so the native publication entry can parse once,
- * capture the record once and render through the same code instead of
+ * capture, authoritative over stdin), resolveNewId, and renderOperation
+ * (result to the KEY=VALUE/JSONL shape). They are exported as functions and
+ * guarded against import-time execution, so the publication entry can parse
+ * once, capture the record once and render through the same code instead of
  * shelling to this module or duplicating the grammar.
+ *
+ * Exit codes: 0 result, 1 board state or read failure, 2 caller error
+ * (including a write mode).
  */
 
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const core = require('./backlog-core.cjs');
 const idc = require('./backlog-id.cjs');
-const storage = require('./backlog-storage.cjs');
+const board = require('./backlog-board.cjs');
 
 const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   add                       --record-file ticket.json
@@ -48,15 +50,15 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   list    [--all | --status <name>] [--full | --ids]
   search  <query> [--full]
   get     <id>
-Reads also accept a trailing --ref <git-ref> (e.g. origin/main): the board is read from that ref.
-Records also accept stdin when --record-file is absent.
+Reads come from the board clone, synced first. add, update, comment, move and remove
+are writes: run backlog-commit.cjs for those.
 Reads print a seven-field summary by default; --full restores the raw rows.
 `;
 
 const MODES = ['add', 'update', 'comment', 'move', 'remove', 'list', 'search', 'get'];
 const RECORD_MODES = ['add', 'update', 'comment'];
 const RECORD_FILE_FLAG = '--record-file';
-const REF_FLAG = '--ref';
+const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove'];
 
 function usage() {
   process.stderr.write(USAGE);
@@ -83,21 +85,6 @@ function parseInvocation(argv) {
 
   const rest = args;
   const isRecordMode = RECORD_MODES.includes(mode);
-
-  // A read may name the git ref it reads the board from, as a trailing pair.
-  // The first argument of get/search stays the literal target or query.
-  let ref = '';
-  if (!isRecordMode && mode !== 'move' && mode !== 'remove') {
-    const at = rest.indexOf(REF_FLAG, mode === 'list' ? 0 : 1);
-    if (at !== -1) {
-      const value = rest[at + 1];
-      if (value === undefined || value === '' || at !== rest.length - 2) {
-        return { ok: false, error: 'bad-argument', usage: true };
-      }
-      ref = value;
-      rest.splice(at, 2);
-    }
-  }
 
   // Only the surplus portion of a record invocation may carry the trailing
   // file pair. Missing/repeated/nontrailing options are caller errors.
@@ -180,7 +167,7 @@ function parseInvocation(argv) {
         return { ok: false, error: 'bad-argument', usage: true };
       }
     }
-    return { ok: true, mode, filter, view, recordSource, ref };
+    return { ok: true, mode, filter, view, recordSource };
   } else if (mode === 'search') {
     // The first argument is reserved as the literal query — option-looking
     // spellings included — and only --full may follow it.
@@ -200,7 +187,7 @@ function parseInvocation(argv) {
     view = 'full';
   }
 
-  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, view, recordSource, ref };
+  return { ok: true, mode, targetId, moveDir, moveAnchor, filter, query, view, recordSource };
 }
 
 /**
@@ -343,25 +330,27 @@ function renderOperation(result, view = 'summary') {
 }
 
 /**
- * Copy the board and its definitions as they stand at a git ref into a temp
- * root, so a read answers from that ref instead of the checked-out copy. The
- * board must exist at the ref; the definitions may be absent, as on disk.
+ * Resolve the board for a read and sync it. Exits for the states that need a
+ * human. A project with no board answers from an empty root, which renders as
+ * BACKLOG_PRESENT=no.
  *
- * @param {string} cwd
- * @param {string} ref
- * @returns {{ok: true, root: string}|{ok: false}}
+ * @returns {{root: string, header: string[]}}
  */
-function materializeRef(cwd, ref) {
-  // Lazy: the only git the read path touches, through the one module that runs it.
-  const git = require('./backlog-git.cjs');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-backlog-ref-'));
-  fs.mkdirSync(path.join(tmp, 'docs'));
-  for (const file of [storage.BACKLOG_FILE, storage.DEFS_FILE]) {
-    const shown = git.run(['show', `${ref}:${file}`], cwd, { allowFailure: true });
-    if (shown.status === 0) fs.writeFileSync(path.join(tmp, file), shown.stdout, 'utf8');
-    else if (file === storage.BACKLOG_FILE) return { ok: false };
+function boardForRead() {
+  const res = board.resolve(process.cwd());
+  if (res.state === 'none') return { root: res.codeRoot || process.cwd(), header: [] };
+  if (res.state !== 'ready') {
+    process.stdout.write('ERROR=board-' + res.state + '\n');
+    if (res.state === 'migration-required') {
+      process.stdout.write('docs/backlog.jsonl is still in the checkout and no .codeadd/board.json says where the board moved. Ask the framework maintainer to migrate this project to the board branch.\n');
+    } else if (res.state === 'branch-missing') {
+      process.stdout.write('.codeadd/board.json names the branch ' + res.branch + ' but the remote has no such branch. Ask the framework maintainer to migrate this project to the board branch.\n');
+    } else {
+      process.stdout.write('The board clone for ' + (res.key || 'this project') + ' is not on this machine and the remote could not be reached. Connect to the network and retry.\n');
+    }
+    process.exit(1);
   }
-  return { ok: true, root: tmp };
+  return { root: res.boardDir, header: board.syncLines(res, board.sync(res)), res };
 }
 
 /**
@@ -370,7 +359,17 @@ function materializeRef(cwd, ref) {
  * @param {string[]} [argv]
  */
 function main(argv) {
-  const invocation = parseInvocation(argv !== undefined ? argv : process.argv.slice(2));
+  const args = argv !== undefined ? argv : process.argv.slice(2);
+  // A write is refused by name before any parsing, the way the publication
+  // entry refuses a read: one route, one name.
+  if (WRITE_MODES.includes(args[0] || '')) {
+    process.stdout.write('ERROR=write-mode\n');
+    process.stdout.write('backlog-cli.cjs only reads. Run: node .codeadd/scripts/backlog-commit.cjs ' + args[0] + ' ...\n');
+    usage();
+    process.exit(2);
+  }
+
+  const invocation = parseInvocation(args);
 
   if (!invocation.ok) {
     process.stdout.write('ERROR=' + invocation.error + '\n');
@@ -379,46 +378,7 @@ function main(argv) {
   }
 
   const { mode } = invocation;
-  let root = process.cwd();
-  if (invocation.ref) {
-    const fromRef = materializeRef(root, invocation.ref);
-    if (!fromRef.ok) {
-      process.stdout.write('ERROR=ref-read-failed\n');
-      process.exit(1);
-    }
-    root = fromRef.root;
-  }
-
-  // Mode-order note: a file read failure exits BEFORE allocation and
-  // persistence; on the stdin path the allocation carries the metadata
-  // check that today precedes the stdin read, and stays there.
-  let record = null;
-  if (invocation.recordSource && invocation.recordSource.kind === 'file') {
-    record = captureRecord(invocation.recordSource);
-    if (!record.ok) {
-      process.stdout.write('ERROR=' + record.error + '\n');
-      process.exit(1);
-    }
-  }
-
-  let newId = '';
-  if (mode === 'add') {
-    const resolved = resolveNewId(root);
-    if (!resolved.ok) {
-      process.stdout.write('ERROR=id-allocation-failed\n');
-      process.exit(1);
-    }
-    newId = resolved.id;
-  }
-
-  // Stdin capture stays exactly where the legacy contract had it.
-  let rawRecord = '';
-  if (invocation.recordSource && invocation.recordSource.kind === 'stdin') {
-    record = captureRecord(invocation.recordSource);
-    rawRecord = record.raw;
-  } else if (record) {
-    rawRecord = record.raw;
-  }
+  const { root, header } = boardForRead();
 
   const result = core.executeBacklog({
     root,
@@ -428,11 +388,9 @@ function main(argv) {
     moveAnchor: invocation.moveAnchor,
     filter: invocation.filter,
     query: invocation.query,
-    rawRecord,
-    newId
+    rawRecord: '',
+    newId: '',
   });
-
-  if (invocation.ref) fs.rmSync(root, { recursive: true, force: true });
 
   if (!result.ok) {
     if (result.writeFailure) {
@@ -443,7 +401,7 @@ function main(argv) {
     process.exit(2);
   }
 
-  process.stdout.write(renderOperation(result, invocation.view));
+  process.stdout.write((header.length ? header.join('\n') + '\n' : '') + renderOperation(result, invocation.view));
   process.exit(0);
 }
 

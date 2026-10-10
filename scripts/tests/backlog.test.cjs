@@ -861,28 +861,98 @@ test('backlog#067 — L4.8: update sets status and feature in ONE write, leaving
   assert.equal(`${ticket.status} ${ticket.feature} ${ticket.work_id}`, 'refining 0042F null');
 });
 
-test('backlog#068 — get --ref reads the board at a git ref, not the stale checked-out copy', (t) => {
-  const repo = h.makeRepo();
-  t.after(() => repo.cleanup());
-  backlogLine(repo.repo, '0012B', 'ticket', 'planned');
-  repo.git('add', '-A');
-  repo.git('commit', '-q', '-m', 'board: planned');
-  // A feature branch born here keeps `planned`; the board moves on in main.
-  repo.git('checkout', '-q', '-b', 'feat/x');
-  repo.git('checkout', '-q', 'main');
-  fs.writeFileSync(path.join(repo.repo, BACKLOG), '');
-  backlogLine(repo.repo, '0012B', 'ticket', 'in-review');
-  repo.git('commit', '-q', '-am', 'board: in-review');
-  repo.git('checkout', '-q', 'feat/x');
+// ─── F5 — the CLI only reads, and reads the board clone ──────────────────────
 
-  const local = backlog(repo.repo, ['get', '0012B']);
-  assert.match(tickets(local.stdout)[0], /"status":"planned"/);
+const WRITE_MODES = [
+  ['add'], ['update', '0001B'], ['comment', '0001B'], ['move', '0001B', '--top'], ['remove', '0001B'],
+];
 
-  const res = backlog(repo.repo, ['get', '0012B', '--ref', 'main']);
+/** A board fixture whose remote board branch already holds one ticket. */
+function boardWith(t, id, title, status = 'open') {
+  const row = JSON.stringify({
+    id, title, theme: 'general', tldr: title, notes: [], done_when: 'it works', paths: [], grounded: false,
+    status, created_at: '2026-09-20T00:00:00Z', updated_at: '2026-09-20T00:00:00Z', comments: [], work_id: null,
+  });
+  const b = h.makeBoard({ files: { [BACKLOG]: row + '\n' } });
+  t.after(() => b.cleanup());
+  return b;
+}
+
+test('backlog#068 — L2.5: every write mode is refused with ERROR=write-mode, exit 2, naming backlog-commit.cjs, writing nothing', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const warm = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(warm.status, 0, warm.output);
+  const before = h.read(path.join(b.boardDir, BACKLOG));
+  for (const args of WRITE_MODES) {
+    const res = backlog(b.repo, args, { env: b.env, input: validTicket() });
+    assert.equal(res.status, 2, args[0] + ': ' + res.output);
+    assert.match(res.stdout, /ERROR=write-mode/);
+    assert.match(res.stdout, /backlog-commit\.cjs/);
+  }
+  assert.equal(h.read(path.join(b.boardDir, BACKLOG)), before);
+  assert.equal(h.git(b.boardDir, ['status', '--porcelain']).stdout, '');
+});
+
+test('backlog#069 — L2.6: get from a stale feature branch answers the clone, and --ref is an unknown argument', (t) => {
+  const b = boardWith(t, '0012B', 'ticket', 'in-review');
+  // The checkout carries an old copy of the board: it must never be read.
+  h.git(b.repo, ['checkout', '-q', '-b', 'feat/x']);
+  const stale = JSON.stringify({ id: '0012B', title: 'stale', status: 'planned' });
+  h.write(path.join(b.repo, BACKLOG), stale + '\n');
+
+  const res = backlog(b.repo, ['get', '0012B'], { env: b.env });
   assert.equal(res.status, 0, res.output);
+  assert.equal(key(res.stdout, 'BOARD_DIR'), b.boardDir);
+  assert.match(key(res.stdout, 'SYNC'), /^(synced|fresh)$/);
+  assert.equal(key(res.stdout, 'TICKETS_RETURNED'), '1');
   assert.match(tickets(res.stdout)[0], /"status":"in-review"/);
 
-  const bad = backlog(repo.repo, ['get', '0012B', '--ref', 'no-such-ref']);
-  assert.equal(bad.status, 1, bad.output);
-  assert.match(bad.stdout, /ERROR=ref-read-failed/);
+  const ref = backlog(b.repo, ['get', '0012B', '--ref', 'main'], { env: b.env });
+  assert.equal(ref.status, 2, ref.output);
+  assert.match(ref.stdout, /ERROR=bad-argument/);
+});
+
+test('backlog#070 — L2.7: a project with no board reads as BACKLOG_PRESENT=no; the three bad states exit 1', (t) => {
+  const plain = project(t);
+  const none = backlog(plain, ['list'], { env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(none.status, 0, none.output);
+  assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
+  assert.equal(key(none.stdout, 'BOARD_DIR'), undefined);
+
+  const b = boardWith(t, '0001B', 'first');
+  h.write(path.join(b.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: b.bare, branch: 'nope' }));
+  const missing = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(missing.status, 1, missing.output);
+  assert.match(missing.stdout, /ERROR=board-branch-missing/);
+
+  const c = boardWith(t, '0001B', 'first');
+  h.write(path.join(c.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: path.join(c.base, 'gone.git'), branch: 'board' }));
+  const offline = backlog(c.repo, ['list'], { env: c.env });
+  assert.equal(offline.status, 1, offline.output);
+  assert.match(offline.stdout, /ERROR=board-checkout-missing/);
+
+  const d = boardWith(t, '0001B', 'first');
+  h.git(d.repo, ['rm', '-q', '-f', '.codeadd/board.json']);
+  h.write(path.join(d.repo, BACKLOG), '{"id":"0001B"}\n');
+  const old = backlog(d.repo, ['list'], { env: { ...d.env, CODEADD_BOARD_DIR: '' } });
+  assert.equal(old.status, 1, old.output);
+  assert.match(old.stdout, /ERROR=board-migration-required/);
+});
+
+test('backlog#071 — L1.4: a read prints BOARD_DIR and SYNC first, and a failed sync still answers', (t) => {
+  const b = boardWith(t, '0001B', 'first');
+  const first = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(first.status, 0, first.output);
+  assert.deepEqual(first.stdout.split('\n').slice(0, 2), ['BOARD_DIR=' + b.boardDir, 'SYNC=synced']);
+  assert.equal(key(first.stdout, 'TICKETS_RETURNED'), '1');
+
+  const again = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(key(again.stdout, 'SYNC'), 'fresh');
+
+  h.git(b.boardDir, ['remote', 'set-url', 'origin', path.join(b.base, 'gone.git')]);
+  const offline = backlog(b.repo, ['list'], { env: { ...b.env, CODEADD_BOARD_SYNC_TTL_MS: '0' } });
+  assert.equal(offline.status, 0, offline.output);
+  assert.equal(key(offline.stdout, 'SYNC'), 'degraded');
+  assert.equal(key(offline.stdout, 'SYNC_REASON'), 'fetch-failed');
+  assert.equal(key(offline.stdout, 'TICKETS_RETURNED'), '1');
 });

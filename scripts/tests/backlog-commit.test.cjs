@@ -61,7 +61,7 @@ test('backlog-commit#001 — L1.2: a bad mode is a caller error, usage on stderr
   assert.equal(res.status, 2, res.output);
 });
 
-test('backlog-commit#002 — L1.3: list, search, get and changes are refused by name', (t) => {
+test('backlog-commit#002 — L1.3: list, search and get are refused by name', (t) => {
   const b = board(t);
   for (const args of [['list'], ['search', 'provider map'], ['get', '0001B'], ['changes']]) {
     const res = commit(b.repo, args, { env: b.env });
