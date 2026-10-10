@@ -214,7 +214,7 @@ F-block complete, whatever STEP 9 answered. The product's add-build writes it on
 `in-review` as "a pull request is open", which is no longer always true of this repository's board.
 -->
 
-**A ticket on `docs/backlog.jsonl` travels through the four stages and moves on the board as the work
+**A ticket on the project board travels through the four stages and moves on the board as the work
 does.** Each stage carries one line pointing here; **this section is the only place the rules live.**
 What each status MEANS — the nine names, the seven columns, the pairs of a running and a parked status —
 is the product's phase model, `add--backlog/references/phases.md`; this section is the internal procedure.

@@ -165,13 +165,13 @@ Commands and skills install to every provider you select. Subagents install to C
 - `AGENTS.md`: project instructions read by AI coding assistants (replaces `CLAUDE.md` at the repo root)
 - `cli/`: installer CLI published as `codeadd`
 - `mcp/`: the knowledge-graph MCP server (two corpora, selected by `--corpus`), shipped in the npm package
-- `board/`: the read-only backlog board over `docs/backlog.jsonl` — a React/TypeScript app plus a zero-dependency Node server; built by `npm run build:board`, run by `npm run board`. Not carried by the npm package or the main release ZIP
+- `board/`: the read-only backlog board over the project's `board` branch (read through one clone per project) — a React/TypeScript app plus a zero-dependency Node server; built by `npm run build:board`, run by `npm run board`. Not carried by the npm package or the main release ZIP
 - `framwork/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
 - `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repo root, gitignored)
 - `docs/deliveries/`: durable delivery history — closed-out plan archives
 - `docs/delivered.jsonl`: the delivery index every close-out appends to
-- `docs/backlog.jsonl`: the backlog ticket ledger the board reads — one JSON line per ticket
+- `.codeadd/board.json`: the one tracked file under `.codeadd/`; it says where the `board` branch (the backlog ticket ledger the board reads) lives
 
 ## Compatibility
 
