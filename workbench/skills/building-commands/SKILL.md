@@ -7,6 +7,7 @@ description: Use when designing command workflows or refactoring existing comman
 
 <!-- uses:
 - skill: add-final-report
+- skill: add-interaction
 - skill: add-artefact-graph
 - skill: add-framework--build
 - skill: add-framework-injection
@@ -179,6 +180,21 @@ IF [condition]:
   ⛔ DO NOT: [specific action]
   ✅ DO: [correct action]
 ```
+
+### A Stop That Asks
+
+**An internal stop that asks the user anything sends every question at once, through `add-interaction`.** A command or
+skill written here states the stop in this shape, and leaves the format of the question to that skill:
+
+```
+IF A STEP ASKS THE USER ONE OR MORE QUESTIONS:
+  ⛔ DO NOT USE: A structured-question tool, or an option table printed apart from the numbered question
+  ⛔ DO NOT: Write "ask one question, wait, then ask the next"
+  ✅ DO: Collect every question the step needs, number them, give each a RECOMMENDED option and the reason,
+         and WAIT once
+```
+
+A product command takes its question format from the interaction skill it loads, not from this block.
 
 ### Top-of-File Placement
 

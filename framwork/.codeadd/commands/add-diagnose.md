@@ -1,6 +1,7 @@
 # Diagnose - Pre-Decision Investigative Triage
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--delivery-mode
 - skill: add--doc-schemas/references/review.md
@@ -28,6 +29,11 @@
 Investigative triage for ambiguous user reports. Receives a vague symptom or uncertain request, applies the `add--investigation` 5-phase methodology, and delivers a diagnosis + route recommendation (hotfix / feature / extend / no-action). READ-ONLY — does NOT implement fixes or open features.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -347,24 +353,10 @@ Then, after the seven blocks, state the accepted route and that this command nev
 
 ### STEP add-diagnose.handoff Offer the continuation
 
-**This command is READ-ONLY and advisory.** The next activity exists only when the accepted route is
-one an agent can pick up. Print the hotfix invocation only for an accepted hotfix route, and never
-invoke it.
-
-| Accepted route | Next activity |
-|---|---|
-| `hotfix` | `/add-hotfix @docs/diagnose/<file>.md` — it consumes the `## Hotfix Handoff` this report appended |
-| `feature` | `/add-new` — a functional gap becomes a feature |
-| `extend` | `/add-new` or `/add-plan`, per the route's own scope |
-| `no-action` | none — the diagnosis was the deliverable |
-
-Finish the report and its metadata, then ask ONCE for instructions only on the first three rows. A
-`no-action` diagnosis ends normally with no offer.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
-activity and its documents.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-diagnose.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

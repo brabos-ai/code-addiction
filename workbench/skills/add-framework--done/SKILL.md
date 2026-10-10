@@ -7,6 +7,7 @@ description: "Use when a delivered branch is ready to close out — gates it on 
 
 <!-- uses:
 - skill: add-commit
+- skill: add-interaction
 - skill: add-final-report
 - skill: add-plan-authoring
 - skill: add-build-ledger
@@ -104,7 +105,7 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 ## Operation Mode
 
 /add-framework--done [plan]     → Close out the branch implementing that plan (full basename, unique slug substring, or a plain path)
-/add-framework--done            → Resolve the plan from the branch, or ask
+/add-framework--done            → Resolve the plan from the branch, or ask (as one numbered batch)
 /add-framework--done --fix <slug> [--ticket <id>]   → Close out a plan-less fix: no plan, no ledger. The fix record is generated from git and CI facts
 
 **Examples:**
@@ -150,6 +151,8 @@ IF `--ticket` WAS GIVEN WITHOUT `--fix`:
 **Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
+
+That confirmation is one numbered item with a RECOMMENDED line, in the same batch as any other open question (`add-interaction`).
 
 **With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
 
@@ -446,7 +449,7 @@ A deleted artefact matching an existing entry's item is a **deletion, proven by 
 
 Match key, in order: **by `node` id when the item has one** (stable across file moves, exact), **by `find` presence when it does not**.
 
-Ask the user, per deletion: *replaced by this delivery*, or *removed*?
+Ask the user, for every deletion in ONE numbered batch (`add-interaction`), each item with a RECOMMENDED line: *replaced by this delivery*, or *removed*?
 
 - **Replaced** → the old entry gains `status: superseded` and `superseded_by: <this id>`
 - **Removed** → the old entry gains `status: gone`, no `superseded_by`

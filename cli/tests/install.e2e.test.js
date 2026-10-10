@@ -160,6 +160,8 @@ describe('install command e2e', () => {
       'docs-pruning': false,
       // board is opt-in: no project uses the board yet (2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
       board: false,
+      // agent-mode is opt-in: it changes how a command talks (2026-10-09T184411-PLAN--agent-mode-feature).
+      'agent-mode': false,
     });
     // Removing the feature prompt must not disturb the plugin path:
     // plugins stay disabled (empty) by default on a fresh install.

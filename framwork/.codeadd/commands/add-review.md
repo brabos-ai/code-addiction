@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add--commit
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--final-report
 - skill: add--investigation
@@ -41,6 +42,11 @@ re-creates exactly the undeclared references removing them was meant to clear.
 Coordinator for feature review. Dispatches read-only reviewers (Frontend + Backend) in parallel, consolidates every finding into one routed correction contract, and writes a versioned `review-NNN.md`. With the `qa-pipeline` feature enabled it additionally judges the rendered result through the absorbed QA sections; without it, this command is the code review and the spec-compliance audit.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Yolo Mode
 
@@ -234,7 +240,7 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 | Do NOT mark review READY | Any gate red on touched file after re-run | Report gate failure; block review (Gate 6) |
 | Do NOT skip review silently | AGENTS.md has no validation_gates | Emit one-line nudge; continue review (Gate 6) |
 | Do NOT use Bash git commit | Any point in workflow | Use /add--commit skill instead |
-| Do NOT stage files silently | Pre-Review Setup (STEP add-review.setup) | Ask user permission first via AskUserQuestion |
+| Do NOT stage files silently | Pre-Review Setup (STEP add-review.setup) | Follow STEP add-review.check-unstaged: ask first, or on a confirming stop print what is being staged |
 | Do NOT USE Edit or Write on application code | Any point in workflow | Emit a `## Fix Routing` row; `/add-build` applies it |
 | Do NOT instruct a dispatched agent to fix anything | Reviewer or judge dispatch | Dispatch read-only; collect findings |
 | Do NOT dispatch the QA judges | the `qa-pipeline` preflight has a failed `block` row (that row exists only when the feature is enabled) | Report the consolidated diagnosis and its remedy |
@@ -248,23 +254,10 @@ These prohibitions replace all scattered conditional blocks and prevent common m
 
 Check working directory for unstaged/untracked changes.
 
-**Stop kind — confirming.** On `DELIVERY=automatic`, do not ask: print one line naming what is being
-staged and stage it as "If user agrees (Yes)" below does — `/add-build` commits per task, so what is left
-unstaged on an automatic delivery is this delivery's own work. On `confirm`, ask.
-
-**If there are unstaged changes:**
-
-Use AskUserQuestion tool to ask the user:
-
-```
-Detected uncommitted changes in your working directory.
-
-To include the changes in the next commit along with review corrections, I can stage them (git add).
-
-Can I stage your changes?
-- Yes: I stage and proceed with the review
-- No: I keep as-is and proceed (changes remain unstaged)
-```
+<!-- slot:agent-mode.staging-consent fallback="fallbacks/agent-mode.add-review.staging-consent.md" -->
+<!-- feature:agent-mode:staging-consent -->
+<!-- /feature:agent-mode:staging-consent -->
+<!-- /slot:agent-mode.staging-consent -->
 
 **If user agrees (Yes):**
 
@@ -940,21 +933,10 @@ line becomes the verdict.
 
 ### STEP add-review.handoff Offer the continuation
 
-**A review never inherits the automatic path — but a review can be run inside one.** Nothing hands a
-delivery to `/add-review`, so the review itself never gains automatic execution: it always stops, and
-the user always runs the next command. What the carrier changes is only whether a person is there to
-answer.
-
-| How the review was invoked | Ending |
-|---|---|
-| By hand, no automatic carrier | `confirm` — finish the report, then ask ONCE for fresh-context instructions, then wait |
-| From inside an automatic delivery | Stop under the rule above. **No offer** — there is no one at the keyboard to answer it, and a question the delivery cannot answer is noise |
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. The
-`BLOCKED`-with-only-manual-routes row is the no-activity case: it offers nothing, because the
-remaining work is the user's to do by hand.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-review.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **On a correction, the block carries the CURRENT review and never a superseded one.** Name this
 `review-NNN.md` and its `## Fix Routing`, keep each finding's identity and the decision that

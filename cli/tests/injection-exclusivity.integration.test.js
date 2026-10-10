@@ -14,6 +14,7 @@ import { enablePlugin, disablePlugin } from '../src/plugins.js';
 import { parseFragmentSections, resolvePlaceholders } from '../src/injection-core.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
+import { TOTAL_POINTS } from './helpers/agent-mode-points.js';
 
 /**
  * Exhaustive substitution matrix: every sidecar point, every fragment section,
@@ -342,13 +343,13 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // 65 -> 66: feature:board adds add-build's in-review write (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F27+F28).
   // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
-  it('sidecar, fragments, and catalog declare the same 71 substitutions', () => {
+  it('sidecar, fragments, and catalog declare the same substitutions: 71 plus the agent-mode sections', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
     const all = [...features, ...plugins];
-    expect(points).toHaveLength(71);
-    expect(all).toHaveLength(71);
+    expect(points).toHaveLength(TOTAL_POINTS());
+    expect(all).toHaveLength(TOTAL_POINTS());
 
     const pointKeys = new Set(points.map(pointKey));
     const fragKeys = new Set(all.map((e) => `${e.namespace}:${e.name}:${e.section}:${e.kind}:${e.resource}`));
@@ -454,10 +455,10 @@ describe('plugin substitution on real built files', () => {
 describe('combined substitution and sibling isolation', () => {
   useFixture();
 
-  it('all 71 full blocks land exactly once when every feature and plugin is enabled', () => {
+  it('every full block lands exactly once when every feature and plugin is enabled', () => {
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();
-    expect(features.length + plugins.length).toBe(71);
+    expect(features.length + plugins.length).toBe(TOTAL_POINTS());
 
     for (const f of FEATURE_NAMES) enableFeature(tmp, f);
     for (const p of PLUGIN_NAMES) expect(enablePlugin(tmp, p).ok).toBe(true);

@@ -21,10 +21,10 @@ array has a length.
 
 [//]: # (codeadd-inventory:start)
 {"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
-{"skills":["add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--id-convention","add--investigation","add--knowledge-discovery","add--optimizing-git-workflow","add--plan-based-features","add--plan-review","add--project-scaffolding","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--skill-creator","add--stripe","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
+{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--optimizing-git-workflow","add--plan-based-features","add--plan-review","add--project-scaffolding","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--skill-creator","add--stripe","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["backlog-cli.cjs","backlog-commit.cjs","backlog-core.cjs","backlog-git.cjs","backlog-id.cjs","backlog-storage.cjs","build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
-{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
 ### Product Layer — `mcp/`
@@ -214,6 +214,8 @@ Optional features inject content into commands **post-install**, so they can be 
 | `tdd-pipeline` | enabled | add-plan, add-build, add-review, add-hotfix |
 | `qa-pipeline` | disabled | add-plan, add-build, add-review |
 | `docs-pruning` | disabled | add-done |
+| `board` | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix |
+| `agent-mode` | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki |
 
 ## Plugin System
 
@@ -285,4 +287,6 @@ This file deliberately stops at the overview. Load the owner when you need the m
 | How a command closes its final report | product `add--final-report`, internal `add-final-report` — one per layer, deliberately not shared |
 | Setup-contract comparison | `add--setup-contract` |
 | A script's contract and exit codes | that script's own header, plus its native `scripts/tests/<name>.test.cjs` suite |
+| How an internal stop asks the user | `add-interaction` |
+| How a product command talks to a person or to a bot | `add--human-interaction` / `add--agent-interaction`, chosen by each command's `agent-mode.interaction` slot |
 | Injection anchor internals | `cli/src/injection-core.js` |

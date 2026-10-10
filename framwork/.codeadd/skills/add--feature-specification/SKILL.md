@@ -88,7 +88,7 @@ already names.
 | `## Open` reads | Ask |
 |---|---|
 | The literal `None` | Nothing. Go to 2.3 |
-| One or more bullets | Those items, and only those — one question per turn |
+| One or more bullets | Those items, and only those |
 | The section is absent, empty, or the file is missing | The full set of questions this skill would ask with no input at all |
 
 ⛔ **A `## Open` section that is present but empty is read as absent.** A missing signal means "not
@@ -96,9 +96,8 @@ closed", never "closed". Falling the wrong way here produces a document built fr
 made.
 
 **Every question carries a concrete recommendation** — which option this skill would take and why,
-drawn from the codebase and from what the intent file already settled. Ask through the provider's
-structured-question tool where the `structuredQuestions` capability says one exists; otherwise present
-an option table with the recommendation marked.
+drawn from the codebase and from what the intent file already settled. How the questions are asked
+belongs to the interaction skill the command loaded.
 
 ### 2.3 The confirmation screen
 

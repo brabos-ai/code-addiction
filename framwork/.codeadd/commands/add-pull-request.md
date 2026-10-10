@@ -1,9 +1,10 @@
 # Pull Request — Create or Update
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--commit
 - skill: add--doc-schemas
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--final-report
 - skill: add--id-convention
 - mention: add--ecosystem
@@ -16,6 +17,11 @@
 Idempotent PR command for the current branch. Detects whether a PR already exists: creates a new one or appends an update section to the existing body. On feature branches, generates the permanent feature changelog before opening the PR so it ships as part of the diff.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -357,21 +363,10 @@ State that a delivery index entry is still owed and that `{{cmd:add-done}}` is w
 
 ### STEP add-pull-request.handoff Offer the continuation
 
-**This command opens a PR and stops. It never merges, and the merge is always the user's.**
-
-| State | Next activity |
-|---|---|
-| PR open, awaiting review | none — a human reviews it; there is no agent activity to continue into |
-| PR merged on GitHub | `/add-done` — cleanup local branch and tags |
-| Scope grew, PR needs updating | `/add-pull-request` — idempotent, appends an update section |
-
-Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
-A PR waiting on a human reviewer is the no-activity case and ends normally with no offer — offering
-"/add-done" before the merge would send the user into a command whose gates cannot pass yet.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-pull-request.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

@@ -5,6 +5,7 @@
 - skill: add--cross-sf-consistency
 - skill: add--database-development
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--doc-schemas
 - skill: add--feature-discovery
 - skill: add--final-report
@@ -46,6 +47,11 @@ Coordinator for technical planning. Loads context, dispatches specialized subage
 
 ---
 
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
+
 ## Required Skills
 
 Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-plan.context (schemas, IDs, universal doc rules). Apply `{{skill:add--id-convention/SKILL.md}}` for ID/branch format. Load `{{skill:add--plan-review/SKILL.md}}` before STEP add-plan.review (pre-delivery review rubric + verdict contract).
@@ -64,10 +70,10 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-plan.context (schemas
 | `coverage_validated` | STEP add-plan.coverage | Coverage < 100% | STOP, resolve gaps (add tasks or document exclusions), re-validate before finalizing | deciding |
 | `plan_reviewed` | STEP add-plan.review | `@plan-reviewer-agent` verdict is `blocked`, blockers remain after the re-dispatch `add--review-discipline` allows, or `@consistency-agent` leaves a conflict standing | STOP, present the blockers to the user; NEVER proceed to STEP add-plan.complete Completion | deciding |
 
-**Stop kind** follows `{{skill:add--delivery-mode/SKILL.md}}`: a **deciding** stop waits on every
-delivery mode; a **confirming** stop waits only on `confirm`, and on `automatic` prints what it would
-have shown and continues. Every gate above that stops is deciding — each presents a failure or a choice
-no approval covered.
+<!-- slot:agent-mode.stop-kinds fallback="fallbacks/agent-mode.add-plan.stop-kinds.md" -->
+<!-- feature:agent-mode:stop-kinds -->
+<!-- /feature:agent-mode:stop-kinds -->
+<!-- /slot:agent-mode.stop-kinds -->
 
 ---
 
@@ -611,10 +617,10 @@ IF COMPOSING THE PREVIEW:
   ✅ DO: Compose the five items from the analysis in hand, and print them
 ```
 
-**Stop kind — confirming.** The preview reports a plan the brainstorm's approval already covered. On
-`DELIVERY=confirm`, wait for the user to correct it or wave it through; on `automatic`, print it and
-continue. **On an automatic delivery it is the one moment the user can see what is being decided
-without them** — which is why it prints in full.
+<!-- slot:agent-mode.preview-wait fallback="fallbacks/agent-mode.add-plan.preview-wait.md" -->
+<!-- feature:agent-mode:preview-wait -->
+<!-- /feature:agent-mode:preview-wait -->
+<!-- /slot:agent-mode.preview-wait -->
 
 **Schema load (MANDATORY):** Execute schema `feature-plan` from `{{skill:add--doc-schemas/SKILL.md}}`. Reuse `[NNNN]F` from about.md. Apply cache technique per skill.
 
@@ -868,23 +874,17 @@ Then, after the seven blocks, state:
 - Key metrics (endpoint count, task count, RF/RN count)
 - Plan review verdict from STEP add-plan.review, and a one-line summary of any applied fixes
 
-**Stop kind — confirming.** The report describes a plan the brainstorm's approval already covered.
-
-| `DELIVERY` | Do |
-|---|---|
-| `confirm` | Offer the continuation under `chat-continuation-eligibility-v1`, then STOP |
-| `automatic` | Print the report and the line `(delivering automatically — continuing to /add-build.)`, then follow {{cmd:add-build}} with this feature's id, from its first step, as `add--delivery-mode` describes |
+<!-- slot:agent-mode.closing-route fallback="fallbacks/agent-mode.add-plan.closing-route.md" -->
+<!-- feature:agent-mode:closing-route -->
+<!-- /feature:agent-mode:closing-route -->
+<!-- /slot:agent-mode.closing-route -->
 
 ### STEP add-plan.handoff Offer the continuation — `confirm`
 
-**On `confirm`, finish the report, then its metadata, and only then ask ONCE whether the user wants
-instructions for continuing in a fresh context.** Then stop and wait.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
-activity and its documents. A plan that was not written — the light path, a blocked review — offers
-nothing.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-plan.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

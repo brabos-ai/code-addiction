@@ -1,6 +1,6 @@
 ---
 name: add--delivery-mode
-description: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, who is offered the optional fresh-context continuation and why, how one command hands off to the next, and where the automatic path ends."
+description: "Use when a pipeline command reaches a stop or its closing handoff — the two delivery modes and where each is carried, which stops wait in each mode, where the optional fresh-context continuation is decided, how one command hands off to the next, and where the automatic path ends."
 ---
 
 # Delivery Mode
@@ -12,7 +12,7 @@ description: "Use when a pipeline command reaches a stop or its closing handoff 
 - mention: /add-build
 - mention: /add-review
 - mention: /add-done
-- skill: add--final-report
+- mention: add--human-interaction
 - mention: add--doc-schemas
 - mention: add--review-discipline
 -->
@@ -120,47 +120,18 @@ IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
 
 ## Handing Off to the Next Command
 
-**This section is `chat-continuation-eligibility-v1`: WHO is offered a handoff, and in what form.**
-What the accepted handoff contains is `chat-continuation-output-v1`, owned by
-`{{skill:add--final-report/SKILL.md}}` — load it there rather than restating the shape. It also owns
-the two turns, so this section decides only whether the first one happens.
+**Who is offered a handoff, and in what form, belongs to the interaction skill the command loaded.**
+When none was loaded the command is read as human, and `{{skill:add--human-interaction/SKILL.md}}` owns
+both contracts — `chat-continuation-eligibility-v1` and `chat-continuation-output-v1`. This section
+decides only what `automatic` does at the end of a command.
 
 | Mode | At the end of a command |
 |---|---|
-| `confirm` | Offer the optional fresh-context instructions once, after the report and its metadata, then stop |
+| `confirm` | What the interaction skill the command loaded says — after the report and its metadata |
 | `automatic` | Print the next command, then **open the next command's file and follow it** |
-
-**`confirm` no longer prints an invocation nobody asked for.** The user already knows how to type the
-next command; what they do not know is which decisions the run settled, and a bare command line
-throws that away. So the manual ending is one localized yes/no question, and the instruction text is
-the user's to ask for.
-
-```
-IF THE RUN ENDED ON confirm AND A REAL NEXT ACTIVITY EXISTS:
-  ✅ DO: Finish the full report, then ask ONCE whether to receive instructions for a fresh context
-  ✅ DO: Wait — the answer comes in the next turn, and only acceptance produces the block
-  ⛔ DO NOT: Print the full invocation before the user asks for it
-  ⛔ DO NOT: Write a handoff file, or offer to run the next command
-
-IF THERE IS NO REAL NEXT ACTIVITY:
-  ⛔ DO NOT: Offer, and DO NOT: invent an activity to offer
-  ✅ DO: Finish the report normally — a completed run, a healthy audit and a merged branch all end here
-```
-
-**"A real next activity" is one the user would plausibly start.** The command that follows in the
-pipeline, the fix a diagnosis routed to, the review a build left open. It is not a suggestion you
-generated because the report felt short, and it is not a feature nobody asked for.
 
 **A run with no mode carrier is `confirm`.** There is no third state to infer, and never read the
 mode off how the user has been talking.
-
-⛔ **A deciding stop is never replaced by the offer.** A blocker, a red build, a push, the publish
-question and every stop in `/add-done` keep their own handling. The offer is what a command does when
-it has finished, not a substitute for a question it owes.
-
-⛔ **Semi-automatic keeps its own decision.** Between subfeatures it stops and asks whether to
-continue — that question is the one it already asked. It does not also offer continuation
-instructions. Inside a subfeature it behaves as `automatic`.
 
 **`automatic` is untouched.** It prints the handoff it always printed and follows the next command
 in this same session. Nothing here adds an offer to it.
@@ -211,12 +182,9 @@ ALWAYS:
 - Print a confirming stop's content in full before passing it on `automatic`
 - Classify a stop by the state it runs in, and call a doubtful one deciding
 - Hand off on `automatic` by reading the next command's file and running it from its first step
-- Offer the continuation once on `confirm`, after the report's metadata, and only for a real next activity
+- Take the offer, and whether one is made, from the interaction skill the command loaded
 
 NEVER:
 - Reach `/add-done` without the user running it
 - Hand an automatic delivery to `/add-review`
 - Re-ask the delivery mode after `/add-brainstorm` recorded it
-- Print the full next-command invocation on `confirm` before the user asks for it
-- Offer continuation when no real next activity exists, or from a worker or nested step
-- Substitute the offer for a deciding stop

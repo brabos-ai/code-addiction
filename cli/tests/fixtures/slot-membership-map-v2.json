@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 71,
-  "slotCount": 64,
+  "membershipCount": 113,
+  "slotCount": 106,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -284,11 +284,91 @@
       ]
     },
     {
+      "resource": "command/add-audit",
+      "file": "framwork/.codeadd/commands/add-audit.md",
+      "kind": "command",
+      "name": "add-audit",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-audit.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "resource": "command/add-brainstorm",
       "file": "framwork/.codeadd/commands/add-brainstorm.md",
       "kind": "command",
       "name": "add-brainstorm",
       "slots": [
+        {
+          "id": "agent-mode.output-cap",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.output-cap.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "board.ticket-resolve",
           "fallback": "fallbacks/empty.md",
@@ -322,6 +402,78 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-refining"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.cap-scope",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.cap-scope.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "cap-scope"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "cap-scope"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.objective-draft",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.objective-draft.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "objective-draft"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "objective-draft"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.cadence",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.cadence.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "cadence"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "cadence"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.structured-ask",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.structured-ask.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "structured-ask"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "structured-ask"
             }
           ]
         },
@@ -362,6 +514,24 @@
           ]
         },
         {
+          "id": "agent-mode.approval-ask",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.approval-ask.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "approval-ask"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "approval-ask"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-intent",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -396,6 +566,42 @@
               "section": "ticket-shaped"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.rules-cadence",
+          "fallback": "fallbacks/agent-mode.add-brainstorm.rules-cadence.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "rules-cadence"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "rules-cadence"
+            }
+          ]
         }
       ]
     },
@@ -405,6 +611,24 @@
       "kind": "command",
       "name": "add-build",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "board.ticket-doing",
           "fallback": "fallbacks/empty.md",
@@ -598,6 +822,24 @@
           ]
         },
         {
+          "id": "agent-mode.checkpoint-route",
+          "fallback": "fallbacks/agent-mode.add-build.checkpoint-route.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "checkpoint-route"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "checkpoint-route"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-in-review",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -668,6 +910,24 @@
               "section": "next-command"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-build.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -677,6 +937,24 @@
       "kind": "command",
       "name": "add-diagnose",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "gitnexus.graph-trace",
           "fallback": "fallbacks/empty.md",
@@ -694,6 +972,24 @@
               "section": "graph-trace"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-diagnose.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -703,6 +999,24 @@
       "kind": "command",
       "name": "add-done",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "docs-pruning.prune",
           "fallback": "fallbacks/empty.md",
@@ -718,6 +1032,24 @@
               "namespace": "feature",
               "name": "docs-pruning",
               "section": "prune"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.ci-watch",
+          "fallback": "fallbacks/agent-mode.add-done.ci-watch.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "ci-watch"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "ci-watch"
             }
           ]
         },
@@ -792,6 +1124,24 @@
               "section": "ticket-report"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-done.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -801,6 +1151,24 @@
       "kind": "command",
       "name": "add-hotfix",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "board.ticket-resolve",
           "fallback": "fallbacks/empty.md",
@@ -908,6 +1276,24 @@
               "section": "ticket-report"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-hotfix.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -917,6 +1303,42 @@
       "kind": "command",
       "name": "add-new",
       "slots": [
+        {
+          "id": "agent-mode.output-cap",
+          "fallback": "fallbacks/agent-mode.add-new.output-cap.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "output-cap"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "board.ticket-intent-field",
           "fallback": "fallbacks/empty.md",
@@ -990,6 +1412,24 @@
           ]
         },
         {
+          "id": "agent-mode.confirm-wait",
+          "fallback": "fallbacks/agent-mode.add-new.confirm-wait.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "confirm-wait"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "confirm-wait"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-shaped",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1006,6 +1446,42 @@
               "section": "ticket-shaped"
             }
           ]
+        },
+        {
+          "id": "agent-mode.closing-route",
+          "fallback": "fallbacks/agent-mode.add-new.closing-route.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-new.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -1016,17 +1492,53 @@
       "name": "add-plan",
       "slots": [
         {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.stop-kinds",
+          "fallback": "fallbacks/agent-mode.add-plan.stop-kinds.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "stop-kinds"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "stop-kinds"
+            }
+          ]
+        },
+        {
           "id": "plan-specs",
           "fallback": "fallbacks/plan-specs.md",
           "sourceOrder": [
             {
               "namespace": "feature",
-              "name": "qa-pipeline",
+              "name": "tdd-pipeline",
               "section": "step-list"
             },
             {
               "namespace": "feature",
-              "name": "tdd-pipeline",
+              "name": "qa-pipeline",
               "section": "step-list"
             }
           ],
@@ -1116,6 +1628,24 @@
           ]
         },
         {
+          "id": "agent-mode.preview-wait",
+          "fallback": "fallbacks/agent-mode.add-plan.preview-wait.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "preview-wait"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "preview-wait"
+            }
+          ]
+        },
+        {
           "id": "board.ticket-done-when",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1150,6 +1680,166 @@
               "section": "ticket-planned"
             }
           ]
+        },
+        {
+          "id": "agent-mode.closing-route",
+          "fallback": "fallbacks/agent-mode.add-plan.closing-route.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "closing-route"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-plan.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-pull-request",
+      "file": "framwork/.codeadd/commands/add-pull-request.md",
+      "kind": "command",
+      "name": "add-pull-request",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-pull-request.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "command/add-qa-setup",
+      "file": "framwork/.codeadd/commands/add-qa-setup.md",
+      "kind": "command",
+      "name": "add-qa-setup",
+      "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.install-confirm",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.install-confirm.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "install-confirm"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "install-confirm"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.config-values",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.config-values.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "config-values"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "config-values"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-qa-setup.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -1159,6 +1849,24 @@
       "kind": "command",
       "name": "add-review",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "tdd-pipeline.step-list",
           "fallback": "fallbacks/empty.md",
@@ -1192,6 +1900,24 @@
               "namespace": "feature",
               "name": "qa-pipeline",
               "section": "step-list"
+            }
+          ]
+        },
+        {
+          "id": "agent-mode.staging-consent",
+          "fallback": "fallbacks/agent-mode.add-review.staging-consent.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "staging-consent"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "staging-consent"
             }
           ]
         },
@@ -1278,6 +2004,24 @@
               "section": "drive"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-review.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     },
@@ -1287,6 +2031,24 @@
       "kind": "command",
       "name": "add-wiki",
       "slots": [
+        {
+          "id": "agent-mode.interaction",
+          "fallback": "fallbacks/agent-mode.interaction.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "interaction"
+            }
+          ]
+        },
         {
           "id": "gitnexus.graph-classify",
           "fallback": "fallbacks/empty.md",
@@ -1394,11 +2156,261 @@
               "section": "graph-contract"
             }
           ]
+        },
+        {
+          "id": "agent-mode.offer",
+          "fallback": "fallbacks/agent-mode.add-wiki.offer.md",
+          "sourceOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "feature",
+              "name": "agent-mode",
+              "section": "offer"
+            }
+          ]
         }
       ]
     }
   ],
   "fragments": [
+    {
+      "id": "product/fragment/fragments/agent-mode/add-audit.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-audit",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-brainstorm.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-brainstorm",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-diagnose",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-hotfix",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-build.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-diagnose.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-diagnose",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-hotfix",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-done.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-done",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-new",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-hotfix.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-hotfix",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-new.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-new",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--delivery-mode",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-pull-request.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-done",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-pull-request",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-qa-setup.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-qa-setup",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/command/add-review",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-review.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-build",
+          "via": "HANDS_OFF_TO"
+        },
+        {
+          "id": "product/command/add-review",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/fragments/agent-mode/add-wiki.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-wiki",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--agent-interaction",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
     {
       "id": "product/fragment/fragments/board/add-brainstorm.md",
       "dependencies": [

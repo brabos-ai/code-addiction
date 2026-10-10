@@ -2,6 +2,7 @@
 
 <!-- uses:
 - skill: add-final-report
+- skill: add-interaction (conditional)
 - mention: add-framework--done
 -->
 
@@ -50,7 +51,7 @@ IF THE OPERATION OR ITS TARGET IS NOT RESOLVED (STEP 2 incomplete):
   ⛔ DO NOT USE: Bash to run the publication entry
   ⛔ DO NOT: Guess which ticket the user meant
   ⛔ DO NOT: Fall back to adding a new ticket when an update, a close or a move was asked for
-  ✅ DO: Name the candidates, or say the ticket was not found, and STOP
+  ✅ DO: Name the candidates as one numbered item (`add-interaction`), or say the ticket was not found, and STOP
 
 IF EXECUTING STEP 3 (the project check):
   ⛔ DO NOT USE: Agent or any subagent dispatch
@@ -132,7 +133,7 @@ IF THE TEXT NAMES A TICKET THAT DOES NOT EXIST:
 
 IF MORE THAN ONE TICKET MATCHES:
   ⛔ DO NOT: Pick the closest
-  ✅ DO: Name every candidate and STOP
+  ✅ DO: Name every candidate as one numbered item (`add-interaction`) and STOP
 ```
 
 For a **move**, resolve the position too: the top, the bottom, or directly after a ticket the text

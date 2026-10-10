@@ -3,6 +3,7 @@
 <!-- uses:
 - skill: add--doc-schemas
 - skill: add--delivery-mode
+- skill: add--human-interaction (conditional)
 - skill: add--feature-specification
 - skill: add--final-report
 - skill: add--id-convention
@@ -22,9 +23,12 @@
 -->
 
 > **REF:** `AGENTS.md` for architecture patterns
-> **OUTPUT:** Max 20 words per response. Tables/lists are exceptions. Straight to the point.
-> **The closing report at `## Completion` is exempt** — it reports in the shape `add--final-report`
-> owns, and a 20-word stub is not that shape.
+
+<!-- slot:agent-mode.output-cap fallback="fallbacks/agent-mode.add-new.output-cap.md" -->
+<!-- feature:agent-mode:output-cap -->
+<!-- /feature:agent-mode:output-cap -->
+<!-- /slot:agent-mode.output-cap -->
+
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 Full feature discovery command BEFORE implementation.
@@ -32,6 +36,11 @@ Full feature discovery command BEFORE implementation.
 **IMPORTANT:** This command is READ-ONLY for project code. May only create/edit documentation in `docs/features/`.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## STEP add-new.load: Load Skills + Validate Context
 
@@ -237,27 +246,10 @@ IF A DECISION IS ALREADY UNDER `## Decided` IN THE INTENT FILE:
   ✅ DO: Show it on the confirmation screen as settled, and move on
 ```
 
-**What the user sees depends on what is left open:**
-
-| `## Open` in the intent file | This STEP |
-|---|---|
-| Reads `None` | The confirmation screen alone. One screen, no questions |
-| Lists items | Those questions, one per turn, then the confirmation screen |
-| Absent, empty, or no intent file at all | The skill’s full question set, then the confirmation screen |
-
-**STOP AND WAIT after the confirmation screen** — except where the table below says the stop passes.
-The user corrects an extraction error or waves it through. **The approval never scales away — only the
-interrogation does.**
-
-**Stop kind — decided by what is left open:**
-
-| State | Kind | On `delivery: automatic` |
-|---|---|---|
-| `## Open` reads `None` | **confirming** | Print the confirmation screen in full and continue to STEP add-new.decompose — the brainstorm's approval already covered it |
-| `## Open` lists items | **deciding** | Ask them and wait — no approval answered them |
-| Absent, empty, or no intent file | **deciding** | Wait — there is no approval to have covered anything |
-
-On `delivery: confirm` every row waits.
+<!-- slot:agent-mode.confirm-wait fallback="fallbacks/agent-mode.add-new.confirm-wait.md" -->
+<!-- feature:agent-mode:confirm-wait -->
+<!-- /feature:agent-mode:confirm-wait -->
+<!-- /slot:agent-mode.confirm-wait -->
 
 ⛔ **A confirmation screen that asks questions is a questionnaire wearing a different name.** It
 restates what is about to be written and invites a correction. It does not re-open settled decisions.
@@ -443,25 +435,20 @@ user, not with what the document contains.
 
 Then, after the seven blocks, summarize the created artifacts. Name the next activity in ordinary prose based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`'s own UX step when the feature touches UI), `/add-build` for implementation. ⛔ Do not print its full invocation here — `STEP add-new.handoff` puts that behind the offer.
 
-**Stop kind — confirming.** The report describes work the brainstorm's approval already covered.
-
-| `delivery:` | Do |
-|---|---|
-| `confirm`, or absent | Offer the continuation under `chat-continuation-eligibility-v1`, then STOP |
-| `automatic` | Print the report and the line `(delivering automatically — continuing to /add-plan.)`, then follow {{cmd:add-plan}} with this feature's id, from its first step, as `add--delivery-mode` describes |
+<!-- slot:agent-mode.closing-route fallback="fallbacks/agent-mode.add-new.closing-route.md" -->
+<!-- feature:agent-mode:closing-route -->
+<!-- /feature:agent-mode:closing-route -->
+<!-- /slot:agent-mode.closing-route -->
 
 ⛔ **On `automatic` the next command is always `/add-plan`, never `/add-build`.** The plan is where the
 objective reaches the reviewer and where an epic's consistency check runs.
 
 ### STEP add-new.handoff Offer the continuation — `confirm`
 
-**On `confirm`, finish the report, then its metadata, and only then ask ONCE whether the user wants
-instructions for continuing in a fresh context.** Then stop and wait.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here. This step supplies only the next
-activity and its documents; `automatic` never reaches it.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-new.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

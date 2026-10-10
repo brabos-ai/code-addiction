@@ -6,9 +6,10 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--dev-environment-setup
 - skill: add--doc-schemas
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--final-report
 - skill: add--qa
 - skill: add--qa-migration
@@ -27,6 +28,11 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow when the scan finds tooling it has no recorded decision for (confirm-then-dogfood), and proves the setup with the deterministic QA preflight — the first real `/add-review` is what proves QA end to end. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -255,7 +261,10 @@ Build a gap list distinguishing **missing** from **present-but-non-functional** 
 
 ## STEP add-qa-setup.install: Install Prerequisites (confirm-then-execute + functional verify)
 
-For each missing or non-functional prerequisite, show the EXACT command, explain what it does, then **WAIT for explicit confirmation** before running it. Never batch-run without confirmation. After each install, **functionally verify** it (re-run the STEP add-qa-setup.diagnose trivial invocation) — a successful install is one whose invocation now works, not one that merely completed.
+<!-- slot:agent-mode.install-confirm fallback="fallbacks/agent-mode.add-qa-setup.install-confirm.md" -->
+<!-- feature:agent-mode:install-confirm -->
+<!-- /feature:agent-mode:install-confirm -->
+<!-- /slot:agent-mode.install-confirm -->
 
 **Who runs the install.** This command runs `npm`/`npx` installs itself (`npm i -D @playwright/test`, `npx playwright install chromium`, `@playwright/mcp`) after the confirmation above. Anything that needs `sudo` or an interactive installer follows `{{skill:add--dev-environment-setup/SKILL.md}}` instead: show the command, the user runs it, then verify it functionally.
 
@@ -313,7 +322,10 @@ The skeleton to write is declared in `## Materializes` → `<provider skills dir
 
 Target: `docs/qa/config.json` (git-tracked, project-wide).
 
-If it exists → per-key merge: keep every existing key (including extras the user added). Fill missing declared keys with defaults. Never drop a user key. Confirm/refresh values with the user; do not silently overwrite a user-edited value with the default. If absent → create it interactively, asking for the project-specific values (do NOT guess base URL or auth/seed flow).
+<!-- slot:agent-mode.config-values fallback="fallbacks/agent-mode.add-qa-setup.config-values.md" -->
+<!-- feature:agent-mode:config-values -->
+<!-- /feature:agent-mode:config-values -->
+<!-- /slot:agent-mode.config-values -->
 
 Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values are free-text hints; viewports default to the declared set.
 
@@ -467,22 +479,10 @@ Then, after the seven blocks, tell the user, in order:
 
 ### STEP add-qa-setup.offer Offer the continuation
 
-**Item 8 above is a real next activity whenever the audit can run.** Where it cannot — no feature
-yet, no `screens.json`, an unavailable MCP server — the remaining steps are the user's own manual
-work and there is nothing to continue into.
-
-| State | Next activity |
-|---|---|
-| Feature exists and the audit can run | `/add-review` on the feature, scoped to the SFxx subfeature when one exists — its QA sections validate the rendered result (UX + functional) |
-| No feature or no `screens.json` yet | none — build the feature first |
-| Migration branch awaiting review | none — that is a human review of an open PR |
-
-Finish the ordered hand-off list, then its metadata, then ask ONCE for instructions only on the first
-row.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-qa-setup.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withFallbacks } from './helpers/with-fallbacks.js';
 
 /**
  * Plan 2026-09-11T014333 — product close-out parity.
@@ -75,7 +76,7 @@ const GATE_SWEEP = ['convergeGates', 'convergeTest', 'commit', 'ecosystem'];
 
 const NL = String.fromCharCode(10);
 const exists = (p) => fs.existsSync(p);
-const read = (p) => (exists(p) ? fs.readFileSync(p, 'utf8') : '');
+const read = (p) => (exists(p) ? withFallbacks(fs.readFileSync(p, 'utf8')) : '');
 
 /** The `<!-- uses: -->` block, or '' when the artefact declares none. */
 function uses(text) {

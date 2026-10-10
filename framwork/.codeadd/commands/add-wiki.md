@@ -1,15 +1,14 @@
 # Wiki Knowledge Base Generator
 
 <!-- uses:
+- skill: add--human-interaction (conditional)
 - skill: add--architecture-discovery
 - skill: add--agents-md-style
 - skill: add--doc-schemas
-- skill: add--delivery-mode
+- skill: add--delivery-mode (conditional)
 - skill: add--ecosystem
 - skill: add--final-report
 - skill: add--wiki-maintenance
-- mention: /add-audit
-- mention: /add-new
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
 - script: migrate-context-files.cjs
@@ -20,6 +19,11 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
 ---
+
+<!-- slot:agent-mode.interaction fallback="fallbacks/agent-mode.interaction.md" -->
+<!-- feature:agent-mode:interaction -->
+<!-- /feature:agent-mode:interaction -->
+<!-- /slot:agent-mode.interaction -->
 
 ## Required Skills
 
@@ -811,22 +815,10 @@ grep -ri "<term>" .codeadd/wiki/**/*.md
 
 ### STEP add-wiki.handoff Offer the continuation
 
-**A standalone wiki run is the no-activity case.** Nothing about generating a knowledge base creates
-work for an agent, so it ends normally with no offer. The offer appears only when the run found
-something to act on.
-
-| Run | Next activity |
-|---|---|
-| Standalone generation, no issues found | none — the wiki is the deliverable |
-| Issues found in the tree | `/add-audit` — a deep health check on what the run surfaced |
-| Context mapped and the user asked to build | `/add-new` — start building with that context |
-
-Finish the report and its metadata, then ask ONCE for instructions only on the second and third rows.
-⛔ **Never propose a feature on a standalone run.** The user asked for a wiki, not for a backlog.
-
-**Eligibility is `chat-continuation-eligibility-v1` and the accepted answer's shape is
-`chat-continuation-output-v1`** — both owned by `{{skill:add--delivery-mode/SKILL.md}}` and
-`{{skill:add--final-report/SKILL.md}}`. Do not restate them here.
+<!-- slot:agent-mode.offer fallback="fallbacks/agent-mode.add-wiki.offer.md" -->
+<!-- feature:agent-mode:offer -->
+<!-- /feature:agent-mode:offer -->
+<!-- /slot:agent-mode.offer -->
 
 **The documents the block points at**, each with the role it plays:
 

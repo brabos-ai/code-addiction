@@ -1,0 +1,1 @@
+- Offer the continuation once on `confirm`, after the report's metadata, and only for a real next activity
