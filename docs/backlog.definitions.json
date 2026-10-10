@@ -26,13 +26,18 @@
       "label": "Review"
     },
     {
-      "name": "done",
+      "name": "release",
       "order": 6,
+      "label": "Release"
+    },
+    {
+      "name": "done",
+      "order": 7,
       "label": "Done"
     },
     {
       "name": "dropped",
-      "order": 7,
+      "order": 8,
       "label": "Dropped",
       "hidden": true
     }
@@ -88,18 +93,26 @@
       "means": "build finished, PR may not exist yet; waiting for review and merge"
     },
     {
-      "name": "done",
+      "name": "awaiting-release",
       "order": 8,
+      "column": "release",
+      "label": "Awaiting release",
+      "means": "merged, waiting for a release"
+    },
+    {
+      "name": "done",
+      "order": 9,
       "column": "done",
       "label": "Done",
       "means": "delivered"
     },
     {
       "name": "dropped",
-      "order": 9,
+      "order": 10,
       "column": "dropped",
       "label": "Dropped",
       "means": "decided against"
     }
-  ]
+  ],
+  "release_flow": true
 }
