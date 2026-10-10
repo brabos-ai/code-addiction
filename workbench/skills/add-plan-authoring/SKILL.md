@@ -8,6 +8,7 @@ description: "Use when writing or revising a plan document — file naming, F-bl
 <!-- uses:
 - agent: plan-review-agent
 - skill: add-review-discipline
+- skill: add-interaction
 - skill: add-final-report
 - skill: add-plan-authoring/references/plan-template.md
 - mention: add-build-ledger
@@ -629,6 +630,9 @@ neither, so it passes through unchanged. This is what lets the continuation line
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
 - **No match** → list `docs/plans/` and STOP.
 
+The question "which" goes out as one numbered item with a RECOMMENDED line (`add-interaction`), in the same
+message as any other open question.
+
 **`--fix <slug>` resolves `*-FIX--<slug>` through three sources, in this order, and stops at the first that answers:**
 
 1. `docs/delivered.jsonl` on the current branch — an entry whose `id` ends `-FIX--<slug>`. Tracked, so it survives a fresh clone or another worktree.
@@ -646,7 +650,8 @@ to adjust, update it with a changelog row, then review and complete it the same 
 An update is not delivered before review — and it gets the same single pass a new plan gets, not an
 extra one for having been revised.
 
-**List Mode** (no argument): list the plans with their status and ask which to work on.
+**List Mode** (no argument): list the plans with their status and ask which to work on, as one numbered item
+with a RECOMMENDED line (`add-interaction`).
 
 ## Common Rationalizations (BLOCKED)
 

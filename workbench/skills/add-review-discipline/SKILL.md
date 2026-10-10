@@ -7,6 +7,7 @@ description: "Use when a command dispatches a reviewer, a cold reader or the pro
 
 <!-- uses:
 - agent: plan-review-agent
+- skill: add-interaction
 - agent: plan-readback-agent
 - agent: prompt-review-agent
 - mention: add-framework--build
@@ -191,8 +192,8 @@ that turns out to be real is a gap in the text, whoever wrote it.
 | `fix-then-ok` | Apply every **Required fix** you accept that invents no user decision. Respect **Do not change**. Deliver |
 | `blocked` | Below |
 
-**`blocked` means a user decision is missing.** Present only the blockers that need one, and WAIT. Apply
-the answers and deliver.
+**`blocked` means a user decision is missing.** Present only the blockers that need one, all in one numbered
+batch with a RECOMMENDED line each (`add-interaction`), and WAIT. Apply the answers and deliver.
 
 ```
 IF THE USER HAS ANSWERED A BLOCKER:

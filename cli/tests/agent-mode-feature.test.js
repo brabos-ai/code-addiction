@@ -500,3 +500,15 @@ describe('F29 -- the internal done asks its plan pick and its deletions as one b
     expect(t).toMatch(/for every deletion in ONE numbered batch/);
   });
 });
+
+describe('F30-F32 -- the shared internal skills point their stops at add-interaction', () => {
+  it.each([
+    ['add-plan-authoring', /goes out as one numbered item with a RECOMMENDED line \(`add-interaction`\)/],
+    ['add-build-ledger', /A hard stop asks through `add-interaction`/],
+    ['add-review-discipline', /all in one numbered\s+batch with a RECOMMENDED line each \(`add-interaction`\)/],
+  ])('%s routes its stop through add-interaction and declares it', (name, phrase) => {
+    const t = wb('skills', name, 'SKILL.md');
+    expect(t).toMatch(phrase);
+    expect(t).toMatch(/<!-- uses:[\s\S]*?- skill: add-interaction[\s\S]*?-->/);
+  });
+});
