@@ -354,3 +354,35 @@ describe('L1.4(c) (F23) -- nothing names the old owners for the continuation con
     expect(bad).toEqual([]);
   });
 });
+
+describe('F22 -- the bot guide says how to turn the mode on and how to answer', () => {
+  const guide = () => readNorm(path.join(CODEADD, 'agent-mode', 'README.md'));
+
+  it('tells how to enable the feature on install and on modify', () => {
+    const text = guide();
+    expect(text).toContain('--enable-feature agent-mode');
+    expect(text).toMatch(/npx codeadd install[^\n]*--enable-feature agent-mode/);
+    expect(text).toMatch(/npx codeadd modify[^\n]*--enable-feature agent-mode/);
+  });
+
+  it('documents the answer format: 1a, 2b, recommended, and free text per number', () => {
+    const text = guide();
+    expect(text).toContain('`1a, 2b`');
+    expect(text).toContain('`recommended`');
+    expect(text).toMatch(/free text/i);
+  });
+
+  it('no longer claims /add-done stops before the merge, and says it merges after its gates', () => {
+    const text = guide();
+    expect(text).not.toMatch(/always stops before the merge/);
+    expect(text).toMatch(/\/add-done[^\n]*merges automatically/);
+    expect(text).toMatch(/pending/i);
+  });
+
+  it('says an automatic delivery can run several stages in one call and that stage names the last', () => {
+    const text = guide();
+    expect(text).toMatch(/automatic/);
+    expect(text).toMatch(/several stages in one call/);
+    expect(text).toMatch(/`stage`/);
+  });
+});

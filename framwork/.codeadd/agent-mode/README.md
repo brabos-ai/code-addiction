@@ -51,8 +51,11 @@ claude -p "<your answer>" --resume <session_id> --output-format json \
 ## 3. The stop rule
 
 Every stop that waits on a decision returns `needs-approval`. That covers a question, an approval and
-a push. `/add-done` always stops before the merge, so an unattended run never merges. Any other status
-is final: `done` finished, `stopped` ended on purpose at a gate, `failed` hit an error nobody planned for.
+a push. `/add-done` asks nothing before the merge: once its gates pass, it merges automatically, so a
+bot that runs it to the end merges. With the agent mode on (section 7) it reads the CI checks once; when
+any is still pending it ends with `stopped` and `/add-done` as the next command, and the next call
+merges once they are green. Any other status is final: `done` finished, `stopped` ended on purpose at
+a gate, `failed` hit an error nobody planned for.
 
 The guide does not list the stops of each command. They change with the commands. Read `reason`.
 
@@ -63,6 +66,10 @@ The guide does not list the stops of each command. They change with the commands
 - Idea still open: `/add-brainstorm`, then `/add-plan`.
 
 Run one command per call. Each call returns its own result.
+
+One exception: a delivery the user chose as `automatic` at `/add-brainstorm` hands each stage to the next
+within the same call, so one call can run several stages in one call. The result's `stage` names the
+command that ended it, and `next_step` says what to call next.
 
 ## 5. Provider support
 
@@ -102,3 +109,41 @@ npx codeadd features list
   install both exist, plain `uninstall` asks which one to remove, and with no terminal it waits.
   `--global` (or `--user`) picks the user-level one. There is no flag for the project one in that
   case, so do not use `uninstall` there from a bot.
+
+## 7. Make the commands talk to a bot
+
+By default the installed commands are written for a person at a terminal: one question per turn, a
+structured-question tool, a yes/no offer to continue after every report. A bot pays a whole call for
+each of those. The `agent-mode` feature swaps them for bot wording. It is off by default and changes
+nothing for a person.
+
+```bash
+# on a new install
+npx codeadd install --providers claude --enable-feature agent-mode
+
+# on a project that already has codeadd
+npx codeadd modify --providers claude --force --enable-feature agent-mode
+```
+
+With it on, in the twelve commands it covers:
+
+- Every question a step needs answered arrives in **one message**, numbered, each with a
+  recommendation and the reason for it. No interactive tool is called.
+- A stop that only repeats something already agreed prints what it would have shown and goes on.
+- No command ends with an offer to continue. Each ends on what changed, what still needs a decision,
+  and the next command as its last line.
+
+The feature changes how the commands talk, not the result: the schema is the same.
+
+## 8. Answer a stop
+
+A stop that waits ends the call with `needs-approval`, and `next_step` holds the numbered questions.
+Answer all of them in the next call, in the same session:
+
+| You send | Meaning |
+|---|---|
+| `1a, 2b` | Option `a` for question 1, option `b` for question 2 |
+| `recommended` | The recommended option for every question |
+| `2: use the shared helper` | Free text for question 2 |
+
+A partial answer is applied, and only the questions left are asked again, with the same numbers.
