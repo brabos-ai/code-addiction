@@ -823,3 +823,32 @@ test('done#056 commit body: git itself parses the trailer', () =>
     const parsed = gitInput(r.repo, ['interpret-trailers', '--parse'], body).stdout;
     assert.match(parsed, /Co-Authored-By: ADD/);
   }));
+
+// --- Hotfix branch-name hints (ticket 0048B) ---------------------------------
+
+test('done#057 context: a hotfix branch with no ID is told the exact hotfix shape', () =>
+  withRepo((r) => {
+    branchCreate(r.repo, 'hotfix/remove-turnstile');
+    const res = runDone(r.repo);
+    assert.notEqual(res.status, 0, res.output);
+    assert.match(res.output, /ERROR=No feature\/hotfix ID found/);
+    assert.match(res.output, /HINT=.*hotfix\/\[NNNN\]H-<slug>/);
+    assert.match(res.output, /hotfix\/0043H-remove-turnstile/);
+  }));
+
+test('done#058 context: a non-hotfix branch with no ID keeps the generic hint', () =>
+  withRepo((r) => {
+    branchCreate(r.repo, 'feature/foo');
+    const res = runDone(r.repo);
+    assert.notEqual(res.status, 0, res.output);
+    assert.match(res.output, /HINT=Branch must contain \/\[NNNN\]\[L\]-\* \(e\.g\. feature\/0001F-name, refactor\/0002R-cleanup\)/);
+    assert.doesNotMatch(res.output, /hotfix\/\[NNNN\]H-<slug>/);
+  }));
+
+test('done#059 hints: the Expected example is a hotfix branch, never fix/0002H', () => {
+  const source = fs.readFileSync(path.join(h.REPO_ROOT, 'framwork', '.codeadd', 'scripts', 'done.cjs'), 'utf8');
+  const expected = source.split('\n').filter((line) => line.includes('HINT=Expected:'));
+  assert.equal(expected.length, 2, 'both Expected hints present');
+  for (const line of expected) assert.match(line, /hotfix\/0002H-urgent/);
+  assert.equal(source.split('\n').some((line) => line.includes('HINT=') && line.includes('fix/0002H')), false);
+});
