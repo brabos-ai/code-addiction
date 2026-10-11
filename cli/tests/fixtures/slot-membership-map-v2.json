@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "membershipCount": 113,
+  "membershipCount": 114,
   "slotCount": 106,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
@@ -840,13 +840,18 @@
           ]
         },
         {
-          "id": "board.ticket-in-review",
+          "id": "board.ticket-in-review+board.deferred-minors",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
             {
               "namespace": "feature",
               "name": "board",
               "section": "ticket-in-review"
+            },
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "deferred-minors"
             }
           ],
           "expectedOrder": [
@@ -854,6 +859,11 @@
               "namespace": "feature",
               "name": "board",
               "section": "ticket-in-review"
+            },
+            {
+              "namespace": "feature",
+              "name": "board",
+              "section": "deferred-minors"
             }
           ]
         },

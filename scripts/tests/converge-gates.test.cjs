@@ -1279,3 +1279,82 @@ test('converge-gates#077 — final review head: a head line between a blocked ve
   assert.match(res.output, /GATE_REVIEW=broken/);
   assert.match(res.output, /GATE_REVIEW_DETAIL=.*blocked 1.*FR-1 — \/add-plan 0085F/);
 });
+
+// ─── Gate 2 — the newest working run is the gate (light review loop) ─────────
+
+test('converge-gates#078 — light review loop L1.1: build line + judged run-001 → ok, BASELINE=feature:run-001, counted', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0090F-buildqa');
+  const abs = path.join(base, dir);
+  makeQaRun(abs, '0090F', 'run-001');
+  writeFinalReview(abs, 'passed (after review-001)');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /REVIEW_SOURCE=build/);
+  assert.match(res.output, /GATE_QA_BASELINE=ok/);
+  assert.match(res.output, /(^|\n)BASELINE=feature:run-001/);
+  assert.match(res.output, /GATES_OK=[0-9]\/5/);
+});
+
+test('converge-gates#079 — light review loop L1.2: build line + no working run → skipped, BASELINE=none', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0091F-buildnoqa');
+  writeFinalReview(path.join(base, dir), 'passed (after review-001)');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /GATE_QA_BASELINE=skipped/);
+  assert.match(res.output, /(^|\n)BASELINE=none/);
+});
+
+test('converge-gates#080 — light review loop L1.3: build line + run-001 without a report → broken, names the missing report', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0092F-buildnoreport');
+  const abs = path.join(base, dir);
+  fs.mkdirSync(path.join(abs, '_tests', 'run-001'), { recursive: true });
+  writeFinalReview(abs, 'passed (after review-001)');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /GATE_QA_BASELINE=broken/);
+  assert.match(res.output, /GATE_QA_BASELINE_DETAIL=.*Missing source report/);
+});
+
+test('converge-gates#081 — light review loop L1.4: review baseline run-001, newer valid run-002 → ok, advanced', (t) => {
+  const base = project(t);
+  const dir = buildOkTree(base, '0093F-advanced');
+  const abs = path.join(base, dir);
+  makeQaRun(abs, '0093F', 'run-002');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /REVIEW_SOURCE=review/);
+  assert.match(res.output, /GATE_QA_BASELINE=ok/);
+  assert.match(res.output, /GATE_QA_BASELINE_DETAIL=.*advanced from feature:run-001 to feature:run-002/);
+  assert.match(res.output, /(^|\n)BASELINE=feature:run-002/);
+  assert.match(res.output, /GATES_OK=5\/5/);
+});
+
+test('converge-gates#082 — light review loop L1.5: newer run-002 without a report → broken', (t) => {
+  const base = project(t);
+  const dir = buildOkTree(base, '0094F-advancedbad');
+  const abs = path.join(base, dir);
+  fs.mkdirSync(path.join(abs, '_tests', 'run-002'), { recursive: true });
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /GATE_QA_BASELINE=broken/);
+  assert.match(res.output, /GATE_QA_BASELINE_DETAIL=.*Missing source report/);
+});
+
+test('converge-gates#083 — light review loop L1.5b: a malformed or different-scope baseline stays broken', (t) => {
+  const base = project(t);
+  const dir = buildOkTree(base, '0095F-malformed');
+  const abs = path.join(base, dir);
+  makeQaRun(abs, '0095F', 'run-002');
+  replaceIn(path.join(abs, 'review-001.md'), 'feature:run-001', '_tests/run-001');
+  let res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_QA_BASELINE=broken/);
+  assert.match(res.output, /GATE_QA_BASELINE_DETAIL=.*Malformed baseline entry/);
+
+  replaceIn(path.join(abs, 'review-001.md'), '_tests/run-001', 'SF01:run-001');
+  res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_QA_BASELINE=broken/);
+  assert.doesNotMatch(res.output, /advanced from/);
+});

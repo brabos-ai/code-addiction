@@ -296,20 +296,24 @@ or `skipped`.**
    table of BLOCKED gates it names) → BLOCKED.
 4. IF `GATE_REVIEW=ok`: take `BASELINE` from the preflight output verbatim and store it as
    `QA_BASELINE` for STEP add-done.promote-qa.
-5. IF `GATE_QA_BASELINE=skipped` (`REVIEW_SOURCE=build`, `BASELINE=none`): no review judged QA.
+5. IF `GATE_QA_BASELINE=skipped` (`REVIEW_SOURCE=build`, `BASELINE=none`): no working QA run exists, so there is nothing to judge or promote.
    Resolve `QA_FEATURE_STATE`, the `qa-pipeline` feature — `true` is enabled; `false`, `unset` and `no-manifest` are disabled,
    the feature's default. **Disabled → proceed. Enabled → STOP — deciding, in every state:** "QA was
    not judged for this feature — close it out without a QA judgement? Working QA evidence left in
    `_tests/` will not be promoted to `_tests/final/`." Yes → proceed with `BASELINE=none`.
-   No → print `/add-review ${FEATURE_ID}` and STOP.
-   **Whenever this branch proceeds, set `QA_PROMOTION_STATUS=skipped`.** No review judged the working
-   evidence, so there is no baseline to validate it against: STEP add-done.promote-qa runs neither
+   No → print `/add-review ${FEATURE_ID}` and STOP — the review runs QA and creates the run.
+   **Whenever this branch proceeds, set `QA_PROMOTION_STATUS=skipped`.** There is no working evidence, so
+   there is no baseline to validate it against: STEP add-done.promote-qa runs neither
    `validate` nor `promote` on this path.
 6. IF `GATE_QA_BASELINE` is `missing`, `broken`, or `not-probed`: show `GATE_QA_BASELINE_DETAIL` →
    BLOCKED. `missing` means the review carries no `> **QA baseline:**` line; `broken` means
-   `qa-evidence.cjs validate` rejected it. Both send the user to `/add-review ${FEATURE_ID}` — never
+   `qa-evidence.cjs validate` rejected the newest working run — its report is missing or invalid, or the
+   baseline line is malformed or names other scopes. A baseline that only moved to a newer run with a valid
+   report is NOT `broken`. Both send the user to `/add-review ${FEATURE_ID}` — never
    author, repair, or guess a baseline here.
-7. IF `GATE_QA_BASELINE=ok`: proceed.
+7. IF `GATE_QA_BASELINE=ok`: proceed. A baseline that advanced past the review's line (its detail says
+   `advanced from`) is not a block: `BASELINE` from the preflight is the newest working run, and it is what
+   STEP add-done.promote-qa promotes.
 
 ⛔ **Reading `GATE_QA_BASELINE` is MANDATORY.** The preflight emits it and it is the gate whose silent loss let a feature whose evidence no longer matched its review reach the merge. Ignoring a computed gate is worse than never computing it.
 
@@ -517,7 +521,7 @@ here would record a relationship nobody can reproduce.
 
 **SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP add-done.document.
 
-**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no review judged the working evidence). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
+**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no working QA run exists). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
 
 For a feature branch, `QA_BASELINE` from STEP add-done.validate is the only promotion manifest. Run in this exact order:
 

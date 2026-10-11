@@ -27,3 +27,8 @@ the `add-build` row of `{{skill:add--backlog/references/lifecycle.md}}`. Any oth
 no PR exists to review, and the ticket stays `doing`, which is true. A write that did not land is one line
 in the report below.
 <!-- /section:ticket-in-review -->
+
+<!-- section:deferred-minors -->
+
+**Deferred minors — one ticket.** When this run wrote any `minor (deferred)` ledger line, write ONE board ticket through `{{skill:add--backlog/SKILL.md}}` (`add`): a title naming the feature and the review number, one note per deferred ledger line, `labels` empty, and no `ticket` relation. A run that wrote none writes nothing. **Never a stop:** a refused or degraded write is one line in the build's final report, and the build continues.
+<!-- /section:deferred-minors -->

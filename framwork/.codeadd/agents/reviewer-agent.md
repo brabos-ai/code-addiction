@@ -115,7 +115,7 @@ when the snapshot package is present, and do not widen either package back to th
 
 ```
 FINDINGS:
-- [finding id or one-line quote] — ADDRESSED | NOT ADDRESSED — [evidence: file:line, or what is missing]
+- [finding id or one-line quote] — ADDRESSED | NOT ADDRESSED — [evidence: file:line; test: <test path or none>] when ADDRESSED, or [what is missing] when NOT ADDRESSED
 NEW_BREAKAGE: [findings introduced by the fix diff, with severity — or "none"]
 DEFERRED_MINORS: [out-of-scope observations — or "none"]
 VERDICT: [n addressed, n open]
