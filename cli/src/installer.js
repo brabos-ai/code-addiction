@@ -6,7 +6,7 @@ import AdmZip from 'adm-zip';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptProviders, promptScope, promptConfirm, promptGitignore, promptExistingInstall } from './prompt.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
-import { applyEnabledFeatures, getFeatureStates, FEATURES } from './features.js';
+import { applyEnabledFeatures, getFeatureStates, warnUninjectedProviders, FEATURES } from './features.js';
 // modify.js and updater.js import this module back. Both are function-only
 // imports, used at call time, so the cycle is safe in either load order.
 import { modify, applyDesiredState, validateDesired, assertPluginsEnabled } from './modify.js';
@@ -412,6 +412,10 @@ export async function install(cwd, options = {}) {
   if (enabledFeatures.length > 0) {
     log.info(`Features enabled: ${enabledFeatures.join(', ')}`);
     log.info('Toggle with: codeadd features enable|disable <name>');
+  }
+  // Only what the user asked for: a registry default such as tdd-pipeline stays silent.
+  for (const [name, on] of Object.entries(requested.features)) {
+    if (on) warnUninjectedProviders(targetDir, name);
   }
 
   // MCP registration, AFTER the manifest so a failed install leaves no config
