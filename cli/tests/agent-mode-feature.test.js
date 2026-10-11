@@ -188,6 +188,25 @@ describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only',
     expect(readNorm(path.join(SKILLS, 'add--human-interaction', 'SKILL.md'))).toContain('`add--agent-interaction`');
   });
 
+  it('an error stop offers no alternative, and a failed prerequisite gate is one even when labelled deciding (0039B)', () => {
+    const text = agent();
+    const section = text.slice(text.indexOf('## Error stops'), text.indexOf('## Closing'));
+    expect(section).toMatch(/DO NOT: Offer an (?:alternative|exception)/);
+    expect(section).toMatch(/prerequisite/i);
+    expect(section).toMatch(/deciding/i);
+    const approval = text.slice(text.indexOf('## Approval and deciding stops'), text.indexOf('## Confirming stops'));
+    expect(approval).toMatch(/error stop outranks/i);
+    // the deciding-stop rule for real choices stays as it was
+    expect(text).toContain('A **deciding** stop presents a choice nobody has made yet');
+  });
+
+  it('the agent-mode add-plan stop-kinds text no longer calls a failed prerequisite gate a deciding choice (0039B)', () => {
+    const body = memberBody('add-plan', 'stop-kinds');
+    expect(body).not.toMatch(/Every gate above\s+that stops is deciding/);
+    expect(body).toMatch(/error stop/i);
+    expect(body).toMatch(/prerequisite/i);
+  });
+
   it('no agent-mode text names a result field, a status or the schema flag', () => {
     const texts = agentModeTexts();
     expect(texts.length).toBeGreaterThan(0);

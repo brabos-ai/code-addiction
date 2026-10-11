@@ -15,6 +15,7 @@ import {
   enableFeature,
   disableFeature,
   getFeatureStates,
+  warnUninjectedProviders,
 } from './features.js';
 import {
   loadCatalog,
@@ -362,7 +363,10 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
 
   // Feature and plugin toggles run AFTER the provider change, through the same
   // functions the `features` and `plugins` subcommands call.
-  for (const name of diff.features.enable) enableFeature(targetDir, name);
+  for (const name of diff.features.enable) {
+    enableFeature(targetDir, name);
+    warnUninjectedProviders(targetDir, name);
+  }
   for (const name of diff.features.disable) disableFeature(targetDir, name);
   const pluginsNotEnabled = [];
   for (const name of diff.plugins.enable) {

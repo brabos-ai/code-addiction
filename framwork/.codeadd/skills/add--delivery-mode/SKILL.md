@@ -13,6 +13,7 @@ description: "Use when a pipeline command reaches a stop or its closing handoff 
 - mention: /add-review
 - mention: /add-done
 - mention: add--human-interaction
+- mention: add--agent-interaction
 - mention: add--doc-schemas
 - mention: add--review-discipline
 -->
@@ -112,7 +113,9 @@ IF A STOP'S KIND IS NOT OBVIOUS FROM ITS STATE:
 - **`/add-build`'s publish question on a branch with no PR.** It is the end of an automatic delivery.
 - **A build that is still red** after the fix attempts run out.
 - **Any failure a command reports as STOP** — a script exiting non-zero, a missing document, a gate
-  that did not pass.
+  that did not pass. "Deciding" here says the stop waits, not that it offers a choice: with the
+  agent-mode feature on, a failure still closes as an error stop under `add--agent-interaction`,
+  naming the command that unblocks it and offering no alternative.
 - **Every stop in `/add-done`.** No mode reaches it: an automatic delivery ends at the publish question,
   and the merge is always the user's.
 
