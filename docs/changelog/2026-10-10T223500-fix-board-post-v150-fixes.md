@@ -23,4 +23,4 @@ Full `npm test` run: every suite green except one pinned-text test of the old re
 
 ## Left for later
 
-Distributing the board app (subtopic 004). `AGENTS.md` still says the board ships "as a separate release asset" in future tense.
+Distributing the board app (subtopic 004). The `AGENTS.md` board section was reworded at close-out: the board is not distributed yet.
