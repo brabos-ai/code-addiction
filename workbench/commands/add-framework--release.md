@@ -277,34 +277,26 @@ Monitor at: `https://github.com/brabos-ai/code-addiction/actions`
 **Runs after the tag is pushed and `main` is checked out again, and only for a stable release.** A beta never goes
 through `production`, so it ships nothing a ticket waits for.
 
-List the tickets the board holds in `awaiting-release`:
+Close every ticket the board holds in `awaiting-release` with ONE write through `backlog-commit.cjs`:
 
 ```bash
-node framwork/.codeadd/scripts/backlog-cli.cjs list --status awaiting-release --ids
+node framwork/.codeadd/scripts/backlog-commit.cjs release <NEXT_VERSION>
 ```
 
-For EACH id it prints, make one write through `backlog-commit.cjs`, with the record on a scratch file
-(`docs/.tmp-ticket.json`, removed right after):
-
-```bash
-node framwork/.codeadd/scripts/backlog-commit.cjs update <id> --record-file docs/.tmp-ticket.json
-# record: {"release":"<NEXT_VERSION>","status":"done"}
-```
-
-`release` is the tag name: `NEXT_VERSION` exactly as STEP 3 stored it, which already starts with `v` (for example `v0.9.0`). `status` and `release` travel in the same write.
+`<NEXT_VERSION>` is the tag name exactly as STEP 3 stored it, which already starts with `v` (for example `v0.9.0`). The mode sets `release` and `status: done` together on every waiting ticket, in one commit, and prints `TICKETS_RELEASED=<ids>` (empty when none was waiting; then `COMMITTED=no` and nothing is pushed).
 
 ```
-IF THE LIST PRINTS `BACKLOG_PRESENT=no`, `TICKETS_RETURNED=0`, OR AN ERROR:
+IF THE WRITE PRINTS `BACKLOG_PRESENT=no`, `REFUSED=board-not-configured`, `TICKETS_RELEASED=` EMPTY, OR AN ERROR:
   ⛔ DO NOT: Stop the release or undo the tag
   ✅ DO: Report it in STEP 8 and continue
 
-IF A WRITE FAILS, IS REFUSED, OR COMES BACK DEGRADED:
+IF THE WRITE FAILS, IS REFUSED, OR COMES BACK DEGRADED:
   ⛔ DO NOT: Retry by hand, push the board branch, or touch the tag
-  ✅ DO: Keep the id and the reason for STEP 8, and go on to the next id
+  ✅ DO: Keep the reason for STEP 8
 
 IF A TICKET IS NOT IN `awaiting-release`:
   ⛔ DO NOT: Close it, whatever its title says
-  ✅ DO: Leave it — only the status names a ticket here, never a guess from the commits or the changelog
+  ✅ DO: Leave it — the mode closes only that status, never a guess from the commits or the changelog
 ```
 
 The degradations in **The Ticket** of `add-plan-authoring` apply to every write here.
@@ -329,7 +321,7 @@ Then, after the seven blocks, state:
 - The tag, and which branch it points at — `production` for stable, `main` for beta.
 - Whether STEP 5 merged to production, or was skipped because the release is beta.
 - The pipeline URL, and that nothing is released until it goes green.
-- **The tickets closed**, stable only: the ids written to `done` with `release` set to the tag, and each failure with its reason. Say they were closed when the tag was pushed, not when the pipeline succeeded. A beta states that the step was skipped.
+- **The tickets closed**, stable only: the ids from `TICKETS_RELEASED`, written to `done` with `release` set to the tag, or the failure with its reason. Say they were closed when the tag was pushed, not when the pipeline succeeded. A beta states that the step was skipped.
 
 ---
 

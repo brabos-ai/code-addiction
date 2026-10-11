@@ -191,10 +191,10 @@ describe('L2.2 -- the add-done write parks a merged ticket when the project opte
     const a = rel.indexOf('### Close the waiting tickets (stable only)');
     expect(a, 'no ticket-closing sub-step').toBeGreaterThan(-1);
     const sub = rel.slice(a, rel.indexOf('\n## ', a + 5));
-    expect(sub).toContain('list --status awaiting-release');
-    expect(sub).toContain('backlog-commit.cjs');
-    expect(sub).toContain('"release":"<NEXT_VERSION>"');
-    expect(sub).toContain('"status":"done"');
+    // One `release <version>` write closes every waiting ticket (it sets release and status together).
+    expect(sub).toContain('backlog-commit.cjs release <NEXT_VERSION>');
+    expect(sub).toContain('TICKETS_RELEASED');
+    expect(sub).not.toContain('docs/.tmp-ticket.json');
     expect(rel).toMatch(/STEP 7: Push tag[^\n]*awaiting-release/);
     expect(rel).toMatch(/IF release type = beta, OR the tag was not pushed:\n[^\n]*backlog-commit\.cjs/);
     const step8 = rel.slice(rel.indexOf('## STEP 8'));

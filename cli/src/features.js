@@ -79,7 +79,7 @@ export const FEATURES = {
     commands: ['add-done'],
   },
   // OFF by default because there is nothing to preserve: no project uses the
-  // board yet, and the board app ships as a separate release asset, so a fresh
+  // board yet, and the board app is not distributed yet (subtopic 004), so a fresh
   // install has no board and no .codeadd/board.json. EVERY ticket instruction the
   // pipeline commands carry lives in fragments/board/ -- with this off, none of
   // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).

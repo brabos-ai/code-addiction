@@ -189,12 +189,15 @@ absent or `false`, a merged ticket is written `done`, exactly as before. A comma
 find out: every read prints `RELEASE_FLOW=yes|no` and the command reads that.
 
 **Existing projects are not migrated.** A file written before this status existed keeps its statuses; nothing
-adds one on a write. A project opts in by adding the `release` column, the `awaiting-release` status and
-`"release_flow": true` to its own file. A project that sets `release_flow: true` without defining the status
-gets `REFUSED=unknown-status` on the write, reported and non-blocking.
+adds one on a write. A project opts in with one write, `node .codeadd/scripts/backlog-commit.cjs release-flow on`,
+which sets `"release_flow": true` and adds the `awaiting-release` status and the `release` column when the file lacks
+them (`release-flow off` turns the flag back off and removes nothing). A project that sets `release_flow: true` by
+hand without defining the status gets `REFUSED=unknown-status` on the write, reported and non-blocking.
 
-**Nothing in the product closes `awaiting-release`.** A project that opts in decides who does: a person, or a script that
-lists the waiting tickets and writes `release` and `done` in one `update`. Until then they stay in the Release column.
+**A release closes `awaiting-release` with one write**: `node .codeadd/scripts/backlog-commit.cjs release <version>`
+sets `release` to the version and `status` to `done` on every waiting ticket, in one commit, and reports
+`TICKETS_RELEASED=` with the ids (empty when none was waiting). Whoever releases (a person, a CI job, a release
+command the project owns) runs it; the framework does not decide when. Until then the tickets stay in the Release column.
 
 `labels` is a suggestion list of `{ name, label, means }`. A project edits it freely. **A write is never refused
 for a label outside it**, and the core never reads it.
@@ -310,6 +313,9 @@ two cannot drift.
 | `unknown-status` | 3 | `status` is not a name in the definitions file |
 | `duplicate-id` | 4 | the id is already on the board |
 | `unknown-id` | 7 | the id named is not on the board, including a `move --after` anchor |
+| `bad-version` | — | `release` got an empty version or one containing whitespace; not a record ban |
+| `bad-flag` | — | `release-flow` got something other than `on` or `off`; not a record ban |
+| `definitions-unreadable` | — | `release-flow` found a definitions file the core cannot parse and left it untouched; not a record ban |
 | `board-not-configured` | — | the project has no board (no `.codeadd/board.json` and no board file), so there is nowhere to write; this is not a record ban |
 
 The name is shared with `delivery-index.md` where the meaning is the same: `invalid-json` and

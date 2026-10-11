@@ -192,7 +192,7 @@ One Notion database, one row per ticket. Map the fields like this:
 
 - `id` to the title, `title` to a text property, `labels` to a multi-select.
 - `status` to a select whose options are the board's statuses, `awaiting-release` included.
-- `release` to a text property, filled once a release closes the ticket (the version, `v1.2.3`).
+- `release` to a text property, filled once a release closes the ticket (the version, `v1.2.3`) — a release does it for every waiting ticket with `backlog-commit.cjs release <version>`.
 
 Step 3 becomes "find the row whose title is the id, then create or update it".
 The same loop works for any project-management app: only the push in step 3 changes.
