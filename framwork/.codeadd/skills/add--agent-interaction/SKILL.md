@@ -84,6 +84,9 @@ a second confirmation of the first.
 An approval is a question like any other: a numbered item, the options, the recommendation. The
 approve-or-adjust choice is one item, not a separate prompt.
 
+An error stop outranks the command's own stop-kind label: where a failure is marked deciding, it still
+closes as an error stop (see **Error stops**).
+
 ## Confirming stops
 
 A **confirming** stop only repeats something already agreed — a design, a summary, a report of work the
@@ -100,6 +103,15 @@ A step that says to **inform the user and stop** keeps its behaviour. Say what f
 words, and stop. **The closing names the one command that unblocks the run**, so the bot knows what to
 call next without reading the failure text.
 
+**An error stop asks nothing and offers no alternative.** No exception, no workaround, no "or I can
+proceed without it". Print what failed, why, and the one command that unblocks it. An alternative
+is a choice the bot takes, and taking it costs a call the failure should have ended.
+
+**A gate that stops on a missing prerequisite is an error stop here** — a file, a document or a setup
+that was not made. This holds even where the command's own gate table classifies that gate
+`deciding`. The label says whether the gate waits; it never turns a failure into a choice. A
+`deciding` stop is for a choice nobody has made yet, not for something that does not exist.
+
 ## Closing
 
 Close in this order, and nothing after it:
@@ -107,7 +119,7 @@ Close in this order, and nothing after it:
 1. The seven blocks of `{{skill:add--final-report/SKILL.md}}`, then the command's own mandatory
    artefact and its metadata, as that skill orders them.
 2. One line per **open decision** — what is still undecided and the question that settles it. Write
-   none when nothing is open; do not invent one.
+   none when nothing is open, and none for an error stop; do not invent one.
 3. The next command, as the last line — the form the command's closing step states it in.
 
 **Close only after every agent and command the run started has finished.** Ending a turn to wait for
@@ -138,3 +150,4 @@ NEVER:
 - Call a structured-question tool or any tool that waits on a person
 - Offer a continuation, or end a run with a yes/no question
 - Ask a question the step does not need answered to move on
+- Offer an alternative, exception or workaround at an error stop

@@ -194,7 +194,8 @@ describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only',
     expect(section).toMatch(/no alternative/i);
     expect(section).toMatch(/prerequisite/i);
     expect(section).toMatch(/deciding/i);
-    expect(section).toMatch(/outranks/i);
+    const approval = text.slice(text.indexOf('## Approval and deciding stops'), text.indexOf('## Confirming stops'));
+    expect(approval).toMatch(/error stop outranks/i);
     // the deciding-stop rule for real choices stays as it was
     expect(text).toContain('A **deciding** stop presents a choice nobody has made yet');
   });
