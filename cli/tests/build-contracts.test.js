@@ -417,11 +417,11 @@ describe('the shipped add-qa-setup changed-in', () => {
   it('keeps the shape installed projects already hold and records the version that set it', () => {
     const sidecar = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
     const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add-qa-setup');
-    expect(c.shape).toBe('sha256:2326519b34fdd1fe');
-    expect(c.changed_in).toBe('1.3.2');
+    expect(c.shape).toBe('sha256:25b937ee17628d6b');
+    expect(c.changed_in).toBe('1.5.2');
     expect(fs.existsSync(sidecar), 'sidecar missing — run `node scripts/build.js` first').toBe(true);
     const built = JSON.parse(fs.readFileSync(sidecar, 'utf8')).contracts['add-qa-setup'];
-    expect(built.shape).toBe('sha256:2326519b34fdd1fe');
-    expect(built.changed_in).toBe('1.3.2');
+    expect(built.shape).toBe('sha256:25b937ee17628d6b');
+    expect(built.changed_in).toBe('1.5.2');
   });
 });
