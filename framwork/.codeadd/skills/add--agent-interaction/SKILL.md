@@ -9,6 +9,7 @@ description: "Use when a command runs for a bot instead of a person — how to a
 - skill: add--final-report
 - mention: add--delivery-mode
 - mention: add--human-interaction
+- mention: /add-qa-setup
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
@@ -103,14 +104,21 @@ A step that says to **inform the user and stop** keeps its behaviour. Say what f
 words, and stop. **The closing names the one command that unblocks the run**, so the bot knows what to
 call next without reading the failure text.
 
-**An error stop asks nothing and offers no alternative.** No exception, no workaround, no "or I can
-proceed without it". Print what failed, why, and the one command that unblocks it. An alternative
-is a choice the bot takes, and taking it costs a call the failure should have ended.
+```
+IF AN ERROR STOP IS REPORTED:
+  ⛔ DO NOT: Offer an alternative, exception or workaround ("proceed without it"), or ask any question
+  ✅ DO: Print what failed, why, and the one command that unblocks it
+```
+
+An alternative is a choice the bot takes, and taking it costs a call the failure should have ended.
 
 **A gate that stops on a missing prerequisite is an error stop here** — a file, a document or a setup
 that was not made. This holds even where the command's own gate table classifies that gate
 `deciding`. The label says whether the gate waits; it never turns a failure into a choice. A
 `deciding` stop is for a choice nobody has made yet, not for something that does not exist.
+
+**A step that itself asks the user to approve the remedy is not an error stop.** The install confirmation
+of `/add-qa-setup` presents a command and waits for a yes, so it stays a deciding stop.
 
 ## Closing
 

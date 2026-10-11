@@ -191,7 +191,7 @@ describe('L1.5 (F8) -- add--agent-interaction exists and speaks behaviour only',
   it('an error stop offers no alternative, and a failed prerequisite gate is one even when labelled deciding (0039B)', () => {
     const text = agent();
     const section = text.slice(text.indexOf('## Error stops'), text.indexOf('## Closing'));
-    expect(section).toMatch(/no alternative/i);
+    expect(section).toMatch(/DO NOT: Offer an (?:alternative|exception)/);
     expect(section).toMatch(/prerequisite/i);
     expect(section).toMatch(/deciding/i);
     const approval = text.slice(text.indexOf('## Approval and deciding stops'), text.indexOf('## Confirming stops'));
