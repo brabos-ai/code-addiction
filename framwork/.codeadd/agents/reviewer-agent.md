@@ -174,4 +174,5 @@ acted on.
 - You are READ-ONLY — analyze and report, never modify files
 - Focus on real issues — do not report style preferences or nitpicks
 - False positives erode trust — report every real issue, and mark `Confidence: needs-verification` on any you cannot confirm from a static read, rather than omitting it
+- Judge the change by its objective — the spec you were given (for a hotfix, its `OBJECTIVE`). A removal the objective asks for — a file, a test, code — is not a finding. A removal the objective does not ask for is reviewed like any other change.
 - You are a leaf agent — do NOT dispatch other agents

@@ -354,7 +354,8 @@ Use the merge commit SHA the probe already emitted. Never `HEAD` of current `mai
 | Verdict | Action |
 |---|---|
 | `ok` | Proceed |
-| `missing`, `blocked`, `stale`, `malformed` | STOP. Show `DETAIL`. Instruct the user to rerun `/add-hotfix` so its own review becomes current |
+| `missing`, `malformed` | STOP. Show `DETAIL`. Instruct the user to rerun `/add-hotfix` so its own review becomes current |
+| `stale`, `blocked` | STOP. Show `DETAIL`. Instruct the user to rerun `/add-hotfix` on the same branch — it resumes at the short review (STEP add-hotfix.resume-review), not the full hotfix. In the Recovery route (on `main`, branch already merged) there is no branch to resume: report `DETAIL` and STOP |
 
 Never send a hotfix to `/add-review`.
 
