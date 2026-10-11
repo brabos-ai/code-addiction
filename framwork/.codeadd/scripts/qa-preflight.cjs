@@ -10,6 +10,9 @@
  *        node .codeadd/scripts/qa-preflight.cjs b <FEATURE_DIR> [SPEC_GLOB]
  *
  * Output: KEY=STATUS lines. Statuses: ok | missing | broken | not-probed.
+ *   On QA_CONTRACT_MATCH=broken only, five more rows say why: the receipt shape and
+ *   its framework-version, the shipped shape, the version that last changed it
+ *   (unknown when the sidecar predates the field) and the action to take.
  *   QA_FEATURE_STATE is the RAW manifest value (true|false|unset|no-manifest);
  *   the calling command applies default semantics — the defaults registry lives
  *   in the CLI (cli/src/features.js) and is not duplicated here.
@@ -219,6 +222,31 @@ function readCurrentShape(text) {
   return '';
 }
 
+/** Receipt `framework-version`, read inside the frontmatter only; '' when absent. */
+function readReceiptVersion(text) {
+  const lines = text.split('\n');
+  if (!lines[0] || !/^---\r?$/.test(lines[0])) return '';
+  for (let i = 1; i < lines.length; i += 1) {
+    if (/^---\r?$/.test(lines[i])) break;
+    const m = /^framework-version:\s*(\S+)\s*\r?$/.exec(lines[i]);
+    if (m) return m[1];
+  }
+  return '';
+}
+
+/**
+ * The version that last changed the shipped QA shape, parsed from the sidecar so
+ * another contract's `changed_in` can never be mistaken for add-qa-setup's.
+ */
+function readChangedIn(text) {
+  try {
+    const v = JSON.parse(text).contracts['add-qa-setup'].changed_in;
+    return typeof v === 'string' && v ? v : '';
+  } catch {
+    return '';
+  }
+}
+
 // --- phases ------------------------------------------------------------------
 
 async function phaseA() {
@@ -334,6 +362,11 @@ async function phaseA() {
           write('QA_CONTRACT_MATCH=ok');
         } else {
           write('QA_CONTRACT_MATCH=broken');
+          write(`QA_CONTRACT_RECEIPT_SHAPE=${recorded}`);
+          write(`QA_CONTRACT_RECEIPT_VERSION=${readReceiptVersion(fs.readFileSync(receipt, 'utf8')) || 'unknown'}`);
+          write(`QA_CONTRACT_SHIPPED_SHAPE=${current}`);
+          write(`QA_CONTRACT_CHANGED_IN=${readChangedIn(fs.readFileSync(sidecar, 'utf8')) || 'unknown'}`);
+          write('QA_CONTRACT_ACTION=/add-qa-setup');
         }
       }
     }
