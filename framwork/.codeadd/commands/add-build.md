@@ -1049,7 +1049,7 @@ Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-N
 ⛔ A `blocker` or `major` row is never deferred, whatever its route. Only `minor`, `polish` and `lint` rows are.
 
 **The formatter.** Take the `format` gate's command from AGENTS.md `validation_gates` and run its mutating
-form ONCE, limited to `TOUCHED_FILES` (git diff --name-only against the feature base) passed as file arguments
+form ONCE, limited to `TOUCHED_FILES` (git diff --name-only against the merge-base with the main branch) passed as file arguments replacing the check command's path argument
 (`dotnet format --include`) — except the `npm run` row, which takes no file list and runs over the whole script.
 Only these five forms are derivable:
 
@@ -1068,7 +1068,7 @@ outcome `resolved`, `Evidence` `formatter`. No derivable mutating form, or still
 **Rows left after the split are the wave.** No rows left → no `@fix-agent` and no re-review: go to STEP
 add-build.resolution. Otherwise the rows are worked in the table's given order, respecting `Blocked by` — **by the
 agent, which is why it receives them whole.** Collect `AREAS` from the rows themselves. **Record
-`FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — STEP add-build.resolution cannot run without it. Dispatch
+`FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — a wave's re-review and its ledger ranges cannot run without it. Dispatch
 **ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
@@ -1134,7 +1134,7 @@ exactly that. A `(build-only …)` line needs no re-review, and is accepted by t
 
 ### STEP add-build.resolution Resolution annex (write-back)
 
-**After the last round of a routed correction, run the Validation Gates Procedure** from `{{skill:add--tasks-checklist/SKILL.md}}` — the same one STEP add-build.validation-gates runs — so the gates run on the fixed tree. A run with no `@fix-agent` round runs it too.
+**After the last round of a routed correction, run the Validation Gates Procedure** from `{{skill:add--tasks-checklist/SKILL.md}}` — the same one STEP add-build.validation-gates runs — so the gates run on the fixed tree. A `lint` or `format` failure left by a row this run deferred stays in `### Known Issues`; it is not fixed here and does not reopen the loop. A run with no `@fix-agent` round runs it too.
 
 After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
@@ -1146,7 +1146,7 @@ After the fix wave, append to the SAME `review-NNN.md` you consumed:
 | <finding id> | <agent or formatter> | resolved / failed / not-mine / disputed / deferred | <file:line> | <test path or none> | <paths> | <one line> |
 ```
 
-`Evidence` and `Test` come from the `[evidence: file:line; test: …]` of the re-review line for that finding; a formatter row carries `formatter` and `—`; a `deferred` row carries `—` in both.
+`Evidence` and `Test` come from the `[evidence: file:line; test: …]` of the re-review line for that finding; a formatter row carries `formatter` and `—`; a `deferred` row, and a row whose round has no re-review line, carry `—` in both.
 
 - **Append-only.** Add rows for the IDs this wave touched; NEVER rewrite or remove an existing row, and never re-add an ID already present.
 - Set the document's frontmatter `status: finalized` **exactly once**, when the wave completes. A second annex write on an already-finalized document adds its new rows and leaves `status` alone.

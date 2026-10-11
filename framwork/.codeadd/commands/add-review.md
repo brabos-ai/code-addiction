@@ -198,7 +198,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Write tasks.md | Update with new tick state and exit code pairs |
 | Idempotency | Do NOT re-dispatch reviewers. Gate failures are validator job, not review job. |
 
-**Success Criteria:** All touched gates exit 0. No `[!]` marks on touched files.
+**Success Criteria:** All touched gates exit 0. No `[!]` marks on touched files, except a red `lint` or `format` gate, which keeps its `[!]` as a `minor` known issue.
 **Failure:** Any `[!]` on a touched file whose intent is not `lint` or `format`. Mark review BLOCKED. Report reason to user.
 
 **Special Cases:**
@@ -793,7 +793,7 @@ Collect results from all previous steps:
 > Reviewed by: /add-review (model: ${MODEL})
 ```
 
-**Overall = PASSED** only if ALL gates are PASSED or SKIPPED.
+**Overall = PASSED** only if ALL gates are PASSED or SKIPPED. A Validation Gates row of `⚠️ KNOWN ISSUES` caused only by a red `lint` or `format` gate counts as PASSED here; it never makes Overall BLOCKED.
 **Overall = BLOCKED** if ANY gate is BLOCKED.
 
 **The two ⊘ states on the QA Judgement row are different diagnoses, and neither blocks.**
@@ -820,7 +820,7 @@ It is the **union** of:
 | `ID` | Finding id, unique within this report |
 | `Severity` | blocker / major / minor / polish |
 | `Area` | database / backend / frontend / e2e |
-| `Route` | The agent that owns the fix, or a manual route (`data-seed`, `env-boot`) |
+| `Route` | The agent that owns the fix, a manual route (`data-seed`, `env-boot`), or `formatter` — only for a red `format` gate, with the Area of the gate's touched files |
 | `File` | Path, where one is known |
 | `Symptom` | One line — what is wrong, observable |
 | `Blocked by` | IDs that must be resolved first, if any |

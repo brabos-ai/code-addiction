@@ -521,7 +521,7 @@ here would record a relationship nobody can reproduce.
 
 **SKIP this STEP entirely if `BRANCH_TYPE` is not `feature`.** Set `QA_PROMOTION_STATUS=skipped` and continue to STEP add-done.document.
 
-**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no review judged the working evidence). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
+**SKIP this STEP's calls too when STEP add-done.validate branch 5 set `QA_PROMOTION_STATUS=skipped`** (`GATE_QA_BASELINE=skipped`: no working QA run exists). Run neither `validate` nor `promote`, promote nothing, and continue to STEP add-done.document. `BASELINE=none` against a leftover working run is exactly the case that would otherwise fail `validate` with no way out.
 
 For a feature branch, `QA_BASELINE` from STEP add-done.validate is the only promotion manifest. Run in this exact order:
 
