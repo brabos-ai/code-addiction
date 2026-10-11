@@ -44,7 +44,7 @@ const MAP = {
   'add-brainstorm': ['ticket-frontmatter', 'ticket-intent', 'ticket-refining', 'ticket-report', 'ticket-resolve', 'ticket-shaped'],
   'add-new': ['ticket-board-write', 'ticket-intent-field', 'ticket-shaped', 'ticket-skeleton'],
   'add-plan': ['ticket-done-when', 'ticket-planned', 'ticket-read'],
-  'add-build': ['ticket-attention', 'ticket-doing', 'ticket-in-review', 'ticket-metadata'],
+  'add-build': ['deferred-minors', 'ticket-attention', 'ticket-doing', 'ticket-in-review', 'ticket-metadata'],
   'add-done': ['ticket-carry', 'ticket-close', 'ticket-report'],
   'add-hotfix': ['ticket-doing', 'ticket-frontmatter', 'ticket-report', 'ticket-resolve'],
 };
@@ -70,7 +70,7 @@ describe('board — the registry and the map', () => {
     }
     for (const k of Object.keys(got)) got[k].sort();
     expect(got).toEqual(MAP);
-    expect(boardPoints()).toHaveLength(24);
+    expect(boardPoints()).toHaveLength(25);
   });
 
   it('no board marker shares an anchor line with another namespace — L6.2 has no subject', () => {
