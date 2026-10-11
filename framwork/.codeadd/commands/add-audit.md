@@ -146,7 +146,7 @@ Use the Agent Registry above (rows: Context, Documentation, Infrastructure). For
 - [ ] `infrastructure-report.md`
 
 **⛔ GATE CHECK: All discovery outputs exist?**
-- If NO → Do NOT proceed; wait or re-dispatch
+- If NO → Do NOT proceed; re-dispatch the missing agent
 - If YES → Proceed to STEP add-audit.analysis.
 
 **⛔ GATE PROHIBITION:** DO NOT dispatch analysis agents until ALL discovery outputs verified.
@@ -175,7 +175,7 @@ Use the Agent Registry above (rows: Security, Architecture, Data). For each agen
 - [ ] `data-report.md`
 
 **⛔ GATE CHECK: All analysis outputs exist?**
-- If NO → Do NOT proceed; wait or re-dispatch
+- If NO → Do NOT proceed; re-dispatch the missing agent
 - If YES → Proceed to STEP add-audit.consolidate.
 
 **⛔ GATE PROHIBITION:** DO NOT proceed to consolidation without all analysis outputs — they feed the final scoring and report.

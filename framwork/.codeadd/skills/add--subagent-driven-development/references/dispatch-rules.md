@@ -5,6 +5,32 @@ subagent points here, so the rule lives once.
 
 ---
 
+## Foreground Only — No Turn Ends With Work Pending
+
+A subagent or a long shell command can run in a background or asynchronous mode of the dispatch or
+shell tool. A run that ends its turn to wait for that work is read as finished, so its result closes
+before the work does and the step that needed the work never happens.
+
+```
+IF DISPATCHING A SUBAGENT OR RUNNING A LONG SHELL COMMAND (A GATE, A BUILD, A TEST RUN):
+  ⛔ DO NOT: Choose a background or asynchronous mode of the dispatch or shell tool
+  ⛔ DO NOT: Dispatch parallel agents one per message
+  ✅ DO: Run it in the foreground — parallel agents go out as several calls in one message
+  ✅ DO: Give a long shell command a timeout that covers it
+
+IF AN AGENT OR A COMMAND IS STILL PENDING:
+  ⛔ DO NOT: End the turn to wait, or emit the closing or the result
+  ✅ DO: Wait for it inside the turn, then continue
+```
+
+**Never end the turn while an agent or a command is pending.**
+
+**One carve-out: an app server a step boots on purpose** (the `qa-project` Managed App Lifecycle) is
+not pending work. The step owns that process and tears it down by that lifecycle; nothing waits for it
+to finish.
+
+---
+
 ## A Fresh Dispatch Leaves Resume Fields Empty
 
 Many engines' subagent tools carry an optional field that **continues an earlier subagent** instead of

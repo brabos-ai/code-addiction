@@ -15,6 +15,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - skill: add--qa-migration
 - skill: add--setup-contract
 - skill: add--subagent-driven-development
+- skill: add--subagent-driven-development/references/dispatch-rules.md
 - agent: e2e-agent
 - command: /add-build
 - command: /add-review
@@ -98,7 +99,8 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:2326519b34fdd1fe
+shape: sha256:25b937ee17628d6b
+changed-in: 1.5.2
 paths:
   - path: docs/qa/config.json
     owner: setup
@@ -174,7 +176,7 @@ description: Use when authoring E2E specs (/add-build) or judging QA (/add-revie
 ## Managed App Lifecycle
 Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this procedure:
 1. **Probe** `baseUrl` (from `docs/qa/config.json`).
-2. If **down**: boot the app **in the background** using `<boot command / config.json bootHint>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
+2. If **down**: boot the app as a managed process (this step owns it and tears it down in step 4 — it is not pending work) using `<boot command / config.json bootHint>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
 3. **Run** the spec(s).
 4. **Teardown** the app **iff we booted it** — never kill a dev server the user already had running.
 5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add-review`** with a flagged note.
@@ -370,6 +372,8 @@ The pattern intentionally ignores only working `docs/features/**/_tests/run-*/` 
 ⛔ IF `MIGRATE` is false → SKIP this step.
 
 Run the migration per {{skill:add--qa-migration/SKILL.md}}, which defines the full sequence (`add-new → add-plan → add-build → add-review`), the checkpoints, the Decision Log, and the branch isolation. Pass it the detected tooling so `add-new`'s `about.md` frames the feature as "migrate the existing QA flow (`<detected tooling>`) to the code-addiction QA pipeline."
+
+**Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — agents run in the foreground and no turn ends with work pending.
 
 Dispatch each command in the chain as a subagent via the Agent tool — autonomous dispatch is **Claude-only in v1** (per the pipeline's distribution decision). Direct autonomy through the **dispatch prompt only**; never edit a dispatched command's source.
 
