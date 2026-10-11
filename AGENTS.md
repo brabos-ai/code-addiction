@@ -198,7 +198,7 @@ All three are gitignored and packaged explicitly by `release.yml`. `SIDECARS` in
 | Sidecar | Carries | Read by |
 |---|---|---|
 | `injection-points.json` | Content anchors for feature/plugin injection | `cli/src/features.js`, `plugins.js` |
-| `contracts.json` | The `shape` of every `## Materializes` block | `status.cjs` |
+| `contracts.json` | The `shape` and `changed_in` of every `## Materializes` block | `status.cjs`, `qa-preflight.cjs` |
 | `artefact-graph.json` | Typed relationship map over `framwork/.codeadd/` and `.claude/`, the composable layer included — fragments declare what they dispatch, and a plugin's bundled skills, the shipped templates and a node per feature and per plugin are all in it | `scripts/graph.js` and `mcp/` — the two surfaces over one file, asserted identical rather than sharing code |
 
 ### Providers
