@@ -290,3 +290,180 @@ test('hotfix-gates#008 — review fingerprint validates exact paths and detects 
   assert.equal(tampered.status, 3, tampered.output);
   assert.match(tampered.output, /HOTFIX_REVIEW=stale/);
 });
+
+// ─── hotfix-gates#009-015 — the covered-deletion rule (ticket 0048B) ─────────
+
+const HF_SLUG = '0043H-remove-turnstile';
+const HF_REL = `docs/features/${HF_SLUG}`;
+const SPEC = 'tests/verify-turnstile.spec.ts';
+const SELF_ROW =
+  'present\t100644\t0000000000000000000000000000000000000000000000000000000000000000\t' +
+  Buffer.from(`${HF_REL}/about.md`, 'utf8').toString('hex');
+
+/** A repo on main carrying `mainFiles`, with the hotfix branch checked out. */
+function hotfixRepo(t, mainFiles) {
+  const r = h.makeRepo();
+  t.after(() => r.cleanup());
+  for (const [rel, content] of Object.entries(mainFiles)) h.write(path.join(r.repo, rel), content);
+  r.git('add', '-A');
+  r.git('commit', '-m', 'base', '-q');
+  r.git('switch', '-c', `hotfix/${HF_SLUG}`, '-q');
+  h.write(path.join(r.repo, HF_REL, 'iterations.jsonl'), '{}\n');
+  return r;
+}
+
+/** Re-derive the about.md self-row hash for a hand-edited manifest block, as an old receipt carried it. */
+function withSelfHash(block) {
+  const zeros = '0'.repeat(64);
+  const selfHex = Buffer.from(`${HF_REL}/about.md`, 'utf8').toString('hex');
+  const rows = block.split('\n');
+  const at = rows.findIndex((row) => row.endsWith('\t' + selfHex));
+  const cells = rows[at].split('\t');
+  cells[2] = zeros;
+  rows[at] = cells.join('\t');
+  const normalized = aboutText(rows.join('\n'))
+    .replace(/^reviewed-tree:.*$/m, 'reviewed-tree: <SELF>')
+    .split('\t' + zeros + '\t' + selfHex).join('\t<SELF>\t' + selfHex);
+  cells[2] = require('node:crypto').createHash('sha256').update(normalized).digest('hex');
+  rows[at] = cells.join('\t');
+  return rows.join('\n');
+}
+
+/** Seal a receipt exactly as /add-hotfix does: manifest, then fingerprint. `rewrite` edits the manifest text. */
+function sealReceipt(r, rewrite = (m) => m) {
+  const aboutPath = path.join(r.repo, HF_REL, 'about.md');
+  h.write(aboutPath, aboutText(SELF_ROW));
+  const m = h.runScript('hotfix-gates', ['review-manifest', HF_REL], { cwd: r.repo });
+  assert.equal(m.status, 0, m.output);
+  const raw = between(m.output, 'PATHS_BEGIN', 'PATHS_END');
+  const block = rewrite(raw);
+  h.write(aboutPath, aboutText(block === raw ? raw : withSelfHash(block)));
+  const f = h.runScript('hotfix-gates', ['review-fingerprint', HF_REL], { cwd: r.repo });
+  assert.equal(f.status, 0, f.output);
+  const fingerprint = (f.stdout.match(/^REVIEWED_TREE=(.+)$/m) || [])[1];
+  assert.ok(fingerprint, 'fingerprint reported');
+  h.write(aboutPath, h.read(aboutPath).replace('sha256:<PENDING>', fingerprint));
+  return aboutPath;
+}
+
+function validate(r, ...extra) {
+  return h.runScript('hotfix-gates', ['review-validate', HF_REL, ...extra], { cwd: r.repo });
+}
+
+function assertOk(res) {
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /HOTFIX_REVIEW=ok/);
+}
+
+function assertStale(res) {
+  assert.equal(res.status, 3, res.output);
+  assert.match(res.output, /HOTFIX_REVIEW=stale/);
+}
+
+test('hotfix-gates#009 — a reviewed file deleted and committed stays covered', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n' });
+  h.write(path.join(r.repo, SPEC), 'edited by the hotfix\n');
+  sealReceipt(r);
+  assertOk(validate(r));
+
+  r.git('rm', '-qf', SPEC);
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+  assertOk(validate(r));
+});
+
+test('hotfix-gates#010 — a deletion unstaged at review time stays covered once committed', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n' });
+  fs.rmSync(path.join(r.repo, SPEC));
+  sealReceipt(r);
+  assertOk(validate(r));
+
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+  assertOk(validate(r));
+});
+
+test('hotfix-gates#011 — an old-style receipt row (deleted 100644) stays covered', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n' });
+  fs.rmSync(path.join(r.repo, SPEC));
+  sealReceipt(r, (m) => m.replace(/^deleted\t000000\t/gm, 'deleted\t100644\t'));
+  assert.match(h.read(path.join(r.repo, HF_REL, 'about.md')), /^deleted\t100644\t-\t/m);
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+  assertOk(validate(r));
+});
+
+test('hotfix-gates#012 — a file added, reviewed, then deleted stays covered', (t) => {
+  const r = hotfixRepo(t, { 'README.md': 'x\n' });
+  h.write(path.join(r.repo, 'tests', 'temp.spec.ts'), 'temporary\n');
+  sealReceipt(r);
+  assertOk(validate(r));
+
+  fs.rmSync(path.join(r.repo, 'tests', 'temp.spec.ts'));
+  assertOk(validate(r));
+});
+
+test('hotfix-gates#013 — the covered deletion survives the merge, validated with --tree', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n' });
+  h.write(path.join(r.repo, SPEC), 'edited by the hotfix\n');
+  sealReceipt(r);
+  r.git('rm', '-qf', SPEC);
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+
+  r.git('switch', 'main', '-q');
+  h.write(path.join(r.repo, 'other.txt'), 'main moved on\n');
+  r.git('add', '-A');
+  r.git('commit', '-m', 'main moves', '-q');
+  const merge = r.git('merge', '--no-ff', `hotfix/${HF_SLUG}`, '-m', 'merge hotfix', '-q');
+  assert.equal(merge.status, 0, merge.output);
+  const sha = r.git('rev-parse', 'HEAD').stdout.trim();
+  assertOk(validate(r, '--tree', sha));
+});
+
+test('hotfix-gates#014 — an edit, an addition or a directory in place of a file still goes stale', (t) => {
+  const setup = () => {
+    const r = hotfixRepo(t, { 'src/fault.txt': 'original\n' });
+    h.write(path.join(r.repo, 'src', 'fault.txt'), 'fixed\n');
+    sealReceipt(r);
+    assertOk(validate(r));
+    return r;
+  };
+
+  const edited = setup();
+  h.write(path.join(edited.repo, 'src', 'fault.txt'), 'changed after the review\n');
+  assertStale(validate(edited));
+
+  const added = setup();
+  h.write(path.join(added.repo, 'src', 'later.txt'), 'late\n');
+  assertStale(validate(added));
+
+  const dir = setup();
+  fs.rmSync(path.join(dir.repo, 'src', 'fault.txt'));
+  h.write(path.join(dir.repo, 'src', 'fault.txt', 'inner.txt'), 'now a directory\n');
+  assertStale(validate(dir));
+});
+
+test('hotfix-gates#015 — review-manifest writes a deletion as 000000 even while the path is still in the index', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n' });
+  fs.rmSync(path.join(r.repo, SPEC));
+  h.write(path.join(r.repo, HF_REL, 'about.md'), aboutText(SELF_ROW));
+  const m = h.runScript('hotfix-gates', ['review-manifest', HF_REL], { cwd: r.repo });
+  assert.equal(m.status, 0, m.output);
+  const hex = Buffer.from(SPEC, 'utf8').toString('hex');
+  assert.match(m.output, new RegExp(`^deleted\t000000\t-\t${hex}$`, 'm'));
+});
+
+test('hotfix-gates#016 — a covered deletion does not hide an edit made to another reviewed file', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n', 'src/fault.txt': 'original\n' });
+  h.write(path.join(r.repo, 'src', 'fault.txt'), 'fixed\n');
+  fs.rmSync(path.join(r.repo, SPEC));
+  sealReceipt(r);
+  assertOk(validate(r));
+
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+  assertOk(validate(r));
+  h.write(path.join(r.repo, 'src', 'fault.txt'), 'changed after the review\n');
+  assertStale(validate(r));
+});

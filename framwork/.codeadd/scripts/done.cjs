@@ -261,7 +261,7 @@ function mergeGuards() {
     fail([
       'STATUS=ERROR',
       `ERROR=Unsupported branch type: ${CURRENT_BRANCH}`,
-      'HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, fix/0002H-urgent)',
+      'HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, hotfix/0002H-urgent)',
     ]);
   }
 }
@@ -382,7 +382,7 @@ function runContext() {
     fail([
       'STATUS=ERROR',
       `ERROR=Unsupported branch type: ${CURRENT_BRANCH}`,
-      'HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, fix/0002H-urgent)',
+      'HINT=Expected: [type]/[NNNN][L]-* (e.g. feature/0001F-name, hotfix/0002H-urgent)',
     ]);
   }
 
@@ -659,7 +659,9 @@ function main(argv) {
     fail([
       'STATUS=ERROR',
       `ERROR=No feature/hotfix ID found in branch: ${CURRENT_BRANCH}`,
-      'HINT=Branch must contain /[NNNN][L]-* (e.g. feature/0001F-name, refactor/0002R-cleanup)',
+      CURRENT_BRANCH.startsWith('hotfix/')
+        ? 'HINT=Hotfix branches must be named hotfix/[NNNN]H-<slug> (e.g. hotfix/0043H-remove-turnstile)'
+        : 'HINT=Branch must contain /[NNNN][L]-* (e.g. feature/0001F-name, refactor/0002R-cleanup)',
     ]);
   }
 

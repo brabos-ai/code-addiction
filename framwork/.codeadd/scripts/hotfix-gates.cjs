@@ -18,6 +18,9 @@
 //       diagnosis-check also returns 3 when diagnosed-commit is unavailable.
 //       diff-wave also returns 3 when no correction changed.
 //       review-validate also returns 3 when the delivery gate is not current and passed.
+// Review rule: a path the receipt lists that is absent from the final tree keeps its receipt row, so a
+//   deletion made after the review stays covered; an edited or added path still goes stale.
+//   Review manifests write a deleted row with mode 000000; diagnosis-* keep entryFor's mode.
 
 const crypto = require('crypto');
 const fs = require('fs');
@@ -390,17 +393,39 @@ function normalizeAbout(content, aboutRel) {
   return Buffer.from(text, 'utf8');
 }
 
-function manifestEntries(hotfixDir, tree) {
+// Absent from the final tree: nothing at the path (a directory there is NOT absent).
+function absentFromTree(rel, tree) {
+  if (tree) {
+    const output = gitMaybe(['ls-tree', '-z', tree, '--', rel]);
+    return !output || output.length === 0;
+  }
+  try {
+    fs.lstatSync(path.join(repo, ...rel.split('/')));
+    return false;
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return true;
+    throw error;
+  }
+}
+
+// The current manifest. With `recorded` (the receipt's rows) it is the effective manifest: every receipt
+// path absent from the final tree takes the receipt row verbatim, even one no longer in the delivery set.
+function manifestEntries(hotfixDir, tree, recorded = null) {
   const aboutRel = `${hotfixDir}/about.md`;
   const paths = deliveryPaths(hotfixDir, tree);
-  const entries = paths.filter((rel) => rel !== aboutRel).map((rel) => {
+  let entries = paths.filter((rel) => rel !== aboutRel).map((rel) => {
     const info = entryFor(rel, tree ? `tree:${tree}` : 'worktree');
-    if (info.state === 'deleted') return { rel, state: 'deleted', mode: info.mode, hash: '-' };
+    if (info.state === 'deleted') return { rel, state: 'deleted', mode: '000000', hash: '-' };
     return { rel, state: 'present', mode: info.mode, hash: sha256(info.content) };
   });
+  if (recorded) {
+    const covered = recorded.filter((row) => row.rel !== aboutRel && absentFromTree(row.rel, tree));
+    const coveredPaths = new Set(covered.map((row) => row.rel));
+    entries = [...entries.filter((entry) => !coveredPaths.has(entry.rel)), ...covered];
+  }
   const about = entryFor(aboutRel, tree ? `tree:${tree}` : 'worktree');
   if (about.state === 'deleted') {
-    entries.push({ rel: aboutRel, state: 'deleted', mode: about.mode, hash: '-' });
+    entries.push({ rel: aboutRel, state: 'deleted', mode: '000000', hash: '-' });
     return sortEntries(entries);
   }
   const placeholder = { rel: aboutRel, state: 'present', mode: about.mode, hash: '0'.repeat(64) };
@@ -453,8 +478,8 @@ function compareManifest(expected, recorded) {
 function fingerprintFor(hotfixDir, tree) {
   const text = readAbout(hotfixDir, tree);
   if (text === null) fail(2, 'Missing hotfix about.md');
-  const expected = manifestEntries(hotfixDir, tree);
   const recorded = parseReceiptManifest(text);
+  const expected = manifestEntries(hotfixDir, tree, recorded);
   compareManifest(expected, recorded);
   return `sha256:${sha256(Buffer.from(expected.map(manifestLine).join('\n') + '\n', 'utf8'))}`;
 }
