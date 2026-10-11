@@ -54,8 +54,8 @@ checkout: it lives on an orphan `board` branch, read through one clone per proje
 `~/.codeadd/<project-key>/board/` (`CODEADD_BOARD_DIR` overrides the path). `.codeadd/board.json` is the one
 file tracked under `.codeadd/`: it says where that branch is. `docs/backlog.jsonl` is never read in the
 checkout. It is `[product]` for the reason
-`mcp/` is: it is built to ship to users, as a separate release asset installed under
-`.codeadd/board/` — the distribution half lands with subtopic 004 of the backlog-board set.
+`mcp/` is: it is meant for users. It is NOT distributed yet — no release asset carries it, and the
+distribution half lands with subtopic 004 of the backlog-board set.
 
 ```
 ⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
