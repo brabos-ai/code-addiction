@@ -179,11 +179,11 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 The receipt exists and the delivery gate sent you back because it is `stale` or `blocked`. Only the review runs again.
 
-1. Build `OBJECTIVE` from that `about.md`: the topic sentence of `## Root Cause`, plus the bullets of `## Fix`. No new field is read.
-2. Re-run STEP add-hotfix.verify-build. When the receipt says `pinned-test: passed`, re-run the pinned test too.
-3. Go to STEP add-hotfix.review and run, in order: review → correct → log → receipt → validate.
-
-A `status: blocked` receipt resumes the same way — the review is what runs again.
+0. Run `node .codeadd/scripts/hotfix-gates.cjs review-validate docs/features/[NNNN]H-<slug>/`. Resume only on `HOTFIX_REVIEW=stale` or `blocked`. Any other verdict (`ok`, `missing`, `malformed`): do not resume — `ok` needs nothing, the others go to STEP add-hotfix.history as a full hotfix.
+1. Build `OBJECTIVE` from that `about.md`, as one sentence: the topic sentence of `## Root Cause`, with the bullets of `## Fix` folded in. No new field is read.
+2. Take `[NNNN]H` and the slug from the branch name. Re-run STEP add-hotfix.verify-build. When the receipt says `pinned-test: passed`, re-run the pinned test that `## Verification` of that `about.md` names.
+3. The blast radius was not retained on this path: rebuild it from that `about.md`'s `## Relations` (`None` means none), and still ask the file-overlap graph question of STEP add-hotfix.review-input.
+4. Go to STEP add-hotfix.review and run, in order: review → correct → log → receipt → validate.
 
 ⛔ DO NOT run STEP add-hotfix.history, STEP add-hotfix.investigate, STEP add-hotfix.root-cause or STEP add-hotfix.implement here. Nothing about the fix is being re-decided.
 
