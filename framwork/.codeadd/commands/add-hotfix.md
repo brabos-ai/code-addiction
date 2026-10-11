@@ -167,9 +167,13 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 **MANDATORY ACTION:** Execute STEP add-hotfix.allocate NOW.
 
-### IF `BRANCH:hotfix/*`:
+### IF the branch matches `hotfix/[NNNN]H-*`:
 
 ✅ Branch OK. If `docs/features/[NNNN]H-<slug>/about.md` already carries `## Review`, go to STEP add-hotfix.resume-review. Otherwise skip to STEP add-hotfix.history.
+
+### IF the branch is any other:
+
+⛔ **TOTAL STOP** - the delivery close-out only accepts a branch named `hotfix/[NNNN]H-<slug>`. Print that shape and the current branch name, then tell the user to switch to `main` and rerun `/add-hotfix`, or to rename the branch to that shape. Do not investigate, do not implement.
 
 ### STEP add-hotfix.resume-review Resume at the review (existing hotfix branch with a receipt)
 
