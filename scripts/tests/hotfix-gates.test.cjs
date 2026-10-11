@@ -312,13 +312,32 @@ function hotfixRepo(t, mainFiles) {
   return r;
 }
 
+/** Re-derive the about.md self-row hash for a hand-edited manifest block, as an old receipt carried it. */
+function withSelfHash(block) {
+  const zeros = '0'.repeat(64);
+  const selfHex = Buffer.from(`${HF_REL}/about.md`, 'utf8').toString('hex');
+  const rows = block.split('\n');
+  const at = rows.findIndex((row) => row.endsWith('\t' + selfHex));
+  const cells = rows[at].split('\t');
+  cells[2] = zeros;
+  rows[at] = cells.join('\t');
+  const normalized = aboutText(rows.join('\n'))
+    .replace(/^reviewed-tree:.*$/m, 'reviewed-tree: <SELF>')
+    .split('\t' + zeros + '\t' + selfHex).join('\t<SELF>\t' + selfHex);
+  cells[2] = require('node:crypto').createHash('sha256').update(normalized).digest('hex');
+  rows[at] = cells.join('\t');
+  return rows.join('\n');
+}
+
 /** Seal a receipt exactly as /add-hotfix does: manifest, then fingerprint. `rewrite` edits the manifest text. */
 function sealReceipt(r, rewrite = (m) => m) {
   const aboutPath = path.join(r.repo, HF_REL, 'about.md');
   h.write(aboutPath, aboutText(SELF_ROW));
   const m = h.runScript('hotfix-gates', ['review-manifest', HF_REL], { cwd: r.repo });
   assert.equal(m.status, 0, m.output);
-  h.write(aboutPath, aboutText(rewrite(between(m.output, 'PATHS_BEGIN', 'PATHS_END'))));
+  const raw = between(m.output, 'PATHS_BEGIN', 'PATHS_END');
+  const block = rewrite(raw);
+  h.write(aboutPath, aboutText(block === raw ? raw : withSelfHash(block)));
   const f = h.runScript('hotfix-gates', ['review-fingerprint', HF_REL], { cwd: r.repo });
   assert.equal(f.status, 0, f.output);
   const fingerprint = (f.stdout.match(/^REVIEWED_TREE=(.+)$/m) || [])[1];
