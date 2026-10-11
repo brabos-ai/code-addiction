@@ -14,6 +14,7 @@
 - skill: add--subagent-driven-development/references/dispatch-rules.md
 - agent: reviewer-agent
 - agent: ux-agent
+- mention: @fix-agent
 - command: /add-build
 - command: /add-done
 - command: /add-plan
@@ -192,13 +193,13 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Re-run procedure | For each `(intent, command)` in block: invoke via Bash, capture stdout/stderr/exit code in this session |
 | Exit 0 | Confirm `[x]` (or upgrade `[!]`/`[ ]` to `[x]`) |
 | Exit ≠ 0 | Partition failures into `TOUCHED_FAILURES` (git diff --name-only) vs `UNTOUCHED_FAILURES` |
-| TOUCHED_FAILURES | Downgrade tick to `[!] — REASON: <≤120 chars>`. **Mark review BLOCKED.** Do NOT auto-fix — emit each as a `## Fix Routing` row. |
+| TOUCHED_FAILURES | Downgrade tick to `[!] — REASON: <≤120 chars>`. A red gate whose intent is `lint` or `format` → gate row `⚠️ KNOWN ISSUES`, one `## Fix Routing` row, severity `minor` (route `formatter` for `format`, `@fix-agent` for `lint`); it does NOT block. **Every other red gate → mark review BLOCKED** and emit each as a `blocker` `## Fix Routing` row. Do NOT auto-fix. |
 | UNTOUCHED_FAILURES only | Keep `[x]`. Refresh `### Known Issues` section (cap 10 items + `+N more`). |
 | Write tasks.md | Update with new tick state and exit code pairs |
 | Idempotency | Do NOT re-dispatch reviewers. Gate failures are validator job, not review job. |
 
 **Success Criteria:** All touched gates exit 0. No `[!]` marks on touched files.
-**Failure:** Any `[!]` on touched file. Mark review BLOCKED. Report reason to user.
+**Failure:** Any `[!]` on a touched file whose intent is not `lint` or `format`. Mark review BLOCKED. Report reason to user.
 
 **Special Cases:**
 - AGENTS.md has no `validation_gates` → Emit nudge: "Note: validation_gates not detected in AGENTS.md. Run /add-wiki to enable validation gates." Skip rest of STEP add-review.gates.
@@ -710,7 +711,9 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
    1. Invoke the command via Bash. Capture stdout/stderr and exit code in this session.
    2. Exit 0 → confirm `[x]` (or upgrade `[!]`/`[ ]` to `[x]`).
    3. Exit ≠ 0 → partition failures into `TOUCHED_FAILURES` vs `UNTOUCHED_FAILURES`.
-      - `TOUCHED_FAILURES` non-empty → downgrade the tick to `[!] — REASON: <≤120 chars>`. **Mark review BLOCKED.** Do NOT auto-fix in review (auto-fixes belong to build); surface to user instead.
+      - `TOUCHED_FAILURES` non-empty → downgrade the tick to `[!] — REASON: <≤120 chars>`. Do NOT auto-fix in review (auto-fixes belong to build); surface to user instead.
+        - Intent `lint` or `format` → the gate row reads `⚠️ KNOWN ISSUES`, the review is NOT blocked by it, and the gate becomes ONE `## Fix Routing` row with severity `minor`: route `formatter` for `format`, `@fix-agent` for `lint`.
+        - Every other red gate keeps the `blocker` rule: **mark review BLOCKED**.
       - `UNTOUCHED_FAILURES` only → keep `[x]` and refresh `### Known Issues` (cap 10 + `+N more`).
 3. Write the updated `tasks.md`.
 
@@ -718,8 +721,8 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
 
 - Every gate command MUST be invoked via Bash in this session before STEP add-review.report produces `review-NNN.md`.
 - Capture each `(gate, exit_code)` pair for inclusion in the Quality Gate Report.
-- Review status MUST be BLOCKED if any gate is red on a touched file after re-run.
-- Each red gate on a touched file becomes a `## Fix Routing` row, area-scoped, severity `blocker`.
+- Review status MUST be BLOCKED if any gate other than `lint` or `format` is red on a touched file after re-run. A red `lint` or `format` gate on a touched file is `⚠️ KNOWN ISSUES` and never blocks.
+- Each red gate on a touched file becomes a `## Fix Routing` row, area-scoped: severity `blocker` for every other red gate, severity `minor` for `lint` and `format`.
 
 ### STEP add-review.log-iteration Log Iteration
 
