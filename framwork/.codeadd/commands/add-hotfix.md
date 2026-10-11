@@ -169,7 +169,19 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 ### IF `BRANCH:hotfix/*`:
 
-✅ Branch OK. Skip to STEP add-hotfix.history.
+✅ Branch OK. If `docs/features/[NNNN]H-<slug>/about.md` already carries `## Review`, go to STEP add-hotfix.resume-review. Otherwise skip to STEP add-hotfix.history.
+
+### STEP add-hotfix.resume-review Resume at the review (existing hotfix branch with a receipt)
+
+The receipt exists and the delivery gate sent you back because it is `stale` or `blocked`. Only the review runs again.
+
+1. Build `OBJECTIVE` from that `about.md`: the topic sentence of `## Root Cause`, plus the bullets of `## Fix`. No new field is read.
+2. Re-run STEP add-hotfix.verify-build. When the receipt says `pinned-test: passed`, re-run the pinned test too.
+3. Go to STEP add-hotfix.review and run, in order: review → correct → log → receipt → validate.
+
+A `status: blocked` receipt resumes the same way — the review is what runs again.
+
+⛔ DO NOT run STEP add-hotfix.history, STEP add-hotfix.investigate, STEP add-hotfix.root-cause or STEP add-hotfix.implement here. Nothing about the fix is being re-decided.
 
 ---
 
@@ -408,7 +420,8 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 ### STEP add-hotfix.review-input Assemble the shared input
 
-- the change under review — this branch's diff against its base, and the paths it touches
+- the change under review — this branch's diff against its base, and the paths it touches. The base is the one `hotfix-gates.cjs` uses: the merge-base with `main`, else `master`, else `HEAD`
+- `OBJECTIVE` — one sentence: the confirmed root cause and what the fix must do, naming any file, test or code the fix must remove. The review covers this branch's diff against `OBJECTIVE` and nothing else; `OBJECTIVE` is the spec for `MODE: task`, because a hotfix has no `about.md` spec or `plan.md` yet at this point
 - the confirmed root cause from STEP add-hotfix.root-cause or the diagnose handoff
 - the **blast radius** retained in STEP add-hotfix.synthesize, or the handoff's confirmed relations when STEPS 4-6 were skipped
 - **the file-overlap half of the graph.** The fix exists now, so a file list exists now. **GRAPH question:** which delivered work items touch the files this fix changed? It is phrased over PATHS. Run `add--knowledge-discovery`'s GRAPH step over this branch's changed paths, resolve the question in its action table, and add the work items it returns to the blast radius above, as identifiers with one line each. STEP add-hotfix.history could not ask this: it runs before the investigation and before the fix, so nothing had changed yet
@@ -419,7 +432,10 @@ Verify build passes for affected apps (backend, frontend, or both).
 
 **DISPATCH AGENT: @reviewer-agent** [read-only, standard]
 - **MODE:** `task`
+- **Spec:** `OBJECTIVE` from STEP add-hotfix.review-input
 - **Input:** STEP add-hotfix.review
+
+The reviewer judges the diff by `OBJECTIVE`. A removal `OBJECTIVE` asks for — a file, a test, code — is not a finding; a removal it does not ask for is reviewed like any other change.
 
 If the named agent is unavailable, dispatch a generic read-only subagent with the same inputs and set `reviewer: generic`. If no read-only subagent exists, perform the same review inline and set `reviewer: inline`.
 
@@ -538,6 +554,8 @@ On the normal path the set was confirmed in STEP add-hotfix.synthesize. On the r
 4. Replace `sha256:<PENDING>` with the printed `REVIEWED_TREE` value. Replace only that field.
 
 ⛔ No hotfix-owned file changes after this replacement.
+
+A deletion of a path the manifest lists, made after this step, stays covered. An edit or an added file does not.
 
 ---
 
