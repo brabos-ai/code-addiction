@@ -6,7 +6,9 @@
 // Usage: node .codeadd/scripts/converge-gates.cjs <FEATURE_DIR> [SFxx]
 // Dependencies: node:fs, node:path, ./qa-evidence.cjs (built-ins only). No shell.
 // Output: KEY=VALUE lines. Gate statuses: ok | missing | broken | not-probed,
-//         plus `skipped` on gate 2 only — a pass, counted in GATES_OK.
+//         plus `skipped` on gate 2 only — a pass, counted in GATES_OK, and
+//         only when no working QA run exists (the newest working run with a
+//         valid report is the gate, whichever source decided gate 1).
 //         REVIEW_SOURCE=build|review|none says which verdict gate 1 read:
 //         the `Final review:` line /add-build writes to the scoped
 //         build-ledger.md, or the highest review-NNN.md. Most recent wins —
@@ -403,16 +405,34 @@ function main(argv) {
   emit(`REVIEW_SOURCE=${reviewSource}`);
 
   // ─── Gate 2: QA baseline ───────────────────────────────────────────────────
-  // The review's `> **QA baseline:**` line, validated by the native evidence
-  // module. A validation failure is translated to `broken` and never
-  // propagated: that would break the exit-0 diagnosis contract on exactly the
-  // cases this gate exists to catch.
+  // The newest working run with a valid report is the gate, whoever decided
+  // gate 1. `skipped` is only for "no working run at all" under a build verdict.
+  // A validation failure is translated to `broken` and never propagated: that
+  // would break the exit-0 diagnosis contract on exactly the cases this gate
+  // exists to catch.
   let baseline = '';
+  const current = evidence.workingBaseline(FEATURE_DIR);
+  const gate2Current = (detail) => {
+    try {
+      evidence.validateBaseline(FEATURE_DIR, current);
+      baseline = current;
+      emit('GATE_QA_BASELINE=ok');
+      if (detail) emit(`GATE_QA_BASELINE_DETAIL=${detail}`);
+      pass();
+    } catch (error) {
+      emit('GATE_QA_BASELINE=broken');
+      emit(`GATE_QA_BASELINE_DETAIL=${flatten(error && error.message ? error.message : String(error))}`);
+    }
+  };
   if (reviewSource === 'build') {
-    baseline = 'none';
-    emit('GATE_QA_BASELINE=skipped');
-    emit("GATE_QA_BASELINE_DETAIL=The build's final review decided; no review document carries a QA baseline");
-    pass();
+    if (current === 'none') {
+      baseline = 'none';
+      emit('GATE_QA_BASELINE=skipped');
+      emit("GATE_QA_BASELINE_DETAIL=The build's final review decided and no working QA run exists");
+      pass();
+    } else {
+      gate2Current('');
+    }
   } else if (reviewPath === '') {
     emit('GATE_QA_BASELINE=missing');
     emit('GATE_QA_BASELINE_DETAIL=No review document to read a baseline from');
@@ -425,14 +445,30 @@ function main(argv) {
       baseline = baselineLine
         .replace(/^>[ \t]*\*\*QA baseline:\*\*[ \t]*/, '')
         .replace(/[ \t]+$/, '');
-      try {
-        evidence.validateBaseline(FEATURE_DIR, baseline);
-        emit('GATE_QA_BASELINE=ok');
-        pass();
-      } catch (error) {
-        const detail = error && error.message ? error.message : String(error);
-        emit('GATE_QA_BASELINE=broken');
-        emit(`GATE_QA_BASELINE_DETAIL=${flatten(detail)}`);
+      // Advanced: a well-formed line over the same scopes as `current`, older
+      // run. Anything else keeps the original validation and its error.
+      let advanced = false;
+      if (baseline !== current && baseline !== 'none' && current !== 'none') {
+        try {
+          const scopes = (list) => list.map((p) => p.key).join(',');
+          advanced = scopes(evidence.parseBaseline(baseline)) === scopes(evidence.parseBaseline(current));
+        } catch {
+          advanced = false;
+        }
+      }
+      if (advanced) {
+        const from = baseline;
+        gate2Current(`QA baseline advanced from ${from} to ${current}; the newer run's report validated`);
+      } else {
+        try {
+          evidence.validateBaseline(FEATURE_DIR, baseline);
+          emit('GATE_QA_BASELINE=ok');
+          pass();
+        } catch (error) {
+          const detail = error && error.message ? error.message : String(error);
+          emit('GATE_QA_BASELINE=broken');
+          emit(`GATE_QA_BASELINE_DETAIL=${flatten(detail)}`);
+        }
       }
     }
   }
