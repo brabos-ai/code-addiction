@@ -453,3 +453,17 @@ test('hotfix-gates#015 — review-manifest writes a deletion as 000000 even whil
   const hex = Buffer.from(SPEC, 'utf8').toString('hex');
   assert.match(m.output, new RegExp(`^deleted\t000000\t-\t${hex}$`, 'm'));
 });
+
+test('hotfix-gates#016 — a covered deletion does not hide an edit made to another reviewed file', (t) => {
+  const r = hotfixRepo(t, { [SPEC]: 'original\n', 'src/fault.txt': 'original\n' });
+  h.write(path.join(r.repo, 'src', 'fault.txt'), 'fixed\n');
+  fs.rmSync(path.join(r.repo, SPEC));
+  sealReceipt(r);
+  assertOk(validate(r));
+
+  r.git('add', '-A');
+  r.git('commit', '-m', 'remove turnstile', '-q');
+  assertOk(validate(r));
+  h.write(path.join(r.repo, 'src', 'fault.txt'), 'changed after the review\n');
+  assertStale(validate(r));
+});
