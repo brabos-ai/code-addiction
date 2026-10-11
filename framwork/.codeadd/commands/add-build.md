@@ -1037,13 +1037,42 @@ feature-gated either.
 ### STEP add-build.consume Consume
 
 Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
-The rows are worked in the table's given order, respecting `Blocked by` — **by the agent, which is why
-it receives them whole.** Collect `AREAS` from the rows themselves. **Record
+
+**Split the rows BEFORE any dispatch.** Small findings do not extend the loop:
+
+| Rows | Do |
+|---|---|
+| route `formatter` | Run the formatter, below. Done before `FIX_BASE` is recorded, so its batch stays out of the fix diff |
+| every other `minor` or `polish` row, including the `lint` gate rows `/add-review` writes as `minor` | Not dispatched. One `T0N: minor (deferred): <ID> <symptom>` ledger line each (the area name stands in for `T0N` here, as in the fix-round lines) and annex outcome `deferred` |
+| every other row | One `@fix-agent` wave, below |
+
+⛔ A `blocker` or `major` row is never deferred, whatever its route. Only `minor`, `polish` and `lint` rows are.
+
+**The formatter.** Take the `format` gate's command from AGENTS.md `validation_gates` and run its mutating
+form ONCE, limited to `TOUCHED_FILES` (git diff --name-only against the feature base) passed as file arguments
+(`dotnet format --include`) — except the `npm run` row, which takes no file list and runs over the whole script.
+Only these five forms are derivable:
+
+| Check form in AGENTS.md | Mutating form |
+|---|---|
+| `prettier --check` | `prettier --write` |
+| `ruff format --check` | `ruff format` |
+| `gofmt -l` | `gofmt -w` |
+| `dotnet format --verify-no-changes` | `dotnet format` |
+| `npm run <x>:check` | `npm run <x>`, only when `package.json` declares `<x>` |
+
+Commit the result as one batch through STEP add-build.commit, then re-run the `format` gate. Green → annex
+outcome `resolved`, `Evidence` `formatter`. No derivable mutating form, or still red → annex outcome `deferred` and a
+`minor (deferred)` ledger line. ⛔ DO NOT invent a mutating form outside the table.
+
+**Rows left after the split are the wave.** No rows left → no `@fix-agent` and no re-review: go to STEP
+add-build.resolution. Otherwise the rows are worked in the table's given order, respecting `Blocked by` — **by the
+agent, which is why it receives them whole.** Collect `AREAS` from the rows themselves. **Record
 `FIX_BASE=$(git rev-parse HEAD)` before the dispatch** — STEP add-build.resolution cannot run without it. Dispatch
 **ONE** `@fix-agent` for the wave per the **Correction Dispatch** contract, with the tracked
 `ATTEMPT` and, at round 3 only, the escalated `MODEL`.
 
-**Every row in the table is fixed — no pre-fix confidence check.** `/add-review`'s `Confidence` field,
+**Every row dispatched to the agent is fixed — no pre-fix confidence check.** `/add-review`'s `Confidence` field,
 where a reviewer reported one, is not consumed here. This dispatch stays "one wave, one fix", the same
 rule `add--review-discipline` states for the review side; STEP add-build.re-review's re-review is what verifies the fix
 afterward, not a gate before it.
@@ -1105,15 +1134,19 @@ exactly that. A `(build-only …)` line needs no re-review, and is accepted by t
 
 ### STEP add-build.resolution Resolution annex (write-back)
 
+**After the last round of a routed correction, run the Validation Gates Procedure** from `{{skill:add--tasks-checklist/SKILL.md}}` — the same one STEP add-build.validation-gates runs — so the gates run on the fixed tree. A run with no `@fix-agent` round runs it too.
+
 After the fix wave, append to the SAME `review-NNN.md` you consumed:
 
 ```markdown
 ## Resolution Annex
 
-| ID | Route | Outcome | Files | Note |
-|----|-------|---------|-------|------|
-| <finding id> | <agent> | resolved / failed / not-mine / disputed | <paths> | <one line> |
+| ID | Route | Outcome | Evidence | Test | Files | Note |
+|----|-------|---------|----------|------|-------|------|
+| <finding id> | <agent or formatter> | resolved / failed / not-mine / disputed / deferred | <file:line> | <test path or none> | <paths> | <one line> |
 ```
+
+`Evidence` and `Test` come from the `[evidence: file:line; test: …]` of the re-review line for that finding; a formatter row carries `formatter` and `—`; a `deferred` row carries `—` in both.
 
 - **Append-only.** Add rows for the IDs this wave touched; NEVER rewrite or remove an existing row, and never re-add an ID already present.
 - Set the document's frontmatter `status: finalized` **exactly once**, when the wave completes. A second annex write on an already-finalized document adds its new rows and leaves `status` alone.
@@ -1133,12 +1166,26 @@ it — **LOAD `{{skill:add--review-discipline/SKILL.md}}`** and follow **The Bui
 `MODE: feature` dispatch, the conditional OWASP pass, one fix wave, and the `Final review:` ledger line with the
 `Final review head:` line after it. On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
 
-**After a CORRECTION run, dispatch nothing new.** STEP add-build.re-review's re-review is this run's review: write
+**After a CORRECTION run, dispatch nothing new — unless the scope check below fails.** STEP add-build.re-review's re-review is this run's review: write
 the verdict from it, plus its `Final review head:` line — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
 `blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP add-build.correct answered stays
 the newest verdict and `/add-done` blocks on it.
 
-**Exception — run the normal review above instead when the last fix round was build-only, or when no round was
+**Scope check — before taking the re-review verdict.** `FIX_FILES` is every file changed across the ranges of this run's
+`fix round` ledger lines; the formatter batch is excluded. `SCOPE` is every path in the `File` cells of the dispatched
+rows (a cell with several paths is split on `,`; an empty cell adds nothing) plus each path's directory. The fix is
+out of scope when a `FIX_FILES` entry is neither in `SCOPE` nor inside one of its directories and is not a test
+file (its path contains `test`, `spec` or `__tests__`), or when `git diff --shortstat` over those ranges exceeds
+**300 changed lines** (insertions plus deletions). Out of scope → run the normal review (the exception below). In
+scope → the re-review verdict, as above.
+
+**No `@fix-agent` round ran** — every row was deferred or fixed by the formatter: dispatch no reviewer. The "no round was
+re-reviewed" exception does NOT apply, because the formatter batch and the deferrals are not rounds. Write
+`Final review: passed (after review-NNN)` and its `Final review head:` line. Such a run holds no `blocker` or
+`major` row by construction, since those are always dispatched.
+
+**Exception — run the normal review above instead when the scope check failed, when the
+last fix round was build-only, or when no round was
 re-reviewed.** A build-only round changed code that no re-review read, so a verdict taken from an earlier
 re-review would cover code it never saw. The normal review packages the unit's whole range, which includes that fix.
 
