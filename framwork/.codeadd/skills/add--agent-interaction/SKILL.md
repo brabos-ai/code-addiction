@@ -110,6 +110,10 @@ Close in this order, and nothing after it:
    none when nothing is open; do not invent one.
 3. The next command, as the last line — the form the command's closing step states it in.
 
+**Close only after every agent and command the run started has finished.** Ending a turn to wait for
+one is forbidden: in this mode the end of a turn IS the end of the run, and whatever is still pending
+is lost.
+
 On an `automatic` delivery the command follows the next command in the same session, as
 `{{skill:add--delivery-mode/SKILL.md}}` says; this order is for a closing that ends the call.
 

@@ -521,6 +521,11 @@ const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
 // leading space) and must stay banned.
 const CONTRACT_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):[^}]+\}\}/;
 const SHAPE_LINE_RE = /^shape:[ \t]*\S+[ \t]*$/;
+// `changed-in:` is the version that ships the current shape. Hand-declared like
+// `shape:` and excluded from the hash the same way — it describes the shape, it
+// is not part of what the command materializes.
+const CHANGED_IN_LINE_RE = /^changed-in:[ \t]*\S+[ \t]*$/;
+const SEMVER_RE = /^\d+\.\d+\.\d+$/;
 // Backticks OR tildes. A `~~~`-fenced example of a `uses:` block — the form
 // used when the example itself contains backticks — would otherwise be
 // extracted as a real declaration.
@@ -582,12 +587,15 @@ function sliceContractBlock(rawContent) {
 function canonicalContractBody(block) {
   // Drop only the FIRST `shape:` line — the declaration's own. A `shape:` line
   // at column 0 inside an embedded template is declared content: excluding it
-  // would make it invisible to drift detection.
+  // would make it invisible to drift detection. `changed-in:` follows the same
+  // first-line-only rule for the same reason.
   let shapeDropped = false;
+  let changedInDropped = false;
   return block
     .split('\n')
     .filter((l) => {
       if (!shapeDropped && SHAPE_LINE_RE.test(l)) { shapeDropped = true; return false; }
+      if (!changedInDropped && CHANGED_IN_LINE_RE.test(l)) { changedInDropped = true; return false; }
       return true;
     })
     .map((l) => l.replace(/[ \t\r]+$/, ''))
@@ -675,18 +683,28 @@ function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
     }
   }
 
+  const changedIn = decl['changed-in'];
+  if (changedIn !== undefined && !SEMVER_RE.test(changedIn)) {
+    throw new Error(
+      `Contract block in ${resourceName} declares changed-in: ${changedIn}. ` +
+        `The value is the version that ships the shape, written MAJOR.MINOR.PATCH.`,
+    );
+  }
+
   const computed = contractShape(block);
   if (decl.shape !== computed) {
     throw new Error(
       `Contract shape changed in ${resourceName}.\n` +
         `  declared: ${decl.shape}\n  computed: ${computed}\n` +
-        `Set shape: ${computed}. Every installed project will need /add-qa-setup.`,
+        `Set shape: ${computed} and changed-in: <the release that will ship this change>. ` +
+        `Every installed project will need /add-qa-setup.`,
     );
   }
 
   return {
     contract: decl.contract,
     shape: decl.shape,
+    ...(changedIn !== undefined ? { changed_in: changedIn } : {}),
     paths: decl.paths,
   };
 }
@@ -713,6 +731,7 @@ function collectContract(rawContent, resourceName, codeaddDir = CODEADD_DIR) {
     }
     CONTRACTS[c.contract] = {
       shape: c.shape,
+      ...(c.changed_in !== undefined ? { changed_in: c.changed_in } : {}),
       paths: c.paths,
     };
   }

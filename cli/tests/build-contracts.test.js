@@ -362,3 +362,66 @@ describe('the shipped add-qa-setup contract', () => {
     expect(block).toContain('## Auth / Seed');
   });
 });
+
+// ---------------------------------------------------------------------------
+// changed-in — the version in which the shape last changed
+// ---------------------------------------------------------------------------
+
+describe('changed-in', () => {
+  const CHANGED = 'changed-in: 1.3.2\n';
+
+  it('the line is outside the hash — the shape is the same with and without it', () => {
+    const without = source();
+    const withLine = source({ yamlExtra: CHANGED });
+    expect(contractShape(sliceContractBlock(withLine))).toBe(contractShape(sliceContractBlock(without)));
+  });
+
+  it('a valid MAJOR.MINOR.PATCH is emitted as changed_in, right after shape', () => {
+    collectContract(sealed({ yamlExtra: CHANGED }), 'add-qa-setup');
+    const out = tmpOut();
+    writeContracts(out);
+    const text = fs.readFileSync(out, 'utf8');
+    expect(JSON.parse(text).contracts['add-qa-setup'].changed_in).toBe('1.3.2');
+    expect(text.indexOf('"shape"')).toBeLessThan(text.indexOf('"changed_in"'));
+    expect(text.indexOf('"changed_in"')).toBeLessThan(text.indexOf('"paths"'));
+  });
+
+  it('a block without the line emits no changed_in key', () => {
+    collectContract(sealed(), 'add-qa-setup');
+    const out = tmpOut();
+    writeContracts(out);
+    expect(JSON.parse(fs.readFileSync(out, 'utf8')).contracts['add-qa-setup']).not.toHaveProperty('changed_in');
+  });
+
+  it('a value that is not MAJOR.MINOR.PATCH fails the build', () => {
+    for (const bad of ['1.3', 'v1.3.2', '1.3.2-beta']) {
+      expect(() => extractContract(sealed({ yamlExtra: `changed-in: ${bad}\n` }), 'add-qa-setup'), bad)
+        .toThrow(/changed-in/);
+    }
+  });
+
+  it('only the FIRST changed-in line leaves the hash — a template line at column 0 still moves it', () => {
+    const base = source({ yamlExtra: CHANGED });
+    const withTemplateLine = source({ yamlExtra: CHANGED, belowFencedHeading: '\nchanged-in: 9.9.9' });
+    expect(contractShape(sliceContractBlock(withTemplateLine)))
+      .not.toBe(contractShape(sliceContractBlock(base)));
+  });
+
+  it('a shape mismatch tells the author to set both shape and changed-in', () => {
+    expect(() => extractContract(source({ yamlExtra: CHANGED }), 'add-qa-setup'))
+      .toThrow(/changed-in/);
+  });
+});
+
+describe('the shipped add-qa-setup changed-in', () => {
+  it('keeps the shape installed projects already hold and records the version that set it', () => {
+    const sidecar = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
+    const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add-qa-setup');
+    expect(c.shape).toBe('sha256:2326519b34fdd1fe');
+    expect(c.changed_in).toBe('1.3.2');
+    expect(fs.existsSync(sidecar), 'sidecar missing — run `node scripts/build.js` first').toBe(true);
+    const built = JSON.parse(fs.readFileSync(sidecar, 'utf8')).contracts['add-qa-setup'];
+    expect(built.shape).toBe('sha256:2326519b34fdd1fe');
+    expect(built.changed_in).toBe('1.3.2');
+  });
+});

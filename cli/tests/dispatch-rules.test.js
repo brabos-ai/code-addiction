@@ -45,6 +45,35 @@ describe('dispatch-rules reference', () => {
   });
 });
 
+describe('foreground rule', () => {
+  const HEADING = '## Foreground Only — No Turn Ends With Work Pending';
+
+  it('carries the foreground section and its phrases', () => {
+    const raw = fs.readFileSync(REF_PATH, 'utf8');
+    expect(raw, 'missing the foreground heading').toContain(HEADING);
+    const text = raw.toLowerCase();
+    for (const phrase of ['foreground', 'in one message', 'never end the turn']) {
+      expect(text, `foreground section must contain "${phrase}"`).toContain(phrase);
+    }
+  });
+
+  it('no product text asks for a background mode by its parameter name', () => {
+    const root = path.join(ROOT, 'framwork', '.codeadd');
+    const hits = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(p);
+        else if (fs.readFileSync(p, 'utf8').includes('run_in_background')) hits.push(p);
+      }
+    };
+    for (const sub of ['commands', 'skills', 'agents', 'fragments', 'plugins']) {
+      if (fs.existsSync(path.join(root, sub))) walk(path.join(root, sub));
+    }
+    expect(hits, 'product text must not ask for run_in_background').toEqual([]);
+  });
+});
+
 describe('every dispatching command reaches the rule', () => {
   const commands = dispatchingCommands();
 

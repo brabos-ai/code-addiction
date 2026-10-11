@@ -99,6 +99,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 ```yaml
 contract: add-qa-setup
 shape: sha256:2326519b34fdd1fe
+changed-in: 1.3.2
 paths:
   - path: docs/qa/config.json
     owner: setup
