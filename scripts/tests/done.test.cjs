@@ -850,5 +850,5 @@ test('done#059 hints: the Expected example is a hotfix branch, never fix/0002H',
   const expected = source.split('\n').filter((line) => line.includes('HINT=Expected:'));
   assert.equal(expected.length, 2, 'both Expected hints present');
   for (const line of expected) assert.match(line, /hotfix\/0002H-urgent/);
-  assert.equal(source.split('\n').some((line) => line.includes('HINT=') && line.includes('fix/0002H')), false);
+  assert.equal(source.split('\n').some((line) => line.includes('HINT=') && /(^|[^t])fix[/]0002H/.test(line)), false);
 });
