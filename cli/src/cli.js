@@ -186,6 +186,15 @@ export async function runCli(argv) {
     return;
   }
 
+  // `--help` / `-h` after any subcommand shows the usage and runs nothing. It is
+  // checked before resolveTarget, which can prompt, and before any subcommand,
+  // so `update --help` can never update. (`mcp` returned above and keeps its own
+  // arguments; the top-level `--help` still reaches the final else below.)
+  if (args.includes('--help') || args.includes('-h')) {
+    log.message(USAGE);
+    process.exit(0);
+  }
+
   const cwd = process.cwd();
   const { targetDir, scope, global } = resolveTarget(cwd, args);
 

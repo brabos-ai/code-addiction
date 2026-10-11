@@ -126,6 +126,19 @@ describe('backlog-cli — the exit-code contract (unchanged)', () => {
     expect(result).toContain('BACKLOG_PRESENT=no\nRELEASE_FLOW=no');
   });
 
+  it('refuses release and release-flow on the read entry with ERROR=write-mode, exit 2', () => {
+    for (const args of [['release', 'v1'], ['release-flow', 'on']]) {
+      let r;
+      try {
+        r = { status: 0, stdout: execFileSync(process.execPath, [CLI_PATH, ...args], { encoding: 'utf8', ...asBoard({ cwd: root }) }) };
+      } catch (e) {
+        r = { status: e.status, stdout: e.stdout };
+      }
+      expect(r.status, args[0]).toBe(2);
+      expect(r.stdout).toContain('ERROR=write-mode');
+    }
+  });
+
   it('exits 2 on unknown-id refusal', () => {
     const r = fail(['update', '0000B'], { input: JSON.stringify({ title: 'Nope' }), cwd: root });
     expect(r.status).toBe(2);

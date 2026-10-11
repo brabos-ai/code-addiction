@@ -7,6 +7,14 @@
  * worktree lands on `board` and nowhere else — never on the caller's branch,
  * never on `main`, so it triggers no code CI.
  *
+ * TWO MODES CHANGE MORE THAN ONE TICKET, OR NONE. `release <version>` closes every
+ * ticket in `awaiting-release` with the version (status done, release <version>)
+ * in ONE commit `backlog: release <version> (<n> tickets)`. `release-flow on|off`
+ * flips the definitions' release_flow flag (on also adds the `awaiting-release`
+ * status and the `release` column when missing) in the commit
+ * `backlog: release-flow on|off`. Either one that changes nothing (no waiting
+ * ticket, flag already in that state) reports COMMITTED=no, exits 0 and does not push.
+ *
  * WRITE MODES ONLY. `list`, `search` and `get` commit nothing and are
  * refused by name (ERROR=read-mode). backlog-cli.cjs is the read entry, and it
  * refuses writes in turn (ERROR=write-mode) naming this one.
@@ -38,6 +46,9 @@
  *   BOARD_DIR=<clone>     where the board lives
  *   LOCK_RECLAIMED=<pid>  only when a dead or very old lock was taken over
  *   TICKET_ID, PERSISTED=yes, COMMITTED=yes|no, SHA, PUSHED=yes|no
+ *                         `release <version>` reports TICKETS_RELEASED=<comma ids>
+ *                         (empty when none was waiting) and `release-flow on|off`
+ *                         reports RELEASE_FLOW=yes|no, each in place of TICKET_ID
  *   RECOVERY_REF          when a commit is only ref-protected (not pushed)
  *   DEGRADED=<reason>     at most one, the most fatal by fixed precedence:
  *                         rebase-conflict, fetch-failed, push-refused,
@@ -72,6 +83,8 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   comment <id>              --record-file comment.json
   move    <id> --top | --after <id> | --bottom
   remove  <id>
+  release <version>         close every awaiting-release ticket with the version
+  release-flow on|off       turn the release step of the board on or off
 
 \`list\`, \`search\`, \`get\` and \`changes\` are reads. Call backlog-cli.cjs directly for those.
 Records also accept stdin when --record-file is absent.
@@ -88,8 +101,8 @@ class Report {
     this.values = {};
   }
 
-  set(key, value) {
-    if (value === null || value === undefined || value === '' || value === false) return;
+  set(key, value, { allowEmpty = false } = {}) {
+    if (value === null || value === undefined || value === false || (value === '' && !allowEmpty)) return;
     if (!(key in this.values)) this.order.push(key);
     this.values[key] = value;
   }
@@ -259,6 +272,8 @@ function main(argv) {
     query: parsed.query,
     rawRecord,
     newId,
+    version: parsed.version,
+    flag: parsed.flag,
   });
 
   if (!result.ok) {
@@ -267,12 +282,21 @@ function main(argv) {
     domainExit(result);
   }
 
-  report.set('TICKET_ID', result.ticketId);
+  let message = `backlog: ${mode} ${result.ticketId}`;
+  if (mode === 'release') {
+    report.set('TICKETS_RELEASED', result.ticketIds.join(','), { allowEmpty: true });
+    message = `backlog: release ${parsed.version} (${result.ticketIds.length} tickets)`;
+  } else if (mode === 'release-flow') {
+    report.set('RELEASE_FLOW', result.releaseFlow === 'on' ? 'yes' : 'no');
+    message = `backlog: release-flow ${result.releaseFlow}`;
+  } else {
+    report.set('TICKET_ID', result.ticketId);
+  }
   report.set('PERSISTED', 'yes');
   report.set('COMMITTED', 'no');
 
   // ── 7. Commit to the clone ───────────────────────────────────────────────
-  const commit = git.commitFiles(boardDir, boardPaths(boardDir), `backlog: ${mode} ${result.ticketId}`);
+  const commit = git.commitFiles(boardDir, boardPaths(boardDir), message);
   if (commit.failed) {
     report.set('RECOVERY_PATH', boardDir);
     report.set('PUSHED', 'no');
@@ -280,6 +304,8 @@ function main(argv) {
     leave(1);
   }
   report.set('COMMITTED', commit.committed ? 'yes' : 'no');
+  // A release or flag write that changed nothing has nothing to publish.
+  if (!commit.committed && (mode === 'release' || mode === 'release-flow')) leave(0);
   let sha = commit.sha;
   if (sha) report.set('SHA', sha);
 

@@ -42,6 +42,7 @@ const DEFAULT_DEFS = {
   release_flow: false
 };
 
+const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow'];
 const RESERVED = ['id', 'created_at', 'updated_at'];
 const REQUIRED = ['title', 'tldr', 'done_when'];
 
@@ -54,11 +55,34 @@ function findRow(rows, id) {
 }
 
 /**
+ * Add the seeded entry called `name` to `list` when no entry has that name.
+ * It goes right before the `done` entry and takes its `order`, pushing that
+ * entry and every later one up by one — the board sorts by `order`, so the new
+ * entry lands where the defaults put it. Without a `done` entry it goes last.
+ */
+function addBeforeDone(list, name, seeded) {
+  if (list.some(e => e && e.name === name)) return;
+  const entry = JSON.parse(JSON.stringify(seeded.find(e => e.name === name)));
+  const at = list.findIndex(e => e && e.name === 'done');
+  const orders = list.map(e => (e && Number.isFinite(e.order) ? e.order : 0));
+  if (at === -1 || !Number.isFinite(list[at].order)) {
+    entry.order = Math.max(0, ...orders) + 1;
+    list.push(entry);
+    return;
+  }
+  const pivot = list[at].order;
+  for (const e of list) if (e && Number.isFinite(e.order) && e.order >= pivot) e.order += 1;
+  entry.order = pivot;
+  list.splice(at, 0, entry);
+}
+
+/**
  * Execute a backlog operation.
  *
  * @param {object} params
  * @param {string} params.root - absolute path to the project root
- * @param {string} params.mode - one of: list, search, get, add, update, comment, move, remove
+ * @param {string} params.mode - one of: list, search, get, add, update, comment, move, remove,
+ *   release, release-flow
  * @param {string} [params.targetId] - ticket id for update/comment/remove/move
  * @param {string} [params.moveDir] - 'top'|'bottom'|'after' for move
  * @param {string} [params.moveAnchor] - anchor id for move --after
@@ -66,11 +90,21 @@ function findRow(rows, id) {
  * @param {string} [params.query] - search query
  * @param {string} [params.rawRecord] - raw JSON text for add/update/comment
  * @param {string} [params.newId] - allocated id for add
+ * @param {string} [params.version] - the release name for release
+ * @param {string} [params.flag] - 'on'|'off' for release-flow
  * @returns {object} result
  */
 function executeBacklog(params) {
   const { root, mode } = params;
-  const isWrite = ['add', 'update', 'comment', 'move', 'remove'].includes(mode);
+  const isWrite = WRITE_MODES.includes(mode);
+
+  // Argument checks come before anything is read or seeded: a refused call writes nothing.
+  if (mode === 'release' && (typeof params.version !== 'string' || params.version === '' || /\s/.test(params.version))) {
+    return { ok: false, refusal: 'bad-version', diagnostics: [] };
+  }
+  if (mode === 'release-flow' && params.flag !== 'on' && params.flag !== 'off') {
+    return { ok: false, refusal: 'bad-flag', diagnostics: [] };
+  }
 
   // Load board first, then definitions
   const board = storage.readBoard(root);
@@ -236,6 +270,43 @@ function executeBacklog(params) {
     try { storage.writeBoard(root, next); }
     catch { return { ok: false, writeFailure: 'backlog' }; }
     return { ok: true, ticketId: params.targetId, diagnostics };
+  }
+
+  if (mode === 'release') {
+    // Every ticket waiting for a release is closed with the version, in one file write.
+    const ts = now();
+    const ticketIds = [];
+    for (const row of board.rows) {
+      const t = row.ticket;
+      if (!t || t.status !== 'awaiting-release') continue;
+      t.release = params.version;
+      t.status = 'done';
+      t.updated_at = ts;
+      row.text = JSON.stringify(t);
+      ticketIds.push(t.id);
+    }
+    if (ticketIds.length) {
+      try { storage.writeBoard(root, board.rows); }
+      catch { return { ok: false, writeFailure: 'backlog' }; }
+    }
+    return { ok: true, ticketIds, diagnostics };
+  }
+
+  if (mode === 'release-flow') {
+    // A file the core cannot parse is never overwritten.
+    if (defsResult.status === 'invalid') return { ok: false, refusal: 'definitions-unreadable', diagnostics };
+    const next = JSON.parse(JSON.stringify(defs));
+    next.release_flow = params.flag === 'on';
+    if (params.flag === 'on') {
+      addBeforeDone(next.statuses, 'awaiting-release', DEFAULT_DEFS.statuses);
+      if (Array.isArray(next.columns)) addBeforeDone(next.columns, 'release', DEFAULT_DEFS.columns);
+    }
+    // Written only when something changed, so a hand-formatted file is not reformatted for nothing.
+    if (JSON.stringify(next) !== JSON.stringify(defs)) {
+      try { storage.writeDefs(root, next); }
+      catch { return { ok: false, writeFailure: 'definitions' }; }
+    }
+    return { ok: true, releaseFlow: params.flag, diagnostics };
   }
 
   // ── Reads ───────────────────────────────────────────────────────────────

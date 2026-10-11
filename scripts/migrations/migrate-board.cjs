@@ -9,19 +9,29 @@
  * the target project, once. The shipped product only says that a migration is
  * needed (ERROR=board-migration-required); it names no path to this file.
  *
- * Usage (cwd = the target project, any branch):
- *   node <this repository>/scripts/migrations/migrate-board.cjs [--reimport]
+ * Usage: download this ONE file, then run it from the project root (cwd = the
+ * target project, any branch), with codeadd 1.5.0 or later installed in it:
+ *   node migrate-board.cjs [--reimport]
  *
- * It requires the board module by path from this repository's
- * framwork/.codeadd/scripts/, so the project being migrated needs no copy of it.
+ * It needs the board modules (backlog-board.cjs, backlog-git.cjs and their
+ * siblings). It takes them from the project's own installed
+ * <project>/.codeadd/scripts/ first, and from this repository's
+ * framwork/.codeadd/scripts/ second (a run from a clone). Neither present, or a
+ * module lacking a function this script uses, is ERROR=board-modules-missing,
+ * before anything is changed. MODULES=<dir> says which directory was used.
  *
  * THE STEPS (each checks the state first and does nothing when it is already
  * done; a finished migration prints MIGRATED=already and exits 0):
  *   1. Config. `.codeadd/board.json` absent -> written with `remote` = the
  *      `origin` URL and branch `board`. No `origin` -> ERROR=no-remote. An
- *      ignore line `.codeadd/` (or `/.codeadd/`) in .gitignore becomes the
- *      `.codeadd/*` + `!.codeadd/board.json` pair; a .gitignore that already
- *      holds the pair is left alone and is not staged.
+ *      ignore line naming the directory (`.codeadd`, `.codeadd/`, with or without
+ *      a leading `/`) becomes the `.codeadd/*` + `!.codeadd/board.json` pair; a line
+ *      naming its contents (`.codeadd/*`, `.codeadd/**`) gets the negation on the
+ *      next line; a .gitignore that already holds a negation is left alone and is
+ *      not staged. Afterwards `git check-ignore` must say .codeadd/board.json is
+ *      not ignored; a rule the script does not recognise (a nested .gitignore,
+ *      .git/info/exclude) prints IGNORE_WARNING=board-json-ignored and
+ *      IGNORE_RULE=<rule>, and the migration goes on.
  *   2. Board branch. `origin/board` absent -> its first commit is built from
  *      the BASE branch's COMMITTED files (`git show origin/<base>:docs/...`,
  *      never the working copy, which on a feature branch is stale), or an empty
@@ -53,17 +63,19 @@
  * never merged: ERROR=board-diverged lists those ids, and they are fixed by hand
  * with backlog-commit.cjs before running again.
  *
- * Output: KEY=value lines. MIGRATED=done|already, BOARD_DIR, BASE_BRANCH,
+ * Output: KEY=value lines. MODULES, MIGRATED=done|already, BOARD_DIR, BASE_BRANCH,
  * BASE_SHA, BOARD_BRANCH_CREATED=yes, REIMPORTED=<n>, CODE_CHANGES=staged and
- * one STAGED=<path> per path, RECOVERY_REFS, LEFTOVER / RECOVERY_PATH.
+ * one STAGED=<path> per path, RECOVERY_REFS, LEFTOVER / RECOVERY_PATH,
+ * IGNORE_WARNING / IGNORE_RULE.
  * Errors: ERROR=no-remote | board-unrecognised | board-diverged |
- * code-side-dirty | not-a-git-repository | board-unavailable | bad-argument.
+ * code-side-dirty | not-a-git-repository | board-unavailable | bad-argument |
+ * board-modules-missing.
  *
  * Exit codes: 0 done or already done, 1 failure, 2 caller error (bad argument,
  * not a git repository).
  *
- * Dependencies: Node built-ins, git, and framwork/.codeadd/scripts/backlog-board.cjs
- * with its siblings.
+ * Dependencies: Node built-ins, git, and backlog-board.cjs / backlog-git.cjs with
+ * their siblings, from the project's .codeadd/scripts/ or from a clone.
  */
 
 'use strict';
@@ -71,17 +83,13 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-
-const REPO = path.resolve(__dirname, '..', '..');
-const SCRIPTS = path.join(REPO, 'framwork', '.codeadd', 'scripts');
-const board = require(path.join(SCRIPTS, 'backlog-board.cjs'));
-const git = require(path.join(SCRIPTS, 'backlog-git.cjs'));
+const { spawnSync } = require('node:child_process');
 
 const BACKLOG = 'docs/backlog.jsonl';
 const DEFS = 'docs/backlog.definitions.json';
 const BRANCH = 'board';
-const DIR_LINE = '.codeadd/';
-const PAIR = ['.codeadd/*', '!.codeadd/board.json'];
+const CONTENTS_LINE = '.codeadd/*';
+const NEGATION = '!.codeadd/board.json';
 
 const out = [];
 const say = (key, value) => out.push(`${key}=${value}`);
@@ -93,6 +101,46 @@ function stop(code, key, value, detail) {
   flush();
   process.exit(code);
 }
+
+// ---------------------------------------------------------------------------
+// The board modules: the project's own install first, a clone second
+// ---------------------------------------------------------------------------
+
+// Everything this script calls on the two modules. Checked before any change.
+const NEEDED = {
+  'backlog-board.cjs': ['acquireLock', 'codeRootOf', 'CONFIG_FILE', 'readConfig', 'resolve', 'sync', 'writerWaitMs'],
+  'backlog-git.cjs': ['commitFiles', 'commitTrailers', 'conditionsAt', 'identityArgs', 'pushBranch', 'RECOVERY_NS', 'remoteHasBranch', 'rootCommit', 'run'],
+};
+
+/** The git top-level of the cwd, or null. The board module is not loaded yet, so it cannot say. */
+function topLevel() {
+  const res = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), encoding: 'utf8' });
+  return res.status === 0 && res.stdout.trim() ? path.resolve(res.stdout.trim()) : null;
+}
+
+function loadModules() {
+  const top = topLevel();
+  const candidates = [];
+  if (top) candidates.push(path.join(top, '.codeadd', 'scripts'));
+  candidates.push(path.join(__dirname, '..', '..', 'framwork', '.codeadd', 'scripts'));
+  const dir = candidates.find((d) => Object.keys(NEEDED).every((name) => fs.existsSync(path.join(d, name))));
+  const missing = (detail) => stop(1, 'ERROR', 'board-modules-missing', detail + ' This script needs codeadd 1.5.0 or later installed in the project (run: npx codeadd update).');
+  if (!dir) missing('No backlog-board.cjs / backlog-git.cjs in ' + (top ? path.join(top, '.codeadd', 'scripts') : 'the current directory') + '.');
+  const loaded = {};
+  for (const [name, exported] of Object.entries(NEEDED)) {
+    try {
+      loaded[name] = require(path.join(dir, name));
+    } catch (e) {
+      missing(`${path.join(dir, name)} could not be loaded (${e.code || e.message}).`);
+    }
+    const lacking = exported.filter((k) => loaded[name][k] === undefined);
+    if (lacking.length) missing(`${path.join(dir, name)} lacks ${lacking.join(', ')}.`);
+  }
+  return { board: loaded['backlog-board.cjs'], git: loaded['backlog-git.cjs'], dir };
+}
+
+const { board, git, dir: MODULES_DIR } = loadModules();
+say('MODULES', MODULES_DIR);
 
 const g = (args, cwd, opts) => git.run(args, cwd, { allowFailure: true, ...opts });
 
@@ -140,21 +188,41 @@ function rowsById(text) {
 // Step 1 (code side, in memory) — the ignore line
 // ---------------------------------------------------------------------------
 
-/** The rewritten .gitignore text, or null when nothing needs to change. */
+/**
+ * The rewritten .gitignore text, or null when nothing needs to change. A line
+ * naming the directory becomes the contents line plus the negation; a line
+ * naming the contents keeps itself and gets the negation after it. Every
+ * matching line is handled, because the LAST matching rule wins.
+ */
 function rewriteIgnore(text) {
   if (text === null) return null;
   const lines = text.split('\n');
-  const hasPair = lines.some((l) => l.trim() === PAIR[1] || l.trim() === '!/' + PAIR[1]);
-  if (hasPair) return null;
+  const hasNegation = lines.some((l) => l.trim() === NEGATION || l.trim() === '!/' + NEGATION.slice(1));
+  if (hasNegation) return null;
   let changed = false;
   const next = [];
   for (const line of lines) {
     const t = line.trim();
-    if (t === DIR_LINE) { next.push(...PAIR); changed = true; } else if (t === '/' + DIR_LINE) {
-      next.push('/' + PAIR[0], '!/' + PAIR[1]); changed = true;
+    const anchor = t.startsWith('/') ? '/' : '';
+    const bare = anchor ? t.slice(1) : t;
+    const cr = line.endsWith('\r') ? '\r' : '';
+    if (bare === '.codeadd' || bare === '.codeadd/') {
+      next.push(anchor + CONTENTS_LINE + cr, '!' + anchor + NEGATION.slice(1) + cr);
+      changed = true;
+    } else if (bare === CONTENTS_LINE || bare === '.codeadd/**') {
+      next.push(line, '!' + anchor + NEGATION.slice(1) + cr);
+      changed = true;
     } else next.push(line);
   }
   return changed ? next.join('\n') : null;
+}
+
+/** The rule that still ignores .codeadd/board.json (`git check-ignore -v`), or null when none does. */
+function ignoringRule(root) {
+  // The verdict comes from the plain form: with -v, git also prints a matching negation and exits 0.
+  if (g(['check-ignore', '--no-index', '-q', '--', board.CONFIG_FILE], root).status !== 0) return null;
+  const named = g(['check-ignore', '--no-index', '-v', '--', board.CONFIG_FILE], root);
+  return named.stdout.trim().split('\t')[0] || 'an ignore rule';
 }
 
 // ---------------------------------------------------------------------------
@@ -395,6 +463,12 @@ function main(argv) {
     g(['add', '--', '.gitignore'], root);
     staged.push('.gitignore');
     changed = true;
+  }
+  const stillIgnored = ignoringRule(root);
+  if (stillIgnored) {
+    say('IGNORE_WARNING', 'board-json-ignored');
+    say('IGNORE_RULE', stillIgnored);
+    out.push('.codeadd/board.json is tracked here only because it was added with -f. Un-ignore it (a "!.codeadd/board.json" line after the rule above) so later edits to it show up.');
   }
   for (const file of [BACKLOG, DEFS]) {
     const tracked = g(['ls-files', '--error-unmatch', '--', file], root).status === 0;
