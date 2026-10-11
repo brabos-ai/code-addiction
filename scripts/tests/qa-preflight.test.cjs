@@ -270,3 +270,75 @@ test('qa-preflight#025 — phase b without FEATURE_DIR → exit 2 with usage', (
   assert.equal(res.status, 2, res.output);
   assert.match(res.output, /Usage/);
 });
+
+// ─── Phase A: QA_CONTRACT_MATCH=broken says why ──────────────────────────────
+
+const SHIPPED = 'sha256:2326519b34fdd1fe';
+const OLD = 'sha256:d599ad3ab3c9f345';
+const BROKEN_ROWS = [
+  'QA_CONTRACT_RECEIPT_SHAPE',
+  'QA_CONTRACT_RECEIPT_VERSION',
+  'QA_CONTRACT_SHIPPED_SHAPE',
+  'QA_CONTRACT_CHANGED_IN',
+  'QA_CONTRACT_ACTION',
+];
+
+function writeReceipt(base, { shape, version } = {}) {
+  const lines = ['---'];
+  if (shape) lines.push(`setup-shape: ${shape}`);
+  if (version) lines.push(`framework-version: ${version}`);
+  lines.push('---', '', '# QA setup', '');
+  h.write(path.join(base, 'docs', 'qa', 'qa-setup.md'), lines.join('\n'));
+}
+
+function writeSidecar(base, contracts) {
+  h.write(path.join(base, '.codeadd', 'contracts.json'), JSON.stringify({ version: 1, contracts }, null, 2));
+}
+
+test('qa-preflight#026 — broken: prints both shapes, both versions and the action', (t) => {
+  const base = project(t);
+  writeReceipt(base, { shape: OLD, version: '1.2.4' });
+  writeSidecar(base, { 'add-qa-setup': { shape: SHIPPED, changed_in: '1.3.2', paths: [] } });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONTRACT_MATCH=broken/);
+  assert.match(res.output, new RegExp(`QA_CONTRACT_RECEIPT_SHAPE=${OLD}`));
+  assert.match(res.output, /QA_CONTRACT_RECEIPT_VERSION=1\.2\.4/);
+  assert.match(res.output, new RegExp(`QA_CONTRACT_SHIPPED_SHAPE=${SHIPPED}`));
+  assert.match(res.output, /QA_CONTRACT_CHANGED_IN=1\.3\.2/);
+  assert.match(res.output, /QA_CONTRACT_ACTION=\/add-qa-setup/);
+});
+
+test('qa-preflight#027 — broken: sidecar without changed_in → CHANGED_IN=unknown; receipt without version → RECEIPT_VERSION=unknown', (t) => {
+  const base = project(t);
+  writeReceipt(base, { shape: OLD });
+  writeSidecar(base, { 'add-qa-setup': { shape: SHIPPED, paths: [] } });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONTRACT_MATCH=broken/);
+  assert.match(res.output, /QA_CONTRACT_CHANGED_IN=unknown/);
+  assert.match(res.output, /QA_CONTRACT_RECEIPT_VERSION=unknown/);
+});
+
+test('qa-preflight#028 — equal shapes → QA_CONTRACT_MATCH=ok and none of the five rows', (t) => {
+  const base = project(t);
+  writeReceipt(base, { shape: SHIPPED, version: '1.5.0' });
+  writeSidecar(base, { 'add-qa-setup': { shape: SHIPPED, changed_in: '1.3.2', paths: [] } });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONTRACT_MATCH=ok/);
+  for (const key of BROKEN_ROWS) assert.doesNotMatch(res.output, new RegExp(key));
+});
+
+test('qa-preflight#029 — another contract carrying changed_in does not leak into add-qa-setup', (t) => {
+  const base = project(t);
+  writeReceipt(base, { shape: OLD, version: '1.2.4' });
+  writeSidecar(base, {
+    'add-qa-setup': { shape: SHIPPED, paths: [] },
+    'add-zzz': { shape: 'sha256:1111111111111111', changed_in: '9.9.9', paths: [] },
+  });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONTRACT_CHANGED_IN=unknown/);
+  assert.doesNotMatch(res.output, /9\.9\.9/);
+});
