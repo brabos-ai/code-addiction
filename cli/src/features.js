@@ -9,6 +9,7 @@ import {
   reconcileSlots,
 } from './injection-core.js';
 import { isPluginDetected } from './plugins.js';
+import { resolveSelected } from './providers.js';
 
 /**
  * Emit an actionable, loud warning when an anchor cannot be located (the user
@@ -189,6 +190,24 @@ function getFragments(cwd, featureName) {
 }
 
 /**
+ * Warn, once, that a feature does nothing on the installed providers that carry no
+ * `commandsSubdir` (Codex, Antigravity, ZCode install commands as skills, and
+ * injection only targets commands). Reads the manifest at call time, so a caller
+ * that changed providers first sees the final set. Silent when none is installed.
+ * Never changes the manifest, an exit code or what enabling does.
+ * @param {string} cwd
+ * @param {string} featureKey  canonical registry key, never a retired alias
+ */
+export function warnUninjectedProviders(cwd, featureKey) {
+  const manifest = readManifest(cwd);
+  const labels = resolveSelected(manifest?.providers ?? [], manifest?.scope ?? 'project')
+    .filter((p) => !p.commandsSubdir)
+    .map((p) => p.label);
+  if (labels.length === 0) return;
+  log.warn(`Feature "${featureKey}" has no effect on ${labels.join(', ')}: they install commands as skills and receive no feature injection.`);
+}
+
+/**
  * Enable a feature — inject fragment content into command markers.
  * @param {string} cwd
  * @param {string} featureName
@@ -287,6 +306,7 @@ export async function features(cwd, args, scope = 'project') {
         const { modified } = enableFeature(cwd, name);
         totalModified += modified;
         log.success(`Feature "${name}" enabled. ${modified} file(s) modified.`);
+        warnUninjectedProviders(cwd, name);
       } else if (!nowEnabled && wasEnabled) {
         const { modified } = disableFeature(cwd, name);
         totalModified += modified;
@@ -325,6 +345,7 @@ export async function features(cwd, args, scope = 'project') {
     if (action === 'enable') {
       const { modified } = enableFeature(cwd, canonical);
       log.success(`Feature "${canonical}" enabled. ${modified} file(s) modified.`);
+      warnUninjectedProviders(cwd, canonical);
     } else {
       const { modified } = disableFeature(cwd, canonical);
       log.success(`Feature "${canonical}" disabled. ${modified} file(s) modified.`);

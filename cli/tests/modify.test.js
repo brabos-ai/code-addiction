@@ -494,6 +494,37 @@ describe('applyDesiredState — features and plugins only (L2.4)', () => {
   });
 });
 
+describe('applyDesiredState — feature warning on providers without injection (0039B)', () => {
+  const notes = () => log.warn.mock.calls.map((c) => String(c[0])).filter((m) => /no feature injection/.test(m));
+
+  it('enabling a feature with codex installed warns once, naming Codex', async () => {
+    seed(['claude', 'codex']);
+    await applyDesiredState(dir, { providers: ['claude', 'codex'], features: { 'agent-mode': true } });
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('Codex (OpenAI)');
+  });
+
+  it('sees the providers added in the same call, so antigrav and zcode are both named', async () => {
+    seed(['claude']);
+    await applyDesiredState(dir, { providers: ['claude', 'antigrav', 'zcode'], features: { 'agent-mode': true } });
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('Antigravity (Google)');
+    expect(notes()[0]).toContain('ZCode (Z.ai)');
+  });
+
+  it('stays silent when only claude, cursor and opencode are installed', async () => {
+    seed(['claude', 'cursor', 'opencode']);
+    await applyDesiredState(dir, { providers: ['claude', 'cursor', 'opencode'], features: { 'agent-mode': true } });
+    expect(notes()).toHaveLength(0);
+  });
+
+  it('adding codex with no feature change does not warn', async () => {
+    seed(['claude']);
+    await applyDesiredState(dir, { providers: ['claude', 'codex'] });
+    expect(notes()).toHaveLength(0);
+  });
+});
+
 describe('applyDesiredState — refusals', () => {
   it('refuses a provider with no global destination in global scope, and writes nothing', async () => {
     seed(['claude'], { scope: 'global' });

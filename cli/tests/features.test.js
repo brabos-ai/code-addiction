@@ -546,3 +546,64 @@ describe('features() CLI interactive mode', () => {
     expect(readManifest(tmpDir).features['tdd-pipeline']).toBe(false);
   });
 });
+
+// 0039B -- a feature enabled where it does nothing says so (Codex, Antigravity and ZCode
+// install commands as skills, so injection never reaches them).
+describe('warnUninjectedProviders (0039B)', () => {
+  const NOTE = /no feature injection/;
+  const notes = () => log.warn.mock.calls.map((c) => String(c[0])).filter((m) => NOTE.test(m));
+
+  beforeEach(() => {
+    log.warn.mockClear();
+  });
+
+  it('names Codex once when it is installed', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'codex'] });
+    await features(tmpDir, ['enable', 'agent-mode']);
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('Codex (OpenAI)');
+    expect(notes()[0]).toContain('agent-mode');
+  });
+
+  it('names Antigravity and ZCode together in the one warning', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'antigrav', 'zcode'] });
+    await features(tmpDir, ['enable', 'agent-mode']);
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('Antigravity (Google)');
+    expect(notes()[0]).toContain('ZCode (Z.ai)');
+  });
+
+  it('stays silent when only providers with injection are installed', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: {}, providers: ['claude', 'cursor', 'opencode'] });
+    await features(tmpDir, ['enable', 'agent-mode']);
+    expect(notes()).toHaveLength(0);
+  });
+
+  it('does not warn on disable, and does not change the manifest write', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { 'agent-mode': true }, providers: ['codex'] });
+    await features(tmpDir, ['disable', 'agent-mode']);
+    expect(notes()).toHaveLength(0);
+    expect(readManifest(tmpDir).features['agent-mode']).toBe(false);
+  });
+
+  it('warns under the canonical key when enabled through a retired alias', async () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { 'tdd-pipeline': false }, providers: ['codex'] });
+    await features(tmpDir, ['enable', 'tdd']);
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('"tdd-pipeline"');
+  });
+
+  it('warns once per feature the interactive menu newly enables', async () => {
+    const tty = process.stdin.isTTY;
+    process.stdin.isTTY = true;
+    try {
+      writeManifest(tmpDir, { version: '1.0.0', features: { 'tdd-pipeline': true }, providers: ['codex'] });
+      mockPromptFeatures.mockResolvedValue(['tdd-pipeline', 'agent-mode']);
+      await features(tmpDir, []);
+    } finally {
+      process.stdin.isTTY = tty;
+    }
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('agent-mode');
+  });
+});

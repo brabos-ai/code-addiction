@@ -14,8 +14,11 @@
 
 **Stop kind** follows `{{skill:add--delivery-mode/SKILL.md}}`: a **deciding** stop waits on every
 delivery mode and sends its questions as one numbered batch; a **confirming** stop never waits — it
-prints what it would have shown and continues, on `confirm` and on `automatic` alike. Every gate above
-that stops is deciding — each presents a failure or a choice no approval covered.
+prints what it would have shown and continues, on `confirm` and on `automatic` alike. A gate above that
+stops on a missing prerequisite (a file, a document, a setup) is an **error stop** under
+`{{skill:add--agent-interaction/SKILL.md}}`, whatever the table above calls it: it names what failed and the
+command that unblocks it, and offers no alternative. Every other gate above that stops is deciding — it
+presents a choice no approval covered.
 
 <!-- /section:stop-kinds -->
 

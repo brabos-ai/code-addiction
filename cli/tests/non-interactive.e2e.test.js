@@ -48,6 +48,7 @@ vi.mock('@clack/prompts', () => ({
   log: { success: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), message: vi.fn() },
 }));
 
+import { log } from '@clack/prompts';
 import { install, writeManifest } from '../src/installer.js';
 import { modify, providers as providersCmd } from '../src/modify.js';
 import { update } from '../src/updater.js';
@@ -210,6 +211,31 @@ describe('install with no TTY (L2.1-L2.5, L2.9)', () => {
     expect(m.features.board).toBe(true);
     expect(m.plugins?.gx?.enabled).not.toBe(true);
     expect(promptsCalled()).toEqual([]);
+  });
+});
+
+describe('install warns when a requested feature has no effect on an installed provider (0039B)', () => {
+  const notes = () => log.warn.mock.calls.map((c) => String(c[0])).filter((m) => /no feature injection/.test(m));
+
+  it('an explicit --enable-feature with codex installed warns once, naming Codex', async () => {
+    log.warn.mockClear();
+    await install(dir, { args: ['--providers', 'claude,codex', '--enable-feature', 'agent-mode'] });
+    expect(notes()).toHaveLength(1);
+    expect(notes()[0]).toContain('Codex (OpenAI)');
+    expect(notes()[0]).toContain('agent-mode');
+  });
+
+  it('a plain install stays silent even though tdd-pipeline is on by default', async () => {
+    log.warn.mockClear();
+    await install(dir, { args: ['--providers', 'claude,codex'] });
+    expect(manifest().features['tdd-pipeline']).toBe(true);
+    expect(notes()).toHaveLength(0);
+  });
+
+  it('--disable-feature never warns', async () => {
+    log.warn.mockClear();
+    await install(dir, { args: ['--providers', 'claude,codex', '--disable-feature', 'tdd-pipeline'] });
+    expect(notes()).toHaveLength(0);
   });
 });
 

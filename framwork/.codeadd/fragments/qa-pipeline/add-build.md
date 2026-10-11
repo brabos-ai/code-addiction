@@ -29,7 +29,7 @@ to the base contract above (consume, scoped re-review, resolution annex, finaliz
    before changing any code. The confirmation gate is mandatory; routing decides
    *who* fixes, never *whether*.
    **Stop kind — confirming** (`add--delivery-mode`). On an automatic delivery,
-   print the grouped rows in full and continue: every agent-routed row is fixed.
+   print the grouped rows in full and continue: every agent-routed row is fixed, except those the base contract defers (`minor`, `polish` and `lint` rows; `formatter` rows go to the formatter).
    The user ran the review that produced them, and asked for its routes to be applied.
 3. **DISPATCH by ROUTE, not by severity.** Work the table in its given `Order`,
    respecting `Blocked by`, and **one agent in flight at a time** — STEP add-build.dependency-order owns that
@@ -39,6 +39,7 @@ to the base contract above (consume, scoped re-review, resolution annex, finaliz
 
    | Route → agent | Who takes it |
    |---|---|
+   | `formatter` rows and deferred `minor`/`polish` rows | Not dispatched here: the base contract (STEP add-build.consume) runs the formatter after the confirmation above and defers the rest |
    | code rows — `@database-agent`, `@backend-agent`, `@frontend-agent` in the table | ONE `@fix-agent` for all of them, per the **Correction Dispatch** contract and its `ATTEMPT` counter. The area agents are not dispatched for a correction |
    | `@e2e-agent` rows (`test-file`) | `@e2e-agent`, once, for all its rows, after the `@fix-agent` wave, with `CAPTURE_DIR` = `${FEATURE_DIR}/_build/e2e-scratch` (deleted afterwards). It is a repair of an existing spec, not the delivery-time authoring |
    | `@ux-agent` rows (`design-spec`) with their contract-line citation | `@ux-agent` in **FIX MODE — design-spec route** |
@@ -59,7 +60,7 @@ to the base contract above (consume, scoped re-review, resolution annex, finaliz
 4. Apply fixes with CORRECTION MODE discipline: follow project patterns, frontend
    loads `add--ux-design`, the build must compile 100%. Surface all severities; the
    user chooses the fix scope — on an automatic delivery the scope is every
-   agent-routed row, and the manual ones wait for the user as step 3 says.
+   agent-routed row the base contract does not defer, and the manual ones wait for the user as step 3 says.
 
 `## Final Review` then writes this run's verdict.
 
@@ -97,5 +98,7 @@ Then append the ledger line, once, through `build-ledger.cjs`: `e2e: complete (N
 <!-- section:next-command -->
 
 - **QA is still owed** (qa-pipeline) — the QA judgement lives only in `{{cmd:add-review}}`. This build proves the specs pass and the Final Review reads the code; neither judges the screens. When the delivery declares screens (it has `## QA/E2E Specification` rows) and this is a normal build or an epic's last subfeature, name `{{cmd:add-review}}` for this feature as the next step, ahead of `/add-done`. On an earlier subfeature the e2e specs and the QA judgement both wait for the last one, so the next step stays the next subfeature's plan. With no screens declared there is no QA to owe: say nothing. On `automatic` the build still never runs it for you.
+
+  **One exception: a routed CORRECTION.** When this run consumed a review's `## Fix Routing` (STEP add-build.correct) AND `node .codeadd/scripts/qa-evidence.cjs working-baseline "${FEATURE_DIR}"` prints a `BASELINE` other than `none`, that review already judged QA and the newest working run is the gate: name `{{cmd:add-done}}` as the next step instead. A normal development build after an older review still owes QA, because its new code was never judged.
 
 <!-- /section:next-command -->
