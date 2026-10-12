@@ -192,10 +192,16 @@ recommend `/add-framework--plan` first.
 
 Direct mode has no F-blocks, so it has no ledger and no per-block cycle.
 
-### 1.3 Worktree for Risky Builds
+### 1.3 Branch and Worktree
 
 A build touching multiple artefacts or rewriting existing commands is easier to discard than to roll
 back. RECOMMEND a branch and worktree before implementing.
+
+**A build that starts on `main` creates its own branch, before STEP 2, and goes on — never ask.**
+Name it `feat/<slug>`: in planned mode the slug is the plan basename after `PLAN--`; in direct mode it
+is the kebab-case name collected at 1.2. A branch of that name that already exists is switched to, not
+recreated. `main` is the literal name, as STEP 9 uses it; a detached HEAD is out of scope. Creating a
+local branch is not a hard stop — the push to a shared remote is, and STEP 9 keeps it.
 
 After a build that changed the product artefact set, RECOMMEND `/add-framework--sync` to regenerate
 the ecosystem map, the README and the web docs.
@@ -626,9 +632,9 @@ IF THE BRANCH HAS NO PR AND THE USER HAS NOT ANSWERED:
   ✅ DO: Ask, and WAIT
 ```
 
-**The `main` case is not theoretical.** This skill never creates a branch — STEP 1.3 only
-recommends one — so a direct build can be sitting on `main`, and offering to push there would put
-work past every gate `/add-framework--done` exists to enforce.
+**The `main` case is a net, not the plan.** STEP 1.3 moves a build off `main` before it commits, so
+this guard should never fire; if work still sits on `main`, offering to push there would put it past
+every gate `/add-framework--done` exists to enforce.
 
 On the first push, ask whether to push the branch and open the PR, as one numbered item with a RECOMMENDED line
 (`add-interaction`). Then:
