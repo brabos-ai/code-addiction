@@ -53,6 +53,7 @@ claude -p "<your answer>" --resume <session_id> --output-format json \
 - `reason` says what the run asks. `next_step` carries the question or the next command.
 - Pass `--json-schema` again on every call. The flag belongs to one call, not to the session, so a
   resumed call without it returns no `structured_output`.
+
 Rules for a bot, every time:
 
 - Always resume with `--resume <session_id>`, where `session_id` is the `.session_id` of the envelope the
