@@ -53,8 +53,18 @@ claude -p "<your answer>" --resume <session_id> --output-format json \
 - `reason` says what the run asks. `next_step` carries the question or the next command.
 - Pass `--json-schema` again on every call. The flag belongs to one call, not to the session, so a
   resumed call without it returns no `structured_output`.
-- `claude -c` continues the most recent session in the directory. Use it only when no other run
-  started there since. `--resume <session_id>` is always safe.
+
+Rules for a bot, every time:
+
+- Always resume with `--resume <session_id>`, where `session_id` is the `.session_id` of the envelope the
+  run returned.
+- Never use `-c` or `--continue`. They pick the most recent session in the directory, which can be
+  another bot's.
+- Never pick a session by the newest `.jsonl` file. It has the same flaw.
+- Always run each agent in its own git worktree.
+- Never switch branches in a checkout that other agents share.
+
+The board is not affected: it lives in its own clone, outside every checkout.
 
 ## 3. The stop rule
 
