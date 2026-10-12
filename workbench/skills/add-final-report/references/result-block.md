@@ -43,7 +43,15 @@ Read `.session_id` from the envelope, then answer in the same session:
 claude -p "<answer>" --resume <session_id> --output-format json --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
 ```
 
-`claude -c` in place of `--resume <session_id>` continues the most recent session in the same directory. Use it only when no other run started there since.
+Rules for a bot, every time:
+
+- Always resume with `--resume <session_id>`, where `session_id` is the `.session_id` of the envelope the run returned.
+- Never use `-c` or `--continue`. They pick the most recent session in the directory, which can be another bot's.
+- Never pick a session by the newest `.jsonl` file. It has the same flaw.
+- Always run each agent in its own git worktree.
+- Never switch branches in a checkout that other agents share.
+
+The board is not affected: it lives in its own clone, outside every checkout.
 
 PowerShell:
 
