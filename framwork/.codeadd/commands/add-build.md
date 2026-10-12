@@ -1167,7 +1167,7 @@ it — **LOAD `{{skill:add--review-discipline/SKILL.md}}`** and follow **The Bui
 `Final review head:` line after it. On the epic's last subfeature, run the **DELTA pass** below first; its findings join this review.
 
 **After a CORRECTION run, dispatch nothing new — unless the scope check below fails.** STEP add-build.re-review's re-review is this run's review: write
-the verdict from it, plus its `Final review head:` line — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
+the verdict from it in the `Final review: <verdict> (after review-NNN)` grammar (`build-ledger.cjs` refuses any other), plus its `Final review head:` line — all `ADDRESSED` → `passed`, open non-blockers → `ruled N`, an open blocker →
 `blocked N` with its `Blocker suggestion:` lines. Without the line, the review STEP add-build.correct answered stays
 the newest verdict and `/add-done` blocks on it.
 
@@ -1320,7 +1320,12 @@ unit: the subfeature `SFxx` on an epic (from the argument, else `EPIC_CURRENT_SF
 feature. It implements
 nothing and dispatches no implementer.
 
-1. **Not an epic** → go to STEP add-build.publish. A simple feature has no checkpoint.
+1. **Not an epic** → run the gate script once, un-scoped, and read its `KEY=VALUE` lines — never re-derive
+   a gate by hand: `node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}"`.
+   `GATES_OK=5/5` → the feature converged, go to STEP add-build.publish. Anything short of `5/5` →
+   exit BLOCKED naming each gate that is not `ok` (a `skipped` gate is a pass, not named) (with `GATE_REVIEW_DETAIL` / `GATE_COVERAGE_DETAIL` when
+   present), then go to STEP add-build.publish, which prints them before its question. A simple feature has
+   no checkpoint, and the script is a read-only diagnosis: it adds no ledger line.
 2. **Epic, and `SFxx` is the last subfeature whose row is not `done`** → run `## The Checkpoint
    Sequence`, then the epic-wide gate below. The DELTA pass already ran, inside `## Final Review`.
 3. **Epic, other rows still pending** → run `## The Checkpoint Sequence` only.
@@ -1589,8 +1594,8 @@ Fill the blocks from this build:
 Then, after the seven blocks and before any metadata, print STEP add-build.rulings-i-made and STEP add-build.next-command below — whole, in their
 own shape. Then apply STEP add-build.handoff, which runs last because the offer comes after the metadata.
 
-**Metadata last:** feature ID, files summary (per area count), build status, and the ledger path with
-its commit brackets.
+**Metadata last:** feature ID, files summary (per area count), build status (BLOCKED, not complete,
+when `## Loop End` exited BLOCKED), and the ledger path with its commit brackets.
 <!-- slot:board.ticket-metadata fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-metadata -->
 <!-- /feature:board:ticket-metadata -->

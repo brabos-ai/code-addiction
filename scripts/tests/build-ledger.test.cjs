@@ -271,3 +271,47 @@ test('build-ledger:EXTRA a refused write exits 1 with ERROR= and no LEDGER= cont
     cleanup();
   }
 });
+
+// Plan 0049B — a Final review: line outside the grammar is refused at the write.
+test('build-ledger#018 0049B L1.4: Final review without (after review-NNN) exits 2, names the grammar, creates nothing', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    const res = h.runScript('build-ledger', [LEDGER, 'Final review: passed', FEATURE_ID, PLAN_PATH], { cwd: repo });
+    assert.equal(res.status, 2, res.output);
+    assert.ok(res.stderr.includes('Final review: passed|ruled N|blocked N (after review-NNN)'), 'stderr names the grammar');
+    assert.equal(res.stdout.includes('LEDGER='), false, 'no success contract on a refused line');
+    assert.equal(fs.existsSync(abs(repo, LEDGER)), false, 'the ledger file is not created');
+  } finally {
+    cleanup();
+  }
+});
+
+test('build-ledger#019 0049B L1.5: a wrong verdict word or trailing text exits 2', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    for (const line of ['Final review: ok (after review-001)', 'Final review: passed (after review-001) extra']) {
+      const res = h.runScript('build-ledger', [LEDGER, line, FEATURE_ID, PLAN_PATH], { cwd: repo });
+      assert.equal(res.status, 2, `${line}\n${res.output}`);
+    }
+  } finally {
+    cleanup();
+  }
+});
+
+test('build-ledger#020 0049B L1.6: well-formed Final review lines and Final review head are appended', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    for (const line of [
+      'Final review: passed (after review-000)',
+      'Final review: ruled 2 (after review-003)',
+      'Final review: blocked 1 (after review-012)',
+      'Final review head: abc123',
+    ]) {
+      const res = h.runScript('build-ledger', [LEDGER, line, FEATURE_ID, PLAN_PATH], { cwd: repo });
+      assert.equal(res.status, 0, `${line}\n${res.output}`);
+      assert.ok(ledgerLines(repo).includes(line), `${line} appended`);
+    }
+  } finally {
+    cleanup();
+  }
+});

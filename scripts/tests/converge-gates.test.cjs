@@ -1358,3 +1358,93 @@ test('converge-gates#083 — light review loop L1.5b: a malformed or different-s
   assert.match(res.output, /GATE_QA_BASELINE=broken/);
   assert.doesNotMatch(res.output, /advanced from/);
 });
+
+// ─── Plan 0049B — the coverage reader lets go of a table when it ends ────────
+
+function featureWithPlan(t, id, planLines) {
+  const base = project(t);
+  const dir = path.join('docs', 'features', id);
+  h.write(path.join(base, dir, 'plan.md'), planLines.join('\n') + '\n');
+  return { base, dir };
+}
+
+test('converge-gates#090 — 0049B L1.1: a second table without Covered? is not read as coverage rows', (t) => {
+  const { base, dir } = featureWithPlan(t, '0096F-two-tables', [
+    '| ID | Requirement | Covered? |',
+    '|----|-------------|----------|',
+    '| RF01 | one | YES |',
+    '| RF02 | two | YES |',
+    '',
+    '| Area | Test File | Status |',
+    '|------|-----------|--------|',
+    '| api | a.test.js | done |',
+    '| ui | b.test.js | done |',
+    '',
+  ]);
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_COVERAGE=ok/);
+  assert.match(res.output, /COVERAGE_UNCOVERED=0/);
+});
+
+test('converge-gates#091 — 0049B L1.2: a later table that carries Covered? is still read', (t) => {
+  const { base, dir } = featureWithPlan(t, '0097F-two-covered', [
+    '| ID | Requirement | Covered? |',
+    '|----|-------------|----------|',
+    '| RF01 | one | YES |',
+    '',
+    '| RF/RN | Test Cases | Covered? |',
+    '|-------|------------|----------|',
+    '| RF01 | T1 | YES |',
+    '| RF02 | T2 | NO |',
+    '',
+  ]);
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_COVERAGE=broken/);
+  assert.match(res.output, /COVERAGE_UNCOVERED=1/);
+});
+
+test('converge-gates#092 — 0049B L1.3: an epic-wide run keeps the uncovered count when the LAST plan has no table', (t) => {
+  const base = project(t);
+  const dir = path.join('docs', 'features', '0098F-last-no-table');
+  const abs = path.join(base, dir);
+  writeEpic(abs, 'all-done');
+  h.write(
+    path.join(abs, 'subfeatures', 'SF01-alpha', 'plan.md'),
+    '| ID | Requirement | Covered? |\n|----|---|---|\n| RF01 | a | NO |\n',
+  );
+  h.write(path.join(abs, 'subfeatures', 'SF02-beta', 'plan.md'), '# Plan\n\nno table here\n');
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_COVERAGE=broken/);
+  assert.match(res.output, /COVERAGE_UNCOVERED=1/);
+});
+
+test('converge-gates#093 — 0049B L1.3b: a data cell reading Covered cannot latch a table whose header has no Covered?', (t) => {
+  const { base, dir } = featureWithPlan(t, '0099F-data-cell', [
+    '| ID | Requirement | Covered? |',
+    '|----|-------------|----------|',
+    '| RF01 | one | YES |',
+    '',
+    '| Area | Note | Status |',
+    '|------|------|--------|',
+    '| api | Covered | done |',
+    '| ui | pending | todo |',
+    '',
+  ]);
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_COVERAGE=ok/);
+  assert.match(res.output, /COVERAGE_UNCOVERED=0/);
+});
+
+test('converge-gates#094 — 0049B: one Covered? table followed by prose still reports its uncovered rows', (t) => {
+  const { base, dir } = featureWithPlan(t, '0100F-table-then-prose', [
+    '| ID | Requirement | Covered? |',
+    '|----|-------------|----------|',
+    '| RF01 | one | NO |',
+    '',
+    'Closing notes.',
+    '',
+  ]);
+  const res = h.runScript('converge-gates', [dir], { cwd: base });
+  assert.match(res.output, /GATE_COVERAGE=broken/);
+  assert.match(res.output, /COVERAGE_UNCOVERED=1/);
+});
