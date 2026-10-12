@@ -112,4 +112,10 @@ describe('product agent mode', () => {
     expect(block, 'codeadd-shell block not found in add-wiki.md').not.toBeNull();
     expect(block[1]).toContain('.codeadd/agent-mode/README.md');
   });
+
+  it('L1.8 the guide states the resume and worktree rules and no claude -c', () => {
+    const guide = fs.readFileSync(GUIDE, 'utf8');
+    expect(guide).not.toContain('claude -c');
+    for (const anchor of ['--resume <session_id>', '.jsonl', 'worktree']) expect(guide).toContain(anchor);
+  });
 });
