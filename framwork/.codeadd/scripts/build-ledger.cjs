@@ -10,7 +10,9 @@
  * Usage: node .codeadd/scripts/build-ledger.cjs <LEDGER_FILE> <LINE> [FEATURE_ID] [PLAN_PATH]
  * Output: KEY=VALUE lines — LEDGER=<path exactly as given>, CREATED=true|false,
  *         LINES=<entries after the header>.
- * Exit:   0 on success. 2 ONLY on CLI misuse. 1 only when the filesystem
+ * Exit:   0 on success. 2 ONLY on CLI misuse — including a LINE that starts with
+ *         `Final review:` and is outside the grammar `Final review: passed|ruled N|
+ *         blocked N (after review-NNN)`. 1 only when the filesystem
  *         refuses the write — a ruling that silently fails to land is worse
  *         than a loud failure, so this one case does not exit 0.
  *
@@ -36,6 +38,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+
+const FINAL_REVIEW_GRAMMAR = 'Final review: passed|ruled N|blocked N (after review-NNN)';
+const FINAL_REVIEW_LINE = /^Final review: (passed|ruled [0-9]+|blocked [0-9]+) \(after review-[0-9]{3}\)$/;
 
 const USAGE = [
   'Usage: build-ledger.cjs <LEDGER_FILE> <LINE> [FEATURE_ID] [PLAN_PATH]',
@@ -103,6 +108,14 @@ function run(argv) {
   // reader that counts entries or resumes from the last one — misuse, refused
   // BEFORE any directory or file is touched.
   if (LINE.includes('\n')) usage();
+
+  // A `Final review:` verdict outside the grammar lands silently and breaks
+  // converge-gates much later, at /add-done. Refused here, before any write.
+  // `Final review head:` does not start with `Final review:`, so it passes.
+  if (LINE.startsWith('Final review:') && !FINAL_REVIEW_LINE.test(LINE)) {
+    process.stderr.write(`Expected ${FINAL_REVIEW_GRAMMAR}\n`);
+    usage();
+  }
 
   const LEDGER_DIR = posixDirname(LEDGER_FILE);
 

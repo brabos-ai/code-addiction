@@ -206,9 +206,16 @@ function isSeparator(line) {
  * Requisitos` X-marker form and the header-named `Covered?` column form.
  * Fence-aware, and reset per file so several subfeature plans do not leak a
  * latched column index into the next.
+ *
+ * A table ends at the first line that does not start with `|`. The column
+ * latch (`covIdx`) is cleared there, and only the first `|` line after a
+ * non-`|` line is read as a header, so a later table counts only if its own
+ * header carries `Covered?`. `seen` records that a coverage table was found and
+ * is never reset, so the returned `mode` survives a last file with none.
  */
 function readCoverage(files) {
-  let mode = 'none';
+  let seen = false;
+  let legacy = false;
   let uncovered = 0;
   let covIdx = 0;
   let inblock = false;
@@ -217,7 +224,7 @@ function readCoverage(files) {
     covIdx = 0;
     inblock = false;
     fence = false;
-    if (mode === 'column') mode = 'none';
+    let inTable = false;
     for (const line of readLines(file)) {
       if (/^[ \t]*```/.test(line)) {
         fence = !fence;
@@ -225,27 +232,34 @@ function readCoverage(files) {
       }
       if (fence) continue;
       if (/^##[ \t]+cobertura de requisitos/i.test(line)) {
-        mode = 'legacy';
+        legacy = true;
+        seen = true;
         inblock = true;
         continue;
       }
-      if (mode === 'legacy' && /^##[ \t]/.test(line)) inblock = false;
-      if (mode === 'legacy' && inblock && /^\|/.test(line) && /\|[ \t]*[Xx][ \t]*\|/.test(line)) {
+      if (legacy && /^##[ \t]/.test(line)) inblock = false;
+      if (!/^\|/.test(line)) {
+        covIdx = 0;
+        inTable = false;
+        continue;
+      }
+      if (legacy && inblock && /\|[ \t]*[Xx][ \t]*\|/.test(line)) {
         uncovered += 1;
         continue;
       }
-      if (mode !== 'legacy' && /^\|/.test(line) && !covIdx) {
+      if (!legacy && !inTable) {
+        inTable = true;
         const parts = line.split('|');
         for (let i = 2; i <= parts.length; i += 1) {
           const cell = trimCell(parts[i - 1]).toLowerCase().replace(/\?/g, '');
           if (cell === 'covered') {
             covIdx = i;
-            mode = 'column';
+            seen = true;
           }
         }
         continue;
       }
-      if (mode === 'column' && /^\|/.test(line)) {
+      if (!legacy && covIdx) {
         if (isSeparator(line)) continue;
         const parts = line.split('|');
         const value = trimCell(parts[covIdx - 1] || '').toUpperCase();
@@ -255,7 +269,7 @@ function readCoverage(files) {
       }
     }
   }
-  return { mode, uncovered };
+  return { mode: !seen ? 'none' : legacy ? 'legacy' : 'column', uncovered };
 }
 
 // ─── Gate 5 helper ───────────────────────────────────────────────────────────

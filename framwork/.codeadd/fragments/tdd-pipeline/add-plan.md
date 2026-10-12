@@ -67,7 +67,7 @@ Use the EXACT format from the {{skill:add--test-specification/SKILL.md}} skill:
 
 ### Coverage vs Requirements
 
-| RF/RN | Test Cases | Covered? |
+| RF/RN | Test Cases | Status |
 |-------|------------|----------|
 | [RF01] | [T01, T03] | ✅ |
 

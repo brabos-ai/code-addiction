@@ -45,7 +45,7 @@ Write to `docs/features/${FEATURE_ID}/plan-test-spec.md`:
 
 ### Coverage vs Requirements
 
-| RF/RN | Test Cases | Covered? |
+| RF/RN | Test Cases | Status |
 |-------|------------|----------|
 | [RF01] | [T01, T03] | ✅ |
 
