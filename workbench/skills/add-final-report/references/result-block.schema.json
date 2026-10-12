@@ -11,7 +11,7 @@
       "const": 1
     },
     "status": {
-      "description": "The outcome. done: the command finished its work. stopped: a gate or a hard stop ended the run on purpose. needs-approval: the run reached a stop that waits on the user - a numbered question batch, an approval or a push - and nothing is wrong or finished; the caller answers in the same session with --resume <session_id>. failed: an error the command did not plan for.",
+      "description": "The outcome. done: the command finished its work. stopped: a gate, a hard stop or a refusal ended the run on purpose - refusing to run on main included - and the reason says which; a run that ends this way is stopped, never done. needs-approval: the run reached a stop that waits on the user - a numbered question batch, an approval or a push - and nothing is wrong or finished; a run that ends on a question is needs-approval, never done; the caller answers in the same session with --resume <session_id>. failed: an error the command did not plan for.",
       "type": "string",
       "enum": ["done", "stopped", "needs-approval", "failed"]
     },
@@ -94,7 +94,7 @@
       "type": "boolean"
     },
     "reason": {
-      "description": "The gate, stop or question batch, in one line; null when there is none.",
+      "description": "The gate, stop or question batch, in one line; on stopped it names the gate or the refusal; null when there is none.",
       "type": ["string", "null"]
     }
   }
