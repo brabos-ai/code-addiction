@@ -121,13 +121,13 @@ describe('product agent mode', () => {
 
   it('L1.9 the status description says a stop or refusal is never done and names the refusal on main', () => {
     const status = readJson(PRODUCT_SCHEMA).properties.status.description;
-    expect(status).toContain('never done');
+    expect(status).toContain('is stopped, never done');
     expect(status).toMatch(/refus\w* to run on main/);
   });
 
   it('L1.10 guide section 1 carries the exit-code check for bash and PowerShell and says claude -p exits 0', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
     const section = guide.slice(guide.indexOf('## 1.'), guide.indexOf('## 2.'));
-    for (const anchor of ["jq -e '.structured_output.status == \"done\"'", 'ConvertFrom-Json', "-ne 'done'", 'claude -p` itself exits 0']) expect(section).toContain(anchor);
+    for (const anchor of ["jq -e '.structured_output.status == \"done\"'", 'ConvertFrom-Json', "-ne 'done'", 'exit 1', 'claude -p` itself exits 0']) expect(section).toContain(anchor);
   });
 });
