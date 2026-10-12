@@ -120,6 +120,11 @@ IF DIRECT MODE (STEP 1.2 — no plan, therefore no tag):
   ⛔ DO NOT USE: Write or Edit outside the resolved target path and its own layer
   ⛔ DO NOT: Touch the other layer for any reason — direct mode has no ledger to rule in
   ✅ DO: Resolve the target path first, let it choose the layer, load that layer's skill
+
+IF THE CURRENT BRANCH IS main WHEN STEP 1.3 RUNS:
+  ⛔ DO NOT: Ask whether to create a branch
+  ⛔ DO NOT: Continue to STEP 2 while still on main
+  ✅ DO: Create or switch to feat/<slug> per STEP 1.3, then go on
 ```
 
 **The last block exists because the three above it are conditional on a tag.** Direct mode has none,
@@ -195,7 +200,7 @@ Direct mode has no F-blocks, so it has no ledger and no per-block cycle.
 ### 1.3 Branch and Worktree
 
 A build touching multiple artefacts or rewriting existing commands is easier to discard than to roll
-back. RECOMMEND a branch and worktree before implementing.
+back. RECOMMEND a worktree before implementing.
 
 **A build that starts on `main` creates its own branch, before STEP 2, and goes on — never ask.**
 Name it `feat/<slug>`: in planned mode the slug is the plan basename after `PLAN--`; in direct mode it

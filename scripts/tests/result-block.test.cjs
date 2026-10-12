@@ -166,12 +166,12 @@ test('the call doc explains how to resume a stopped run', () => {
 
 test('the status description says a stop or refusal is never done and names the refusal on main', () => {
   const status = JSON.parse(read(SCHEMA_FILE)).properties.status.description;
-  assert.ok(status.includes('never done'), 'never done');
+  assert.ok(status.includes('is stopped, never done'), 'is stopped, never done');
   assert.match(status, /refus\w* to run on main/);
 });
 
 test('the call doc carries the exit-code check for bash and PowerShell and says claude -p exits 0', () => {
   const doc = read('workbench/skills/add-final-report/references/result-block.md');
   const section = doc.slice(doc.indexOf('## How to call'), doc.indexOf('## Resuming'));
-  for (const needle of ["jq -e '.structured_output.status == \"done\"'", 'ConvertFrom-Json', "-ne 'done'", 'claude -p` itself exits 0']) assert.ok(section.includes(needle), needle);
+  for (const needle of ["jq -e '.structured_output.status == \"done\"'", 'ConvertFrom-Json', "-ne 'done'", 'exit 1', 'claude -p` itself exits 0']) assert.ok(section.includes(needle), needle);
 });
