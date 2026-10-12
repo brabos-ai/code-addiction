@@ -68,6 +68,7 @@ import "../styles/global.css";
             <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
             <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
             <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
+            <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">Agent Mode</a></li>
             <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">Plugins</a></li>
             <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
             <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
@@ -646,6 +647,68 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-1">Backlog board (pipeline commands read a ticket and move it through the phase statuses)</p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-hotfix</code></p>
           </div>
+          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+            <div class="flex items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-sm">agent-mode</code>
+              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Bot wording for headless runs (one numbered question batch, no continue offer). <a href="#agent-mode" class="text-accent hover:underline">Read more</a></p>
+            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-qa-setup</code>, <code class="font-mono">add-pull-request</code>, <code class="font-mono">add-audit</code>, <code class="font-mono">add-wiki</code></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- AGENT MODE -->
+      <section id="agent-mode" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Agent Mode</h2>
+        <p class="text-muted-light mb-6">
+          A bot (CI, a script or another agent) can run any installed command headless and read a JSON result.
+          The guide uses <code class="text-accent font-mono text-xs">claude -p</code> with <code class="text-accent font-mono text-xs">--json-schema</code>
+          as an example. The contract is the result schema, not the tool, so other providers can reproduce the same flow.
+        </p>
+
+        <div class="space-y-6">
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">Enable it</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-am-install">npx codeadd install --providers claude --enable-feature agent-mode</span>
+                <button onclick="copyCmd('cmd-am-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-muted select-none"># on a project that already has codeadd</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-am-modify">npx codeadd modify --providers claude --force --enable-feature agent-mode</span>
+                <button onclick="copyCmd('cmd-am-modify', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">What changes for bots</p>
+            <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm">
+              <li>Every question a step needs answered arrives in <strong>one message</strong>, numbered, each with a recommendation and the reason for it.</li>
+              <li>No command ends with an offer to continue. Each ends on what changed, what still needs a decision, and the next command.</li>
+              <li>The result schema is the same. The feature changes how the commands talk, not the result.</li>
+              <li>It takes effect on Claude Code, Cursor and OpenCode. Codex, Antigravity and ZCode install the commands as skills and cannot receive feature injection, so their commands keep the human wording.</li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">Session and worktree rule</p>
+            <p class="text-muted-light text-sm mb-2">A run that ends with <code class="text-accent font-mono text-xs">needs-approval</code> waits for an answer. A bot follows these rules every time:</p>
+            <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm">
+              <li>Always resume with <code class="font-mono text-xs">--resume &lt;session_id&gt;</code>, using the <code class="font-mono text-xs">.session_id</code> of the envelope the run returned.</li>
+              <li>Never use <code class="font-mono text-xs">-c</code> or <code class="font-mono text-xs">--continue</code>, and never pick the newest <code class="font-mono text-xs">.jsonl</code> file. Both can pick another bot's session.</li>
+              <li>Always run each agent in its own git worktree.</li>
+              <li>Never switch branches in a checkout that other agents share.</li>
+            </ul>
+          </div>
+
+          <p class="text-muted text-xs">The full guide, with the call examples, the stop rule and the CLI flags, is installed at <code class="font-mono">.codeadd/agent-mode/README.md</code>.</p>
         </div>
       </section>
 
