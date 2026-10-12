@@ -180,3 +180,27 @@ describe('L4 — wording sweep', () => {
     expect(t).toMatch(/\/add-review[^\n]*optional|optional[^\n]*\/add-review/i);
   });
 });
+
+describe('Plan 0049B — build gates aligned with done', () => {
+  it('L2.1 a simple feature runs converge-gates un-scoped at Loop End and closes only on 5/5', () => {
+    const loopEnd = section(read(P.build), 'Loop End');
+    const step1 = loopEnd.split('\n').find((l) => l.startsWith('1. '));
+    expect(step1).toBeDefined();
+    const block = loopEnd.slice(loopEnd.indexOf(step1), loopEnd.indexOf('\n2. '));
+    expect(block).toMatch(/converge-gates\.cjs "docs\/features\/\$\{FEATURE_ID\}"/);
+    expect(block).not.toMatch(/converge-gates\.cjs[^\n]*SFxx|EPIC_CURRENT_SF/);
+    expect(block).toMatch(/5\/5/);
+    expect(block).toMatch(/exit BLOCKED naming each gate that is not `ok`/);
+    expect(block).not.toMatch(/^1\. \*\*Not an epic\*\* → go to STEP add-build\.publish\. A simple feature has no checkpoint\.$/m);
+  });
+
+  it('L2.2 the test-spec coverage table says Status; the requirements table keeps Covered?', () => {
+    const frag = read(path.join(CODEADD, 'fragments', 'tdd-pipeline', 'add-plan.md'));
+    const spec = read(skill('add--test-specification'));
+    for (const t of [frag, spec]) {
+      expect(t).not.toContain('| Covered? |');
+      expect(t).toContain('| RF/RN | Test Cases | Status |');
+    }
+    expect(read(cmd('add-plan'))).toContain('| ID | Requirement | Covered? |');
+  });
+});
