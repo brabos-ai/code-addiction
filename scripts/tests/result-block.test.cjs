@@ -153,11 +153,13 @@ test('no markdown under workbench/ mentions the 0028B output mode', () => {
 
 test('the status description says a waiting stop is needs-approval and how the run continues', () => {
   const status = JSON.parse(read(SCHEMA_FILE)).properties.status.description;
-  for (const needle of ['needs-approval', 'claude -c', '--resume']) assert.ok(status.includes(needle), needle);
+  for (const needle of ['needs-approval', '--resume']) assert.ok(status.includes(needle), needle);
+  assert.ok(!status.includes('claude -c'), 'claude -c');
   assert.match(JSON.parse(read(SCHEMA_FILE)).properties.next_step.description, /needs-approval/);
 });
 
 test('the call doc explains how to resume a stopped run', () => {
   const doc = read('workbench/skills/add-final-report/references/result-block.md');
-  for (const needle of ['--resume', 'session_id', 'claude -c']) assert.ok(doc.includes(needle), needle);
+  for (const needle of ['--resume', 'session_id', 'worktree']) assert.ok(doc.includes(needle), needle);
+  assert.ok(!doc.includes('claude -c'), 'claude -c');
 });
