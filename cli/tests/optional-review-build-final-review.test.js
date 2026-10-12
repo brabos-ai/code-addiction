@@ -64,7 +64,8 @@ function mdFiles(dir, out = []) {
 // sentences (+3: the e2e build-only source, the e2e ledger row, the e2e batch commit). The e2e dispatch
 // itself stays in the fragment, not in this file.
 // 1708 is plan 2026-10-11T124512 (light review loop): +43 over the 1665 at its branch start — the CORRECTION row split and the formatter map in STEP add-build.consume, the gates run and the annex columns in STEP add-build.resolution, and the scope check and the no-round verdict in Final Review, and two lines for the board.deferred-minors slot member. The format map has no other home: it is the build that runs the formatter.
-const BUILD_LINE_BUDGET = 1708;
+// 1713 is plan 2026-10-12T114425 (build gates aligned with done): +5 over the 1708 — Loop End step 1 runs converge-gates on a simple feature, the same call the epic path already makes.
+const BUILD_LINE_BUDGET = 1713;
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {
