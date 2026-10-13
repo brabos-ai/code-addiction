@@ -37,6 +37,22 @@ On Windows PowerShell 5.1 the double quotes inside the text must be escaped, as 
 Stdout is one JSON envelope. The result is its `.structured_output` field. Read `status` from it:
 `done`, `stopped`, `needs-approval` or `failed`. `needs_approval` repeats the same fact as a boolean.
 
+A run that ends at a STOP, a gate or a refusal is `stopped`, and a run that ends on a question is `needs-approval`: the schema says neither is ever `done`. To fail a step on anything but `done`, save the envelope to a file (you still need its `session_id`) and check it. `claude -p` itself exits 0 whenever the model finishes, so the exit code is the caller's to set.
+
+bash:
+
+```bash
+claude -p "<command>" --output-format json --json-schema "$(cat .codeadd/agent-mode/result.schema.json)" > out.json
+jq -e '.structured_output.status == "done"' out.json > /dev/null
+```
+
+PowerShell:
+
+```powershell
+$out = Get-Content out.json -Raw | ConvertFrom-Json
+if ($out.structured_output.status -ne 'done') { exit 1 }
+```
+
 ## 2. Resume a stopped run
 
 The resume flags below are Claude Code's. Another provider has its own way to continue a session; the rest of
