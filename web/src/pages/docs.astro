@@ -662,53 +662,65 @@ import "../styles/global.css";
       <section id="agent-mode" class="mb-20">
         <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Agent Mode</h2>
         <p class="text-muted-light mb-6">
-          A bot (CI, a script or another agent) can run any installed command headless and read a JSON result.
-          The guide uses <code class="text-accent font-mono text-xs">claude -p</code> with <code class="text-accent font-mono text-xs">--json-schema</code>
-          as an example. The contract is the result schema, not the tool, so other providers can reproduce the same flow.
+          Hand your bot a card or a slug and let it ship. With Agent Mode, an assistant like Grok Bot runs plan, build,
+          review and release on its own. It asks only what matters, all at once, and you approve the PR.
         </p>
 
         <div class="space-y-6">
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">Enable it</p>
+            <p class="text-foreground text-sm font-semibold mb-2">Turn it on</p>
             <div class="space-y-2">
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
                 <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-am-install">npx codeadd install --providers claude --enable-feature agent-mode</span>
+                <span class="flex-1 text-foreground break-all" id="cmd-am-install">npx codeadd install --providers claude --enable-feature agent-mode</span>
                 <button onclick="copyCmd('cmd-am-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
               </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-muted select-none"># on a project that already has codeadd</span>
-              </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-am-modify">npx codeadd modify --providers claude --force --enable-feature agent-mode</span>
-                <button onclick="copyCmd('cmd-am-modify', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <p class="text-muted text-xs">Already using codeadd? Run <code class="font-mono">npx codeadd modify --providers claude --force --enable-feature agent-mode</code>.</p>
             </div>
           </div>
 
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">What changes for bots</p>
+            <p class="text-foreground text-sm font-semibold mb-3">How it works</p>
+            <ol class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                <p class="text-accent font-mono text-xs mb-1">1</p>
+                <p class="text-foreground text-sm font-semibold mb-1">You talk to your bot</p>
+                <p class="text-muted-light text-sm">Point it at a card, a slug or a one-line idea.</p>
+              </li>
+              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                <p class="text-accent font-mono text-xs mb-1">2</p>
+                <p class="text-foreground text-sm font-semibold mb-1">The bot runs codeadd</p>
+                <p class="text-muted-light text-sm">Plan, build, review and done, one command after the other.</p>
+              </li>
+              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                <p class="text-accent font-mono text-xs mb-1">3</p>
+                <p class="text-foreground text-sm font-semibold mb-1">You answer once</p>
+                <p class="text-muted-light text-sm">Open questions come together, each with a recommendation.</p>
+              </li>
+              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                <p class="text-accent font-mono text-xs mb-1">4</p>
+                <p class="text-foreground text-sm font-semibold mb-1">You approve the PR</p>
+                <p class="text-muted-light text-sm">The bot merges on green CI and can cut the release.</p>
+              </li>
+            </ol>
+          </div>
+
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">Why it is easy</p>
             <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm">
-              <li>Every question a step needs answered arrives in <strong>one message</strong>, numbered, each with a recommendation and the reason for it.</li>
-              <li>No command ends with an offer to continue. Each ends on what changed, what still needs a decision, and the next command.</li>
-              <li>The result schema is the same. The feature changes how the commands talk, not the result.</li>
-              <li>It takes effect on Claude Code, Cursor and OpenCode. Codex, Antigravity and ZCode install the commands as skills and cannot receive feature injection, so their commands keep the human wording.</li>
+              <li><strong class="text-foreground">No interactive stops.</strong> Commands never wait on a menu or a yes/no to continue.</li>
+              <li><strong class="text-foreground">Questions batched.</strong> Everything a step needs arrives in one numbered message. Reply <code class="font-mono text-xs">recommended</code> to accept them all.</li>
+              <li><strong class="text-foreground">Clear status at the end.</strong> Every run ends as done, stopped, needs-approval or failed, with the reason and the next command.</li>
+              <li><strong class="text-foreground">Parallel agents, isolated.</strong> Each agent works in its own git worktree and its own session, so three or four can run side by side.</li>
             </ul>
           </div>
 
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">Session and worktree rule</p>
-            <p class="text-muted-light text-sm mb-2">A run that ends with <code class="text-accent font-mono text-xs">needs-approval</code> waits for an answer. A bot follows these rules every time:</p>
-            <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm">
-              <li>Always resume with <code class="font-mono text-xs">--resume &lt;session_id&gt;</code>, using the <code class="font-mono text-xs">.session_id</code> of the envelope the run returned.</li>
-              <li>Never use <code class="font-mono text-xs">-c</code> or <code class="font-mono text-xs">--continue</code>, and never pick the newest <code class="font-mono text-xs">.jsonl</code> file. Both can pick another bot's session.</li>
-              <li>Always run each agent in its own git worktree.</li>
-              <li>Never switch branches in a checkout that other agents share.</li>
-            </ul>
+            <p class="text-foreground text-sm font-semibold mb-2">What you tell the bot</p>
+            <blockquote class="border-l-2 border-accent pl-4 text-foreground text-sm italic">Take the dark-mode-toggle card, build it and open the PR for me.</blockquote>
           </div>
 
-          <p class="text-muted text-xs">The full guide, with the call examples, the stop rule and the CLI flags, is installed at <code class="font-mono">.codeadd/agent-mode/README.md</code>.</p>
+          <p class="text-muted text-xs">Works on Claude Code, Cursor and OpenCode. Building your own bot? The technical guide (headless calls, sessions and the result schema) is installed at <a href="https://github.com/brabos-ai/code-addiction/blob/main/framwork/.codeadd/agent-mode/README.md" class="font-mono text-accent hover:underline">.codeadd/agent-mode/README.md</a>.</p>
         </div>
       </section>
 
@@ -1671,4 +1683,7 @@ import "../styles/global.css";
     observer.observe(section);
   })();
   </script>
+  <style is:global>
+    section[id] { scroll-margin-top: 4.5rem; }
+  </style>
 </Layout>
