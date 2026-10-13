@@ -33,6 +33,22 @@ $schema = (Get-Content workbench/skills/add-final-report/references/result-block
 claude -p "/add-framework--backlog update 9999B" --output-format json --json-schema $schema
 ```
 
+To fail a step on anything but `done`, save the envelope to a file and check it. The schema says a run that ends at a STOP, a gate or a refusal is `stopped` and one that ends on a question is `needs-approval`, never `done`. `claude -p` itself exits 0 whenever the model finishes, so the exit code is the caller's to set.
+
+bash:
+
+```bash
+claude -p "<command>" --output-format json --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)" > out.json
+jq -e '.structured_output.status == "done"' out.json > /dev/null
+```
+
+PowerShell:
+
+```powershell
+$out = Get-Content out.json -Raw | ConvertFrom-Json
+if ($out.structured_output.status -ne 'done') { exit 1 }
+```
+
 ## Resuming a stopped run
 
 A run that ends with `status: needs-approval` stopped at a question, an approval or a push, and is waiting on the user. The schema's `status` description says what each status means; this section only says how to continue.
