@@ -708,6 +708,54 @@ import "../styles/global.css";
             </ul>
           </div>
 
+          <div id="agent-mode-usage">
+            <p class="text-foreground text-sm font-semibold mb-2">Usage</p>
+            <p class="text-muted-light text-sm mb-3">Copyable examples for Claude Code. Another provider passes the same schema through its own headless and structured-output flags.</p>
+            <div class="space-y-4">
+              <div>
+                <p class="text-muted-light text-sm mb-2">1. Enable it once per project (see above), then give each agent its own worktree and branch:</p>
+                <div class="relative bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-xs">
+                  <button onclick="copyCmd('cmd-am-worktree', this)" class="plugin-copy-btn absolute top-2 right-3 text-muted hover:text-accent transition-colors text-xs font-sans">Copy</button>
+                  <pre id="cmd-am-worktree" class="text-foreground whitespace-pre-wrap overflow-x-auto">git worktree add ../myapp-agent-1 -b feat/dark-mode
+cd ../myapp-agent-1</pre>
+                </div>
+                <p class="text-muted text-xs mt-1">One branch per worktree. Never switch branches in a checkout other agents share.</p>
+              </div>
+              <div>
+                <p class="text-muted-light text-sm mb-2">2. Run a command headless and save the JSON envelope. Pass the schema as text, not as a path:</p>
+                <div class="relative bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-xs">
+                  <button onclick="copyCmd('cmd-am-run', this)" class="plugin-copy-btn absolute top-2 right-3 text-muted hover:text-accent transition-colors text-xs font-sans">Copy</button>
+                  <pre id="cmd-am-run" class="text-foreground whitespace-pre-wrap overflow-x-auto">SCHEMA="$(cat .codeadd/agent-mode/result.schema.json)"
+claude -p "/add-plan add a dark mode toggle" --output-format json \
+  --json-schema "$SCHEMA" &gt; out.json
+SID=$(jq -r '.session_id' out.json)</pre>
+                </div>
+              </div>
+              <div>
+                <p class="text-muted-light text-sm mb-2">3. Read the result block in <code class="font-mono text-xs">.structured_output</code>. <code class="font-mono text-xs">claude -p</code> exits 0 whenever the model finishes, so the caller sets the exit code:</p>
+                <div class="relative bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-xs">
+                  <button onclick="copyCmd('cmd-am-read', this)" class="plugin-copy-btn absolute top-2 right-3 text-muted hover:text-accent transition-colors text-xs font-sans">Copy</button>
+                  <pre id="cmd-am-read" class="text-foreground whitespace-pre-wrap overflow-x-auto">jq -r '.structured_output | .status, .reason, .next_step' out.json
+jq -e '.structured_output.status == "done"' out.json &gt; /dev/null || exit 1</pre>
+                </div>
+                <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm mt-2">
+                  <li><code class="font-mono text-xs">done</code>: finished. Call the command in <code class="font-mono text-xs">next_step</code>.</li>
+                  <li><code class="font-mono text-xs">needs-approval</code>: waiting on an answer. <code class="font-mono text-xs">next_step</code> holds the numbered questions; answer them in the same session (step 4).</li>
+                  <li><code class="font-mono text-xs">stopped</code>: ended on purpose at a STOP, a gate or a refusal. Read <code class="font-mono text-xs">reason</code>, fix what it names (or wait, for pending CI), then run <code class="font-mono text-xs">next_step</code>. Never treat it as done.</li>
+                  <li><code class="font-mono text-xs">failed</code>: an unplanned error. Stop the chain and report <code class="font-mono text-xs">reason</code>.</li>
+                </ul>
+              </div>
+              <div>
+                <p class="text-muted-light text-sm mb-2">4. Answer and continue in the same session with <code class="font-mono text-xs">--resume</code>, passing the schema again. Never <code class="font-mono text-xs">-c</code> or <code class="font-mono text-xs">--continue</code>:</p>
+                <div class="relative bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-xs">
+                  <button onclick="copyCmd('cmd-am-resume', this)" class="plugin-copy-btn absolute top-2 right-3 text-muted hover:text-accent transition-colors text-xs font-sans">Copy</button>
+                  <pre id="cmd-am-resume" class="text-foreground whitespace-pre-wrap overflow-x-auto">claude -p "1a, 2b" --resume "$SID" --output-format json \
+  --json-schema "$SCHEMA" &gt; out.json</pre>
+                </div>
+                <p class="text-muted text-xs mt-1">Send <code class="font-mono">recommended</code> to take every recommended option. On Windows PowerShell 5.1, escape the double quotes in the schema text first: <code class="font-mono">$schema = (Get-Content .codeadd/agent-mode/result.schema.json -Raw) -replace '"','\"'</code>.</p>
+              </div>
+            </div>
+          </div>
           <p class="text-muted text-xs">The full guide, with the call examples, the stop rule and the CLI flags, is installed at <code class="font-mono">.codeadd/agent-mode/README.md</code>.</p>
         </div>
       </section>
