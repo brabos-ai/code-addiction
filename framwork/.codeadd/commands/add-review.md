@@ -569,17 +569,17 @@ prompt: |
 
   ## VALIDATION CHECKLIST
 
-  **Patterns (Critical):** IoC/DI (providers, imports, barrel exports), REST API (noun-based URLs, 201/204 codes), DTOs (class-validator, no raw objects, global validation)
+  **Patterns (Critical):** IoC/DI (providers, imports, barrel exports), REST API (noun-based URLs, 201/204 codes), DTOs (the project's validation layer, no raw objects, global validation)
 
   **Architecture:** Domain ← Repositories ← Services ← Controllers; no domain imports from outer; no business logic in controllers; SOLID principles (SRP, O/C, DIP)
 
-  **Database:** Migrations with up/down; Kysely types updated; parametrized queries; no JSON.parse on JSONB (auto-parsed); no JSON.stringify before insert
+  **Database:** Migrations with up/down; query types regenerated; parametrized queries; no manual (de)serialisation the driver already does
 
-  **Security (OWASP):** Parametrized queries, input validation; guards on protected routes; encrypted credentials; no sensitive logs; account_id filtering (multi-tenancy); CORS restricted; no critical npm vulnerabilities; explicit DTOs
+  **Security (OWASP):** Parametrized queries, input validation; guards on protected routes; encrypted credentials; no sensitive logs; account_id filtering (multi-tenancy); CORS restricted; the project's dependency audit shows no critical vulnerabilities; explicit DTOs
 
   **Code Quality:** No `any` types, explicit returns, no console.log, no debugger, no comments, no unused imports, no magic numbers
 
-  **Error Handling:** NestJS exceptions; throw NotFoundException (not null); descriptive messages
+  **Error Handling:** the framework's error types; throw a not-found error (not null); descriptive messages
 
   **Contracts:** Backend DTOs mirrored as frontend interfaces; enums match; Date→string serialization
 
