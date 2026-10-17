@@ -76,7 +76,7 @@ Generate tasks.md with atomic subtasks:
 ## Tasks
 | ID | Description | Service | Files | Deps | Verify |
 |----|-------------|---------|-------|------|--------|
-| 1.1 | Create users table migration | database | `migrations/001.ts` | - | `npm run migrate` |
+| 1.1 | Create users table migration | database | `migrations/001.ts` | - | `<migration command from AGENTS.md>` against the local test database |
 | 2.1 | Create signup endpoint | backend | `api/controller.ts`, `api/dto.ts` | 1.1 | `curl POST /api/signup` |
 | 3.1 | Create SignupForm component | frontend | `components/SignupForm.tsx` | 2.1 | browser: form renders |
 ```
