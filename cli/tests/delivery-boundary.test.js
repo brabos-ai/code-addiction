@@ -173,6 +173,9 @@ describe('F3/F4 — add-new and database-agent', () => {
 
 describe('F5/F6/F7 — examples stop naming a stack', () => {
   const STACK = /Kysely|Knex|Zustand|NestJS|class-validator|app\.module\.ts|worker\.module\.ts/;
+  // add-review.md carries two "## VALIDATION CHECKLIST" blocks (backend and frontend reviewer);
+  // the plan scopes only the backend one, which opens with the **Patterns** category.
+  const BACKEND_CHECKLIST = /^ {2}## VALIDATION CHECKLIST\s*\n\s*\n {2}\*\*Patterns/m;
 
   it('L1.5 add-build Area-Specific Notes and Skills Reference carry no stack name', () => {
     const text = read(P.addBuild);
@@ -192,7 +195,7 @@ describe('F5/F6/F7 — examples stop naming a stack', () => {
 
   it('L1.5 add-review VALIDATION CHECKLIST carries no stack name', () => {
     const text = read(P.addReview);
-    const list = between(text, /^ {2}## VALIDATION CHECKLIST\s*$/m, /^ {2}## RULES\s*$/m);
+    const list = between(text, BACKEND_CHECKLIST, /^ {2}## RULES\s*$/m);
     expect(list, 'VALIDATION CHECKLIST').not.toBeNull();
     expect(list).not.toMatch(STACK);
     expect(list).not.toMatch(/npm vulnerabilities/);
@@ -201,7 +204,8 @@ describe('F5/F6/F7 — examples stop naming a stack', () => {
   // GREEN by design: guards what must survive.
   it('L1.5 add-review keeps every check category', () => {
     const text = read(P.addReview);
-    const list = between(text, /^ {2}## VALIDATION CHECKLIST\s*$/m, /^ {2}## RULES\s*$/m);
+    const list = between(text, BACKEND_CHECKLIST, /^ {2}## RULES\s*$/m);
+    expect(list, 'VALIDATION CHECKLIST').not.toBeNull();
     for (const cat of ['Patterns', 'Architecture', 'Database', 'Security', 'Code Quality', 'Error Handling']) {
       expect(list, cat).toContain(`**${cat}`);
     }
