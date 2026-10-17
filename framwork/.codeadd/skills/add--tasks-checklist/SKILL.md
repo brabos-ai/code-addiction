@@ -11,6 +11,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - mention: add--feature-specification
 - mention: /add-plan
 - command: /add-wiki
+- mention: /add-done
 -->
 
 ## Overview
@@ -65,14 +66,14 @@ description: Schema and tick rules for tasks.md across plan/build/review.
   - Deps: -
   - Consumes: -
   - Produces: `UserRepository.insert(row: NewUser): Promise<User>`
-  - Verify: `npm run migrate`
+  - Verify: `<migration command from AGENTS.md>` against the local test database
 - [ ] T02 [max 10 words description]
   - Service: backend
   - Files: `path/a.ts`, `path/b.ts`
   - Deps: T01
   - Consumes: `UserRepository.insert(row: NewUser): Promise<User>` (T01)
   - Produces: `UsersService.create(dto: CreateUserDto): Promise<UserDto>`
-  - Verify: tests pass
+  - Verify: `<validation_gates.test>` scoped to `path/a.spec.ts`
 
 ## Acceptance Checklist
 
@@ -92,6 +93,25 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 > The exact items above are auto-derived from AGENTS.md `validation_gates`. The example shows a Node project; for Python the items would read `Run \`pytest\` …`, for .NET `Run \`dotnet test\` …`, etc. — language-agnostic.
 
+## Delivery Boundary
+
+**A delivery is code, migration files and tests, landing in one merge.** Deploying it is not part of the delivery: the project's own deploy process runs after `/add-done`.
+
+**This section owns the rule.** Every other artefact points here instead of restating it.
+
+```
+IF A TASK OR ACCEPTANCE ITEM WOULD APPLY MIGRATIONS TO, DEPLOY TO OR PUBLISH TO A SHARED, STAGING OR PRODUCTION ENVIRONMENT:
+  ⛔ DO NOT: Write it as an Execution task, an Acceptance item or a `Verify:` line
+  ⛔ DO NOT: Phase the work around an intermediate deploy (migrate, then deploy, then switch on)
+  ✅ DO: Deliver the migration FILE and its tests; the deploy process applies it after the merge
+```
+
+- **Unless the user asked for it.** When the user asked for a deploy step, the deploy order is recorded as a note in `plan.md`'s `## Global Constraints`, with the user's request as its source, never as a task or an Acceptance item — a task is something `add-build` executes.
+- **Still allowed and expected:** running the app, applying migrations to a local or test database, and local QA (functional, UX, Playwright).
+- **How `Verify:` is chosen:** the `AGENTS.md` `validation_gates` command scoped to the task's files, or another local check (a curl to the locally running app, a browser check). A `Verify:` never writes outside a local or test environment.
+- **Fallback when `AGENTS.md` has no `validation_gates`:** the project's own test command scoped to the task's files, taken from the repository (its scripts, README or `wiki/workflows.md`), or a local browser or curl check. Never an invented command.
+- **Compatible with the `Verify:` tier rule** in the architect template: that rule narrows *which* test file, this one narrows *which environment*.
+
 ## Section Rules
 
 ### `## Requirements Coverage`
@@ -108,11 +128,11 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 ### `## Execution`
 
 - Task line format: `- [ ] TNN <description, ≤10 words>` followed by 6 metadata sub-bullets in this exact order (Service, Files, Deps, Consumes, Produces, Verify).
-- Allowed services: `database`, `backend`, `frontend`, `test`, `infra`. Exactly one service per task. Maximum 3 files per task; if more, split.
+- Allowed services: `database`, `backend`, `frontend`, `test`, `infra` (`infra` is config files only — container, CI, environment templates — never a step that deploys or publishes). Exactly one service per task. Maximum 3 files per task; if more, split.
 - `Deps`: comma-separated task IDs (e.g., `T01, T03`) or `-` if none.
 - `Consumes`: the **exact signature** this task calls, plus the producing task ID in parentheses — e.g. `` `UserRepository.insert(row: NewUser): Promise<User>` (T01) ``. `-` when the task calls nothing an earlier task built. Multiple entries are comma-separated, each with its own task ID.
 - `Produces`: the **exact signature** of everything a later task will call — e.g. `` `UsersService.create(dto: CreateUserDto): Promise<UserDto>` ``. `-` when nothing downstream calls into this task.
-- `Verify`: MANDATORY single line — a runnable command, curl, or browser check.
+- `Verify`: MANDATORY single line — a runnable command, curl, or browser check, chosen and bounded by `## Delivery Boundary`.
 - **Match rule:** every `Consumes` signature MUST match, **character for character**, a `Produces` signature on an **earlier** task. This is checkable by machine, not by opinion — `/add-plan`'s STEP 11 validation gate compares the strings and fails on a mismatch, printing both. A `Consumes` written as prose ("the repo insert method") fails that comparison, which is the point: a signature a machine cannot match is a signature a dispatched subagent cannot implement against.
 - **Why these two lines exist:** a subagent implementing T02 never sees T01's code. `Deps: T01` states order; only `Consumes` / `Produces` state the contract, so both tasks build against the same name instead of each inventing one.
 - **No tick rule.** `Consumes` and `Produces` are **not** progress — an interface is a contract. Validators NEVER tick these lines and never mark them `[!]`. The tick rule below applies to the task's own `- [ ]` checkbox and to nothing inside it.
@@ -230,6 +250,7 @@ Follow the Section Rules defined in the `add--tasks-checklist` skill. All
 checkboxes start as `[ ]` — do NOT pre-tick anything. Complexity scoring:
 SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 Service order (TDD ordering): test → database → backend → frontend.
+Follow `## Delivery Boundary`: no task or Acceptance item deploys, publishes or applies migrations outside local/test unless the user asked as that section says, and every `Verify:` is local.
 
 **`Verify:` tier rule.** If a task's `Files` include a test spec that `wiki/workflows.md`'s Test
 Workflow section names as CI-tier (integration/e2e), write that task's `Verify:` line scoped to that
@@ -323,4 +344,5 @@ When invoked by `add-review`, ignore any pre-existing `[x]` ticks on `## Validat
 [ ] Every ## Execution Consumes matches a Produces on an earlier task, character for character
 [ ] All checkboxes initialized as [ ]
 [ ] No tick lives in plan.md (plan.md is frozen)
+[ ] No task or Acceptance item deploys, publishes or applies migrations outside local/test unless the user asked, and every Verify: is local
 ```

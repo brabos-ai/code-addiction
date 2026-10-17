@@ -1,0 +1,29 @@
+# Build ledger — plan: docs/plans/2026-10-17T083012-PLAN--deploy-out-of-scope.md
+
+Ruling: STEP 2 design approval not asked — the operator instructed "do not ask questions, execute the recommended option" and the plan has no Global Constraint overriding a gate of the build skill — costs a re-plan if the operator wanted to see the design first
+Ruling: plan header says `Delivery: confirm`, treated as approved by the operator's invocation instruction — the instruction names the plan and says implement every F-block — costs nothing to undo, the branch stays local until STEP 9
+F10: RED observed — 16 failed, 6 passed (the 6 are the survive-guards marked green by design); no prior commit gap
+F10: complete (commits 2a6a545ccc7bcb97ceeca9803cd869788f275bcd..a0440ff4311e58a9de57d04218d97540e8fe9385, RED run 16 failed/6 guards green)
+F1: Ruling: scoped the add-review test extractor to the backend VALIDATION CHECKLIST (opens with **Patterns**) after the first F10 run matched the frontend checklist of the same file — the plan names lines 572-582 only, the frontend one (TanStack Query, React) is untouched — costs one wrongly-green test until fixed; the corrected test was seen RED before F6 and rides in the F1 commit
+F1: Ruling: added `- mention: /add-done` to the tasks-checklist uses block — the new section names /add-done in prose and the prose gate fails an undeclared name — costs nothing
+F1: complete (commits a0440ff4311e58a9de57d04218d97540e8fe9385..1d025bba10c3f04930218c5b6a804ff8a1e17983, build.js exit 0 no new warning vs baseline, delivery-boundary L1.1/L1.2 8/8 green)
+F2: Ruling: placeholders `<validation_gates.lint>` and `<validation_gates.typecheck>` in the Global Constraints example — same notation as F1 `<validation_gates.test>` — costs a notation tweak if the plan wanted other names
+F2: complete (commits 1d025bba10c3f04930218c5b6a804ff8a1e17983..621779aaddd8020465edd057124f862cc78ed9ba, build.js exit 0 no new warning, L1.3 3/3 green)
+F8: complete (commits 621779aaddd8020465edd057124f862cc78ed9ba..5f8bbc186eda12d31e0743b81347c44aef303227, build.js exit 0 no new warning, L1.6 green, plan-review-agent-speed/product-pipeline-parity/review-no-loops green)
+F3: complete (commits 5f8bbc186eda12d31e0743b81347c44aef303227..cdd720664fd0594f52f2e836b8648d3b5413796b, build.js exit 0 no new warning, L1.4 add-new green, build-injection-points green)
+F4: complete (commits cdd720664fd0594f52f2e836b8648d3b5413796b..ec9160262e31386880069dd1206f8b75b10376b1, build.js exit 0 no new warning, L1.4 database-agent green, slot markers untouched)
+F5: complete (commits ec9160262e31386880069dd1206f8b75b10376b1..8aab5047c94e45fb3c234e2c0b00cc6b4f566cf2, build.js exit 0 no new warning, L1.5 green, build-injection-points and cut-review-and-build-loop-cost green)
+F6: complete (commits 8aab5047c94e45fb3c234e2c0b00cc6b4f566cf2..92b5be6905231476ca4ce71036786e0167b2122c, build.js exit 0 no new warning, L1.5 green, build-injection-points and cut-review-and-build-loop-cost green)
+F7: complete (commits 92b5be6905231476ca4ce71036786e0167b2122c..3ea3f907f8c201888a23da166e257e0097b3928d, build.js exit 0 no new warning, L1.5 green, build-injection-points and cut-review-and-build-loop-cost green)
+F9: Ruling: wrote `finalize &amp; merge` in docs.astro — the plan says `&` and an HTML text node wants the entity — costs nothing, renders the same
+F9: complete (commits 3ea3f907f8c201888a23da166e257e0097b3928d..720da757d2ce879260b23370131b01628ee77ca6, build.js exit 0 no new warning, git status framwork/ empty, L3.2 docs grep: 0 "→ deploy", README line present)
+GRAPH: add--tasks-checklist — add-build, add-plan, add-review, add--doc-schemas, add--subagent-driven-development (depth 1); add--doc-schemas not changed or named, grep finds no stale `npm run migrate`/`Verify: tests pass` in framwork/.codeadd or workbench; no entry
+GRAPH: add-plan, add-new, add-build, add-review, database-agent, add--plan-review, persistent-logging-and-tasks.md — text-only edits, no heading/STEP/slot change; dependants not enumerated per artefact (tasks-checklist hub checked above); no entry
+L3.1: read built framwork/.claude/skills/add--tasks-checklist/SKILL.md — (1) may a task run the migration against staging? No (Delivery Boundary prohibition block); (2) against the test DB? Yes ("Still allowed and expected"); (3) Verify with no validation_gates? the Fallback bullet: repo's own test command scoped to the task's files, or a local browser/curl check, never invented
+L3.2: docs.astro has 0 `→ deploy`; README carries the line
+Ruling: applied 2 review findings (note location -> plan.md Global Constraints with the user's request as source; architect RULES line now carries the "unless the user asked" exception) — commit 720da757d2ce879260b23370131b01628ee77ca6..1862b8976c909661ab69ca9388ef359fee2c1e87, F1 layer [product] — costs a one-line edit if another section is preferred for the note
+Ruling: rejected quality findings 5 (single owner) on add--tasks-checklist L253/L347, add-plan L444 and add--plan-review L61 — the plan specifies each of those one-line pointers and L1.2/L1.3/L1.6 assert them; they sit where the shortcut is tempting — costs a drift risk between the copies if the rule changes
+Ruling: rejected the add-plan "where to record the note" finding as a separate edit — the skill (owner) now names the place and add-plan points to it — costs nothing
+Ruling: rejected side-effect lows (add--code-review Kysely lines, doc-schemas history.md yarn example, README/index.astro "NestJS") — plan Does NOT Include excludes stack-knowledge skills; marketing copy is not a Verify example — costs a follow-up ticket for the code-review checklist, which now disagrees with add-review's
+Ruling: rejected conformance low on /add-done uses mention and README placement — both required by the gates / the plan wording — costs nothing
+REVIEW: complete (11 findings, 2 applied, 9 rejected)

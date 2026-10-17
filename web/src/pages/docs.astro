@@ -276,7 +276,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-done</code>
-                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges. Hotfix close-out requires a passed Review receipt in <code class="text-foreground">about.md</code></p>
+                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges. Hotfix close-out requires a passed Review receipt in <code class="text-foreground">about.md</code>. Deploy is not part of a delivery - it runs after <code class="text-foreground">/add-done</code>, through your own deploy process</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-pull-request</code>
@@ -517,7 +517,7 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-4">Critical production bug. Fast-track fix with tracking.</p>
             <div class="font-mono text-sm text-muted-light">
               <span style="color:#ff4444">/add-hotfix</span> → diagnose, fix, document with global ID<br/>
-              <span class="text-accent">/add-done</span> → deploy
+              <span class="text-accent">/add-done</span> → finalize &amp; merge
             </div>
           </div>
 

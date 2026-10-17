@@ -441,6 +441,7 @@ ${RELATED_WORK}
   ### Migration
   - [Action]: [table/column] - [type/constraint]
   - Reference: `[search codebase for similar migration]`
+  - Delivery: the migration FILE is delivered in this branch; the project's deploy process applies it to shared environments after `/add-done` — not a task
 
   ### Repository
   | Method | Purpose |
@@ -658,7 +659,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 - List renders in under 200ms for up to 100 items (about.md RNF01)
 - Node 20.x; no `^` or `~` in package.json (AGENTS.md stack)
-- `npm run lint` and `npm run typecheck` exit 0 (AGENTS.md validation_gates)
+- `<validation_gates.lint>` and `<validation_gates.typecheck>` exit 0 (AGENTS.md validation_gates)
 - Spacing only through `--space-*` tokens (design-system.md)
 ```
 
@@ -706,6 +707,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 ```
 
 **Rules:**
+- The generated tasks.md MUST honour `## Delivery Boundary` in `{{skill:add--tasks-checklist/SKILL.md}}`
 - tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Validation Gates` (validators parse by text). **The sixth is conditional** — write it only when `AGENTS.md` exposes a `validation_gates` block, and omit the section entirely otherwise
 - Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP add-plan.schema-gate checks this mechanically, and a `Consumes` written as prose fails there
 - plan.md FROZEN after this step (no spec checklist section)
