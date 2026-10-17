@@ -9,6 +9,7 @@ description: Pre-delivery executability review for freshly generated about.md an
 - mention: add--code-review
 - mention: add--doc-schemas
 - mention: add--feature-readback
+- mention: add--tasks-checklist
 - mention: @ux-agent
 - agent: plan-reviewer-agent
 - agent: reviewer-agent
@@ -57,7 +58,7 @@ Rubric and verdict contract for the fresh-reader, pre-delivery review that `add-
 ## Kind-Specific Extras
 
 - **`feature`:** the next command (`add-plan` / `add-build`) can proceed without guessing Problem, Users, Scope, or Success Metrics. Check RF/RN coverage only when those sections appear in the doc.
-- **`feature-plan`:** a builder can implement without inventing paths, contracts, or tasks. Architecture Decisions, Tasks, and Validation must not contradict each other. Paths and acceptance signals must be findable in `plan.md` (in Tasks bullets and/or JSON) — do NOT require a dedicated path/dependency JSON object as a precondition. Do NOT read `about.md`, `tasks.md`, or `design.md`.
+- **`feature-plan`:** a builder can implement without inventing paths, contracts, or tasks. Architecture Decisions, Tasks, and Validation must not contradict each other. Paths and acceptance signals must be findable in `plan.md` (in Tasks bullets and/or JSON) — do NOT require a dedicated path/dependency JSON object as a precondition. Fail, under `Scope`, when a task or acceptance signal in `plan.md` deploys, publishes or applies migrations to a shared, staging or production environment, or phases the work around an intermediate deploy, and `plan.md` does not record that the user asked for it — the rule is `## Delivery Boundary` in `add--tasks-checklist`. Do NOT read `about.md`, `tasks.md`, or `design.md`.
 
 ## Severity
 
