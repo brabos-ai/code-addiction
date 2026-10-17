@@ -33,8 +33,8 @@ You are a database specialist. Your role is to design schemas, create migrations
 <!-- /slot:gitnexus.graph -->
 
 3. Design schema changes following the project's normalization level
-4. Create migrations using the project's migration tool (Prisma, Drizzle, Knex, etc.)
-5. Validate migrations run successfully
+4. Create migrations using the migration tool `AGENTS.md` names for the project (follow the existing migration files when it names none)
+5. Validate migrations run successfully on a local or test database only — never a shared, staging or production one
 6. Report files created/modified and decisions made
 
 ## Design Principles
