@@ -106,7 +106,7 @@ IF A TASK OR ACCEPTANCE ITEM WOULD APPLY MIGRATIONS TO, DEPLOY TO OR PUBLISH TO 
   ✅ DO: Deliver the migration FILE and its tests; the deploy process applies it after the merge
 ```
 
-- **Unless the user asked for it.** When the user asked for a deploy step, the deploy order is recorded as a note in `plan.md`, never as a task or an Acceptance item — a task is something `add-build` executes.
+- **Unless the user asked for it.** When the user asked for a deploy step, the deploy order is recorded as a note in `plan.md`'s `## Global Constraints`, with the user's request as its source, never as a task or an Acceptance item — a task is something `add-build` executes.
 - **Still allowed and expected:** running the app, applying migrations to a local or test database, and local QA (functional, UX, Playwright).
 - **How `Verify:` is chosen:** the `AGENTS.md` `validation_gates` command scoped to the task's files, or another local check (a curl to the locally running app, a browser check). A `Verify:` never writes outside a local or test environment.
 - **Fallback when `AGENTS.md` has no `validation_gates`:** the project's own test command scoped to the task's files, taken from the repository (its scripts, README or `wiki/workflows.md`), or a local browser or curl check. Never an invented command.
@@ -250,7 +250,7 @@ Follow the Section Rules defined in the `add--tasks-checklist` skill. All
 checkboxes start as `[ ]` — do NOT pre-tick anything. Complexity scoring:
 SIMPLE ≤5 tasks, STANDARD 6–12, COMPLEX 13+ (warn: should be split as epic).
 Service order (TDD ordering): test → database → backend → frontend.
-Follow `## Delivery Boundary`: no task or Acceptance item deploys, publishes or applies migrations outside local/test, and every `Verify:` is local.
+Follow `## Delivery Boundary`: no task or Acceptance item deploys, publishes or applies migrations outside local/test unless the user asked as that section says, and every `Verify:` is local.
 
 **`Verify:` tier rule.** If a task's `Files` include a test spec that `wiki/workflows.md`'s Test
 Workflow section names as CI-tier (integration/e2e), write that task's `Verify:` line scoped to that
