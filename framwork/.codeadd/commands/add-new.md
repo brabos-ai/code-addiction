@@ -263,7 +263,7 @@ test already put anything larger on the full path.
 
 **Analyze the confirmed scope for independent user flows.**
 
-**Independent flow** = testable in isolation, distinct objective, could be own PR. Keywords: "will also", "and then", "another flow".
+**Independent flow** = testable in isolation, distinct objective, could be own PR. Work is split by user flow, never by deploy stage — migrate, deploy and switch-on are not flows. Keywords: "will also", "and then", "another flow".
 
 **IF N = 1:** Skip decomposition, continue to STEP add-new.document.
 **IF N >= 2 [STOP]:** Propose decomposition. **Each subfeature states, in one line, how it serves the
