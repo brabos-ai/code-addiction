@@ -733,16 +733,16 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 **Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
-- **Database:** Entities, Kysely types, Knex migration, Repository, barrel exports
-- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, register in app.module.ts
-- **Workers:** Worker, Processor, queue config, error handling, register in worker.module.ts
-- **Frontend:** Pages, Components, Zustand store, Hooks, mirror DTOs, API integration, forms
+- **Database:** Entities, query types, migration file, Repository, barrel exports
+- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, module registration
+- **Workers:** Worker, Processor, queue config, error handling, module registration
+- **Frontend:** Pages, Components, state store, Hooks, mirror DTOs, API integration, forms
   - MANDATORY: Load skill `add--frontend-development` first
   - The frontend skill will check for design.md → if missing, auto-load ux-design/SKILL.md
 
 **Skills Reference (MANDATORY):**
 - Backend: skill `add--backend-development` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
-- Database: skill `add--database-development` (Entities, Migrations, Kysely, Repositories)
+- Database: skill `add--database-development` (Entities, Migrations, query types, Repositories)
 - Frontend: skill `add--frontend-development` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 
 #### STEP add-build.subagent-dispatch Subagent Dispatch
