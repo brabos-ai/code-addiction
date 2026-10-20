@@ -233,7 +233,7 @@ start a new agent, tell it to read its role file and use this framework:
 - `.codeadd/agent-mode/roles/product-pm.md` owns scope, release and priority, and shapes the work up to
   `shaped`. It never implements.
 - `.codeadd/agent-mode/roles/chief-engineer.md` takes one ticket and runs it through `/add-plan`,
-  `/add-build` and `/add-review` to the pull request.
+  `/add-build` and `/add-review`, then `/add-done` or `/add-pull-request`.
 
 Each role file lists the commands the agent runs, its boundaries, when it stops and asks the user, and the
 summary it ends with.

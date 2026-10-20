@@ -18,11 +18,16 @@ Run these in order, one command per call:
 `/add-review` comes before `/add-done` and before `/add-pull-request`, every time, for every size of change.
 Do not skip it because the change is small.
 
-Resolve every `blocker` and every `major` finding the review returns, then review again until none is left.
-A `minor` follows the normal deferred flow: the build writes a `minor (deferred)` line in its ledger, and
-`### Known Issues` lists what a gate left behind. When the board is on, the build also writes one ticket for
-the deferred minors. Without the board that ticket does not exist, and the ledger and `### Known Issues` are
-the whole record. Do not fix a minor by hand to make a summary shorter.
+Resolve every `blocker` and every `major` finding the review returns. Run `/add-build` again: it works the
+rows in the review's `## Fix Routing` table, in at most 3 fix rounds per wave. Then run `/add-review` again.
+If a `blocker` or `major` is still open after that, stop and ask the user: `/add-done` and
+`/add-pull-request` will not go ahead with it open.
+
+A `minor` or `polish` finding follows the normal deferred flow: the build writes a `minor (deferred)` line in its
+ledger and leaves the finding alone. (The one exception is a formatter fix, which the build runs itself.)
+`### Known Issues` is a different list: it holds gate failures in files your change did not touch. When the board
+is on, the build also writes one ticket for the deferred minors. Without the board that ticket does not exist,
+and the ledger is the record. Do not fix a minor by hand to make a summary shorter.
 
 For a critical or large PR, the user may ask another engineer to run `/add-review` in its own worktree. You
 act on its findings the same way.
