@@ -201,6 +201,8 @@ Read `.codeadd/agent-mode/README.md` NOW, at answer time, in the project root fi
 
 DO NOT summarise it from memory or copy it into your answer. The guide changes with the framework, and a copy goes stale. When the file is missing, say so and tell the user to run `codeadd update`.
 
+When the question is about a team of agents or a role, read the files in `.codeadd/agent-mode/roles/` NOW as well, the same way, and answer from them.
+
 ---
 
 ### Type I: CLI Lifecycle
