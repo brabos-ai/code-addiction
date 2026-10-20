@@ -164,17 +164,18 @@ describe('agent team roles', () => {
     }
   });
 
-  it('T1.3 chief-engineer.md names its commands and the review rules, and puts /add-review before done and PR', () => {
+  it('T1.3 chief-engineer.md names its commands and the review rules, and makes /add-review optional', () => {
     const text = roleText('chief-engineer');
-    for (const anchor of ['/add-plan', '/add-build', '/add-review', '/add-done', '/add-pull-request', 'blocker', 'major', 'minor (deferred)', 'Known Issues']) {
+    for (const anchor of ['/add-plan', '/add-build', '/add-review', '/add-done', '/add-hotfix', 'Final review:', 'blocked N', 'Ruling:']) {
       expect(text, `chief-engineer.md names ${anchor}`).toContain(anchor);
     }
-    expect(text).toMatch(/`\/add-review`[^\n]*(before|ahead of)[^\n]*`\/add-done`[^\n]*`\/add-pull-request`/);
+    expect(text).toContain("`/add-review` is optional");
+    expect(text).not.toContain("/add-pull-request");
   });
 
-  it('T1.4 product-pm.md names its commands, the acceptance check, that it never implements, and the assignee comment', () => {
+  it('T1.4 product-pm.md names its commands, the release close, that it never implements, and the assignee comment', () => {
     const text = roleText('product-pm');
-    for (const anchor of ['/add-brainstorm', '/add-new', 'shaped', 'acceptance criteria', 'backlog-commit.cjs comment']) {
+    for (const anchor of ['/add-brainstorm', '/add-new', 'shaped', 'backlog-commit.cjs release', 'backlog-commit.cjs comment']) {
       expect(text, `product-pm.md names ${anchor}`).toContain(anchor);
     }
     expect(text).toMatch(/never implements?/i);

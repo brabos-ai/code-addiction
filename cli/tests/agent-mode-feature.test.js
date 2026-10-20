@@ -402,7 +402,8 @@ describe('F22 -- the bot guide says how to turn the mode on and how to answer', 
   it('says an automatic delivery can run several stages in one call and that stage names the last', () => {
     const text = guide();
     expect(text).toMatch(/automatic/);
-    expect(text).toMatch(/several stages in one call/);
+    expect(text).toMatch(/several stages/);
+    expect(text).toMatch(/publish stop/);
     expect(text).toMatch(/`stage`/);
   });
 });
