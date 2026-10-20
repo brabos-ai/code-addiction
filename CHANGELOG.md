@@ -11,4 +11,5 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - GitHub templates for issues and pull requests
 - CI and release workflows
 - Root-level README for public onboarding
+- Agent team section (`## 10`) in the agent-mode guide, and two role files, `roles/product-pm.md` and `roles/chief-engineer.md`
 

@@ -47,6 +47,15 @@ describe('add-help command', () => {
   });
 });
 
+describe('add-help Type H and the agent roles', () => {
+  it('T1.8 Type H names agent-mode/roles/', () => {
+    const src = read(helpPath);
+    const typeH = src.slice(src.indexOf('### Type H'), src.indexOf('### Type I'));
+    expect(typeH.length).toBeGreaterThan(0);
+    expect(typeH).toContain('agent-mode/roles/');
+  });
+});
+
 describe('add--ecosystem routing for add-help', () => {
   const eco = () => read(path.join(codeadd, 'skills/add--ecosystem/SKILL.md'));
 

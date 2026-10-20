@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import AdmZip from 'adm-zip';
+import { copyRelease } from '../src/release-copy.js';
 
 const { validateResultBlock } = createRequire(import.meta.url)('../../scripts/tests/result-block-schema.cjs');
 
@@ -129,5 +132,102 @@ describe('product agent mode', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
     const section = guide.slice(guide.indexOf('## 1.'), guide.indexOf('## 2.'));
     for (const anchor of ["jq -e '.structured_output.status == \"done\"'", 'ConvertFrom-Json', "-ne 'done'", 'exit 1', 'claude -p` itself exits 0']) expect(section).toContain(anchor);
+  });
+});
+
+/**
+ * Agent team roles (ticket 0054B) — a team section in the guide and two role files.
+ *
+ * Test names carry a `T` prefix: `L1.1`–`L1.10` above are taken, and a reused name would collide.
+ * Every check reads files; T2.1 also installs into a temp dir it deletes at the end.
+ */
+const AGENT_MODE = path.join(SOURCE, 'agent-mode');
+const ROLES = ['product-pm', 'chief-engineer'];
+const roleText = (name) => fs.readFileSync(path.join(AGENT_MODE, 'roles', `${name}.md`), 'utf8');
+const ROLE_HEADINGS = ['## Commands', '## Boundaries', '## When to stop and ask', '## Summary format'];
+const LOCK_CLAIM = /per-ticket (lock|claim)|locks? (the|each|one|a) ticket|ticket is locked|claims? (the|a) ticket/i;
+
+describe('agent team roles', () => {
+  it.each(ROLES)('T1.1 roles/%s.md exists and carries the four role headings exactly once', (name) => {
+    const text = roleText(name);
+    for (const heading of ROLE_HEADINGS) {
+      expect(text.split('\n').filter((line) => line.trim() === heading), `${name}.md heading ${heading}`).toHaveLength(1);
+    }
+  });
+
+  it('T1.2 every /add-* command named in a role file is a command in provider-map.json', () => {
+    const commands = Object.keys(readJson(path.join(ROOT, 'framwork', 'provider-map.json')).commands);
+    const named = [...new Set(ROLES.flatMap((name) => roleText(name).match(/\/add-[a-z][a-z-]*/g) ?? []))];
+    expect(named.length, 'the role files name no /add-* command').toBeGreaterThan(0);
+    for (const name of named) {
+      expect(commands, `a role file names ${name}, which is not a product command`).toContain(name.slice(1));
+    }
+  });
+
+  it('T1.3 chief-engineer.md names its commands and the review rules, and puts /add-review before done and PR', () => {
+    const text = roleText('chief-engineer');
+    for (const anchor of ['/add-plan', '/add-build', '/add-review', '/add-done', '/add-pull-request', 'blocker', 'major', 'minor (deferred)', 'Known Issues']) {
+      expect(text, `chief-engineer.md names ${anchor}`).toContain(anchor);
+    }
+    expect(text).toMatch(/`\/add-review`[^\n]*(before|ahead of)[^\n]*`\/add-done`[^\n]*`\/add-pull-request`/);
+  });
+
+  it('T1.4 product-pm.md names its commands, the acceptance check, that it never implements, and the assignee comment', () => {
+    const text = roleText('product-pm');
+    for (const anchor of ['/add-brainstorm', '/add-new', 'shaped', 'acceptance criteria', 'backlog-commit.cjs comment']) {
+      expect(text, `product-pm.md names ${anchor}`).toContain(anchor);
+    }
+    expect(text).toMatch(/never implements?/i);
+  });
+
+  it.each(ROLES)('T1.5 roles/%s.md carries the with-board and without-board handoff', (name) => {
+    const text = roleText(name);
+    for (const anchor of ['shaped', '-intent.md', 'about.md']) expect(text, `${name}.md names ${anchor}`).toContain(anchor);
+  });
+
+  it('T1.6 the guide has section 10, with the team rules, and sections 1 to 9 are still there', () => {
+    const guide = fs.readFileSync(GUIDE, 'utf8');
+    const start = guide.indexOf('## 10. Work as a team of agents');
+    expect(start, 'the guide has no section 10').toBeGreaterThan(-1);
+    const section = guide.slice(start);
+    for (const anchor of [
+      'section 2', 'backlog-commit.cjs', 'ERROR=board-locked', 'rebase-conflict', 'push-refused', 'fetch-failed',
+      'RECOVERY_REF', 'shaped', '-intent.md', '/add-review', 'roles/product-pm.md', 'roles/chief-engineer.md',
+    ]) {
+      expect(section, `section 10 names ${anchor}`).toContain(anchor);
+    }
+    // These two are the detail of section 2's list. Naming them again is the copy the drift risk warns about.
+    expect(section).not.toContain('--continue');
+    expect(section).not.toContain('.jsonl');
+    for (let n = 1; n <= 9; n++) expect(guide, `section ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
+  });
+
+  it('T1.7 no file under agent-mode/ says the board locks a ticket, and the check catches such a line', () => {
+    const files = filesUnder(AGENT_MODE);
+    expect(files.length).toBeGreaterThan(0);
+    for (const file of files) {
+      expect(fs.readFileSync(file, 'utf8'), `${path.relative(ROOT, file)} claims a per-ticket lock`).not.toMatch(LOCK_CLAIM);
+    }
+    // The guard bites: the same scan over a README copy carrying one such line must match.
+    const injected = `${fs.readFileSync(GUIDE, 'utf8')}\nThe board locks each ticket while an engineer works on it.\n`;
+    expect(injected).toMatch(LOCK_CLAIM);
+  });
+
+  it('T2.1 an install copies agent-mode/roles/ byte for byte', () => {
+    const zip = new AdmZip();
+    for (const file of filesUnder(AGENT_MODE)) {
+      zip.addFile(`framwork/.codeadd/${path.relative(path.join(SOURCE), file).split(path.sep).join('/')}`, fs.readFileSync(file));
+    }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-team-roles-'));
+    try {
+      copyRelease(zip, dir, []);
+      for (const name of ROLES) {
+        const installed = path.join(dir, '.codeadd', 'agent-mode', 'roles', `${name}.md`);
+        expect(fs.existsSync(installed), `${name}.md was not installed`).toBe(true);
+        expect(fs.readFileSync(installed)).toEqual(fs.readFileSync(path.join(AGENT_MODE, 'roles', `${name}.md`)));
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
