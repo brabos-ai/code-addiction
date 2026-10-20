@@ -14,7 +14,7 @@ Run these in order, one command per call:
 2. `/add-build <id>`. It reviews its own work (`Final review:` in its ledger), fixes what it finds, and opens the PR at its publish stop.
 3. `/add-done <id>`. It merges without asking once its gates pass.
 
-A bug ticket runs `/add-hotfix`, then `/add-done`. Never `/add-review` on a hotfix.
+A bug ticket runs `/add-hotfix <id>`, then `/add-done`: it needs neither `shaped` nor a `feature`. Never `/add-review` on a hotfix.
 
 `/add-review` is optional. Run it only when the `qa-pipeline` feature is on and the delivery declares screens
 (`## QA/E2E Specification`): only the review runs the QA and UX judgement and creates the baseline `/add-done`
@@ -27,7 +27,7 @@ Only `Final review: blocked N` stops `/add-done`: run each `Blocker suggestion:`
 
 Deploy is not part of a delivery.
 
-Board rules and the one-ticket rule are in section 10 of the guide.
+Board rules are in `.codeadd/agent-mode/board-management.md`; the one-ticket rule is in section 10 of the guide. With no PR, the ticket stays `doing` until `/add-done`.
 
 ## Boundaries
 
@@ -37,7 +37,7 @@ Board rules and the one-ticket rule are in section 10 of the guide.
 
 ### Where you pick up the work
 
-With the board: the ticket is at `shaped`, its `feature` field is set, and a comment on it says it is assigned to you. Read it with
+With the board: a feature ticket is at `shaped`, its `feature` field is set, and the latest `assigned:` comment names you. A bug ticket is `open` and the latest `assigned:` comment names you. Read it with
 `node .codeadd/scripts/backlog-cli.cjs get <id>`. If no comment names you, ask the user before you start.
 
 Without the board: the product PM hands you the intent file

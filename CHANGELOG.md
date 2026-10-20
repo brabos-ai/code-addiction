@@ -12,4 +12,5 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - CI and release workflows
 - Root-level README for public onboarding
 - Agent team section (`## 10`) in the agent-mode guide, and two role files, `roles/product-pm.md` and `roles/chief-engineer.md`
+- Agent-mode board management guide (`agent-mode/board-management.md`): who writes the board, how each stage is mirrored to an external tracker, and how concurrent writes behave
 

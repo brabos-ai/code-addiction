@@ -225,6 +225,8 @@ The same loop works for any project-management app: only the push in step 3 chan
 
 Nothing here is tracker code: the framework ships no tracker code, and the sync itself is the bot's job.
 
+Who mirrors what, field by field, is in `.codeadd/agent-mode/board-management.md` (section 3): each stage owner mirrors its own stage, and automatic sync is future work.
+
 ## 10. Work as a team of agents
 
 Several agents can work on one codebase and one board: product PMs shape the work, engineers build it. To
@@ -244,12 +246,9 @@ Rules for the team, every time:
   not repeated here.
 - One engineer takes one ticket at a time. This is a process rule the product PM keeps: the PM records who
   took the ticket as a comment, and nothing on the board stops a second engineer.
-- Write to the board only through `node .codeadd/scripts/backlog-commit.cjs <mode>`. Never edit the board
-  files.
-- `ERROR=board-locked` means another write holds the board clone's lock. Wait and run the same write again.
-- `SYNC_REASON=rebase-conflict`, `push-refused` or `fetch-failed` (a write reports it as `DEGRADED=`) means
-  stop and report to the user. Never resolve it. The write is not lost: its commit is kept in the board
-  clone, under the ref named by `RECOVERY_REF`.
+- The board rules (where it lives, who writes, the lock, `ERROR=board-locked`, `DEGRADED=` with `RECOVERY_REF`,
+  `rebase-conflict`, `push-refused`, `fetch-failed`) are in `.codeadd/agent-mode/board-management.md`. Write only through
+  `node .codeadd/scripts/backlog-commit.cjs <mode>`. On a degraded write, stop and report to the user.
 - The product PM hands work to an engineer through the intent file and the `shaped` status. Without the
   board, the handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and
   `docs/features/<id>/about.md`.
