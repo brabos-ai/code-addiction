@@ -224,3 +224,33 @@ Step 3 becomes "find the row whose title is the id, then create or update it".
 The same loop works for any project-management app: only the push in step 3 changes.
 
 Nothing here is tracker code: the framework ships no tracker code, and the sync itself is the bot's job.
+
+## 10. Work as a team of agents
+
+Several agents can work on one codebase and one board: product PMs shape the work, engineers build it. To
+start a new agent, tell it to read its role file and use this framework:
+
+- `.codeadd/agent-mode/roles/product-pm.md` owns scope, release and priority, and shapes the work up to
+  `shaped`. It never implements.
+- `.codeadd/agent-mode/roles/chief-engineer.md` takes one ticket and runs it through `/add-plan`,
+  `/add-build` and `/add-review` to the pull request.
+
+Each role file lists the commands the agent runs, its boundaries, when it stops and asks the user, and the
+summary it ends with.
+
+Rules for the team, every time:
+
+- Every agent has its own git worktree and its own session. The rules for that are in section 2. They are
+  not repeated here.
+- One engineer takes one ticket at a time. This is a process rule the product PM keeps: the PM records who
+  took the ticket as a comment, and nothing on the board stops a second engineer.
+- Write to the board only through `node .codeadd/scripts/backlog-commit.cjs <mode>`. Never edit the board
+  files.
+- `ERROR=board-locked` means another write holds the board clone's lock. Wait and run the same write again.
+- `SYNC_REASON=rebase-conflict`, `push-refused` or `fetch-failed` (a write reports it as `DEGRADED=`) means
+  stop and report to the user. Never resolve it. The write is not lost: its commit is kept in the board
+  clone, under the ref named by `RECOVERY_REF`.
+- The product PM hands work to an engineer through the intent file and the `shaped` status. Without the
+  board, the handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and
+  `docs/features/<id>/about.md`.
+- For a critical or large PR, another engineer may run `/add-review` in its own worktree.
