@@ -29,7 +29,7 @@ A failed board write never fails the command: it shows as a line in the final re
 | `/add-hotfix` | `doing` and `work_id`; never `in-review` |
 | `/add-done` | `awaiting-release` when `RELEASE_FLOW=yes`, else `done` |
 
-A write that would move a ticket back to a phase it already left is skipped.
+Nothing validates transitions; only the phase check and the `work_id` stop skip a write.
 
 Manual, always:
 
@@ -38,7 +38,8 @@ Manual, always:
 - Drop, reprioritise (`move`), or edit a ticket.
 - Turn the release flow on, once per project: `backlog-commit.cjs release-flow on`.
 - Close the tickets of a release: `backlog-commit.cjs release <version>`. It moves every `awaiting-release`
-  ticket to `done` with the version, in one commit.
+  ticket to `done` and overwrites its `release` with the version, in one commit. Run it only when every waiting
+  ticket belongs to that version.
 
 To write a record (a comment, a patch), create the JSON file with the agent file-write tool, as UTF-8, then pass it:
 
@@ -47,7 +48,7 @@ node .codeadd/scripts/backlog-commit.cjs comment <id> --record-file assign.json
 ```
 
 where `assign.json` is `{"content":"assigned: <engineer>"}`. Do not build the file with `echo >`: in Windows
-PowerShell 5 it writes UTF-16, and the write can fail with `record-read-failed`.
+PowerShell 5 it writes UTF-16, and the write is refused with `REFUSED=invalid-json` (exit 2).
 
 ## 3. Who does what, and the external mirror
 
@@ -61,7 +62,7 @@ the external board right after. There is no single mirror bot.
 | Shaped | PM, `/add-brainstorm` or `/add-new` | `shaped`, `feature` set | status `shaped`, feature id |
 | Docs on `main` | PM | none: commit and push the intent and `docs/features/<id>/` | none |
 | Assigned | PM | comment `assigned: <engineer>` | assignee |
-| Release mapping | PM | `update` the ticket's release; reflect any change made in the external board | release |
+| Release mapping | PM | none in `release`: keep the mapping in the external board or a label | release |
 | Planning | engineer, `/add-plan` | `planning`, then `planned` | status |
 | Building | engineer, `/add-build` or `/add-hotfix <id>` | `doing` | status `doing` |
 | PR opened | engineer, `/add-build` | `in-review` (only with a PR) | status `in-review` |
@@ -74,7 +75,8 @@ Each external field has one owner, so the two boards do not drift:
 - Execution status (`planning` to `done`): the engineer.
 - Release, priority and assignment: the PM.
 - The PM decides the release mapping (which tickets go in which release). When the PM decides it in the external
-  board, the PM reflects it into the internal board.
+  board, the PM reflects it into the internal board as a label, never in the `release` field (that field is filled only when a
+  release closes the ticket).
 
 Automatic sync between the two boards is future work and out of scope here. Section 9 of the guide describes the
 `changes --since` loop a project can use to build one.
@@ -82,13 +84,13 @@ Automatic sync between the two boards is future work and out of scope here. Sect
 ## 4. Concurrency
 
 - Only the assignee writes a ticket. A ticket is one line of one file, so two machines writing the same ticket
-  (or a `move`, which reorders lines) can conflict on rebase.
+  (or a `move`, which reorders lines) can conflict on rebase. Edits on adjacent lines can conflict too.
 - On one machine, a write takes the clone's lock and waits up to 30 seconds. If it is still held, the write exits 1
   with `ERROR=board-locked` and writes nothing. Run the same write again.
 - A read never waits: if the lock is held it prints `SYNC=skipped` and answers from the clone.
 - Between machines, a refused push re-fetches, rebases once and tries again. If that fails, the write reports
   `DEGRADED=rebase-conflict` (or `push-refused`, `fetch-failed`). The commit is not lost: it stays in the clone,
-  held by the ref named in `RECOVERY_REF`, and the next write pushes it. Stop, report to the user, and do not resolve
+  held by the ref named in `RECOVERY_REF`, and the next write tries to push it. After `rebase-conflict`, every later write on that machine degrades again until the user resolves it. Stop, report to the user, and do not resolve
   it by hand.
 - Same ticket, two machines: the second write is the one that degrades. Report it; the user picks which write stands.
 
