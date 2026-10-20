@@ -194,9 +194,11 @@ working.
 
 ## 9. Mirror the board to an external tracker
 
-The project's board lives on its own `board` branch, in one clone per project on the machine. A bot that
-keeps an outside tracker in step with it does not read the files: it asks the board what changed since the
-last time it looked, with the same entry every command uses.
+The project's board lives on its own `board` branch, in one clone per project on the machine. The internal
+board is the source of truth. Today each stage owner mirrors its own stage to the outside tracker by hand
+(see `.codeadd/agent-mode/board-management.md`). The loop below is the basis for a future automatic sync:
+it does not read the files, it asks the board what changed since the last time it looked, with the same entry
+every command uses.
 
 1. Keep the last `HEAD` you stored. The first time there is none.
 2. Run `node .codeadd/scripts/backlog-cli.cjs changes --since <sha>` (no `--since` the first time: every
@@ -223,7 +225,9 @@ One Notion database, one row per ticket. Map the fields like this:
 Step 3 becomes "find the row whose title is the id, then create or update it".
 The same loop works for any project-management app: only the push in step 3 changes.
 
-Nothing here is tracker code: the framework ships no tracker code, and the sync itself is the bot's job.
+Nothing here is tracker code: the framework ships no tracker code. Automatic sync is future work and out of scope; there is no single mirror bot.
+
+Who mirrors what, field by field, is in `.codeadd/agent-mode/board-management.md` (section 3): each stage owner mirrors its own stage.
 
 ## 10. Work as a team of agents
 
@@ -244,13 +248,11 @@ Rules for the team, every time:
   not repeated here.
 - One engineer takes one ticket at a time. This is a process rule the product PM keeps: the PM records who
   took the ticket as a comment, and nothing on the board stops a second engineer.
-- Write to the board only through `node .codeadd/scripts/backlog-commit.cjs <mode>`. Never edit the board
-  files.
-- `ERROR=board-locked` means another write holds the board clone's lock. Wait and run the same write again.
-- `SYNC_REASON=rebase-conflict`, `push-refused` or `fetch-failed` (a write reports it as `DEGRADED=`) means
-  stop and report to the user. Never resolve it. The write is not lost: its commit is kept in the board
-  clone, under the ref named by `RECOVERY_REF`.
-- The product PM hands work to an engineer through the intent file and the `shaped` status. Without the
+- The board rules (where it lives, who writes, the lock, `ERROR=board-locked`, `DEGRADED=` with `RECOVERY_REF`,
+  `rebase-conflict`, `push-refused`, `fetch-failed`) are in `.codeadd/agent-mode/board-management.md`. Write only through
+  `node .codeadd/scripts/backlog-commit.cjs <mode>`. On a degraded write, stop and report to the user.
+- The product PM hands work to an engineer with the `assigned: <engineer>` comment, written after the intent
+  file and `docs/features/<id>/` are on main. Without the
   board, the handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and
   `docs/features/<id>/about.md`.
 - Commit and push the intent file and `docs/features/<id>/` to the main branch before the handoff: `/add-new` makes no git write, and another worktree does not see an uncommitted file.

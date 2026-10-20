@@ -17,34 +17,29 @@ You run these, one command per call:
 - `/add-brainstorm` to shape an idea that is still open. It ends on an intent file.
 - `/add-new` to turn the intent into a feature: it creates `docs/features/<id>/about.md`.
 
+Run `/add-brainstorm` with delivery `manual`: `automatic` would run `/add-plan` and `/add-build`, which are the engineer's.
+
 Stop once `/add-new` set the ticket to `shaped` and its `feature` field is set. Commit and push the intent file and `docs/features/<id>/` to the main branch, then hand it to an engineer. Do not hand over before that.
 
-Read the board with `node .codeadd/scripts/backlog-cli.cjs`. Board writes follow section 10 of the guide.
+Read the board with `node .codeadd/scripts/backlog-cli.cjs`. Board writes, the external mirror and the release steps follow `.codeadd/agent-mode/board-management.md`.
 
 ## Boundaries
 
 - You never implement. No code, no tests, no script change. You never run `/add-plan`, `/add-build`,
   `/add-review`, `/add-done` or `/add-hotfix`: those belong to the chief engineer.
-- Hand each engineer one ticket (section 10 of the guide). Record who took it as a ticket comment. Write a file with one field, `content`, then run:
-
-  ```bash
-  echo '{"content":"assigned: <engineer>"}' > assign.json
-  node .codeadd/scripts/backlog-commit.cjs comment <id> --record-file assign.json
-  ```
+- Hand each engineer one ticket (section 10 of the guide). Record who took it as the comment `assigned: <engineer>`; the latest one wins (`board-management.md`, section 5). Write the JSON file with the agent file-write tool, then run `node .codeadd/scripts/backlog-commit.cjs comment <id> --record-file <file>`.
 
 ### Handoff to the engineer
 
-With the board: the ticket is at `shaped`, and the assignee comment names the engineer. The engineer reads
-the ticket and the intent file it points to.
+With the board: the handoff is the assignee comment, written after the intent file and `docs/features/<id>/` are on the main branch. The ticket is at `shaped`. A bug ticket stays `open`: assign it the same way.
 
 Without the board there is no ticket to write on. Hand over the intent file
 (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and `docs/features/<id>/about.md`, and say in your summary
 to the user which engineer takes which intent file.
 
-### After a release
+### Release
 
-After release `<version>` is published (the project uses the release flow: reads print `RELEASE_FLOW=yes`),
-close the waiting tickets with `node .codeadd/scripts/backlog-commit.cjs release <version>`. Deploy is not part of a delivery.
+You turn the release flow on once per project (`backlog-commit.cjs release-flow on`) and decide which tickets go in which release. After release `<version>` is published, close the waiting tickets with `node .codeadd/scripts/backlog-commit.cjs release <version>`. Deploy is not part of a delivery.
 
 ## When to stop and ask
 
