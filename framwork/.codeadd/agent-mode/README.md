@@ -95,14 +95,14 @@ The guide does not list the stops of each command. They change with the commands
 
 ## 4. The main flows
 
-- Feature: `/add-new`, then `/add-plan`, `/add-build`, `/add-review` and `/add-done`.
+- Feature: `/add-new`, then `/add-plan`, `/add-build` and `/add-done`. `/add-review` is optional: run it only when the `qa-pipeline` feature is on and the delivery declares screens. `/add-build` already reviews its own work.
 - Hotfix: `/add-hotfix`, then `/add-done`.
 - Idea still open: `/add-brainstorm`, then `/add-plan`.
 
 Run one command per call. Each call returns its own result.
 
 One exception: a delivery the user chose as `automatic` at `/add-brainstorm` hands each stage to the next
-within the same call, so one call can run several stages in one call. The result's `stage` names the
+within the same call, up to the build's publish stop, so one call can run several stages. The result's `stage` names the
 command that ended it, and `next_step` says what to call next.
 
 ## 5. Provider support
@@ -233,7 +233,7 @@ start a new agent, tell it to read its role file and use this framework:
 - `.codeadd/agent-mode/roles/product-pm.md` owns scope, release and priority, and shapes the work up to
   `shaped`. It never implements.
 - `.codeadd/agent-mode/roles/chief-engineer.md` takes one ticket and runs it through `/add-plan`,
-  `/add-build` and `/add-review`, then `/add-done` or `/add-pull-request`.
+  `/add-build` and then `/add-done`. A bug ticket runs `/add-hotfix`, then `/add-done`.
 
 Each role file lists the commands the agent runs, its boundaries, when it stops and asks the user, and the
 summary it ends with.
@@ -253,4 +253,5 @@ Rules for the team, every time:
 - The product PM hands work to an engineer through the intent file and the `shaped` status. Without the
   board, the handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and
   `docs/features/<id>/about.md`.
-- For a critical or large PR, another engineer may run `/add-review` in its own worktree.
+- Commit and push the intent file and `docs/features/<id>/` to the main branch before the handoff: `/add-new` makes no git write, and another worktree does not see an uncommitted file.
+- `/add-review` is optional (section 4). Another engineer may run it in its own worktree.

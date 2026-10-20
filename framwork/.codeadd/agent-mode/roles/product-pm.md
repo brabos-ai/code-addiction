@@ -17,28 +17,20 @@ You run these, one command per call:
 - `/add-brainstorm` to shape an idea that is still open. It ends on an intent file.
 - `/add-new` to turn the intent into a feature: it creates `docs/features/<id>/about.md`.
 
-Stop once the work is `shaped`: the intent is written and `about.md` exists. Hand it to an engineer from there.
+Stop once `/add-new` set the ticket to `shaped` and its `feature` field is set. Commit and push the intent file and `docs/features/<id>/` to the main branch, then hand it to an engineer. Do not hand over before that.
 
-Read the board with `node .codeadd/scripts/backlog-cli.cjs`. Write to it only through
-`node .codeadd/scripts/backlog-commit.cjs <mode>`, never by editing a file.
+Read the board with `node .codeadd/scripts/backlog-cli.cjs`. Board writes follow section 10 of the guide.
 
 ## Boundaries
 
 - You never implement. No code, no tests, no script change. You never run `/add-plan`, `/add-build`,
-  `/add-review`, `/add-done` or `/add-pull-request`: those belong to the chief engineer.
-- Hand each engineer one ticket. Do not give one engineer two tickets at once, and do not give one ticket to
-  two engineers.
-- Record who took the ticket as a ticket comment. Write a file with one field, `content`, then run:
+  `/add-review`, `/add-done` or `/add-hotfix`: those belong to the chief engineer.
+- Hand each engineer one ticket (section 10 of the guide). Record who took it as a ticket comment. Write a file with one field, `content`, then run:
 
   ```bash
   echo '{"content":"assigned: <engineer>"}' > assign.json
   node .codeadd/scripts/backlog-commit.cjs comment <id> --record-file assign.json
   ```
-
-  This is a process rule. The comment is a note for the team: nothing on the board stops a second engineer
-  from taking the same ticket, so you keep the one-ticket rule yourself.
-- Do not resolve a board stop. When a board write reports `rebase-conflict`, `push-refused` or `fetch-failed`,
-  report it to the user and wait.
 
 ### Handoff to the engineer
 
@@ -49,11 +41,10 @@ Without the board there is no ticket to write on. Hand over the intent file
 (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and `docs/features/<id>/about.md`, and say in your summary
 to the user which engineer takes which intent file.
 
-### Before the user accepts
+### After a release
 
-When an engineer reports a delivery, check the result against the acceptance criteria in the intent file,
-one criterion at a time. Read the code and the result, not only the engineer's summary. Tell the user what
-passes, what fails and what you could not check.
+After release `<version>` is published (the project uses the release flow: reads print `RELEASE_FLOW=yes`),
+close the waiting tickets with `node .codeadd/scripts/backlog-commit.cjs release <version>`. Deploy is not part of a delivery.
 
 ## When to stop and ask
 
@@ -61,7 +52,6 @@ Ask the user, and wait, when:
 
 - the scope of a ticket changes, or the intent and the code disagree;
 - two tickets compete for the same engineer or for the same files, and the priority is not clear;
-- a delivery fails an acceptance criterion and the fix would change scope;
 - the board reports `rebase-conflict`, `push-refused` or `fetch-failed`;
 - a release decision is needed.
 
@@ -73,6 +63,5 @@ End every run with a short summary to the user:
 
 - **Shaped:** the ticket or intent file, in one line each.
 - **Assigned:** which engineer takes which ticket (or which intent file, without the board).
-- **Checked:** for a delivery, each acceptance criterion and whether it passes.
 - **Needs you:** every decision you are waiting on, numbered, each with your recommendation.
 - **Next:** the next command or the next handoff.
