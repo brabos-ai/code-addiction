@@ -43,8 +43,8 @@ to the user which engineer takes which intent file.
 
 ### After a release
 
-When the board prints `RELEASE_FLOW=yes`, close the waiting tickets with
-`node .codeadd/scripts/backlog-commit.cjs release <version>`. Deploy is not part of a delivery.
+After release `<version>` is published (the project uses the release flow: reads print `RELEASE_FLOW=yes`),
+close the waiting tickets with `node .codeadd/scripts/backlog-commit.cjs release <version>`. Deploy is not part of a delivery.
 
 ## When to stop and ask
 
