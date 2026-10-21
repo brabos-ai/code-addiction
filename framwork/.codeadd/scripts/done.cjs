@@ -5,9 +5,29 @@
  *
  * Usage:
  *   node .codeadd/scripts/done.cjs                       # Context mode (default)
- *   node .codeadd/scripts/done.cjs --commit-push         # Commit the working-tree docs, push the branch
+ *   node .codeadd/scripts/done.cjs --commit-push         # Commit the delivery's files, push the branch
  *   node .codeadd/scripts/done.cjs --merge               # The whole local sequence: commit-push, squash, cleanup
  *   node .codeadd/scripts/done.cjs --cleanup <MERGE_SHA> # Post-merge checks, then tags, worktree and branch
+ *
+ * Where each mode runs: the primary checkout runs all four. A linked worktree
+ * runs context, --commit-push and --cleanup when its checked-out branch is the
+ * feature branch (a branch with a feature id, not main); any other linked
+ * worktree refuses. --merge needs the primary checkout, because it checks out
+ * main. Context prints CHECKOUT=primary|linked so the caller routes before
+ * running --merge. --cleanup in a linked worktree does everything git allows
+ * from there and defers the two things it cannot — removing that worktree and
+ * deleting its checked-out branch — printing WORKTREE_CLEANUP=DEFERRED,
+ * LOCAL_DELETE=DEFERRED and a HINT= with the commands for the primary checkout.
+ *
+ * Staging is scoped to the delivery. A pending path (modified, staged, deleted,
+ * untracked) is in scope when the branch already touches it (diff against the
+ * merge base with main), sits untracked beside one that it touches, lies under
+ * the delivery folder, or is a close-out output (CLOSE_OUT_PATHS). Anything
+ * else is reported as DIRTY_UNRELATED=<path> with DIRTY_UNRELATED_COUNT=<n>;
+ * --commit-push then stops with STATUS=ERROR before staging a single file, and
+ * context reports the same list and still exits 0. Another feature's folder
+ * under docs/features/ is neither staged nor reported. With no merge base,
+ * context prints DIRTY_UNRELATED_COUNT=unknown and --commit-push stops.
  *
  * --cleanup REQUIRES the merge commit it proves against. A squash creates a new
  * commit, so the branch tip is never an ancestor of main and nothing can derive
@@ -57,6 +77,7 @@ let FEATURE_NUMBER = '';
 let FEATURE_SLUG = '';
 let DOCS_DIR = '';
 let CLEANUP_SHA = '';
+let IS_LINKED = false;
 
 // --- output -----------------------------------------------------------------
 // fs.writeSync on the raw descriptor is synchronous even when stdout is a pipe,
@@ -204,6 +225,95 @@ function physicalGitPath(flag) {
   }
 }
 
+// --- scoped staging ---------------------------------------------------------
+
+/**
+ * What /add-done writes itself before commit-push. `docs/features` is listed
+ * whole because runMerge's trees compare excludes the whole folder; the
+ * classifier narrows it to DOCS_DIR. runMerge builds both its pathspec lists
+ * from this one constant so the lists cannot drift from the classifier.
+ */
+const CLOSE_OUT_PATHS = [
+  'docs/features',
+  'docs/delivered.jsonl',
+  '.codeadd/wiki',
+  '.codeadd/project/decisions.jsonl',
+];
+
+/** NUL-separated git output (`-z`) as a list of raw paths. */
+function nulList(text) {
+  return String(text).split('\0').filter((p) => p !== '');
+}
+
+function underPath(p, dir) {
+  return p === dir || p.startsWith(`${dir}/`);
+}
+
+/** The merge base with main, or '' when neither origin/<main> nor <main> has one. */
+function mergeBase() {
+  for (const ref of [`origin/${MAIN_BRANCH}`, MAIN_BRANCH]) {
+    const res = git(['merge-base', 'HEAD', ref]);
+    if (res.status === 0 && res.stdout.trim() !== '') return res.stdout.trim();
+  }
+  return '';
+}
+
+/** Every pending path, deduplicated: modified, deleted, staged, untracked. */
+function pendingPaths() {
+  const modified = nulList(git(['diff', '--name-only', '--no-renames', '-z']).stdout);
+  const staged = nulList(git(['diff', '--cached', '--name-only', '--no-renames', '-z']).stdout);
+  const untracked = nulList(git(['ls-files', '--others', '--exclude-standard', '-z']).stdout);
+  return { modified, staged, untracked, all: [...new Set([...modified, ...staged, ...untracked])] };
+}
+
+/**
+ * Split the pending paths into the delivery's own and the rest. Returns null
+ * when there is no merge base to judge against. `stage` is what commit-push
+ * adds; `unrelated` is what stops it.
+ */
+function classifyPending() {
+  const base = mergeBase();
+  if (base === '') return null;
+  const branchSet = new Set(nulList(git(['diff', '--name-only', '--no-renames', '-z', base, 'HEAD']).stdout));
+  const touchedDirs = [];
+  for (const p of branchSet) {
+    const i = p.lastIndexOf('/');
+    if (i > 0) touchedDirs.push(p.slice(0, i));
+  }
+  const pending = pendingPaths();
+  const staged = new Set(pending.staged);
+  const untracked = new Set(pending.untracked);
+  const stage = [];
+  const unrelated = [];
+  for (const p of pending.all) {
+    if (underPath(p, 'docs/features')) {
+      // Only the current delivery folder is ever in scope here. Another
+      // feature's folder stays out of the commit and out of the report — unless
+      // it was staged by hand, which git commit would carry anyway.
+      if (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) stage.push(p);
+      else if (staged.has(p)) unrelated.push(p);
+      continue;
+    }
+    const inScope =
+      branchSet.has(p) ||
+      (untracked.has(p) && touchedDirs.some((d) => underPath(p, d))) ||
+      (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) ||
+      CLOSE_OUT_PATHS.some((c) => c !== 'docs/features' && underPath(p, c));
+    if (inScope) stage.push(p);
+    else unrelated.push(p);
+  }
+  return { stage, unrelated };
+}
+
+/** A path as one output line: a newline inside it would forge a second key. */
+function printable(p) {
+  return p.replace(/\n/g, '\\n');
+}
+
+function dirtyUnrelatedLines(unrelated) {
+  return [`DIRTY_UNRELATED_COUNT=${unrelated.length}`, ...unrelated.map((p) => `DIRTY_UNRELATED=${printable(p)}`)];
+}
+
 // --- immutable final snapshots ----------------------------------------------
 
 /**
@@ -267,18 +377,36 @@ function mergeGuards() {
 }
 
 function doCommitPush() {
-  const modified = lines(git(['diff', '--name-only']).stdout);
-  const staged = lines(git(['diff', '--cached', '--name-only']).stdout);
-  const untracked = lines(git(['ls-files', '--others', '--exclude-standard']).stdout);
-  const hasUncommitted = modified.length + staged.length + untracked.length > 0;
+  const pending = pendingPaths();
+  let hasUncommitted = pending.all.length > 0;
 
   if (hasUncommitted) {
-    out('STEP=Committing pending changes...');
-    // Feature-scoped staging: stage all code changes but ONLY the current
-    // feature's docs; other features' untracked docs stay untracked.
-    gitOrFail(['add', '-A', '--', '.', ':(exclude)docs/features/*']);
-    if (DOCS_DIR !== '' && isDir(path.join(CWD, DOCS_DIR))) {
-      gitOrFail(['add', '-A', '--', DOCS_DIR]);
+    // Scoped staging: the check runs BEFORE the first git add, so a refusal
+    // leaves the index exactly as the caller left it.
+    const classified = classifyPending();
+    if (classified === null) {
+      fail([
+        'STATUS=ERROR',
+        `ERROR=No merge base with ${MAIN_BRANCH}; cannot tell which uncommitted files belong to this delivery.`,
+        `HINT=Run git fetch origin ${MAIN_BRANCH} and re-run.`,
+      ]);
+    }
+    if (classified.unrelated.length > 0) {
+      fail([
+        'STATUS=ERROR',
+        'ERROR=Uncommitted files outside this delivery.',
+        ...dirtyUnrelatedLines(classified.unrelated),
+        'HINT=Commit or stash them, then re-run. None of them was staged.',
+      ]);
+    }
+    hasUncommitted = classified.stage.length > 0;
+    if (hasUncommitted) {
+      out('STEP=Committing pending changes...');
+      // Literal pathspecs from stdin: no glob surprise in a file name, and no
+      // argv length limit on a long list.
+      gitOrFail(['--literal-pathspecs', 'add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], {
+        input: `${classified.stage.join('\0')}\0`,
+      });
     }
   }
 
@@ -328,7 +456,10 @@ function doCleanup() {
   // the switch is a no-op. One implementation, both callers.
   const currentRes = git(['branch', '--show-current']);
   const current = currentRes.status === 0 ? currentRes.stdout.trim() : '';
-  if (current !== MAIN_BRANCH) {
+  if (IS_LINKED) {
+    // Main belongs to the primary checkout; git refuses to check it out here.
+    out('CHECKOUT_MAIN=SKIPPED (linked worktree)');
+  } else if (current !== MAIN_BRANCH) {
     out(`STEP=Switching to ${MAIN_BRANCH}...`);
     gitOrFail(['checkout', MAIN_BRANCH]);
     gitOrFail(['pull', 'origin', MAIN_BRANCH]);
@@ -348,6 +479,21 @@ function doCleanup() {
   }
 
   out('STEP=Cleaning up branches...');
+  if (IS_LINKED) {
+    // This worktree cannot remove itself and git refuses to delete the branch
+    // it has checked out. Delete what is remote, defer the rest. The pull comes
+    // first in the hint: `branch -d` refuses a branch the local main has not
+    // seen merged.
+    if (git(['push', 'origin', '--delete', CURRENT_BRANCH]).status !== 0) out('REMOTE_DELETE=SKIPPED');
+    const top = git(['rev-parse', '--show-toplevel']).stdout.trim() || CWD;
+    out('WORKTREE_CLEANUP=DEFERRED');
+    out('LOCAL_DELETE=DEFERRED');
+    out(
+      `HINT=From the primary checkout run, in order: git pull origin ${MAIN_BRANCH} && git worktree remove "${top}" && git branch -d ${CURRENT_BRANCH}`,
+    );
+    out('CLEANUP=OK');
+    return;
+  }
   // Remove the feature's worktree first: `git branch -d` fails while the branch
   // is checked out in a linked worktree. No --force — fail loud if dirty.
   if (FEATURE_SLUG !== '') {
@@ -376,6 +522,7 @@ function runContext() {
   out(`MAIN_BRANCH=${MAIN_BRANCH}`);
   out(`BRANCH_TYPE=${BRANCH_TYPE}`);
   out(`FEATURE_NUMBER=${FEATURE_NUMBER}`);
+  out(`CHECKOUT=${IS_LINKED ? 'linked' : 'primary'}`);
   out('');
 
   if (BRANCH_TYPE === 'unknown') {
@@ -400,6 +547,10 @@ function runContext() {
 
   const hasUncommitted = modified.length + staged.length + untracked.length > 0;
   out(`HAS_UNCOMMITTED=${hasUncommitted ? 'true' : 'false'}`);
+  // Judged only when something is pending; no merge base means no judgement.
+  const classified = hasUncommitted ? classifyPending() : { unrelated: [] };
+  if (classified === null) out('DIRTY_UNRELATED_COUNT=unknown');
+  else outLines(dirtyUnrelatedLines(classified.unrelated));
   if (hasUncommitted) {
     out('');
     out('UNCOMMITTED_FILES=[');
@@ -521,12 +672,21 @@ function runCleanupMode() {
   doCleanup();
   out('');
   out('STATUS=SUCCESS');
-  out(`CURRENT_BRANCH=${MAIN_BRANCH}`);
+  out(`CURRENT_BRANCH=${IS_LINKED ? CURRENT_BRANCH : MAIN_BRANCH}`);
   process.exit(0);
 }
 
 function runMerge() {
   mergeGuards();
+  // The local squash checks out main, which the primary checkout holds. Refuse
+  // before doCommitPush: nothing is committed, pushed or checked out.
+  if (IS_LINKED) {
+    fail([
+      'STATUS=ERROR',
+      'ERROR=The local squash onto main needs the primary checkout; this is a linked worktree.',
+      'HINT=Take the pull request route from here, or re-run --merge from the primary checkout.',
+    ]);
+  }
   doCommitPush();
 
   // Prove main is pushable BEFORE anything local is written. A client-side
@@ -551,21 +711,14 @@ function runMerge() {
   // actual question ("does main already carry everything but STEP 6's output").
   const treesMatch = git([
     'diff', '--quiet', MAIN_BRANCH, CURRENT_BRANCH, '--', '.',
-    ':(exclude)docs/features',
-    ':(exclude)docs/delivered.jsonl',
-    ':(exclude).codeadd/wiki',
-    ':(exclude).codeadd/project/decisions.jsonl',
+    ...CLOSE_OUT_PATHS.map((p) => `:(exclude)${p}`),
   ]).status === 0;
   const mergeMode = treesMatch ? 'direct' : 'squash';
   out(`MERGE_MODE=${mergeMode}`);
 
   if (mergeMode === 'direct') {
     out(`STEP=Committing STEP 6 output directly onto ${MAIN_BRANCH}...`);
-    const step6Diff = git([
-      'diff', MAIN_BRANCH, CURRENT_BRANCH, '--',
-      'docs/features', 'docs/delivered.jsonl',
-      '.codeadd/wiki', '.codeadd/project/decisions.jsonl',
-    ]).stdout;
+    const step6Diff = git(['diff', MAIN_BRANCH, CURRENT_BRANCH, '--', ...CLOSE_OUT_PATHS]).stdout;
     if (step6Diff.trim() === '') {
       out(`MERGE_COMMIT=SKIPPED (nothing to commit: ${MAIN_BRANCH} already carries the branch)`);
     } else {
@@ -633,14 +786,12 @@ function main(argv) {
     fail(['STATUS=ERROR', 'ERROR=HEAD is detached. Checkout a named branch before running this script.']);
   }
 
-  // Start guard: refuse to run from inside a linked worktree. Resolve both git
-  // paths physically before comparing — git returns one absolute and one
-  // cwd-relative from a subdir, so a raw compare false-positives.
+  // Resolve both git paths physically before comparing — git returns one
+  // absolute and one cwd-relative from a subdir, so a raw compare
+  // false-positives.
   const gitDir = physicalGitPath('--git-dir');
   const gitCommonDir = physicalGitPath('--git-common-dir');
-  if (gitDir !== '' && gitDir !== gitCommonDir) {
-    fail(['STATUS=ERROR', 'ERROR=Running inside a linked worktree. Run /add-done from the primary checkout.']);
-  }
+  IS_LINKED = gitDir !== '' && gitDir !== gitCommonDir;
 
   const mainResult = discoverMainBranch(CWD);
   MAIN_BRANCH = mainResult.ok ? mainResult.branch : '';
@@ -654,6 +805,19 @@ function main(argv) {
   FEATURE_NUMBER = meta.FEATURE_ID;
   FEATURE_SLUG = meta.FEATURE_SLUG;
   DOCS_DIR = meta.DOCS_DIR;
+
+  // Start guard: a linked worktree runs only when its checked-out branch is a
+  // supported feature branch. In a linked worktree that branch IS the current
+  // one, so the branch is the whole test — a path rule would refuse the
+  // worktrees bots create elsewhere. Fires before the generic no-ID refusal;
+  // the primary checkout never reaches it.
+  if (IS_LINKED && (CURRENT_BRANCH === MAIN_BRANCH || FEATURE_NUMBER === '' || BRANCH_TYPE === 'unknown')) {
+    fail([
+      'STATUS=ERROR',
+      `ERROR=Running inside a linked worktree not on a feature branch (checked out: ${CURRENT_BRANCH}).`,
+      'HINT=Run /add-done from the worktree checked out on the feature branch, or from the primary checkout.',
+    ]);
+  }
 
   if (FEATURE_NUMBER === '') {
     fail([
