@@ -263,7 +263,10 @@ function pendingPaths() {
   const modified = nulList(git(['diff', '--name-only', '--no-renames', '-z']).stdout);
   const staged = nulList(git(['diff', '--cached', '--name-only', '--no-renames', '-z']).stdout);
   const untracked = nulList(git(['ls-files', '--others', '--exclude-standard', '--full-name', '-z']).stdout);
-  return { modified, staged, untracked, all: [...new Set([...modified, ...staged, ...untracked])] };
+  // Paths `git rm` already removed from disk and index: the index holds them, and
+  // `git add -A <path>` on one fails with "pathspec did not match".
+  const stagedDeleted = nulList(git(['diff', '--cached', '--name-only', '--diff-filter=D', '--no-renames', '-z']).stdout);
+  return { modified, staged, stagedDeleted, untracked, all: [...new Set([...modified, ...staged, ...untracked])] };
 }
 
 /**
@@ -282,6 +285,7 @@ function classifyPending() {
   }
   const pending = pendingPaths();
   const staged = new Set(pending.staged);
+  const stagedDeleted = new Set(pending.stagedDeleted);
   const untracked = new Set(pending.untracked);
   const stage = [];
   const unrelated = [];
@@ -290,7 +294,7 @@ function classifyPending() {
       // Only the current delivery folder is ever in scope here. Another
       // feature's folder stays out of the commit and out of the report — unless
       // it was staged by hand, which git commit would carry anyway.
-      if (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) stage.push(p);
+      if (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) { if (!stagedDeleted.has(p)) stage.push(p); }
       else if (staged.has(p)) unrelated.push(p);
       continue;
     }
@@ -299,7 +303,7 @@ function classifyPending() {
       (untracked.has(p) && touchedDirs.some((d) => underPath(p, d))) ||
       (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) ||
       CLOSE_OUT_PATHS.some((c) => c !== 'docs/features' && underPath(p, c));
-    if (inScope) stage.push(p);
+    if (inScope) { if (!stagedDeleted.has(p)) stage.push(p); }
     else unrelated.push(p);
   }
   return { stage, unrelated };
@@ -399,8 +403,9 @@ function doCommitPush() {
         'HINT=Commit or stash them, then re-run. None of them was staged.',
       ]);
     }
-    hasUncommitted = classified.stage.length > 0;
-    if (hasUncommitted) {
+    // Staged changes (a `git rm` among them) are already in the index: the commit still runs.
+    hasUncommitted = classified.stage.length > 0 || pending.staged.length > 0;
+    if (classified.stage.length > 0) {
       out('STEP=Committing pending changes...');
       // Literal pathspecs from stdin: no glob surprise in a file name, and no
       // argv length limit on a long list.

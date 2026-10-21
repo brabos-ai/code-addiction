@@ -444,3 +444,28 @@ test('backlog-commit#022 — 0057B: sync-defs on a board with no definitions fil
   assert.equal(h.parseKV(res.stdout).COMMITTED, 'no');
   assert.equal(commitCount(b), before);
 });
+
+test('backlog-commit#023 — 0059B: release skips a waiting ticket marked for another version, and reports it', (t) => {
+  const mark = (id, extra) => JSON.stringify(Object.assign(JSON.parse(waiting(id, 'awaiting-release')), extra));
+  const rows = [
+    mark('0001B', { labels: ['release:v0.6.0'] }),
+    mark('0002B', {}),
+    mark('0003B', { labels: ['release:v0.7.0'] }),
+    mark('0004B', { release: '0.7.0' }),
+    mark('0005B', { release: '0.6.0' }),
+  ].join('\n') + '\n';
+  const b = h.makeBoard({ files: { [BACKLOG]: rows } });
+  t.after(() => b.cleanup());
+
+  const res = commit(b.repo, ['release', 'v0.6.0'], { env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const kv = h.parseKV(res.stdout);
+  assert.equal(kv.TICKETS_RELEASED, '0001B,0002B,0005B');
+  assert.equal(kv.TICKETS_SKIPPED, '0003B,0004B');
+  assert.equal(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout.trim(), 'backlog: release v0.6.0 (3 tickets)');
+  const rowsAfter = remoteBoard(b).trim().split('\n').map((l) => JSON.parse(l));
+  assert.deepEqual(rowsAfter.map((x) => [x.id, x.status, x.release]), [
+    ['0001B', 'done', 'v0.6.0'], ['0002B', 'done', 'v0.6.0'], ['0003B', 'awaiting-release', undefined],
+    ['0004B', 'awaiting-release', '0.7.0'], ['0005B', 'done', 'v0.6.0'],
+  ]);
+});
