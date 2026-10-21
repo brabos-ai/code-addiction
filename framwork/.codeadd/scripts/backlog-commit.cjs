@@ -7,13 +7,19 @@
  * worktree lands on `board` and nowhere else — never on the caller's branch,
  * never on `main`, so it triggers no code CI.
  *
- * TWO MODES CHANGE MORE THAN ONE TICKET, OR NONE. `release <version>` closes every
+ * THREE MODES CHANGE MORE THAN ONE TICKET, OR NONE. `release <version>` closes every
  * ticket in `awaiting-release` with the version (status done, release <version>)
  * in ONE commit `backlog: release <version> (<n> tickets)`. `release-flow on|off`
  * flips the definitions' release_flow flag (on also adds the `awaiting-release`
  * status and the `release` column when missing) in the commit
- * `backlog: release-flow on|off`. Either one that changes nothing (no waiting
- * ticket, flag already in that state) reports COMMITTED=no, exits 0 and does not push.
+ * `backlog: release-flow on|off`. `sync-defs` adds every default status an existing
+ * definitions file lacks (`awaiting-release` only when release_flow is on) in the
+ * commit `backlog: sync-defs (<n> statuses)`; a file that is absent stays absent and
+ * one that cannot be parsed is REFUSED=definitions-unreadable. Any of the three that
+ * changes nothing (no waiting ticket, flag already in that state, no status missing)
+ * reports COMMITTED=no, exits 0 and does not push.
+ * An `add` or `update` that names a default status the file lacks merges the
+ * definitions first and commits both files in the same commit (DEFS_ADDED=).
  *
  * WRITE MODES ONLY. `list`, `search` and `get` commit nothing and are
  * refused by name (ERROR=read-mode). backlog-cli.cjs is the read entry, and it
@@ -48,7 +54,10 @@
  *   TICKET_ID, PERSISTED=yes, COMMITTED=yes|no, SHA, PUSHED=yes|no
  *                         `release <version>` reports TICKETS_RELEASED=<comma ids>
  *                         (empty when none was waiting) and `release-flow on|off`
- *                         reports RELEASE_FLOW=yes|no, each in place of TICKET_ID
+ *                         reports RELEASE_FLOW=yes|no and `sync-defs` reports
+ *                         DEFS_ADDED=<comma names> (empty when none), each in place of
+ *                         TICKET_ID. `add`/`update` report DEFS_ADDED=<names> after
+ *                         TICKET_ID only when they merged the definitions
  *   RECOVERY_REF          when a commit is only ref-protected (not pushed)
  *   DEGRADED=<reason>     at most one, the most fatal by fixed precedence:
  *                         rebase-conflict, fetch-failed, push-refused,
@@ -85,6 +94,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   remove  <id>
   release <version>         close every awaiting-release ticket with the version
   release-flow on|off       turn the release step of the board on or off
+  sync-defs                 add the default statuses an old definitions file lacks
 
 \`list\`, \`search\`, \`get\` and \`changes\` are reads. Call backlog-cli.cjs directly for those.
 Records also accept stdin when --record-file is absent.
@@ -289,8 +299,12 @@ function main(argv) {
   } else if (mode === 'release-flow') {
     report.set('RELEASE_FLOW', result.releaseFlow === 'on' ? 'yes' : 'no');
     message = `backlog: release-flow ${result.releaseFlow}`;
+  } else if (mode === 'sync-defs') {
+    report.set('DEFS_ADDED', result.defsAdded.join(','), { allowEmpty: true });
+    message = `backlog: sync-defs (${result.defsAdded.length} statuses)`;
   } else {
     report.set('TICKET_ID', result.ticketId);
+    if (result.defsAdded && result.defsAdded.length) report.set('DEFS_ADDED', result.defsAdded.join(','));
   }
   report.set('PERSISTED', 'yes');
   report.set('COMMITTED', 'no');
@@ -304,8 +318,8 @@ function main(argv) {
     leave(1);
   }
   report.set('COMMITTED', commit.committed ? 'yes' : 'no');
-  // A release or flag write that changed nothing has nothing to publish.
-  if (!commit.committed && (mode === 'release' || mode === 'release-flow')) leave(0);
+  // A release, flag or definitions write that changed nothing has nothing to publish.
+  if (!commit.committed && (mode === 'release' || mode === 'release-flow' || mode === 'sync-defs')) leave(0);
   let sha = commit.sha;
   if (sha) report.set('SHA', sha);
 
