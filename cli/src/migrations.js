@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
 import { resolveSelected } from './providers.js';
@@ -462,6 +463,80 @@ function retireAboutSuffix(ctx) {
   return { changes, notes, failed };
 }
 
+// ---------------------------------------------------------------------------
+// 0004 — an existing board definitions file gains the default statuses it lacks
+// ---------------------------------------------------------------------------
+
+/** The installed write entry, run in the project. The bound covers the 30 s lock wait, the fetch and the push. */
+function defaultExec(ctx) {
+  return spawnSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'sync-defs'], {
+    cwd: ctx.cwd,
+    encoding: 'utf8',
+    timeout: 120000,
+  });
+}
+
+/** The KEY=VALUE lines the write entry prints; the first occurrence of a key wins. */
+function parseReport(stdout) {
+  const kv = {};
+  for (const line of String(stdout ?? '').split(/\r?\n/)) {
+    const eq = line.indexOf('=');
+    if (eq > 0 && /^[A-Z_]+$/.test(line.slice(0, eq)) && !(line.slice(0, eq) in kv)) kv[line.slice(0, eq)] = line.slice(eq + 1);
+  }
+  return kv;
+}
+
+/**
+ * Add the default statuses the board's definitions file lacks.
+ *
+ * THE BOARD IS NOT IN THE CHECKOUT, so this does not read it. It runs the
+ * project's installed `backlog-commit.cjs sync-defs` — the one write route, with
+ * its lock, its fetch, its commit and its push to the `board` branch — and maps
+ * the report. Nothing here duplicates board resolution or git.
+ *
+ * Applied (silently when no board is configured): no write entry installed, no board in the
+ * project, or exit 0. Everything else THROWS, so the migration stays pending and
+ * the next `migrate` / `update` retries it — an unreadable definitions file or a
+ * board error marked applied would hide the repair for good. `exec` is injectable
+ * for tests only.
+ *
+ * @param {{cwd: string}} ctx
+ * @param {(ctx: {cwd: string}) => {status: number|null, stdout?: string, error?: Error, signal?: string|null}} [exec]
+ */
+export function syncBoardDefinitions(ctx, exec = defaultExec) {
+  if (!fs.existsSync(path.join(ctx.cwd, '.codeadd', 'board.json'))) {
+    // Silent: most projects have no board, and a line on every `update` would be noise.
+    return { changes: [], notes: [] };
+  }
+  if (!fs.existsSync(path.join(ctx.cwd, '.codeadd', 'scripts', 'backlog-commit.cjs'))) {
+    return { changes: [], notes: ['backlog-commit.cjs not installed; nothing to sync'] };
+  }
+
+  const res = exec(ctx);
+  if (res.error || res.signal) {
+    throw new Error(`board definitions sync did not finish: ${res.error ? res.error.message : `killed by ${res.signal}`}`);
+  }
+  const kv = parseReport(res.stdout);
+
+  if (res.status === 0) {
+    const notes = [];
+    const added = (kv.DEFS_ADDED ?? '').split(',').filter(Boolean);
+    if (kv.DEGRADED) {
+      notes.push(`board definitions were committed in the board clone but not pushed (DEGRADED=${kv.DEGRADED}); the next board write pushes them`);
+    }
+    if (added.length === 0) {
+      notes.unshift('board definitions already hold every default status');
+      return { changes: [], notes };
+    }
+    return { changes: [`board definitions: added ${added.join(', ')}`], notes };
+  }
+  if (res.status === 2 && kv.REFUSED === 'board-not-configured') {
+    return { changes: [], notes: ['no board in this project'] };
+  }
+  const why = kv.REFUSED ? `REFUSED=${kv.REFUSED}` : kv.ERROR ? `ERROR=${kv.ERROR}` : `exit ${res.status}`;
+  throw new Error(`board definitions sync failed: ${why}`);
+}
+
 export const MIGRATIONS = [
   {
     id: '0001-prune-legacy-orphans',
@@ -477,6 +552,11 @@ export const MIGRATIONS = [
     id: '0003-retire-about-suffix',
     description: 'Rewrite the retired -about type names and write each wiki page the id it already answered by',
     run: retireAboutSuffix,
+  },
+  {
+    id: '0004-sync-board-definitions',
+    description: 'Add the default statuses an existing board definitions file lacks — writes the board branch through backlog-commit.cjs',
+    run: syncBoardDefinitions,
   },
 ];
 

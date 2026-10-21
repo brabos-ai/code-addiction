@@ -359,3 +359,88 @@ test('backlog-commit#016 — the new modes refuse a bad version or flag with the
   const missing = commit(b.repo, ['release'], { env: b.env });
   assert.equal(missing.status, 2, missing.output);
 });
+
+// ─── 0057B: an existing definitions file gains the default statuses it lacks ──
+
+const DEFS = 'docs/backlog.definitions.json';
+const stat = (name, order) => ({ name, order, label: name, means: `means ${name}` });
+const OLD5 = () => JSON.stringify({
+  statuses: [stat('open', 1), stat('doing', 2), stat('awaiting-release', 3), stat('done', 4), stat('dropped', 5)],
+  labels: [],
+  release_flow: true,
+}, null, 2) + '\n';
+const remoteDefs = (b) => JSON.parse(h.git(b.bare, ['show', `board:${DEFS}`]).stdout);
+const DEFAULT_ORDER = ['open', 'refining', 'shaped', 'planning', 'planned', 'doing', 'in-review', 'awaiting-release', 'done', 'dropped'];
+const old5Board = (t) => board(t, { files: { [BACKLOG]: waiting('0001B', 'open') + '\n', [DEFS]: OLD5() } });
+
+test('backlog-commit#017 — 0057B L2.1: sync-defs adds the missing defaults in ONE commit and pushes it', (t) => {
+  const b = old5Board(t);
+  const before = commitCount(b);
+  const res = commit(b.repo, ['sync-defs'], { env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const kv = h.parseKV(res.stdout);
+  assert.equal(kv.ROUTE, 'board');
+  assert.equal(kv.DEFS_ADDED, 'refining,shaped,planning,planned,in-review');
+  assert.equal(kv.TICKET_ID, undefined);
+  assert.equal(kv.COMMITTED, 'yes');
+  assert.equal(kv.PUSHED, 'yes');
+  assert.equal(commitCount(b), before + 1);
+  assert.deepEqual(remoteDefs(b).statuses.map((s) => s.name), DEFAULT_ORDER);
+  assert.equal(h.git(b.bare, ['log', '-1', '--format=%s', 'board']).stdout.trim(), 'backlog: sync-defs (5 statuses)');
+});
+
+test('backlog-commit#018 — 0057B L2.2: a second sync-defs commits nothing and does not push', (t) => {
+  const b = old5Board(t);
+  assert.equal(commit(b.repo, ['sync-defs'], { env: b.env }).status, 0);
+  const head = h.git(b.bare, ['rev-parse', 'board']).stdout.trim();
+  const again = commit(b.repo, ['sync-defs'], { env: b.env });
+  assert.equal(again.status, 0, again.output);
+  const kv = h.parseKV(again.stdout);
+  assert.equal(kv.COMMITTED, 'no');
+  assert.equal(kv.DEFS_ADDED, '', 'nothing was added');
+  assert.equal(kv.PUSHED, undefined);
+  assert.equal(h.git(b.bare, ['rev-parse', 'board']).stdout.trim(), head);
+});
+
+test('backlog-commit#019 — 0057B L2.3: an update naming a missing default merges and lands in the SAME commit', (t) => {
+  const b = old5Board(t);
+  const before = commitCount(b);
+  const res = commit(b.repo, ['update', '0001B'], { input: JSON.stringify({ status: 'refining' }), env: b.env });
+  assert.equal(res.status, 0, res.output);
+  const kv = h.parseKV(res.stdout);
+  assert.equal(kv.TICKET_ID, '0001B');
+  assert.equal(kv.DEFS_ADDED, 'refining,shaped,planning,planned,in-review');
+  assert.equal(kv.COMMITTED, 'yes');
+  assert.equal(commitCount(b), before + 1, 'one board commit');
+  const touched = h.git(b.bare, ['show', '--name-only', '--format=', 'board']).stdout.split('\n').filter(Boolean).sort();
+  assert.deepEqual(touched, [BACKLOG, DEFS].sort());
+  assert.deepEqual(remoteDefs(b).statuses.map((s) => s.name), DEFAULT_ORDER);
+});
+
+test('backlog-commit#020 — 0057B L2.4: a status that is not a default is still refused, no new commit', (t) => {
+  const b = old5Board(t);
+  const before = commitCount(b);
+  const res = commit(b.repo, ['update', '0001B'], { input: JSON.stringify({ status: 'invented' }), env: b.env });
+  assert.equal(res.status, 2, res.output);
+  assert.match(res.output, /REFUSED=unknown-status/);
+  assert.equal(commitCount(b), before);
+  assert.deepEqual(remoteDefs(b).statuses.map((s) => s.name), ['open', 'doing', 'awaiting-release', 'done', 'dropped']);
+});
+
+test('backlog-commit#021 — 0057B: sync-defs on an unparseable file is REFUSED=definitions-unreadable, exit 2, nothing committed', (t) => {
+  const b = board(t, { files: { [DEFS]: 'not json' } });
+  const before = commitCount(b);
+  const res = commit(b.repo, ['sync-defs'], { env: b.env });
+  assert.equal(res.status, 2, res.output);
+  assert.match(res.output, /REFUSED=definitions-unreadable/);
+  assert.equal(commitCount(b), before);
+});
+
+test('backlog-commit#022 — 0057B: sync-defs on a board with no definitions file creates nothing', (t) => {
+  const b = board(t);
+  const before = commitCount(b);
+  const res = commit(b.repo, ['sync-defs'], { env: b.env });
+  assert.equal(res.status, 0, res.output);
+  assert.equal(h.parseKV(res.stdout).COMMITTED, 'no');
+  assert.equal(commitCount(b), before);
+});

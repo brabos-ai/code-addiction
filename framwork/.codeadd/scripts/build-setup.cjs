@@ -12,6 +12,13 @@
  * Output (parseable, last non-hint line):
  *   BRANCH:<name> STATE:created|existing|current MODE:in-place|worktree [DERIVED:true] [WORKTREE:<path>]
  *
+ * --worktree, when THIS run added the worktree, also prints one line BEFORE the
+ * BRANCH: line (BRANCH: stays the last stdout line):
+ *   COPIED=<dir>,<dir>   the installed directories copied in, in .gitignore order
+ *   COPIED=none          nothing was copied (no ADD block, or nothing to carry)
+ * It is never printed in in-place mode or on STATE:current, where the worktree
+ * is left untouched.
+ *
  * Exit codes (preserved):
  *   0 — success
  *   2 — feature dir not found / ambiguous / missing argument
@@ -25,6 +32,16 @@
  * target branch is left alone. Worktree mode skips that guard (it never
  * disturbs the current checkout) and copies untracked feature docs into the
  * new worktree, because `worktree add` does not follow them.
+ *
+ * INSTALLED FRAMEWORK. `worktree add` brings tracked files only, and the
+ * installed `.codeadd/` and the provider folders are gitignored, so a new
+ * worktree starts without the commands the build is about to run. The script
+ * copies them from the source checkout. Candidates are the directories in the
+ * `# ADD - managed by code-addiction` block of its .gitignore — exactly what the
+ * CLI installed; negations are dropped and `.codeadd/*` reads as `.codeadd`.
+ * The gate is per file: only files git neither tracks nor already finds in the
+ * new worktree are copied (git ls-files --others --ignored). Nothing is ever
+ * overwritten, and a tracked file always arrives from the commit, not the copy.
  *
  * Dependencies: Node built-ins only, git on PATH, and the sibling
  * get-main-branch.cjs / get-branch-metadata.cjs helpers. No shell.
@@ -100,6 +117,59 @@ function ensureGitignore(cwd) {
   let content = '';
   if (fs.existsSync(ignorePath)) content = fs.readFileSync(ignorePath, 'utf8');
   if (!content.includes('.worktrees/')) fs.appendFileSync(ignorePath, '.worktrees/\n');
+}
+
+/**
+ * The directories the CLI installed, read from the ADD-managed .gitignore block
+ * of `cwd`. Negations and comments are dropped, `.codeadd/*` reads as
+ * `.codeadd`, a trailing slash goes. No block means no candidates.
+ */
+function installedDirs(cwd) {
+  let content = '';
+  try {
+    content = fs.readFileSync(path.join(cwd, '.gitignore'), 'utf8');
+  } catch (e) {
+    return [];
+  }
+  const dirs = [];
+  let inBlock = false;
+  for (const raw of content.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line === '# ADD - managed by code-addiction') { inBlock = true; continue; }
+    if (line === '# END ADD') break;
+    if (!inBlock || line === '' || line.startsWith('#') || line.startsWith('!')) continue;
+    const dir = line.replace(/\/\*$/, '').replace(/\/+$/, '');
+    if (dir === '' || /[*?[]/.test(dir) || dir.startsWith('/') || dir.includes('..')) continue;
+    if (!dirs.includes(dir)) dirs.push(dir);
+  }
+  return dirs;
+}
+
+/**
+ * Copy the installed framework into a worktree this run just added. Returns
+ * the directories that received at least one file, in candidate order.
+ */
+function copyInstalled(cwd, wtAbs) {
+  const copied = [];
+  for (const dir of installedDirs(cwd)) {
+    if (!isDirectory(path.join(cwd, dir))) continue;
+    const listed = git(cwd, ['ls-files', '-z', '--others', '--ignored', '--exclude-standard', '--', dir]);
+    if (listed.status !== 0) continue;
+    let count = 0;
+    for (const rel of listed.stdout.split('\0').filter((p) => p !== '')) {
+      const dest = path.join(wtAbs, rel);
+      if (fs.existsSync(dest)) continue;
+      try {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.copyFileSync(path.join(cwd, rel), dest, fs.constants.COPYFILE_EXCL);
+        count += 1;
+      } catch (e) {
+        // A file that cannot be copied is left out; the rest still go.
+      }
+    }
+    if (count > 0) copied.push(dir);
+  }
+  return copied;
 }
 
 function parseArgs(argv) {
@@ -240,6 +310,7 @@ function main(argv = process.argv.slice(2)) {
   let state;
   let wtPath = '';
   let wtAbs = '';
+  let copied = null;
 
   if (!worktree) {
     mode = 'in-place';
@@ -276,12 +347,15 @@ function main(argv = process.argv.slice(2)) {
       const destParent = path.join(cwd, wtPath, path.dirname(featureDir));
       fs.mkdirSync(destParent, { recursive: true });
       fs.cpSync(path.join(cwd, featureDir), path.join(destParent, dirname), { recursive: true });
+      // The installed framework is gitignored, so it does not follow either.
+      copied = copyInstalled(cwd, path.resolve(cwd, wtPath));
     }
 
     wtAbs = path.resolve(cwd, wtPath);
   }
 
   // --- 8. Output ---
+  if (copied !== null) process.stdout.write(`COPIED=${copied.length > 0 ? copied.join(',') : 'none'}\n`);
   let out = `BRANCH:${branch} STATE:${state} MODE:${mode}`;
   if (derived) out += ' DERIVED:true';
   if (worktree) out += ` WORKTREE:${wtAbs}`;
@@ -303,6 +377,8 @@ module.exports = {
   refExists,
   worktreeRegistered,
   ensureGitignore,
+  installedDirs,
+  copyInstalled,
   parseArgs,
   resolveFeature,
   readBranchFromAbout,

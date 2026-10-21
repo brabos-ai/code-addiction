@@ -50,6 +50,11 @@ function commitAll(repo, msg) {
   h.git(repo, ['add', '-A']);
   h.git(repo, ['commit', '-q', '-m', msg || 'fixture']);
 }
+/** Commit exactly these paths, leaving the rest of the tree as it is. */
+function commitOnly(repo, files, msg) {
+  h.git(repo, ['add', '--', ...files]);
+  h.git(repo, ['commit', '-q', '-m', msg || 'fixture']);
+}
 function branchCreate(repo, name) {
   return h.git(repo, ['checkout', '-b', name, '-q']);
 }
@@ -314,6 +319,7 @@ test('done#019 merge mode: commits final QA snapshots and leaves ignored working
     src(r.repo, 'docs/features/0001F-test/_tests/run-001/qa-validation-001.md', 'working\n');
     src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'final\n');
     src(r.repo, '.gitignore', '# ADD QA evidence - managed by add.qa-setup\ndocs/features/**/_tests/run-*/\n# END ADD QA evidence\n');
+    commitOnly(r.repo, ['.gitignore'], 'ignore rules');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
@@ -328,6 +334,7 @@ test('done#020 merge mode: blocks when a broad ignore rule would omit final QA e
     branchCreate(r.repo, 'feature/0001F-test');
     src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'final\n');
     src(r.repo, '.gitignore', 'docs/features/**/_tests/\n');
+    commitOnly(r.repo, ['.gitignore'], 'ignore rules');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 1, res.output);
@@ -365,10 +372,11 @@ test('done#022 merge mode: blocks deletion of an already tracked final snapshot'
 test('done#023 start guard: fails when run from inside a linked worktree', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    h.git(r.repo, ['worktree', 'add', '-b', 'feature/0002F-wt', '.worktrees/0002F-wt', '-q']);
-    const wt = path.join(r.repo, '.worktrees', '0002F-wt');
+    h.git(r.repo, ['worktree', 'add', '-b', 'scratch-wt', '.worktrees/scratch-wt', '-q']);
+    const wt = path.join(r.repo, '.worktrees', 'scratch-wt');
     const res = runDone(wt);
     assert.notEqual(res.status, 0, res.output);
+    assert.match(res.output, /linked worktree not on a feature branch/);
     assert.match(res.output, /primary checkout/);
   }));
 
@@ -852,3 +860,212 @@ test('done#059 hints: the Expected example is a hotfix branch, never fix/0002H',
   for (const line of expected) assert.match(line, /hotfix\/0002H-urgent/);
   assert.equal(source.split('\n').some((line) => line.includes('HINT=') && /(^|[^t])fix[/]0002H/.test(line)), false);
 });
+
+// --- Linked worktree on the feature branch (ticket 0058B) --------------------
+
+/** A remote, a pushed feature branch, and a linked worktree checked out on it. */
+function linkedFixture(r, branch = 'feature/0002F-wt') {
+  setupRemote(r);
+  const wt = path.join(r.base, 'wt');
+  h.git(r.repo, ['worktree', 'add', '-b', branch, wt, '-q']);
+  h.git(wt, ['push', '-u', 'origin', branch, '-q']);
+  return wt;
+}
+function remoteTip(r, branch) {
+  return h.git(r.repo, ['ls-remote', 'origin', 'refs/heads/' + branch]).stdout.split(/\s+/)[0];
+}
+
+test('done#060 worktree: context runs in a linked worktree on the feature branch and says CHECKOUT=linked', () =>
+  withRepo((r) => {
+    const wt = linkedFixture(r);
+    const res = runDone(wt);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /CHECKOUT=linked/);
+    assert.match(res.output, /CURRENT_BRANCH=feature\/0002F-wt/);
+    branchCreate(r.repo, 'feature/0001F-test');
+    const primary = runDone(r.repo);
+    assert.equal(primary.status, 0, primary.output);
+    assert.match(primary.output, /CHECKOUT=primary/);
+  }));
+
+test('done#061 worktree: commit-push in the matching linked worktree lands on the branch and the remote', () =>
+  withRepo((r) => {
+    const wt = linkedFixture(r);
+    src(wt, 'docs/features/0002F-wt/about.md', 'own\n');
+    const res = runDone(wt, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /COMMIT=OK/);
+    assert.match(res.output, /PUSH_BRANCH=OK/);
+    const tip = h.git(wt, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(remoteTip(r, 'feature/0002F-wt'), tip);
+    assert.notEqual(h.git(wt, ['ls-files', 'docs/features/0002F-wt/about.md']).stdout.trim(), '');
+    assert.equal(h.git(r.repo, ['branch', '--show-current']).stdout.trim(), 'main');
+  }));
+
+test('done#062 worktree: --merge refuses in a linked worktree and changes nothing', () =>
+  withRepo((r) => {
+    const wt = linkedFixture(r);
+    src(wt, 'docs/features/0002F-wt/about.md', 'own\n');
+    const head = h.git(wt, ['rev-parse', 'HEAD']).stdout.trim();
+    const mainTip = h.git(r.repo, ['rev-parse', 'main']).stdout.trim();
+    const res = runDone(wt, ['--merge']);
+    assert.equal(res.status, 1, res.output);
+    assert.match(res.output, /STATUS=ERROR/);
+    assert.match(res.output, /local squash onto main needs the primary checkout/);
+    assert.match(res.output, /HINT=.*pull request/);
+    assert.doesNotMatch(res.output, /COMMIT=OK|PUSH_BRANCH=OK/);
+    assert.equal(h.git(wt, ['rev-parse', 'HEAD']).stdout.trim(), head);
+    assert.equal(h.git(wt, ['branch', '--show-current']).stdout.trim(), 'feature/0002F-wt');
+    assert.equal(remoteTip(r, 'feature/0002F-wt'), head);
+    assert.equal(h.git(r.repo, ['rev-parse', 'main']).stdout.trim(), mainTip);
+  }));
+
+test('done#063 worktree: a linked worktree checked out on main refuses', () =>
+  withRepo((r) => {
+    setupRemote(r);
+    branchCreate(r.repo, 'feature/0001F-test');
+    const wt = path.join(r.base, 'wt-main');
+    h.git(r.repo, ['worktree', 'add', wt, 'main', '-q']);
+    const res = runDone(wt);
+    assert.equal(res.status, 1, res.output);
+    assert.match(res.output, /linked worktree not on a feature branch/);
+  }));
+
+test('done#064 worktree: --cleanup in the linked worktree defers the worktree and local branch deletes', () =>
+  withRepo((r) => {
+    const wt = linkedFixture(r);
+    h.git(r.repo, ['merge', '--no-edit', 'feature/0002F-wt', '-q']);
+    h.git(r.repo, ['push', 'origin', 'HEAD', '-q']);
+    const sha = h.git(r.repo, ['rev-parse', 'main']).stdout.trim();
+    const res = runDone(wt, ['--cleanup', sha]);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /CHECKOUT_MAIN=SKIPPED \(linked worktree\)/);
+    assert.match(res.output, /WORKTREE_CLEANUP=DEFERRED/);
+    assert.match(res.output, /LOCAL_DELETE=DEFERRED/);
+    assert.match(res.output, /HINT=.*git pull origin main.*git worktree remove .*git branch -d feature\/0002F-wt/);
+    assert.match(res.output, /CLEANUP=OK/);
+    assert.match(res.output, /CURRENT_BRANCH=feature\/0002F-wt/);
+    assert.equal(remoteTip(r, 'feature/0002F-wt'), '');
+    assert.equal(fs.existsSync(wt), true);
+    assert.equal(h.git(r.repo, ['rev-parse', '--verify', 'feature/0002F-wt']).status, 0);
+  }));
+
+// --- Scoped staging (ticket 0058B) -------------------------------------------
+
+/** main carries four files; the branch commits to three of them. */
+function scopedFixture(r) {
+  setupRemote(r);
+  src(r.repo, 'a.txt', 'a1\n');
+  src(r.repo, 'd.txt', 'd1\n');
+  src(r.repo, 'other.txt', 'o1\n');
+  src(r.repo, 'src/keep.js', 'k1\n');
+  commitAll(r.repo, 'base');
+  h.git(r.repo, ['push', 'origin', 'main', '-q']);
+  branchCreate(r.repo, 'feature/0001F-test');
+  src(r.repo, 'a.txt', 'a2\n');
+  src(r.repo, 'd.txt', 'd2\n');
+  src(r.repo, 'src/keep.js', 'k2\n');
+  commitOnly(r.repo, ['a.txt', 'd.txt', 'src/keep.js'], 'branch work');
+  h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
+}
+function dirtyLines(output) {
+  return output.split('\n')
+    .filter((l) => l.startsWith('DIRTY_UNRELATED='))
+    .map((l) => l.slice('DIRTY_UNRELATED='.length).replace(/\r$/, ''))
+    .sort();
+}
+
+test('done#065 scoped staging: unrelated dirty files are listed, never staged, and nothing is committed', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'stray.txt', 'stray\n');
+    src(r.repo, 'other.txt', 'o2\n');
+    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    const head = h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 1, res.output);
+    assert.match(res.output, /STATUS=ERROR/);
+    assert.match(res.output, /DIRTY_UNRELATED_COUNT=2/);
+    assert.deepEqual(dirtyLines(res.output), ['other.txt', 'stray.txt']);
+    assert.match(res.output, /HINT=.*[Cc]ommit or stash/);
+    assert.equal(h.git(r.repo, ['diff', '--cached', '--name-only']).stdout.trim(), '');
+    assert.equal(h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim(), head);
+  }));
+
+test('done#066 scoped staging: a file staged by hand outside the delivery is refused', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'stray.txt', 'stray\n');
+    h.git(r.repo, ['add', 'stray.txt']);
+    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    const head = h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 1, res.output);
+    assert.deepEqual(dirtyLines(res.output), ['stray.txt']);
+    assert.equal(h.git(r.repo, ['diff', '--cached', '--name-only']).stdout.trim(), 'stray.txt');
+    assert.equal(h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim(), head);
+  }));
+
+test('done#067 scoped staging: branch-diff files, siblings, the delivery folder and the index are all committed', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'a.txt', 'a3\n');
+    fs.rmSync(path.join(r.repo, 'd.txt'), { force: true });
+    src(r.repo, 'src/new.js', 'n\n');
+    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0001F"}\n');
+    src(r.repo, 'docs/features/0002F-other/about.md', 'other\n');
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /COMMIT=OK/);
+    const shown = h.git(r.repo, ['show', '--name-status', '--format=', 'HEAD']).stdout.replace(/\r/g, '');
+    assert.match(shown, /^M\ta\.txt$/m);
+    assert.match(shown, /^D\td\.txt$/m);
+    assert.match(shown, /^A\tsrc\/new\.js$/m);
+    assert.match(shown, /^A\tdocs\/features\/0001F-test\/about\.md$/m);
+    assert.match(shown, /^A\tdocs\/delivered\.jsonl$/m);
+    assert.doesNotMatch(shown, /0002F-other/);
+    assert.equal(h.git(r.repo, ['status', '--porcelain']).stdout.trim(), '?? docs/features/0002F-other/');
+  }));
+
+test('done#068 scoped staging: context lists the same unrelated paths and still exits 0', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'stray.txt', 'stray\n');
+    src(r.repo, 'other.txt', 'o2\n');
+    src(r.repo, 'docs/features/0002F-other/about.md', 'other\n');
+    const res = runDone(r.repo);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /DIRTY_UNRELATED_COUNT=2/);
+    assert.deepEqual(dirtyLines(res.output), ['other.txt', 'stray.txt']);
+  }));
+
+test('done#069 scoped staging: with no merge base context says unknown and commit-push stops', () =>
+  withRepo((r) => {
+    setupRemote(r);
+    h.git(r.repo, ['checkout', '--orphan', 'feature/0001F-test', '-q']);
+    h.git(r.repo, ['rm', '-rf', '-q', '--ignore-unmatch', '.']);
+    h.git(r.repo, ['commit', '--allow-empty', '-q', '-m', 'unrelated history']);
+    src(r.repo, 'stray.txt', 'stray\n');
+    const ctx = runDone(r.repo);
+    assert.equal(ctx.status, 0, ctx.output);
+    assert.match(ctx.output, /DIRTY_UNRELATED_COUNT=unknown/);
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 1, res.output);
+    assert.match(res.output, /STATUS=ERROR/);
+    assert.match(res.output, /HINT=.*fetch/);
+    assert.equal(h.git(r.repo, ['diff', '--cached', '--name-only']).stdout.trim(), '');
+  }));
+
+test('done#070 scoped staging: commit-push run from a subdirectory stages root-relative paths', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'a.txt', 'a3\n');
+    src(r.repo, 'src/new.js', 'n\n');
+    const res = runDone(path.join(r.repo, 'src'), ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /COMMIT=OK/);
+    const shown = h.git(r.repo, ['show', '--name-status', '--format=', 'HEAD']).stdout.replace(/\r/g, '');
+    assert.match(shown, /^M\ta\.txt$/m);
+    assert.match(shown, /^A\tsrc\/new\.js$/m);
+  }));

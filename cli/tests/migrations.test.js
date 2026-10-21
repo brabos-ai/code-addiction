@@ -17,6 +17,7 @@ import {
   pendingMigrations,
   runMigrations,
   migrate,
+  syncBoardDefinitions,
 } from '../src/migrations.js';
 
 let tmpDir;
@@ -310,5 +311,120 @@ describe('behavioural acceptance (L3)', () => {
 
     expect(fs.existsSync(keeper)).toBe(true);
     expect(readManifestFile(tmpDir).migrations).toEqual(snapshot.migrations);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 0004-sync-board-definitions (0057B)
+// ---------------------------------------------------------------------------
+
+describe('0004-sync-board-definitions (0057B)', () => {
+  /** A project that points at a board and holds the shipped write entry. */
+  function seedBoardProject({ script = true } = {}) {
+    fs.mkdirSync(path.join(tmpDir, '.codeadd', 'scripts'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), JSON.stringify({ remote: 'x', branch: 'board' }), 'utf8');
+    if (script) fs.writeFileSync(path.join(tmpDir, '.codeadd', 'scripts', 'backlog-commit.cjs'), '// stub', 'utf8');
+  }
+  const reply = (status, stdout = '', extra = {}) => () => ({ status, stdout, stderr: '', ...extra });
+  const spy = (fn) => {
+    const calls = [];
+    const exec = (...args) => { calls.push(args); return fn(...args); };
+    return { exec, calls };
+  };
+
+  it('L2.7 is registered, after 0003, and allMigrationIds stays sorted', () => {
+    expect(MIGRATIONS.map((m) => m.id)).toContain('0004-sync-board-definitions');
+    const ids = allMigrationIds();
+    expect(ids).toEqual([...ids].sort());
+    expect(ids.indexOf('0004-sync-board-definitions')).toBeGreaterThan(ids.indexOf('0003-retire-about-suffix'));
+    expect(MIGRATIONS.find((m) => m.id === '0004-sync-board-definitions').description).toMatch(/board/i);
+  });
+
+  it('exits 0 with names: one change entry naming them', () => {
+    seedBoardProject();
+    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'ROUTE=board\nDEFS_ADDED=refining,shaped\nCOMMITTED=yes\nPUSHED=yes\n'));
+    expect(out.changes).toEqual(['board definitions: added refining, shaped']);
+  });
+
+  it('exits 0 with an empty list: one note, no change', () => {
+    seedBoardProject();
+    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'ROUTE=board\nCOMMITTED=no\n'));
+    expect(out.changes ?? []).toEqual([]);
+    expect(out.notes).toEqual(['board definitions already hold every default status']);
+  });
+
+  it('a DEGRADED line becomes a note that names it', () => {
+    seedBoardProject();
+    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'DEFS_ADDED=shaped\nCOMMITTED=yes\nPUSHED=no\nDEGRADED=push-refused\n'));
+    expect(out.changes).toEqual(['board definitions: added shaped']);
+    expect(out.notes.join(' ')).toContain('push-refused');
+  });
+
+  it('REFUSED=board-not-configured is applied with a note', () => {
+    seedBoardProject();
+    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'REFUSED=board-not-configured\n'));
+    expect(out.notes).toEqual(['no board in this project']);
+  });
+
+  it('REFUSED=definitions-unreadable throws, so the migration stays pending', () => {
+    seedBoardProject();
+    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'REFUSED=definitions-unreadable\n'))).toThrow(/definitions-unreadable/);
+  });
+
+  it('a board error throws with the ERROR= line', () => {
+    seedBoardProject();
+    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(1, 'ERROR=board-checkout-missing\n'))).toThrow(/board-checkout-missing/);
+  });
+
+  it('an older script that does not know the mode throws', () => {
+    seedBoardProject();
+    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'ERROR=bad-mode\n'))).toThrow(/bad-mode/);
+  });
+
+  it('a timed-out or killed spawn throws', () => {
+    seedBoardProject();
+    expect(() => syncBoardDefinitions({ cwd: tmpDir }, () => ({ status: null, stdout: '', error: new Error('spawnSync ETIMEDOUT') }))).toThrow();
+    expect(() => syncBoardDefinitions({ cwd: tmpDir }, () => ({ status: null, stdout: '', signal: 'SIGTERM' }))).toThrow();
+  });
+
+  it('no .codeadd/board.json: applied, silent, and the spawn never happens', () => {
+    seedProject();
+    const { exec, calls } = spy(reply(0, ''));
+    const out = syncBoardDefinitions({ cwd: tmpDir }, exec);
+    expect(calls).toHaveLength(0);
+    expect(out.notes).toEqual([]);
+    expect(out.changes).toEqual([]);
+  });
+
+  it('a board is configured but the script is not installed: applied with a note, no spawn', () => {
+    seedBoardProject({ script: false });
+    const { exec, calls } = spy(reply(0, ''));
+    const out = syncBoardDefinitions({ cwd: tmpDir }, exec);
+    expect(calls).toHaveLength(0);
+    expect(out.notes).toEqual(['backlog-commit.cjs not installed; nothing to sync']);
+  });
+
+  it('the default spawn runs the installed entry with sync-defs, in the project directory', () => {
+    seedBoardProject();
+    fs.writeFileSync(
+      path.join(tmpDir, '.codeadd', 'scripts', 'backlog-commit.cjs'),
+      "process.stdout.write('DEFS_ADDED=' + process.argv[2] + '\\n');\n",
+      'utf8',
+    );
+    const out = syncBoardDefinitions({ cwd: tmpDir });
+    expect(out.changes).toEqual(['board definitions: added sync-defs']);
+  });
+
+  it('through runMigrations a throw leaves 0004 out of applied, and a clean run records it', () => {
+    seedBoardProject();
+    const registry = [{ id: '0004-sync-board-definitions', description: 'x', run: (ctx) => syncBoardDefinitions(ctx, reply(2, 'REFUSED=definitions-unreadable\n')) }];
+    const failed = runMigrations({ cwd: tmpDir, providers: [] }, [], { registry });
+    expect(failed.applied).toEqual([]);
+    expect(failed.failed.map((f) => f.id)).toEqual(['0004-sync-board-definitions']);
+
+    const ok = [{ id: '0004-sync-board-definitions', description: 'x', run: (ctx) => syncBoardDefinitions(ctx, reply(0, 'DEFS_ADDED=shaped\n')) }];
+    const done = runMigrations({ cwd: tmpDir, providers: [] }, [], { registry: ok });
+    expect(done.applied).toEqual(['0004-sync-board-definitions']);
+    expect(done.changes).toEqual(['board definitions: added shaped']);
   });
 });
