@@ -99,6 +99,19 @@ node .codeadd/scripts/done.cjs
 | `HAS_UNCOMMITTED` | Inform in preview |
 | `CHANGED_FILES` | Resolve directory + analyze files |
 | `CHANGED_COUNT` | Inform in preview |
+| `CHECKOUT` | `primary` or `linked` — read at STEP add-done.local-merge before `--merge` |
+| `DIRTY_UNRELATED_COUNT` | Above 0 → **STOP** before STEP add-done.document: list every `DIRTY_UNRELATED` path, ask the user to commit or stash them, then re-run. `unknown` is not a stop |
+
+`done.cjs` runs from the primary checkout, or from the linked worktree checked out on the feature branch. Only the local route's `--merge` needs the primary checkout.
+
+```
+IF DIRTY_UNRELATED_COUNT IS ABOVE 0:
+  ⛔ DO NOT USE: Write on any document
+  ⛔ DO NOT: Stage, commit or stash those files yourself
+  ✅ DO: List the paths, ask the user to commit or stash them, and WAIT
+```
+
+**Stop kind — deciding, in every state.** Whose files they are is not something this command can know.
 
 **IF STATUS=ERROR:** Show error and stop.
 
@@ -923,6 +936,8 @@ reviews, required checks, protected branches — are the ones that apply.
 node .codeadd/scripts/done.cjs --commit-push
 ```
 
+If it exits 1 with `DIRTY_UNRELATED=<path>` lines, nothing was staged: report the list and STOP, as at STEP add-done.collect.
+
 STEP add-done.document's documents land on the branch and CI is re-triggered on the new commit.
 **That commit has not been tested yet**, which is the whole reason the next two
 items exist.
@@ -969,6 +984,8 @@ same guarantee without holding the session open, with the same deliberate flag.
 node .codeadd/scripts/done.cjs --cleanup "$(gh pr view --json mergeCommit --jq .mergeCommit.oid)"
 ```
 
+From a linked worktree the cleanup prints `WORKTREE_CLEANUP=DEFERRED` and `LOCAL_DELETE=DEFERRED`: the worktree and the local branch stay, and the `HINT=` line carries the commands to run from the primary checkout. Carry that line into STEP add-done.complete.
+
 The sha is passed because the merge creates a NEW commit on the server, and it
 is the commit that put the delivery on `main`. Passing it is what lets the
 cleanup prove the merge landed without deriving anything from local refs, which
@@ -990,6 +1007,8 @@ three STEPs that already ran rather than writing their output twice.
 Taken when STEP add-done.local-route chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
 `no-gh` record, or `gh` is unavailable.
 
+**IF `CHECKOUT=linked`:** do not run `--merge` — it checks out `main`, which the primary checkout holds. Say the local squash needs the primary checkout, and offer the PR route (`{{cmd:add-pull-request}}`) or a re-run from the primary checkout. Then STOP.
+
 ```bash
 node .codeadd/scripts/done.cjs --merge
 ```
@@ -1000,6 +1019,7 @@ node .codeadd/scripts/done.cjs --merge
 |---|---|---|
 | `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add-pull-request}}`, then re-run |
 | `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP add-done.complete and report the branch left behind, naming the check. This is not a failed delivery |
+| `DIRTY_UNRELATED=<path>` lines, exit 1 | Files outside this delivery are uncommitted; nothing was staged | Report the list and STOP — the user commits or stashes them, then re-runs |
 
 On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add-build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add-build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.cjs --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add-build` makes.
 
@@ -1054,6 +1074,7 @@ Then, after the seven blocks, state:
   required check configured. On the local route: that no PR existed, and which
   `PUBLISH_RECORD` value said so. A gate that quietly changes which evidence it
   accepts is worse than a slow one.
+- **The deferred cleanup**, when `--cleanup` printed `WORKTREE_CLEANUP=DEFERRED`: the worktree and the local branch were kept, and the commands from its `HINT=` line are what is left to run.
 - **Which route STEP add-done.pr-route and STEP add-done.local-route chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
 <!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
