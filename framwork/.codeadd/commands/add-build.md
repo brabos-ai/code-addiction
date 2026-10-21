@@ -152,7 +152,7 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 1. Resolve target: explicit `F[NNNN]` arg > `FEATURE_ID` from status.cjs (branch) > ask-gate listing `PENDING:` features from status.cjs output. Normalize to the canonical `[NNNN][L]` ID the script expects.
 2. Run `node .codeadd/scripts/build-setup.cjs <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
-4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory). Read `COPIED=` only when the line is present: report what was copied; on `COPIED=none`, say the worktree has no installed framework and that the user must copy `.codeadd/` and the provider folders into it, or run `npx codeadd install` inside it, before going on. No line (in-place mode, or a worktree that already existed) means nothing to report.
+4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory). Read `COPIED=` only when the line is present: report what was copied; on `COPIED=none`, say the worktree has no installed framework, ask the user to run `npx codeadd install` inside it (or copy `.codeadd/` and the installed provider folders listed in the `.gitignore` ADD block), and WAIT — **Deciding**, in every state; do not run `status.cjs` there before. No line (in-place mode, or a worktree that already existed) means nothing to report.
 <!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
 <!-- feature:board:ticket-doing -->
 <!-- /feature:board:ticket-doing -->

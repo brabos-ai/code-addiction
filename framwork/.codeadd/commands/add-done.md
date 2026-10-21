@@ -100,12 +100,13 @@ node .codeadd/scripts/done.cjs
 | `CHANGED_FILES` | Resolve directory + analyze files |
 | `CHANGED_COUNT` | Inform in preview |
 | `CHECKOUT` | `primary` or `linked` — read at STEP add-done.local-merge before `--merge` |
-| `DIRTY_UNRELATED_COUNT` | Above 0 → **STOP** before STEP add-done.document: list every `DIRTY_UNRELATED` path, ask the user to commit or stash them, then re-run. `unknown` is not a stop |
+| `DIRTY_UNRELATED_COUNT` | Above 0 → STOP, see the block below. `unknown` is not a stop |
 
 `done.cjs` runs from the primary checkout, or from the linked worktree checked out on the feature branch. Only the local route's `--merge` needs the primary checkout.
 
 ```
 IF DIRTY_UNRELATED_COUNT IS ABOVE 0:
+  ⛔ DO NOT: Run any later STEP — the stop is right here, after collect
   ⛔ DO NOT USE: Write on any document
   ⛔ DO NOT: Stage, commit or stash those files yourself
   ✅ DO: List the paths, ask the user to commit or stash them, and WAIT
@@ -1007,7 +1008,11 @@ three STEPs that already ran rather than writing their output twice.
 Taken when STEP add-done.local-route chose it: `PR_STATE` is `none` with a `declined`, `on-main` or
 `no-gh` record, or `gh` is unavailable.
 
-**IF `CHECKOUT=linked`:** do not run `--merge` — it checks out `main`, which the primary checkout holds. Say the local squash needs the primary checkout, and offer the PR route (`{{cmd:add-pull-request}}`) or a re-run from the primary checkout. Then STOP.
+```
+IF CHECKOUT IS linked:
+  ⛔ DO NOT USE: Bash for done.cjs --merge
+  ✅ DO: Say the local squash needs the primary checkout (it checks out main), offer the PR route ({{cmd:add-pull-request}}) or a re-run from the primary checkout, and STOP
+```
 
 ```bash
 node .codeadd/scripts/done.cjs --merge
