@@ -293,3 +293,79 @@ test('build-setup#022 worktree idempotency (STATE:current when already registere
   assert.equal(second.status, 0);
   has(second, 'STATE:current');
 });
+
+// ─── Installed framework carried into a new worktree (ticket 0058B) ───────
+
+const ADD_BLOCK = [
+  '# ADD - managed by code-addiction',
+  '.codeadd/*',
+  '!.codeadd/board.json',
+  '.claude/',
+  '.tracked-only/',
+  '# END ADD',
+  '',
+].join('\n');
+
+/** A repo whose .gitignore carries the ADD block, one tracked file per kind. */
+function installedFixture(r) {
+  makeFeature(r, '0042F-auth', 'feature/0042F-auth');
+  h.write(path.join(r.repo, '.gitignore'), ADD_BLOCK);
+  h.write(path.join(r.repo, '.codeadd', 'board.json'), '{"committed":true}\n');
+  h.write(path.join(r.repo, '.tracked-only', 'kept.txt'), 'tracked\n');
+  r.git('add', '.gitignore');
+  r.git('add', '-f', '.codeadd/board.json', '.tracked-only/kept.txt');
+  r.git('commit', '-m', 'installed layout', '-q');
+  h.write(path.join(r.repo, '.codeadd', 'board.json'), '{"changed":"in the source"}\n');
+  h.write(path.join(r.repo, '.codeadd', 'manifest.json'), '{"installed":true}\n');
+  h.write(path.join(r.repo, '.claude', 'commands', 'x.md'), 'command\n');
+}
+const wtOf = (r) => path.join(r.repo, '.worktrees', '0042F-auth');
+
+test('build-setup#023 worktree mode copies .codeadd and a provider folder, and never a tracked file', (t) => {
+  const r = repo(t);
+  installedFixture(r);
+  const res = run(r, ['0042F', '--worktree']);
+  assert.equal(res.status, 0, res.output);
+  has(res, 'COPIED=.codeadd,.claude\n');
+  assert.equal(h.read(path.join(wtOf(r), '.codeadd', 'manifest.json')), '{"installed":true}\n');
+  assert.equal(h.read(path.join(wtOf(r), '.claude', 'commands', 'x.md')), 'command\n');
+  assert.equal(h.read(path.join(wtOf(r), '.codeadd', 'board.json')), '{"committed":true}\n');
+  const lines = res.stdout.trim().split('\n');
+  assert.match(lines[lines.length - 1], /^BRANCH:/);
+  assert.ok(lines.findIndex((l) => l.startsWith('COPIED=')) < lines.length - 1, 'COPIED= comes before BRANCH:');
+});
+
+test('build-setup#024 worktree mode with no ADD block prints COPIED=none', (t) => {
+  const r = repo(t);
+  makeFeature(r, '0042F-auth', 'feature/0042F-auth');
+  h.write(path.join(r.repo, '.claude', 'commands', 'x.md'), 'command\n');
+  const res = run(r, ['0042F', '--worktree']);
+  assert.equal(res.status, 0, res.output);
+  has(res, 'COPIED=none\n');
+  assert.equal(fs.existsSync(path.join(wtOf(r), '.claude')), false);
+});
+
+test('build-setup#025 a block entry whose files are all tracked is not copied and not listed', (t) => {
+  const r = repo(t);
+  installedFixture(r);
+  const res = run(r, ['0042F', '--worktree']);
+  assert.equal(res.status, 0, res.output);
+  assert.doesNotMatch(res.stdout, /COPIED=.*\.tracked-only/);
+  assert.equal(h.read(path.join(wtOf(r), '.tracked-only', 'kept.txt')), 'tracked\n');
+});
+
+test('build-setup#026 a second run (STATE:current) and in-place mode print no COPIED= line', (t) => {
+  const r = repo(t);
+  installedFixture(r);
+  assert.equal(run(r, ['0042F', '--worktree']).status, 0);
+  const again = run(r, ['0042F', '--worktree']);
+  assert.equal(again.status, 0, again.output);
+  has(again, 'STATE:current');
+  hasNot(again, 'COPIED=');
+  const inPlace = repo(t);
+  installedFixture(inPlace);
+  inPlace.git('checkout', '--', '.codeadd/board.json');
+  const res = run(inPlace, ['0042F']);
+  assert.equal(res.status, 0, res.output);
+  hasNot(res, 'COPIED=');
+});
