@@ -262,7 +262,7 @@ function mergeBase() {
 function pendingPaths() {
   const modified = nulList(git(['diff', '--name-only', '--no-renames', '-z']).stdout);
   const staged = nulList(git(['diff', '--cached', '--name-only', '--no-renames', '-z']).stdout);
-  const untracked = nulList(git(['ls-files', '--others', '--exclude-standard', '-z']).stdout);
+  const untracked = nulList(git(['ls-files', '--others', '--exclude-standard', '--full-name', '-z']).stdout);
   return { modified, staged, untracked, all: [...new Set([...modified, ...staged, ...untracked])] };
 }
 
@@ -307,7 +307,7 @@ function classifyPending() {
 
 /** A path as one output line: a newline inside it would forge a second key. */
 function printable(p) {
-  return p.replace(/\n/g, '\\n');
+  return p.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
 }
 
 function dirtyUnrelatedLines(unrelated) {
@@ -404,7 +404,7 @@ function doCommitPush() {
       out('STEP=Committing pending changes...');
       // Literal pathspecs from stdin: no glob surprise in a file name, and no
       // argv length limit on a long list.
-      gitOrFail(['--literal-pathspecs', 'add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], {
+      gitOrFail(['-C', git(['rev-parse', '--show-toplevel']).stdout.trim() || CWD, '--literal-pathspecs', 'add', '-A', '--pathspec-from-file=-', '--pathspec-file-nul'], {
         input: `${classified.stage.join('\0')}\0`,
       });
     }
@@ -489,7 +489,7 @@ function doCleanup() {
     out('WORKTREE_CLEANUP=DEFERRED');
     out('LOCAL_DELETE=DEFERRED');
     out(
-      `HINT=From the primary checkout run, in order: git pull origin ${MAIN_BRANCH} && git worktree remove "${top}" && git branch -d ${CURRENT_BRANCH}`,
+      `HINT=From the primary checkout run, in order: git pull origin ${MAIN_BRANCH} && git worktree remove "${top}" && git branch -d ${CURRENT_BRANCH} (use -D if the PR was squash-merged)`,
     );
     out('CLEANUP=OK');
     return;

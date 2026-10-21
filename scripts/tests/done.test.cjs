@@ -1056,3 +1056,16 @@ test('done#069 scoped staging: with no merge base context says unknown and commi
     assert.match(res.output, /HINT=.*fetch/);
     assert.equal(h.git(r.repo, ['diff', '--cached', '--name-only']).stdout.trim(), '');
   }));
+
+test('done#070 scoped staging: commit-push run from a subdirectory stages root-relative paths', () =>
+  withRepo((r) => {
+    scopedFixture(r);
+    src(r.repo, 'a.txt', 'a3\n');
+    src(r.repo, 'src/new.js', 'n\n');
+    const res = runDone(path.join(r.repo, 'src'), ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.match(res.output, /COMMIT=OK/);
+    const shown = h.git(r.repo, ['show', '--name-status', '--format=', 'HEAD']).stdout.replace(/\r/g, '');
+    assert.match(shown, /^M\ta\.txt$/m);
+    assert.match(shown, /^A\tsrc\/new\.js$/m);
+  }));
