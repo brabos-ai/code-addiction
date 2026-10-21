@@ -136,16 +136,20 @@ and it is the reason a later reader must not merge them.
 }
 ```
 
-Written once, on the first WRITE that finds it absent — a read never brings a file into existence. **Never rewritten after that**,
-and `backlog.bats` asserts it with `DEFS_PRESERVED`: a hand-edited file survives further writes
-byte-for-byte.
+Written once, on the first WRITE that finds it absent — a read never brings a file into existence. **An entry the
+user wrote is never edited after that**, and `backlog.bats` asserts it with `DEFS_PRESERVED`: a hand-edited file
+survives further writes byte-for-byte.
 
-⛔ **The SEEDED SHAPE grew; the never-rewritten promise did not change.** The shape above replaced a
-four-status one, and a reader meeting both facts at once can easily conclude the script now updates an
-existing file. It does not, and `DEFS_PRESERVED` is unmodified. **Nothing reconciles an old file with this
-shape — not a migration, not a fill-in, not on a write.** A project whose file predates the change keeps it
-exactly as it is, and a write naming a status it does not define is refused, as any undefined status always
-was.
+⛔ **The SEEDED SHAPE grew, and an old file gains the names it lacks — and only that.** The shape above replaced a
+four-status one. A file that predates a status the pipeline writes would refuse that write forever, so three things
+add the **missing default statuses** to an existing file: `backlog-commit.cjs sync-defs`, migration
+`0004-sync-board-definitions` (run by `codeadd migrate` and `codeadd update`), and any `add` / `update` that names
+a default status the file lacks (merged in the same board commit). The merge inserts each missing name before the first
+entry already in the file that the default order puts after it. It never edits, renames, removes or re-labels an
+entry, never touches a custom field or `labels`, adds `awaiting-release` only when `release_flow` is `true`, adds a
+column only when the file already has a `columns` array and an added status names it, writes only when something
+changed, and never touches a file it cannot parse. A status that is **not** one of the ten defaults is still refused
+with `REFUSED=unknown-status`, as any undefined status always was.
 
 ### Keys added over time are all optional
 
@@ -176,9 +180,9 @@ and `planning`/`planned`. That pairing is what lets eight columns hold ten statu
 ```
 ⛔ THE VOCABULARY IS THE USER'S WORKFLOW, NOT THE FRAMEWORK'S:
   ⛔ DO NOT: Re-seed the file because its statuses are not the shipped ten
-  ⛔ DO NOT: Add a status to it on the user's behalf, reserved or otherwise
+  ⛔ DO NOT: Add a status to it on the user's behalf that is not one of the ten defaults, and never edit or reorder-away one the user wrote
   ⛔ DO NOT: Refuse to READ a board because the file no longer defines a status in use
-  ✅ DO: Create it when absent, validate writes against it, and report what it no longer covers
+  ✅ DO: Create it when absent, add only the missing default names (`sync-defs`), validate writes against it, and report what it no longer covers
 ```
 
 ### The release step is opt-in, and the labels are a suggestion
@@ -188,8 +192,8 @@ and `planning`/`planned`. That pairing is what lets eight columns hold ten statu
 absent or `false`, a merged ticket is written `done`, exactly as before. A command never opens this file to
 find out: every read prints `RELEASE_FLOW=yes|no` and the command reads that.
 
-**Existing projects are not migrated.** A file written before this status existed keeps its statuses; nothing
-adds one on a write. A project opts in with one write, `node .codeadd/scripts/backlog-commit.cjs release-flow on`,
+**An existing project is not switched on.** A file written before this status existed does not gain
+`awaiting-release` from a merge while `release_flow` is off. A project opts in with one write, `node .codeadd/scripts/backlog-commit.cjs release-flow on`,
 which sets `"release_flow": true` and adds the `awaiting-release` status and the `release` column when the file lacks
 them (`release-flow off` turns the flag back off and removes nothing). A project that sets `release_flow: true` by
 hand without defining the status gets `REFUSED=unknown-status` on the write, reported and non-blocking.
@@ -293,7 +297,7 @@ Each is testable, and each has a `REFUSED=` name below.
 
 Two further promises are structural rather than submittable, so they carry no `REFUSED=` name:
 **the CLI only reads** (a write mode exits 2 with `ERROR=write-mode`), and **`docs/backlog.definitions.json`
-is never rewritten once it exists**. The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
+never loses or edits an entry once it exists** (only missing default statuses are added, by `sync-defs`). The publication entry owns Git commits. Native CLI tests prove the local no-process boundary;
 `backlog.bats` proves definitions preservation.
 
 ## `REFUSED=` vocabulary
@@ -315,7 +319,7 @@ two cannot drift.
 | `unknown-id` | 7 | the id named is not on the board, including a `move --after` anchor |
 | `bad-version` | — | `release` got an empty version or one containing whitespace; not a record ban |
 | `bad-flag` | — | `release-flow` got something other than `on` or `off`; not a record ban |
-| `definitions-unreadable` | — | `release-flow` found a definitions file the core cannot parse and left it untouched; not a record ban |
+| `definitions-unreadable` | — | `release-flow` or `sync-defs` found a definitions file the core cannot parse and left it untouched; not a record ban |
 | `board-not-configured` | — | the project has no board (no `.codeadd/board.json` and no board file), so there is nowhere to write; this is not a record ban |
 
 The name is shared with `delivery-index.md` where the meaning is the same: `invalid-json` and
