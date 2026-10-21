@@ -1069,3 +1069,21 @@ test('done#070 scoped staging: commit-push run from a subdirectory stages root-r
     assert.match(shown, /^M\ta\.txt$/m);
     assert.match(shown, /^A\tsrc\/new\.js$/m);
   }));
+
+test('done#071 commit-push: a delivery doc removed with git rm is committed, not handed to git add', () =>
+  withRepo((r) => {
+    setupRemote(r);
+    branchCreate(r.repo, 'feature/0001F-test');
+    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, 'docs/features/0001F-test/gone.md', 'gone\n');
+    commitAll(r.repo, 'delivery docs');
+    h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
+    h.git(r.repo, ['rm', '-q', 'docs/features/0001F-test/gone.md']);
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.doesNotMatch(res.output, /did not match/);
+    assert.match(res.output, /COMMIT=OK/);
+    assert.match(res.output, /PUSH_BRANCH=OK/);
+    const shown = h.git(r.repo, ['show', '--name-status', '--format=', 'HEAD']).stdout.replace(/\r/g, '');
+    assert.match(shown, /^D\tdocs\/features\/0001F-test\/gone\.md$/m);
+  }));
