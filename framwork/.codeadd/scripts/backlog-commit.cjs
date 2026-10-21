@@ -7,9 +7,9 @@
  * worktree lands on `board` and nowhere else — never on the caller's branch,
  * never on `main`, so it triggers no code CI.
  *
- * THREE MODES CHANGE MORE THAN ONE TICKET, OR NONE. `release <version>` closes every
- * ticket in `awaiting-release` with the version (status done, release <version>)
- * in ONE commit `backlog: release <version> (<n> tickets)`. `release-flow on|off`
+ * THREE MODES CHANGE MORE THAN ONE TICKET, OR NONE. `release <version>` closes the
+ * tickets in `awaiting-release` that are not marked for another version (status done,
+ * release <version>) in ONE commit `backlog: release <version> (<n> tickets)`. `release-flow on|off`
  * flips the definitions' release_flow flag (on also adds the `awaiting-release`
  * status and the `release` column when missing) in the commit
  * `backlog: release-flow on|off`. `sync-defs` adds every default status an existing
@@ -53,7 +53,9 @@
  *   LOCK_RECLAIMED=<pid>  only when a dead or very old lock was taken over
  *   TICKET_ID, PERSISTED=yes, COMMITTED=yes|no, SHA, PUSHED=yes|no
  *                         `release <version>` reports TICKETS_RELEASED=<comma ids>
- *                         (empty when none was waiting) and `release-flow on|off`
+ *                         (empty when none was waiting), TICKETS_SKIPPED=<comma ids> (the waiting
+ *                         ones marked for another version by `release` or a `release:<x>`
+ *                         label; v0.6.0 equals 0.6.0) and `release-flow on|off`
  *                         reports RELEASE_FLOW=yes|no and `sync-defs` reports
  *                         DEFS_ADDED=<comma names> (empty when none), each in place of
  *                         TICKET_ID. `add`/`update` report DEFS_ADDED=<names> after
@@ -92,7 +94,7 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-commit.cjs <write-mode> [arg
   comment <id>              --record-file comment.json
   move    <id> --top | --after <id> | --bottom
   remove  <id>
-  release <version>         close every awaiting-release ticket with the version
+  release <version>         close the awaiting-release tickets not marked for another version
   release-flow on|off       turn the release step of the board on or off
   sync-defs                 add the default statuses an old definitions file lacks
 
@@ -295,6 +297,7 @@ function main(argv) {
   let message = `backlog: ${mode} ${result.ticketId}`;
   if (mode === 'release') {
     report.set('TICKETS_RELEASED', result.ticketIds.join(','), { allowEmpty: true });
+    report.set('TICKETS_SKIPPED', (result.skippedIds || []).join(','), { allowEmpty: true });
     message = `backlog: release ${parsed.version} (${result.ticketIds.length} tickets)`;
   } else if (mode === 'release-flow') {
     report.set('RELEASE_FLOW', result.releaseFlow === 'on' ? 'yes' : 'no');

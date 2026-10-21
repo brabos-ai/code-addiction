@@ -338,12 +338,26 @@ function executeBacklog(params) {
   }
 
   if (mode === 'release') {
-    // Every ticket waiting for a release is closed with the version, in one file write.
+    // Every ticket waiting for this release is closed with the version, in one file write.
+    // A ticket whose `release` field or `release:<x>` label names another version is skipped.
+    // Versions compare without a leading v; the version is written exactly as given.
+    const bare = (v) => String(v).trim().replace(/^v/i, '');
+    const wanted = bare(params.version);
+    const namesOther = (t) => {
+      const declared = [];
+      if (t.release !== undefined && t.release !== null && String(t.release).trim() !== '') declared.push(t.release);
+      for (const l of Array.isArray(t.labels) ? t.labels : []) {
+        if (typeof l === 'string' && l.startsWith('release:')) declared.push(l.slice('release:'.length));
+      }
+      return declared.some((v) => bare(v) !== wanted);
+    };
     const ts = now();
     const ticketIds = [];
+    const skippedIds = [];
     for (const row of board.rows) {
       const t = row.ticket;
       if (!t || t.status !== 'awaiting-release') continue;
+      if (namesOther(t)) { skippedIds.push(t.id); continue; }
       t.release = params.version;
       t.status = 'done';
       t.updated_at = ts;
@@ -354,7 +368,7 @@ function executeBacklog(params) {
       try { storage.writeBoard(root, board.rows); }
       catch { return { ok: false, writeFailure: 'backlog' }; }
     }
-    return { ok: true, ticketIds, diagnostics };
+    return { ok: true, ticketIds, skippedIds, diagnostics };
   }
 
   if (mode === 'release-flow') {
