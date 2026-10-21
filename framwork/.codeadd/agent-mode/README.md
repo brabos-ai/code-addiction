@@ -77,7 +77,7 @@ Rules for a bot, every time:
 - Never use `-c` or `--continue`. They pick the most recent session in the directory, which can be
   another bot's.
 - Never pick a session by the newest `.jsonl` file. It has the same flaw.
-- Always run each agent in its own git worktree.
+- Always run each agent in its own git worktree. `build-setup.cjs --worktree` carries the installed framework into the new worktree; a worktree made by hand needs `.codeadd/` and the provider folders copied, or `npx codeadd install` run in it.
 - Never switch branches in a checkout that other agents share.
 
 The board is not affected: it lives in its own clone, outside every checkout.
@@ -90,6 +90,8 @@ bot that runs it to the end merges. With the agent mode on (section 7) it reads 
 any is still pending it ends with `stopped` and `/add-done` as the next command, and the next call
 merges once they are green. Any other status is final: `done` finished, `stopped` ended on purpose at
 a gate, `failed` hit an error nobody planned for.
+
+`/add-done` runs `git push` and `gh pr merge`, so a destructive-command hook used in autonomous runs must allow them for that step.
 
 The guide does not list the stops of each command. They change with the commands. Read `reason`.
 
