@@ -20,7 +20,7 @@ about to start, `docs/delivered.jsonl` covers work that is finished, and nothing
 | File | Holds | Written by | Hand-edited? |
 |---|---|---|---|
 | `docs/backlog.jsonl` | the tickets, in priority order | the backlog Node entries through the canonical core | never in normal operation |
-| `docs/backlog.definitions.json` | the status vocabulary | seeded once by the backlog Node core on the first write | **yes — it is the user's** |
+| `docs/backlog.definitions.json` | the status vocabulary | seeded by the backlog Node core on the first write; missing default statuses are added later by `sync-defs`, never edited | **yes — it is the user's** |
 
 Both are tracked in git, on the project's `board` branch, flat directly under `docs/` of the **board
 clone** (`~/.codeadd/<project-key>/board/`; `CODEADD_BOARD_DIR` overrides the path), UTF-8, **LF**. They are
