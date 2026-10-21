@@ -1,6 +1,6 @@
 # Plan: Board definitions sync — an existing definitions file gains the default statuses it lacks
 
-> **Status:** approved
+> **Status:** implemented
 > **Layers:** product
 > **Type:** script
 > **Created:** 2026-10-20
@@ -391,3 +391,4 @@ Gaps a reviewer must actively hunt:
 |------|--------|
 | 2026-10-20 | Initial creation |
 | 2026-10-20 | Review fix-then-ok applied: F6 names `backlog.test.cjs` as run-unchanged and where new cases go (A1); F5 short-circuits on no `board.json`, maps a missing script to applied, L2.8/L2.9 cover the real `0004` in update/install suites (A2); F5 spawn timeout 120 s → throw (A3); F4 names the `mode` chain and the no-op exit edits (A4); `release_flow` non-boolean counts as off (N1). Status set to approved by the planner, at the user's request |
+| 2026-10-20 | Implemented in commits 417d9a3..HEAD of branch fix/board-defs-migrate; rulings in the ledger |
