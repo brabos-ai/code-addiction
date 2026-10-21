@@ -139,6 +139,17 @@ describe('backlog-cli — the exit-code contract (unchanged)', () => {
     }
   });
 
+  it('refuses sync-defs on the read entry with ERROR=write-mode, exit 2 (0057B)', () => {
+    let r;
+    try {
+      r = { status: 0, stdout: execFileSync(process.execPath, [CLI_PATH, 'sync-defs'], { encoding: 'utf8', ...asBoard({ cwd: root }) }) };
+    } catch (e) {
+      r = { status: e.status, stdout: e.stdout };
+    }
+    expect(r.status).toBe(2);
+    expect(r.stdout).toContain('ERROR=write-mode');
+  });
+
   it('exits 2 on unknown-id refusal', () => {
     const r = fail(['update', '0000B'], { input: JSON.stringify({ title: 'Nope' }), cwd: root });
     expect(r.status).toBe(2);

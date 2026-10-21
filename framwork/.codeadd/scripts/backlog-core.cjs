@@ -42,7 +42,7 @@ const DEFAULT_DEFS = {
   release_flow: false
 };
 
-const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow'];
+const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow', 'sync-defs'];
 const RESERVED = ['id', 'created_at', 'updated_at'];
 const REQUIRED = ['title', 'tldr', 'done_when'];
 
@@ -56,14 +56,20 @@ function findRow(rows, id) {
 
 /**
  * Add the seeded entry called `name` to `list` when no entry has that name.
- * It goes right before the `done` entry and takes its `order`, pushing that
- * entry and every later one up by one — the board sorts by `order`, so the new
- * entry lands where the defaults put it. Without a `done` entry it goes last.
+ * It goes right before the first entry already in `list` that the seeded order
+ * puts after it, and takes that entry's `order`, pushing it and every later one
+ * up by one — the board sorts by `order`, so the new entry lands where the
+ * defaults put it. For `awaiting-release` that entry is `done`. With no such
+ * entry it goes last.
  */
-function addBeforeDone(list, name, seeded) {
+function addInDefaultOrder(list, name, seeded) {
   if (list.some(e => e && e.name === name)) return;
   const entry = JSON.parse(JSON.stringify(seeded.find(e => e.name === name)));
-  const at = list.findIndex(e => e && e.name === 'done');
+  let at = -1;
+  for (const later of seeded.slice(seeded.findIndex(e => e.name === name) + 1)) {
+    at = list.findIndex(e => e && e.name === later.name);
+    if (at !== -1) break;
+  }
   const orders = list.map(e => (e && Number.isFinite(e.order) ? e.order : 0));
   if (at === -1 || !Number.isFinite(list[at].order)) {
     entry.order = Math.max(0, ...orders) + 1;
@@ -77,12 +83,35 @@ function addBeforeDone(list, name, seeded) {
 }
 
 /**
+ * Add every default status the definitions lack. Pure: no I/O, the argument is
+ * not touched. Entries already in the file are never edited, renamed or removed;
+ * the only key that moves on one is `order`, shifted to make room. `awaiting-release`
+ * is added only when `release_flow` is true. A column is added only when the file
+ * already has a `columns` array and an added status names a column it lacks.
+ *
+ * @returns {{next: object, added: string[]}} added = the status names, in default order
+ */
+function mergeDefaultStatuses(defs) {
+  const next = JSON.parse(JSON.stringify(defs));
+  const added = [];
+  if (!next || !Array.isArray(next.statuses)) return { next, added };
+  for (const seeded of DEFAULT_DEFS.statuses) {
+    if (seeded.name === 'awaiting-release' && next.release_flow !== true) continue;
+    if (next.statuses.some(e => e && e.name === seeded.name)) continue;
+    addInDefaultOrder(next.statuses, seeded.name, DEFAULT_DEFS.statuses);
+    added.push(seeded.name);
+    if (Array.isArray(next.columns)) addInDefaultOrder(next.columns, seeded.column, DEFAULT_DEFS.columns);
+  }
+  return { next, added };
+}
+
+/**
  * Execute a backlog operation.
  *
  * @param {object} params
  * @param {string} params.root - absolute path to the project root
  * @param {string} params.mode - one of: list, search, get, add, update, comment, move, remove,
- *   release, release-flow
+ *   release, release-flow, sync-defs
  * @param {string} [params.targetId] - ticket id for update/comment/remove/move
  * @param {string} [params.moveDir] - 'top'|'bottom'|'after' for move
  * @param {string} [params.moveAnchor] - anchor id for move --after
@@ -104,6 +133,20 @@ function executeBacklog(params) {
   }
   if (mode === 'release-flow' && params.flag !== 'on' && params.flag !== 'off') {
     return { ok: false, refusal: 'bad-flag', diagnostics: [] };
+  }
+
+  // sync-defs reads only the definitions file. An absent one stays absent (reads already
+  // fall back to the defaults); a file the core cannot parse is never overwritten.
+  if (mode === 'sync-defs') {
+    const found = storage.readDefs(root);
+    if (found.status === 'absent') return { ok: true, defsAdded: [], diagnostics: [] };
+    if (found.status === 'invalid') return { ok: false, refusal: 'definitions-unreadable', diagnostics: [] };
+    const merged = mergeDefaultStatuses(found.defs);
+    if (merged.added.length) {
+      try { storage.writeDefs(root, merged.next); }
+      catch { return { ok: false, writeFailure: 'definitions' }; }
+    }
+    return { ok: true, defsAdded: merged.added, diagnostics: [] };
   }
 
   // Load board first, then definitions
@@ -138,6 +181,26 @@ function executeBacklog(params) {
     diagnostics.push({ key: 'DEFS_UNREADABLE', value: 'yes' });
   }
 
+  // A status the file lacks but the defaults carry is accepted, and the merged definitions are
+  // held back: they are written right before the board, after every other check, so a refused
+  // write leaves both files untouched.
+  let mergedDefs = null;
+  let defsAdded = [];
+  const knowsStatus = (status) => {
+    if (defs.statuses.some(s => s.name === status)) return true;
+    if (defsProvenance !== 'file') return false;
+    const merged = mergeDefaultStatuses(defs);
+    if (!merged.added.includes(status)) return false;
+    mergedDefs = merged.next;
+    defsAdded = merged.added;
+    return true;
+  };
+  const writeMergedDefs = () => {
+    if (!mergedDefs) return true;
+    try { storage.writeDefs(root, mergedDefs); return true; }
+    catch { return false; }
+  };
+
   // Parse record for write modes that need it
   let record = null;
   if (['update', 'comment'].includes(mode) && !findRow(board.rows, params.targetId)) {
@@ -169,7 +232,7 @@ function executeBacklog(params) {
       }
     }
     const status = typeof record.status === 'string' && record.status !== '' ? record.status : 'open';
-    if (!defs.statuses.some(s => s.name === status)) {
+    if (!knowsStatus(status)) {
       return { ok: false, refusal: 'unknown-status', diagnostics };
     }
     if (findRow(board.rows, params.newId)) {
@@ -197,9 +260,10 @@ function executeBacklog(params) {
     };
 
     board.rows.push({ n: board.rows.length + 1, text: JSON.stringify(ticket), ticket });
+    if (!writeMergedDefs()) return { ok: false, writeFailure: 'definitions' };
     try { storage.writeBoard(root, board.rows); }
     catch { return { ok: false, writeFailure: 'backlog' }; }
-    return { ok: true, ticketId: ticket.id, diagnostics, defsProvenance };
+    return { ok: true, ticketId: ticket.id, diagnostics, defsProvenance, defsAdded };
   }
 
   if (mode === 'update' || mode === 'comment') {
@@ -221,7 +285,7 @@ function executeBacklog(params) {
         }
       }
       if (Object.prototype.hasOwnProperty.call(record, 'status')) {
-        if (!defs.statuses.some(s => s.name === record.status)) {
+        if (!knowsStatus(record.status)) {
           return { ok: false, refusal: 'unknown-status', diagnostics };
         }
       }
@@ -239,9 +303,10 @@ function executeBacklog(params) {
 
     t.updated_at = now();
     row.text = JSON.stringify(t);
+    if (!writeMergedDefs()) return { ok: false, writeFailure: 'definitions' };
     try { storage.writeBoard(root, board.rows); }
     catch { return { ok: false, writeFailure: 'backlog' }; }
-    return { ok: true, ticketId: t.id, diagnostics };
+    return { ok: true, ticketId: t.id, diagnostics, defsAdded };
   }
 
   if (mode === 'remove') {
@@ -298,8 +363,8 @@ function executeBacklog(params) {
     const next = JSON.parse(JSON.stringify(defs));
     next.release_flow = params.flag === 'on';
     if (params.flag === 'on') {
-      addBeforeDone(next.statuses, 'awaiting-release', DEFAULT_DEFS.statuses);
-      if (Array.isArray(next.columns)) addBeforeDone(next.columns, 'release', DEFAULT_DEFS.columns);
+      addInDefaultOrder(next.statuses, 'awaiting-release', DEFAULT_DEFS.statuses);
+      if (Array.isArray(next.columns)) addInDefaultOrder(next.columns, 'release', DEFAULT_DEFS.columns);
     }
     // Written only when something changed, so a hand-formatted file is not reformatted for nothing.
     if (JSON.stringify(next) !== JSON.stringify(defs)) {
@@ -375,4 +440,4 @@ function executeBacklog(params) {
   };
 }
 
-module.exports = { executeBacklog, DEFAULT_DEFS };
+module.exports = { executeBacklog, mergeDefaultStatuses, DEFAULT_DEFS };
