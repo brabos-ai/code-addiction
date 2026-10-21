@@ -27,7 +27,7 @@
  * every ticket as added. A sha that is not an ancestor of the tip exits 1 with
  * ERROR=cursor-unknown: the caller starts again without --since.
  *
- * WRITES ARE REFUSED. add, update, comment, move, remove, release and release-flow exit 2 with
+ * WRITES ARE REFUSED. add, update, comment, move, remove, release, release-flow and sync-defs exit 2 with
  * ERROR=write-mode and a line naming backlog-commit.cjs, the one write route.
  * The write grammar is still parsed here and exported, because
  * backlog-commit.cjs shares it. `release <version>` and `release-flow on|off` are
@@ -35,6 +35,8 @@
  * option-looking version is a version); a missing argument is ERROR=missing-version
  * or ERROR=missing-flag, a surplus one ERROR=bad-argument. Whether the version or
  * the flag is acceptable is the core's call (REFUSED=bad-version / bad-flag).
+ * `sync-defs` takes no argument (a surplus one is ERROR=bad-argument) and adds the
+ * default statuses an existing definitions file lacks.
  *
  * For record modes (add/update/comment) a trailing `--record-file <path>`
  * pair supplies the record; no pair means stdin. Non-record modes never
@@ -67,19 +69,20 @@ const USAGE = `USAGE: node .codeadd/scripts/backlog-cli.cjs <mode> [args]
   remove  <id>
   release <version>
   release-flow on|off
+  sync-defs
   list    [--all | --status <name>] [--full | --ids]
   search  <query> [--full]
   get     <id>
   changes [--since <sha>]
-Reads come from the board clone, synced first. add, update, comment, move, remove, release
-and release-flow are writes: run backlog-commit.cjs for those.
+Reads come from the board clone, synced first. add, update, comment, move, remove, release,
+release-flow and sync-defs are writes: run backlog-commit.cjs for those.
 Reads print a seven-field summary by default; --full restores the raw rows.
 `;
 
-const MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow', 'list', 'search', 'get', 'changes'];
+const MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow', 'sync-defs', 'list', 'search', 'get', 'changes'];
 const RECORD_MODES = ['add', 'update', 'comment'];
 const RECORD_FILE_FLAG = '--record-file';
-const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow'];
+const WRITE_MODES = ['add', 'update', 'comment', 'move', 'remove', 'release', 'release-flow', 'sync-defs'];
 
 function usage() {
   process.stderr.write(USAGE);
@@ -141,6 +144,10 @@ function parseInvocation(argv) {
     if (rest[0] === undefined) return { ok: false, error: 'missing-flag', usage: true };
     if (rest.length > 1) return { ok: false, error: 'bad-argument', usage: true };
     return { ok: true, mode, flag: rest[0], recordSource };
+  }
+  if (mode === 'sync-defs') {
+    if (rest.length > 0) return { ok: false, error: 'bad-argument', usage: true };
+    return { ok: true, mode, recordSource };
   }
 
   let targetId = '';
