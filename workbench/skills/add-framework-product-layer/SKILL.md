@@ -38,12 +38,11 @@ changes only through a plan. A build that edits it is a build doing someone else
 framwork/.codeadd/skills/add-resource-path-convention/SKILL.md   # ALWAYS — path references
 framwork/.codeadd/skills/add-ecosystem/SKILL.md                  # ALWAYS — ecosystem overview
 framwork/.codeadd/skills/add-token-efficiency/SKILL.md           # ALWAYS
-(native `skill-creator` plugin + add-framework-development)         # IF the artefact is a skill
 framwork/.codeadd/skills/add-doc-schemas/SKILL.md                # IF generating docs
 ```
 
 `add-framework-development` carries the artefact anatomies, the `<!-- uses: -->` syntax and the
-build-pipeline internals. Read it when creating a new artefact type or changing how the build works.
+build-pipeline internals. Read it when creating a new artefact type or changing how the build works. If the artefact is a skill, also read it and use the native `skill-creator` plugin (install steps are in that skill).
 
 ## Source of Truth
 

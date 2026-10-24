@@ -221,9 +221,9 @@ add-qa/
 To author or test a skill, install the native Claude Code `skill-creator` plugin — the framework no longer ships a skill for it:
 
 ```
+/plugin marketplace add anthropics/claude-plugins-official   # first, only if the marketplace is not added yet
 /plugin install skill-creator@claude-plugins-official
-/plugin marketplace add anthropics/claude-plugins-official   # if the marketplace is not added yet
-claude plugin install skill-creator@claude-plugins-official   # shell form
+claude plugin install skill-creator@claude-plugins-official   # the same install, from a shell
 ```
 
 **Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
