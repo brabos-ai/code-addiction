@@ -317,7 +317,7 @@ describe('L1 extractUses', () => {
       '',
     ].join('\n');
 
-    expect(extractUses(src, 'add--skill-creator', 'skill')).toEqual([]);
+    expect(extractUses(src, 'add--example', 'skill')).toEqual([]);
   });
 
   it('L1.8 accepts blank lines and indentation inside the block', () => {
@@ -947,7 +947,10 @@ describe('node inventory snapshot', () => {
       // person (plan 2026-10-09T184411-PLAN--agent-mode-feature, F4).
       // skill 62 -> 63: add--agent-interaction, the bot counterpart (F8).
       // skill 63 -> 64: add-interaction, the internal rule for a stop that asks (F25).
-      skill: 64,
+      // skill 64 -> 59: add--stripe, add--plan-based-features, add--optimizing-git-workflow,
+      // add--project-scaffolding and add--skill-creator removed; nothing loaded them
+      // (ticket 0060B, plan 2026-10-24T182329-PLAN--remove-generic-skills, F1).
+      skill: 59,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -969,7 +972,8 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F5.)
       // reference 72 -> 73: add--backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
       // reference 73 -> 74: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
-      reference: 74,
+      // reference 74 -> 55: the references/ files of those five skills went with them (0060B, F1).
+      reference: 55,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add-pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1128,8 +1132,10 @@ describe('node inventory snapshot', () => {
     // exactly the on-disk delta, with no hardcoded total to drift.
     const shippedScriptsCount = shippedScripts();
     // 226 -> 228 + the agent-mode fragments: the agent-mode feature node (F10) and add-interaction (F25), then one fragment node each.
-    expect(nodes).toHaveLength(228 + agentModeFragments() + shippedScriptsCount);
-    expect(nodes.filter((n) => n.declares)).toHaveLength(143 + agentModeFragments());
+    // 228 -> 204: the five generic skills removed with their 19 references (0060B, F1).
+    expect(nodes).toHaveLength(204 + agentModeFragments() + shippedScriptsCount);
+    // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {
