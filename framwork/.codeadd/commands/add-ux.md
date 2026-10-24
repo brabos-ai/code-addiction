@@ -67,8 +67,6 @@ READ skill `add--ux-design` — single source of truth for UX knowledge.
 | `modern-patterns.md` | Modern interaction patterns, visual trends |
 | `ux-writing.md` | Microcopy, error messages, empty states |
 
-For component/library APIs, read the project's own docs per {{addpath:wiki/conventions.md}} / `AGENTS.md`.
-
 For component/library APIs, read the project's own docs per `{{addpath:wiki/conventions.md}}` / `AGENTS.md`.
 
 If nothing specific matches, SKILL.md alone is sufficient.
