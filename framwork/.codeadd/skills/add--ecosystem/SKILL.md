@@ -32,19 +32,14 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--id-convention
 - mention: add--investigation
 - mention: add--knowledge-discovery
-- mention: add--optimizing-git-workflow
-- mention: add--plan-based-features
 - mention: add--plan-review
 - mention: add--review-discipline
-- mention: add--project-scaffolding
 - mention: add--qa
 - mention: add--qa-migration
 - mention: add--qa-spec
 - mention: add--resource-path-convention
 - mention: add--security-audit
 - mention: add--setup-contract
-- mention: add--skill-creator
-- mention: add--stripe
 - mention: add--subagent-driven-development
 - mention: add--tasks-checklist
 - mention: add--tdd
@@ -112,7 +107,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 ## When NOT to Use
 
 - Not a how-to guide — load the specific skill for execution detail.
-- Not for authoring new skills/commands → use `add--skill-creator`.
+- Not for authoring new skills/commands → use the native Claude Code `skill-creator` plugin.
 - Not for resource path conventions → use `add--resource-path-convention`.
 
 ## Commands
@@ -171,10 +166,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) | add-build, add-done, add-hotfix, add-new, add-plan, add-pull-request |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add-audit, add-diagnose, add-hotfix, add-review |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm | add-brainstorm, add-diagnose, add-hotfix, add-new, add-plan, add-review |
-| add--optimizing-git-workflow | Git patterns, commits, branches, aliases | (none) |
-| add--plan-based-features | Implement subscription plan-based features | (none) |
 | add--plan-review | Pre-delivery executability rubric for about.md and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` | add-new, add-plan |
-| add--project-scaffolding | Create projects from scratch: Starter/Scale, multi-stack Node.js, Starter-to-Scale migration | (none) |
 | add--qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, config.json/screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded at the QA merge step `qa-pipeline` adds to /add-review, never by a judge | add-qa-setup, add-review |
 | add--qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints; consumed by /add-qa-setup | add-qa-setup |
 | add--qa-spec | Generate a code-free QA/E2E spec (reachability intent, UX acceptance, functional scenarios, capture states, viewports, a11y expectations) from about.md + design.md + plan-*.md, **and** author the `_tests/screens.json` screen catalog by read-merge-write — loaded by add-plan's qa-pipeline QA-Spec step | (none) |
@@ -182,8 +174,6 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at the one site that dispatches a readback, and the one boundary where a verdict may reach disk | add-build, add-new, add-plan |
 | add--security-audit | OWASP checklist, RLS, secrets, multi-tenancy | (none) |
 | add--setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE | add-qa-setup |
-| add--skill-creator | Create and test skills under real pressure | (none) |
-| add--stripe | Stripe integration, price versioning, grandfathering | (none) |
 | add--subagent-driven-development | Subagent coordination with quality gates | add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki |
 | add--tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add-build, add-plan, add-review |
 | add--tdd | RED-GREEN-REFACTOR execution discipline: failing test confirmed for the right reason before code | (none) |
