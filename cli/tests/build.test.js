@@ -645,8 +645,8 @@ describe('resolveResourcePaths', () => {
   });
 
   it('resolves {{skill:NAME/SUBFILE}} for non-SKILL.md files', () => {
-    expect(resolveResourcePaths('Grep {{skill:add--ux-design/shadcn-docs.md}}', claudeProvider))
-      .toBe('Grep .claude/skills/add--ux-design/shadcn-docs.md');
+    expect(resolveResourcePaths('Grep {{skill:add--ux-design/design-contract.md}}', claudeProvider))
+      .toBe('Grep .claude/skills/add--ux-design/design-contract.md');
   });
 
   it('resolves {{addpath:X}} to literal .codeadd/X regardless of provider', () => {
