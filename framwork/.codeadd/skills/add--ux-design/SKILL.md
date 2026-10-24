@@ -12,14 +12,7 @@ description: "Use when building, styling, or theming UI components, pages, layou
 - skill: add--ux-design/design-contract.md
 - skill: add--ux-design/design-direction.md
 - skill: add--ux-design/modern-patterns.md
-- skill: add--ux-design/motion-dev-docs.md
-- skill: add--ux-design/recharts-docs.md
 - skill: add--ux-design/saas-patterns.md
-- skill: add--ux-design/shadcn-docs.md
-- skill: add--ux-design/tailwind-v3-docs.md
-- skill: add--ux-design/tanstack-query-docs.md
-- skill: add--ux-design/tanstack-router-docs.md
-- skill: add--ux-design/tanstack-table-docs.md
 - skill: add--ux-design/ux-laws-principles.md
 - skill: add--ux-design/ux-writing.md
 - agent: qa-agent
@@ -76,15 +69,7 @@ Do NOT load this skill for:
 
 ### Docs Lookup
 
-| Library | Doc file |
-|---------|----------|
-| shadcn | `{{skill:add--ux-design/shadcn-docs.md}}` |
-| tailwind | `{{skill:add--ux-design/tailwind-v3-docs.md}}` |
-| motion | `{{skill:add--ux-design/motion-dev-docs.md}}` |
-| recharts | `{{skill:add--ux-design/recharts-docs.md}}` |
-| @tanstack/react-table | `{{skill:add--ux-design/tanstack-table-docs.md}}` |
-| @tanstack/react-query | `{{skill:add--ux-design/tanstack-query-docs.md}}` |
-| @tanstack/react-router | `{{skill:add--ux-design/tanstack-router-docs.md}}` |
+This skill bundles no library docs. Component and library APIs come from the project itself: the installed components in its component inventory (`design-context.md`), then the project's own sources and docs as named in `{{addpath:wiki/conventions.md}}` / `{{addpath:wiki/domains/frontend.md}}` when they exist, else `AGENTS.md`. Never assume a library the project does not use.
 
 ### Recommended Libraries
 
