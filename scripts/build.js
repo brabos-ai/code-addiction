@@ -830,7 +830,7 @@ const NON_ARTEFACT_FILE = /^(_|(README|NOTES|CHANGELOG)\.[A-Za-z0-9]+$)/i;
 /**
  * Character spans covered by fenced code blocks.
  *
- * A declaration shown inside a fence is documentation — `add-skill-creator`
+ * A declaration shown inside a fence is documentation — a skill
  * teaching the convention, a plan quoting an example. Treating it as a
  * declaration invents edges out of prose, and those edges point at artefacts the
  * quoting file never actually uses.

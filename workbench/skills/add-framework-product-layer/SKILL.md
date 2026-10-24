@@ -38,7 +38,7 @@ changes only through a plan. A build that edits it is a build doing someone else
 framwork/.codeadd/skills/add-resource-path-convention/SKILL.md   # ALWAYS — path references
 framwork/.codeadd/skills/add-ecosystem/SKILL.md                  # ALWAYS — ecosystem overview
 framwork/.codeadd/skills/add-token-efficiency/SKILL.md           # ALWAYS
-framwork/.codeadd/skills/add-skill-creator/SKILL.md              # IF the artefact is a skill
+(native `skill-creator` plugin + add-framework-development)         # IF the artefact is a skill
 framwork/.codeadd/skills/add-doc-schemas/SKILL.md                # IF generating docs
 ```
 
