@@ -179,7 +179,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--tdd | RED-GREEN-REFACTOR execution discipline: failing test confirmed for the right reason before code | (none) |
 | add--test-specification | Generate contract test cases (RF/RN → testable cases) into plan-test-spec.md | (none) |
 | add--token-efficiency | Compression, compact JSON, minimal tokens | (none) |
-| add--ux-design | Components, mobile-first, SaaS patterns, shadcn, Tailwind | add-build, add-hotfix, add-plan, add-review, add-ux |
+| add--ux-design | Design direction, UX laws, layout contract, critique rubric, SaaS patterns, mobile-first | add-build, add-hotfix, add-plan, add-review, add-ux |
 | add--wiki-maintenance | Incremental project-wiki updates — diff-driven surgical edits, never full rewrites — loaded by `/add-wiki update` and add-done STEP 4.9 | add-done, add-wiki |
 
 ## Agents
