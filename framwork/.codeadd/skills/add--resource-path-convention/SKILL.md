@@ -116,7 +116,7 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 1. Read {{cmd:add-plan}} — PRIMARY reference
 2. Run: node .codeadd/scripts/status.cjs
 3. Read {{skill:add--backend-development/SKILL.md}}
-4. For components, Grep {{skill:add--ux-design/shadcn-docs.md}}
+4. For layout notation, Read {{skill:add--ux-design/design-contract.md}}
 ```
 
 ### Incorrect

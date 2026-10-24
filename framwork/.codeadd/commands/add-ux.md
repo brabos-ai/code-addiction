@@ -63,16 +63,11 @@ READ skill `add--ux-design` — single source of truth for UX knowledge.
 
 | Doc | Covers |
 |-----|--------|
-| `shadcn-docs.md` | UI components (button, dialog, form, card, input) |
-| `tailwind-v3-docs.md` | Styling, spacing, colors, responsive |
-| `motion-dev-docs.md` | Animations, transitions, micro-interactions |
-| `recharts-docs.md` | Charts, graphs, data visualization |
-| `tanstack-table-docs.md` | Tables, grids, sorting, filtering |
-| `tanstack-query-docs.md` | Data fetching, cache, mutations |
-| `tanstack-router-docs.md` | Routing, navigation |
 | `ux-laws-principles.md` | UX laws (Fitts, Hick, Jakob, Doherty) |
 | `modern-patterns.md` | Modern interaction patterns, visual trends |
 | `ux-writing.md` | Microcopy, error messages, empty states |
+
+For component/library APIs, read the project's own docs per `{{addpath:wiki/conventions.md}}` / `AGENTS.md`.
 
 If nothing specific matches, SKILL.md alone is sufficient.
 

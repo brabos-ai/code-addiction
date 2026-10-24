@@ -22,7 +22,7 @@ You are the LAYOUT & COMPONENT SPECIALIST. You run after `@ux-flow-agent` — yo
 
 ## How You Work
 
-Load skill `add--ux-design` files `shadcn-docs.md`, `tailwind-v3-docs.md`, `motion-dev-docs.md`. Follow skill `add--ux-design` file `design-contract.md` (Layout Tree Notation, Component Composition, Design Contract Dimensions) for the notation spec — reference it, do not restate the tables here.
+Use the component inventory in `design-context.md` (from `@ux-flow-agent` Step 0.3). When a component's API matters, read the project's own component sources and docs as pointed by `{{addpath:wiki/conventions.md}}` (+ `{{addpath:wiki/domains/frontend.md}}`) if they exist, else `AGENTS.md`; never assume a library the inventory does not show. Follow skill `add--ux-design` file `design-contract.md` (Layout Tree Notation, Component Composition, Design Contract Dimensions) for the notation spec — reference it, do not restate the tables here.
 
 1. Per screen, emit the layout tree: one minified JSON object per screen (mobile-first, `span` per breakpoint) per the schema — no wireframe, no leaf-level styling.
 2. Spec new components only — existing components are referenced by path, never re-specced. Every component (existing or new) states its composition against the inventory in `design-context.md` — never an invented component or library.

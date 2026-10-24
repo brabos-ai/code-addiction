@@ -697,7 +697,7 @@ ${GLOBAL_CONSTRAINTS}
 ## MANDATORY: Load Development Skill
 Read: skill add-${AREA}-development (patterns, validation, code style)
 - For Frontend: skill will auto-load ux-design if design.md exists
-- Reference component docs as needed: shadcn, tailwind-v3, motion, recharts, tanstack
+- Component/library APIs: follow the project's own docs per {{addpath:wiki/conventions.md}} / AGENTS.md
 
 ## IDEMPOTENCY: Before writing files
 - Check if file exists → READ FIRST before overwriting

@@ -973,7 +973,8 @@ describe('node inventory snapshot', () => {
       // reference 72 -> 73: add--backlog/references/phases.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F19).
       // reference 73 -> 74: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
       // reference 74 -> 55: the references/ files of those five skills went with them (0060B, F1).
-      reference: 55,
+      // reference 55 -> 48: the seven bundled library docs of add--ux-design went (0061B, F2).
+      reference: 48,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add-pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1133,7 +1134,8 @@ describe('node inventory snapshot', () => {
     const shippedScriptsCount = shippedScripts();
     // 226 -> 228 + the agent-mode fragments: the agent-mode feature node (F10) and add-interaction (F25), then one fragment node each.
     // 228 -> 204: the five generic skills removed with their 19 references (0060B, F1).
-    expect(nodes).toHaveLength(204 + agentModeFragments() + shippedScriptsCount);
+    // 204 -> 197: the seven bundled library docs of add--ux-design removed (0061B, F2).
+    expect(nodes).toHaveLength(197 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
   });
