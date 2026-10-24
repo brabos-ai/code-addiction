@@ -69,7 +69,7 @@ Do NOT load this skill for:
 
 ### Docs Lookup
 
-This skill bundles no library docs. Component and library APIs come from the project itself: the installed components in its component inventory (`design-context.md`), then the project's own sources and docs as named in `{{addpath:wiki/conventions.md}}` / `{{addpath:wiki/domains/frontend.md}}` when they exist, else `AGENTS.md`. Never assume a library the project does not use.
+This skill bundles no library docs. Component and library APIs come from the project itself: the installed components in its component inventory (`design-context.md`), then the project's own sources and docs as named in `{{addpath:wiki/conventions.md}}` / `{{addpath:wiki/domains/frontend.md}}` when they exist, else `AGENTS.md`. Never assume a library the project does not use; `### Recommended Libraries` below applies only to a project with no stack of its own yet.
 
 ### Recommended Libraries
 
