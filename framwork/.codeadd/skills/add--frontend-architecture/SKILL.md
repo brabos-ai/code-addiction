@@ -8,7 +8,6 @@ description: Frontend architecture consultant for project structure, folder orga
 <!-- uses:
 - skill: add--frontend-development
 - mention: add--backend-architecture
-- mention: add--project-scaffolding
 - mention: add--ux-design
 - skill: add--frontend-architecture/references/angular.md
 - skill: add--frontend-architecture/references/react.md
@@ -150,7 +149,7 @@ features/
 - [ ] User asks how to **implement** a feature (routing, forms, data fetching) — use `add--frontend-development`
 - [ ] User asks about **UI/UX design**, styling, components visuals — use `add--ux-design` / `frontend-design`
 - [ ] User asks about **backend** structure or APIs — use `add--backend-architecture`
-- [ ] User wants to **scaffold** a new project from scratch — use `add--project-scaffolding`
+- [ ] User wants to **scaffold** a new project from scratch
 - [ ] Question is about a specific library's API — use Context7 docs
 
 ---

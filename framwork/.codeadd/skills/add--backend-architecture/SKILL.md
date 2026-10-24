@@ -9,7 +9,6 @@ description: Guides backend architecture decisions — over-engineering, folder 
 - mention: add--architecture-discovery
 - mention: add--backend-development
 - mention: add--frontend-architecture
-- mention: add--project-scaffolding
 - skill: add--backend-architecture/references/clean-architecture.md
 - skill: add--backend-architecture/references/combined-strategy.md
 - skill: add--backend-architecture/references/universal-rules.md
@@ -23,7 +22,7 @@ Guide architectural decisions for backend projects. Language and framework agnos
 ## When NOT to Use
 
 - **Code implementation** — use `add--backend-development` instead
-- **Project scaffolding / file generation** — use `add--project-scaffolding` instead
+- **Project scaffolding / file generation**
 - **Discovering existing architecture** — use `add--architecture-discovery` instead
 - **Frontend structure decisions** — use `add--frontend-architecture` instead
 

@@ -10,7 +10,6 @@ description: |
 - mention: add--backend-architecture
 - mention: add--database-development
 - mention: add--frontend-development
-- mention: add--project-scaffolding
 - mention: add--security-audit
 -->
 
@@ -32,7 +31,7 @@ Skill for backend API implementation following universal architectural principle
 - **Security audits / threat modeling** — use `add--security-audit`
 - **Pure scripts, CLIs, or non-API code** — these patterns target HTTP API services
 - **Greenfield architecture decisions** — use `add--backend-architecture` to choose structure first
-- **Project scaffolding** — use `add--project-scaffolding` for initial setup
+- **Project scaffolding**
 
 ---
 
