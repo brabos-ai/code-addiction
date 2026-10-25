@@ -7,7 +7,7 @@ import "../styles/global.css";
 
 <Layout title="Code Addiction — Spec-driven AI development framework">
   <!-- Nav -->
-  <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
+  <nav transition:name="site-nav" class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu" aria-controls="mobile-menu" aria-expanded="false">
@@ -279,6 +279,12 @@ import "../styles/global.css";
   </footer>
 
   <script is:inline>
+    // The client router swaps the page without a reload, so everything binds on
+    // astro:page-load (once per page shown) and document-level handlers are released
+    // before the swap. A script runs once per document; init runs once per page.
+    function initHome() {
+    const pageAbort = new AbortController();
+    document.addEventListener('astro:before-swap', () => pageAbort.abort(), { once: true });
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLinks = document.querySelectorAll('.mobile-link');
@@ -302,7 +308,7 @@ import "../styles/global.css";
           setMobileMenu(false);
           mobileMenuToggle.focus();
         }
-      });
+      }, { signal: pageAbort.signal });
     }
 
     // Scroll reveal and card spotlight. Both are decoration: the markup only carries data-reveal
@@ -366,5 +372,7 @@ import "../styles/global.css";
         if (event.target === flowchartModal) flowchartModal.close();
       });
     }
+    }
+    document.addEventListener('astro:page-load', initHome);
   </script>
 </Layout>

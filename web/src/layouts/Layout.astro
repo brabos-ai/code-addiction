@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from "astro:transitions";
 import syne800 from "@fontsource/syne/files/syne-latin-800-normal.woff2?url";
 import outfitLatin from "@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2?url";
 
@@ -43,6 +44,7 @@ const ogImage = new URL("/og.png", Astro.site);
     <link rel="preload" as="font" type="font/woff2" href={outfitLatin} crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
+    <ClientRouter />
   </head>
   <body class="min-h-screen antialiased">
     <slot />

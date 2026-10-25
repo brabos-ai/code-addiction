@@ -290,7 +290,7 @@ test('F17: a search trigger opens on click and on Ctrl+K / Cmd+K, and the nav dr
   const docs = DOCS();
   assert.match(docs, /id="docs-search-open"/);
   assert.match(docs, /e(vent)?\.(ctrlKey|metaKey)[\s\S]{0,80}\.key\.toLowerCase\(\) === 'k'/);
-  const nav = docs.match(/<nav class="fixed top-0[\s\S]*?<\/nav>/)[0];
+  const nav = docs.match(/<nav[^>]*class="fixed top-0[\s\S]*?<\/nav>/)[0];
   for (const h of ['#commands', '#graph', '#flows']) assert.ok(!nav.includes(`href="${h}"`), `nav still links ${h}`);
 });
 
