@@ -155,3 +155,41 @@ test('F7: home page copy: no Portuguese accessible names, a space before the her
 test('F7: the docs page keeps its own #flows section', () => {
   assert.match(DOCS(), /<section id="flows"/);
 });
+
+// ------------------------------------------------------- F8 one provider source
+function providerEntries() {
+  const src = read('src/data/providers.ts');
+  return [...src.matchAll(/^\s*\{\s*key:\s*"([^"]+)"([^}]*)\}/gm)].map(m => ({
+    key: m[1],
+    name: (m[2].match(/name:\s*"([^"]+)"/) || [])[1],
+    dir: (m[2].match(/\bdir:\s*"([^"]+)"/) || [])[1],
+    agentsDir: (m[2].match(/agentsDir:\s*"([^"]+)"/) || [])[1],
+  }));
+}
+
+test('F8: providers.ts holds exactly the six registry providers, with unique names and registry directories', () => {
+  assert.ok(exists('src/data/providers.ts'), 'providers.ts missing');
+  const reg = JSON.parse(fs.readFileSync(path.join(ROOT, 'framwork', 'provider-map.json'), 'utf8')).providers;
+  const entries = providerEntries();
+  assert.equal(entries.length, 6);
+  assert.deepEqual(entries.map(e => e.key).sort(), Object.keys(reg).sort());
+  assert.equal(new Set(entries.map(e => e.name)).size, 6, 'display names must be unique');
+  for (const e of entries) {
+    const strip = d => d.replace(/^framwork\//, '') + '/';
+    assert.equal(e.dir, strip(reg[e.key].dir), `${e.key} dir`);
+    assert.equal(e.agentsDir, reg[e.key].agentsDir ? strip(reg[e.key].agentsDir) : undefined, `${e.key} agentsDir`);
+  }
+});
+
+test('F8: both pages render from providers.ts and keep no hand-written provider tile', () => {
+  assert.match(HOME(), /data\/providers/);
+  assert.match(DOCS(), /data\/providers/);
+  assert.doesNotMatch(HOME(), /\.zcode\//);
+  assert.doesNotMatch(HOME(), /Codex \(OpenAI\)/);
+  assert.doesNotMatch(DOCS(), /<tr><td class="py-3 pr-4 text-muted-light">/);
+});
+
+test('F8: the Antigravity and ZCode caveat survives under the docs table', () => {
+  assert.match(DOCS(), /Antigravity is deferred because/);
+  assert.match(DOCS(), /ZCode reads commands and skills from the same/);
+});
