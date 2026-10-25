@@ -226,7 +226,7 @@ Optional features inject content into commands **post-install**, so they can be 
 
 ## Plugin System
 
-A `plugin` integrates an **external MCP tool** — distinct from a feature. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points at the tool's own installer. Disabled by default.
+A `plugin` integrates an **external MCP tool** — distinct from a feature. The CLI owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points at the tool's own installer. The conversational setup commands (`/add-setup`, `/add-qa-setup`) may install a tool after the user confirms. Disabled by default.
 
 | Component | Path |
 |-----------|------|

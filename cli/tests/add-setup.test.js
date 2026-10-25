@@ -242,3 +242,15 @@ describe('F6 — the CLI outros and the plugin catalog wording', () => {
     expect(doc).toContain('The CLI owns utilization, never installation');
   });
 });
+
+describe('F7 — AGENTS.md, README and the web docs', () => {
+  it('L1.13 the Plugin System paragraph names /add-setup, the README and docs.astro list it', () => {
+    const agents = read(path.join(root, 'AGENTS.md'));
+    const pluginPara = agents.slice(agents.indexOf('## Plugin System'), agents.indexOf('## Setup Contracts'));
+    expect(pluginPara).toContain('/add-setup');
+    expect(pluginPara).toContain('after the user confirms');
+    expect(read(path.join(root, 'README.md'))).toContain('/add-setup');
+    const docs = read(path.join(root, 'web/src/pages/docs.astro'));
+    expect(docs).toMatch(/<code[^>]*>\/add-setup<\/code>/);
+  });
+});

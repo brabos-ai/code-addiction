@@ -142,7 +142,7 @@ Steps 1-4 can also run unattended: approve `/add-brainstorm` with "deliver autom
 
 Deploy is out of scope of a delivery: a delivery is code, migration files and tests in one merge, and deploying runs after `/add-done`, through your own deploy process.
 
-Not sure which command to run next? `/add-help` answers which command to use and in what order, what each feature and plugin is and how to enable it, how to run from a bot, and the CLI lifecycle. It is a router and finishes no work.
+Not sure which command to run next? `/add-help` answers which command to use and in what order, what each feature and plugin is and how to enable it, how to run from a bot, and the CLI lifecycle. It is a router and finishes no work. New here, or just ran `codeadd install` or `codeadd update`? Run `/add-setup`: it checks your project, offers each feature and plugin with its benefit in one list, and sets up the ones you accept.
 
 ### Choose your flow
 
