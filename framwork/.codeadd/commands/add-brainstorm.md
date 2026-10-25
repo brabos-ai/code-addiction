@@ -6,12 +6,18 @@
 - skill: add--human-interaction (conditional)
 - skill: add--final-report
 - skill: add--knowledge-discovery
+- skill: add--backend-architecture (conditional)
+- skill: add--frontend-architecture (conditional)
+- skill: add--agents-md-style (conditional)
+- skill: add--architecture-discovery (conditional)
 - command: /add-diagnose
 - command: /add-hotfix
 - command: /add-new
+- command: /add-wiki
 - mention: /add-plan
 - mention: /add-done
 - script: status.cjs
+- script: migrate-context-files.cjs
 -->
 
 <!-- slot:agent-mode.output-cap fallback="fallbacks/agent-mode.add-brainstorm.output-cap.md" -->
@@ -34,7 +40,7 @@ end on one approval that decides how the delivery continues.
 ```
 STEP add-brainstorm.load-context:   Load context (status.cjs)   → SILENT, FIRST
 STEP add-brainstorm.classify: Classify the request       → spike | bounded | architectural — STATED, NO STOP
-STEP add-brainstorm.explore:   Interactive Exploration    → objective drafted first, then one question at a time
+STEP add-brainstorm.explore:   Interactive Exploration    → objective drafted first, then one question at a time (+ greenfield foundations when GREENFIELD=yes)
 STEP add-brainstorm.write-doc:   Write the brainstorm doc   → ARCHITECTURAL PATH ONLY — always, before the approval
 STEP add-brainstorm.self-review:   Self-review + gate         → ARCHITECTURAL PATH ONLY, must return PASS
 STEP add-brainstorm.handoff:   Report, approve, hand off  → ALL THREE paths report; bounded + architectural ask the
@@ -74,12 +80,15 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP add-brainstorm.handof
   ⛔ DO NOT: Follow /add-diagnose, /add-hotfix or /add-plan — every route stays a suggestion the user accepts, never one you run
 ```
 
-**Two files may be written, and only these two, both under `docs/brainstorm/`:**
+**The two brainstorm files are always the only ones written under `docs/brainstorm/`. A greenfield run adds four more files, listed in the last row:**
 
 | File | When |
 |---|---|
 | `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, always, at STEP add-brainstorm.write-doc |
 | `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, after the approval at STEP add-brainstorm.handoff |
+| `.codeadd/wiki/conventions.md`, `.codeadd/wiki/index.md`, `.codeadd/wiki/.meta.json`, `AGENTS.md` | Greenfield only (`GREENFIELD=yes`), after either Approve option, at STEP add-brainstorm.write-intent-file, before the intent file |
+
+The foundation files and the context-file migration (`migrate-context-files.cjs`) are project documentation, not application code, so the HARD GATE's ban on application code and on Bash for implementation does not cover them. Their managed blocks are copied from `/add-wiki` ({{cmd:add-wiki}}).
 
 ⛔ **Nothing is written on the `spike` path.** A spike's output is a recommendation, and keeping it is
 a new request with its own classification.
