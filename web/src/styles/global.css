@@ -120,6 +120,11 @@ body::before {
   outline-offset: 3px;
 }
 
+/* Docs sidebar: the section being read */
+#docs-sidebar a[aria-current="true"] {
+  color: var(--color-accent);
+}
+
 /* Selection */
 ::selection {
   background: rgba(0, 255, 136, 0.2);

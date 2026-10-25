@@ -68,13 +68,13 @@ import "../styles/global.css";
         <div>
           <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Deep Dive</p>
           <ul class="space-y-2">
-            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
             <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
             <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
             <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">Agent Mode</a></li>
             <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">Plugins</a></li>
             <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
             <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
+            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
           </ul>
         </div>
       </nav>
@@ -1105,6 +1105,26 @@ import "../styles/global.css";
           }
         });
       });
+    }
+
+    // Scroll-spy: the sidebar link of the section being read carries aria-current.
+    if ('IntersectionObserver' in window) {
+      const spyLinks = new Map();
+      sidebarLinks.forEach(link => {
+        const hash = link.getAttribute('href');
+        if (hash && hash.startsWith('#')) spyLinks.set(hash.slice(1), link);
+      });
+      const setCurrent = (id) => {
+        spyLinks.forEach((link, key) => {
+          if (key === id) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        });
+      };
+      const spy = new IntersectionObserver((entries) => {
+        // The band is a thin strip near the top, so one section crosses it at a time.
+        entries.forEach(entry => { if (entry.isIntersecting) setCurrent(entry.target.id); });
+      }, { rootMargin: '-72px 0px -75% 0px' });
+      document.querySelectorAll('section[id]').forEach(section => spy.observe(section));
     }
   </script>
 
