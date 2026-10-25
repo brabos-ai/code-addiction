@@ -83,3 +83,10 @@ test('F3: the home hero section clips its glow and the docs main can shrink', ()
   assert.ok(main, 'docs main not found');
   assert.match(main[0], /min-w-0/);
 });
+
+// ------------------------------------------------------------ F4 focus ring
+test('F4: one global :focus-visible rule in the accent colour, and no focus:outline-none', () => {
+  assert.match(CSS(), /:focus-visible\s*\{[^}]*outline:[^;}]*(accent|#00ff88)/);
+  assert.doesNotMatch(HOME(), /focus:outline-none/);
+  assert.doesNotMatch(DOCS(), /focus:outline-none/);
+});
