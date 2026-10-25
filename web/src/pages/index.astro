@@ -10,12 +10,12 @@ const locale = Astro.currentLocale ?? "en";
 const t = useT(locale);
 ---
 
-<Layout title="Code Addiction — Spec-driven AI development framework">
+<Layout title={t("home.title")}>
   <!-- Nav -->
   <nav transition:name="site-nav" class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu" aria-controls="mobile-menu" aria-expanded="false">
+        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label={t("home.nav.toggleMenu")} aria-controls="mobile-menu" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <a href="#" class="font-display font-bold text-foreground tracking-tight text-lg">
@@ -23,18 +23,18 @@ const t = useT(locale);
         </a>
       </div>
       <div class="hidden md:flex items-center gap-6">
-        <a href="#trail" class="text-sm text-muted-light hover:text-accent transition-colors">How it works</a>
-        <a href="#why" class="text-sm text-muted-light hover:text-accent transition-colors">Why</a>
-        <a href="#start" class="text-sm text-muted-light hover:text-accent transition-colors">Get started</a>
-        <a href={localeHref(locale, "docs")} class="text-sm text-muted-light hover:text-accent transition-colors">Docs</a>
+        <a href="#trail" class="text-sm text-muted-light hover:text-accent transition-colors">{t("home.nav.howItWorks")}</a>
+        <a href="#why" class="text-sm text-muted-light hover:text-accent transition-colors">{t("home.nav.why")}</a>
+        <a href="#start" class="text-sm text-muted-light hover:text-accent transition-colors">{t("home.nav.getStarted")}</a>
+        <a href={localeHref(locale, "docs")} class="text-sm text-muted-light hover:text-accent transition-colors">{t("home.nav.docs")}</a>
         <LanguageToggle />
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("home.nav.github")}
         </a>
       </div>
       <div class="flex md:hidden items-center">
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-3 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("home.nav.github")}
         </a>
       </div>
     </div>
@@ -42,10 +42,10 @@ const t = useT(locale);
     <!-- Mobile Menu Overlay -->
     <div id="mobile-menu" class="hidden md:hidden border-t border-white/5 bg-surface/95 backdrop-blur-md absolute w-full top-14 left-0 shadow-xl">
       <div class="flex flex-col px-6 py-4 space-y-4">
-        <a href="#trail" class="mobile-link text-base font-medium text-muted-light hover:text-accent">How it works</a>
-        <a href="#why" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Why</a>
-        <a href="#start" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Get started</a>
-        <a href={localeHref(locale, "docs")} class="mobile-link text-base font-medium text-muted-light hover:text-accent">Docs</a>
+        <a href="#trail" class="mobile-link text-base font-medium text-muted-light hover:text-accent">{t("home.nav.howItWorks")}</a>
+        <a href="#why" class="mobile-link text-base font-medium text-muted-light hover:text-accent">{t("home.nav.why")}</a>
+        <a href="#start" class="mobile-link text-base font-medium text-muted-light hover:text-accent">{t("home.nav.getStarted")}</a>
+        <a href={localeHref(locale, "docs")} class="mobile-link text-base font-medium text-muted-light hover:text-accent">{t("home.nav.docs")}</a>
         <LanguageToggle class="text-sm" />
       </div>
     </div>
@@ -57,17 +57,14 @@ const t = useT(locale);
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none"></div>
 
     <div class="relative text-center max-w-3xl">
-      <p class="font-mono text-accent text-sm mb-6 fade-up tracking-widest uppercase">Spec-driven framework</p>
+      <p class="font-mono text-accent text-sm mb-6 fade-up tracking-widest uppercase">{t("home.hero.eyebrow")}</p>
 
       <h1 class="font-display font-extrabold text-5xl sm:text-7xl md:text-8xl leading-[0.9] tracking-tight fade-up fade-up-delay-1">
         Code<br/>
         <span class="glow text-accent">Addiction</span>
       </h1>
 
-      <p class="mt-8 text-lg sm:text-xl text-muted-light max-w-xl mx-auto leading-relaxed fade-up fade-up-delay-2 font-light">
-        Structured workflows from discovery to delivery. <br class="hidden sm:block"/>
-        Installed in seconds. Addictive to use.
-      </p>
+      <p class="mt-8 text-lg sm:text-xl text-muted-light max-w-xl mx-auto leading-relaxed fade-up fade-up-delay-2 font-light" set:html={t("home.hero.tagline")} />
 
       <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 fade-up fade-up-delay-3">
         <!-- Install command -->
@@ -80,7 +77,7 @@ const t = useT(locale);
           class="flex items-center gap-2 bg-accent text-surface font-medium px-6 py-3 rounded-lg hover:bg-accent-dim transition-colors text-sm"
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-          View on GitHub
+          {t("home.hero.viewOnGithub")}
         </a>
       </div>
     </div>
@@ -96,22 +93,22 @@ const t = useT(locale);
   <!-- Terminal session: static text; the typing effect is a mask added by JS -->
   <section id="session" class="px-6 pb-24">
     <div class="max-w-3xl mx-auto">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4 text-center">A session, shortened</p>
-      <h2 class="sr-only">Plan and build a feature in two commands</h2>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4 text-center">{t("home.session.eyebrow")}</p>
+      <h2 class="sr-only">{t("home.session.heading")}</h2>
       <div id="session-term" class="rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden">
         <div class="flex items-center gap-1.5 px-4 py-3 border-b border-white/5" aria-hidden="true">
           <span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span>
         </div>
         <div class="p-6 font-mono text-sm leading-relaxed space-y-1 overflow-x-auto">
         <span class="term-line" style="--i:0"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-plan checkout-discounts</span></span>
-        <span class="term-line" style="--i:1"><span class="text-muted-light">  </span><span class="text-muted-light">Discovery: 3 questions asked, 3 decisions recorded</span></span>
-        <span class="term-line" style="--i:2"><span class="text-muted-light">  </span><span class="text-muted-light">Plan written: 4 tasks, 2 acceptance tests</span></span>
+        <span class="term-line" style="--i:1"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.discovery")}</span></span>
+        <span class="term-line" style="--i:2"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.planWritten")}</span></span>
         <span class="term-line" style="--i:3"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-build</span></span>
-        <span class="term-line" style="--i:4"><span class="text-muted-light">  </span><span class="text-muted-light">Task 1/4  schema and migration .......... done</span></span>
-        <span class="term-line" style="--i:5"><span class="text-muted-light">  </span><span class="text-muted-light">Task 2/4  discount service ............... done</span></span>
-        <span class="term-line" style="--i:6"><span class="text-muted-light">  </span><span class="text-muted-light">Task 3/4  API endpoint ................... done</span></span>
-        <span class="term-line" style="--i:7"><span class="text-muted-light">  </span><span class="text-muted-light">Task 4/4  checkout form ................. done</span></span>
-        <span class="term-line" style="--i:8"><span class="text-accent">✔ </span><span class="text-accent">Build complete: tests green, ready for /add-review</span></span>
+        <span class="term-line" style="--i:4"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.task1")}</span></span>
+        <span class="term-line" style="--i:5"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.task2")}</span></span>
+        <span class="term-line" style="--i:6"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.task3")}</span></span>
+        <span class="term-line" style="--i:7"><span class="text-muted-light">  </span><span class="text-muted-light">{t("home.session.task4")}</span></span>
+        <span class="term-line" style="--i:8"><span class="text-accent">✔ </span><span class="text-accent">{t("home.session.complete")}</span></span>
         </div>
       </div>
     </div>
@@ -120,25 +117,22 @@ const t = useT(locale);
   <!-- The Development Trail -->
   <section id="trail" class="py-24 px-6">
     <div class="max-w-6xl mx-auto">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">How it works</p>
-      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-4">The Development Trail</h2>
-      <p class="text-muted-light text-lg mb-12 max-w-2xl">
-        Every feature follows a clear path from idea to delivery.
-        Pick the trail that fits your task.
-      </p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("home.trail.eyebrow")}</p>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-4">{t("home.trail.heading")}</h2>
+      <p class="text-muted-light text-lg mb-12 max-w-2xl">{t("home.trail.intro")}</p>
 
       <!-- Flowchart SVG -->
       <div class="w-full relative">
         <button
           id="flowchart-open"
           class="w-full overflow-hidden rounded-xl border border-white/10 hover:border-accent/30 transition-colors cursor-zoom-in group relative"
-          aria-label="View full-size image"
+          aria-label={t("home.trail.viewFullSize")}
         >
-          <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="w-full"/>
+          <img src="/flowchart.svg" alt={t("home.trail.alt")} class="w-full"/>
           <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
             <span class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-xs font-mono px-3 py-1.5 rounded-lg flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
-              enlarge
+              {t("home.trail.enlarge")}
             </span>
           </div>
         </button>
@@ -146,18 +140,18 @@ const t = useT(locale);
 
       <!-- Lightbox -->
       <dialog id="flowchart-modal"
-        aria-label="Development Trail flowchart, full size"
+        aria-label={t("home.trail.dialogLabel")}
         class="fixed inset-0 m-0 w-screen h-screen max-w-none max-h-none bg-black/90 p-4 text-white open:flex items-center justify-center backdrop:bg-black/90"
       >
         <button
           id="flowchart-close"
           type="button"
           class="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
-          aria-label="Close"
+          aria-label={t("home.trail.close")}
         >
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-        <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="max-w-full max-h-full rounded-xl"/>
+        <img src="/flowchart.svg" alt={t("home.trail.alt")} class="max-w-full max-h-full rounded-xl"/>
       </dialog>
     </div>
   </section>
@@ -165,32 +159,32 @@ const t = useT(locale);
   <!-- Why section -->
   <section id="why" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Why teams get addicted</p>
-      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-16">Less ceremony. Same quality.</h2>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("home.why.eyebrow")}</p>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-16">{t("home.why.heading")}</h2>
 
       <div data-reveal class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">00</div>
-          <h3 class="font-display font-semibold text-lg mb-2">Zero ramp-up</h3>
-          <p class="text-muted-light text-sm leading-relaxed">New devs ship on day one by following the flow. No wikis to read, no setup guides.</p>
+          <h3 class="font-display font-semibold text-lg mb-2">{t("home.why.cards.0.title")}</h3>
+          <p class="text-muted-light text-sm leading-relaxed">{t("home.why.cards.0.desc")}</p>
         </div>
 
         <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">01</div>
-          <h3 class="font-display font-semibold text-lg mb-2">10x fewer decisions</h3>
-          <p class="text-muted-light text-sm leading-relaxed">The framework already made the boring ones. You focus on what matters.</p>
+          <h3 class="font-display font-semibold text-lg mb-2">{t("home.why.cards.1.title")}</h3>
+          <p class="text-muted-light text-sm leading-relaxed">{t("home.why.cards.1.desc")}</p>
         </div>
 
         <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">02</div>
-          <h3 class="font-display font-semibold text-lg mb-2">Consistent output</h3>
-          <p class="text-muted-light text-sm leading-relaxed">Every feature gets discovery, planning, review, and docs. Automatically.</p>
+          <h3 class="font-display font-semibold text-lg mb-2">{t("home.why.cards.2.title")}</h3>
+          <p class="text-muted-light text-sm leading-relaxed">{t("home.why.cards.2.desc")}</p>
         </div>
 
         <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">03</div>
-          <h3 class="font-display font-semibold text-lg mb-2">Works with your stack</h3>
-          <p class="text-muted-light text-sm leading-relaxed">NestJS, React, any database. Claude, Codex, Antigravity, Cursor, OpenCode, ZCode.</p>
+          <h3 class="font-display font-semibold text-lg mb-2">{t("home.why.cards.3.title")}</h3>
+          <p class="text-muted-light text-sm leading-relaxed">{t("home.why.cards.3.desc")}</p>
         </div>
       </div>
     </div>
@@ -199,8 +193,8 @@ const t = useT(locale);
   <!-- Providers -->
   <section class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto text-center">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">One install, every provider</p>
-      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-12">Runs everywhere</h2>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("home.providers.eyebrow")}</p>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-12">{t("home.providers.heading")}</h2>
 
       <div class="flex flex-wrap items-center justify-center gap-8 text-muted">
         {providers.map((p) => (
@@ -216,14 +210,14 @@ const t = useT(locale);
   <!-- Get Started -->
   <section id="start" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-3xl mx-auto text-center">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Get started</p>
-      <h2 data-reveal class="font-display font-bold text-3xl sm:text-5xl mb-6">One command away</h2>
-      <p class="text-muted-light text-lg mb-4">Install Code Addiction in any project. No config needed.</p>
-      <p class="text-muted text-sm mb-10">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended) &mdash; no Bash, WSL or Git-Bash needed.</p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("home.start.eyebrow")}</p>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-5xl mb-6">{t("home.start.heading")}</h2>
+      <p class="text-muted-light text-lg mb-4">{t("home.start.lead")}</p>
+      <p class="text-muted text-sm mb-10" set:html={t("home.start.requires")} />
 
       <div class="bg-white/[0.03] border border-white/10 rounded-xl p-8 text-left font-mono text-sm space-y-3">
         <div>
-          <span class="text-muted select-none"># install in your project</span>
+          <span class="text-muted select-none">{t("home.start.installComment")}</span>
         </div>
         <CommandLine command="npx codeadd install" bare />
       </div>
@@ -233,7 +227,7 @@ const t = useT(locale);
           href={localeHref(locale, "docs")}
           class="inline-flex items-center gap-2 text-accent border border-accent/30 hover:bg-accent/10 font-medium px-6 py-3 rounded-lg transition-colors text-sm"
         >
-          Read the docs
+          {t("home.start.readDocs")}
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </a>
       </div>
@@ -245,7 +239,7 @@ const t = useT(locale);
     <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
       <div class="flex items-center gap-2">
         <span class="font-display font-bold text-foreground"><span class="text-accent">+</span> code addiction</span>
-        <span class="text-muted text-sm ml-2">by brabos.ai</span>
+        <span class="text-muted text-sm ml-2">{t("home.footer.by")}</span>
       </div>
 
       <div class="flex items-center gap-6">
@@ -255,7 +249,7 @@ const t = useT(locale);
           target="_blank"
           rel="noopener"
           class="text-muted hover:text-accent transition-colors"
-          aria-label="GitHub"
+          aria-label={t("home.footer.github")}
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         </a>
@@ -266,7 +260,7 @@ const t = useT(locale);
           target="_blank"
           rel="noopener"
           class="text-muted hover:text-accent transition-colors"
-          aria-label="LinkedIn"
+          aria-label={t("home.footer.linkedin")}
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
         </a>
@@ -277,7 +271,7 @@ const t = useT(locale);
           target="_blank"
           rel="noopener"
           class="text-muted hover:text-accent transition-colors"
-          aria-label="npm"
+          aria-label={t("home.footer.npm")}
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M1.763 0C.786 0 0 .786 0 1.763v20.474C0 23.214.786 24 1.763 24h20.474c.977 0 1.763-.786 1.763-1.763V1.763C24 .786 23.214 0 22.237 0zM5.13 5.323l13.837.019-.009 13.836h-3.464l.01-10.382h-3.456L12.04 19.17H5.113z"/></svg>
         </a>

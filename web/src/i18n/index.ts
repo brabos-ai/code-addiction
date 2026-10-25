@@ -13,10 +13,15 @@ const TREES: Record<Locale, unknown> = { en, "pt-br": ptBr };
 export const SAME_IN_BOTH: string[] = [
   "common.localeEn",
   "common.localePtBr",
+  "home.nav.docs",
+  "home.nav.github",
+  "home.footer.github",
+  "home.footer.linkedin",
+  "home.footer.npm",
 ];
 
 // Top-level sections the same-value guard skips while their copy is still being moved.
-export const UNMIGRATED: string[] = ["home", "docs"];
+export const UNMIGRATED: string[] = ["docs"];
 
 function leaves(node: unknown, prefix: string, out: Map<string, string>): Map<string, string> {
   if (typeof node === "string") {

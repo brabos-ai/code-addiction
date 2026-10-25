@@ -143,7 +143,8 @@ test('F6: the Cytoscape zoom and fit calls honour reduced motion', () => {
 
 // ------------------------------------------------------------- F7 copy slips
 test('F7: home page copy: no Portuguese accessible names, a space before the hero break, Why anchor', () => {
-  const home = HOME();
+  // Home copy lives in en.ts since 0069B; the Portuguese one is correct in pt-br.ts only.
+  const home = HOME() + read('src/i18n/en.ts');
   for (const s of ['Ver imagem', 'ampliar', 'Fechar']) assert.ok(!home.includes(s), `${s} still present`);
   assert.doesNotMatch(home, /#flows/);
   assert.doesNotMatch(home, /id="flows"/);
