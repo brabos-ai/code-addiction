@@ -446,9 +446,10 @@ function mermaidId(nodeId) {
  * once is an unreadable hairball that tells a reader nothing.
  *
  * @param {object} graph
- * @param {{root?: string, depth?: number, kinds?: string[], direction?: string}} opts
- *   root  — centre the diagram on one artefact and walk out from it
- *   kinds — otherwise, include only these node kinds
+ * @param {{root?: string, depth?: number, kinds?: string[], layers?: string[], direction?: string}} opts
+ *   root   — centre the diagram on one artefact and walk out from it
+ *   kinds  — otherwise, include only these node kinds
+ *   layers — keep only nodes of these layers, in either mode
  */
 function toMermaid(graph, opts = {}) {
   const { depth = 2, direction = 'LR' } = opts;
@@ -469,6 +470,13 @@ function toMermaid(graph, opts = {}) {
   }
 
   const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  if (opts.layers) {
+    const layers = new Set(opts.layers);
+    for (const id of [...keep]) {
+      const n = byId.get(id);
+      if (n && !layers.has(n.layer)) keep.delete(id);
+    }
+  }
   const lines = [`flowchart ${direction}`];
 
   for (const id of [...keep].sort()) {
@@ -502,8 +510,13 @@ function toMermaid(graph, opts = {}) {
  * documented command failed the test and replaced the docs diagram with a
  * hairball. Sharing the profile is what makes "regenerate" and "assert current"
  * describe the same picture by construction.
+ *
+ * `layers: ['product']` keeps the internal pipeline out of a public page: its
+ * commands are not installable by a user, and drawing them promises something
+ * the site cannot deliver. Filtering by layer, not by a name prefix, also keeps
+ * an internal skill or agent out the day this profile grows beyond commands.
  */
-const DOCS_PROFILE = { kinds: ['command'], depth: 1 };
+const DOCS_PROFILE = { kinds: ['command'], depth: 1, layers: ['product'] };
 const DOCS_DIAGRAM = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
 
 module.exports = {
