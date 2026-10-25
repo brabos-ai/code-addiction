@@ -407,3 +407,15 @@ test('Lighthouse a11y: inline links are underlined, the map hint has contrast, t
   assert.doesNotMatch(btn[0], /aria-label=/, 'the visible text already names the button; a different label fails label-in-name');
   assert.match(docs, /<kbd[^>]*aria-hidden="true"/);
 });
+
+// ====================================================================
+// 0069B site-i18n — plan docs/plans/2026-10-25T194930-PLAN--site-i18n.md
+// ====================================================================
+const I18N = name => read(`src/i18n/${name}`);
+
+test('i18n F1: the Astro config routes en (default, unprefixed) and pt-br', () => {
+  const cfg = read('astro.config.mjs');
+  assert.match(cfg, /defaultLocale:\s*["']en["']/);
+  assert.match(cfg, /locales:\s*\[\s*["']en["']\s*,\s*["']pt-br["']\s*\]/);
+  assert.match(cfg, /routing:\s*\{[^}]*prefixDefaultLocale:\s*false/);
+});
