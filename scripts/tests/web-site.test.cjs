@@ -140,3 +140,18 @@ test('F6: the Cytoscape zoom and fit calls honour reduced motion', () => {
   assert.match(docs, /prefers-reduced-motion/);
   assert.doesNotMatch(docs, /\{\s*duration:\s*(350|180)\s*\}/, 'animate() still has a fixed duration');
 });
+
+// ------------------------------------------------------------- F7 copy slips
+test('F7: home page copy: no Portuguese accessible names, a space before the hero break, Why anchor', () => {
+  const home = HOME();
+  for (const s of ['Ver imagem', 'ampliar', 'Fechar']) assert.ok(!home.includes(s), `${s} still present`);
+  assert.doesNotMatch(home, /#flows/);
+  assert.doesNotMatch(home, /id="flows"/);
+  assert.match(home, /delivery\. <br class="hidden sm:block"\/>/);
+  assert.equal((home.match(/href="#why"/g) || []).length, 2, 'desktop and mobile links both point at #why');
+  assert.match(home, /<!-- Why section -->\s*<section id="why"/);
+});
+
+test('F7: the docs page keeps its own #flows section', () => {
+  assert.match(DOCS(), /<section id="flows"/);
+});
