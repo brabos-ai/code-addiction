@@ -230,3 +230,29 @@ test('F10: an IntersectionObserver over section[id] sets aria-current on the sid
   assert.match(docs, /section\[id\]/);
   assert.match(docs, /aria-current/);
 });
+
+// ------------------------------------------- F11 share preview and dark scheme
+test('F11: the layout carries og:image, a large twitter card, a canonical link and color-scheme', () => {
+  const layout = read('src/layouts/Layout.astro');
+  assert.match(layout, /property="og:image"/);
+  assert.match(layout, /name="twitter:card"\s+content="summary_large_image"/);
+  assert.match(layout, /rel="canonical"/);
+  assert.match(layout, /name="color-scheme"\s+content="dark"/);
+});
+
+test('F11: the Astro config sets site to the public origin', () => {
+  assert.match(read('astro.config.mjs'), /site:\s*"https:\/\/code\.brabos\.ai"/);
+});
+
+test('F11: og.png is 1200x630 by its PNG header', () => {
+  assert.ok(exists('public/og.png'), 'og.png missing');
+  const buf = fs.readFileSync(path.join(WEB, 'public', 'og.png'));
+  assert.equal(buf.toString('latin1', 1, 4), 'PNG');
+  assert.equal(buf.readUInt32BE(16), 1200);
+  assert.equal(buf.readUInt32BE(20), 630);
+});
+
+test('F11: :root declares color-scheme: dark and Mermaid gets brand themeVariables', () => {
+  assert.match(CSS(), /:root\s*\{[^}]*color-scheme:\s*dark/);
+  assert.match(DOCS(), /themeVariables/);
+});
