@@ -114,6 +114,26 @@ node .codeadd/scripts/status.cjs
 
 Parse output: BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGELOGS.
 
+**Greenfield check — evaluate `GREENFIELD` once, here.** `GREENFIELD=yes` only when both hold:
+
+- there is no `AGENTS.md` at the project root;
+- after listing the files with `git ls-files --cached --others --exclude-standard` (a plain directory listing when the folder is not a git repository) and dropping dot-prefixed paths, `docs/`, root `*.md` and `LICENSE*`, nothing remains.
+
+If either fails, `GREENFIELD` is not `yes` and nothing below about greenfield applies.
+
+**Evaluate it even when `status.cjs` failed.** The tolerance below depends on it.
+
+```
+IF GREENFIELD=yes AND status.cjs EXITED 1 (ERROR:not a git repository) OR 2 (ERROR:no main branch found):
+  ⛔ DO NOT: Stop the brainstorm on that failure
+  ✅ DO: Continue with BRANCH, WIKI and PROJECT_DOCS unknown, and record `no git history yet`
+
+IF GREENFIELD IS NOT yes AND status.cjs FAILS:
+  ✅ DO: Handle the failure as before — this tolerance does not apply
+```
+
+This command runs read-only git queries only (`git ls-files`, `git rev-parse`). It never runs `git init`, `git add` or `git commit`.
+
 Then load:
 - **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `docs/features/{FEAT_ID}/changelog.md` for context
 - **PRIOR WORK — ranked, not swept:** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its INDEX step against the brainstorm topic. It returns entries ordered `live` → `changed` → `superseded` → `gone`. Then **deep-read `about.md` for the matched entries only** — the index says *whether* something shipped and never *how* it works, so the business rules and integration points still have to be read. Ranked-then-deep-read, on a handful of features instead of the whole directory.
