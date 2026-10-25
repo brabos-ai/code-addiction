@@ -51,6 +51,7 @@ import "../styles/global.css";
             <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">About</a></li>
             <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">Installation</a></li>
             <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">Quickstart</a></li>
+            <li><a href="#setup" class="text-muted-light hover:text-foreground transition-colors">Guided Setup</a></li>
           </ul>
         </div>
         <div>
@@ -195,6 +196,46 @@ import "../styles/global.css";
       <!-- Divider -->
       <div class="border-t border-white/5 my-16"></div>
 
+      <!-- SETUP -->
+      <section id="setup" class="mb-20">
+        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
+        <p class="text-muted-light mb-6">
+          <code class="text-accent font-mono text-sm">/add-setup</code> is the guided onboarding for a fresh or updated install.
+          It checks your project, then offers every feature and <a href="#plugins" class="text-accent hover:underline">plugin</a> with its benefit
+          in <strong>one numbered list</strong>, with a recommended answer for each. Reply once, for example <code class="font-mono text-xs">1 yes, 2 no</code> or <code class="font-mono text-xs">all recommended</code>.
+        </p>
+
+        <div class="grid sm:grid-cols-3 gap-4 mb-6">
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">1 &mdash; Check</div>
+            <p class="text-muted-light text-sm">Reads the project (code, frontend, wiki, QA setup) and what is already on. Changes nothing.</p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">2 &mdash; Offer</div>
+            <p class="text-muted-light text-sm">One numbered list. Items already on, or declined before, are not asked again.</p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <div class="text-accent font-mono text-sm mb-2">3 &mdash; Run</div>
+            <p class="text-muted-light text-sm">Only the items you accept: tool installs, one <code class="font-mono text-xs">codeadd modify</code>, <code class="font-mono text-xs">/add-qa-setup</code> and <code class="font-mono text-xs">/add-wiki</code>.</p>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <span class="text-accent font-mono text-sm whitespace-nowrap">When to run</span>
+            <span class="text-muted-light text-sm">Once after <code class="font-mono text-xs text-foreground">codeadd install</code> or <code class="font-mono text-xs text-foreground">codeadd update</code>. After an update it asks only about items that are new in that version.</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <span class="text-accent font-mono text-sm whitespace-nowrap">Where choices live</span>
+            <span class="text-muted-light text-sm">Every decision and its reason is recorded in <code class="font-mono text-xs text-foreground">.codeadd/settings.json</code>. Commit this file so teammates and future updates see what was enabled and why.</span>
+          </div>
+          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <span class="text-accent font-mono text-sm whitespace-nowrap">Empty project</span>
+            <span class="text-muted-light text-sm">With no code yet, it offers nothing and points you to <code class="font-mono text-xs text-foreground">/add-brainstorm</code>. Run it again once the foundations exist.</span>
+          </div>
+        </div>
+      </section>
+
       <!-- COMMANDS -->
       <section id="commands" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
@@ -298,7 +339,7 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-setup</code>
+                <a href="#setup" class="text-accent font-mono text-sm hover:underline">/add-setup</a>
                 <p class="text-muted text-xs mt-0.5">Guided onboarding — offers each feature and plugin with its benefit, sets up the ones you accept</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
@@ -733,6 +774,34 @@ import "../styles/global.css";
           plugin-bound skills. Plugins are <strong>disabled by default</strong> and require the
           external tool to be installed first.
         </p>
+
+        <div class="grid sm:grid-cols-3 gap-4 mb-8">
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <code class="text-accent font-mono text-sm font-bold">gitnexus</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
+            </div>
+            <p class="text-muted-light text-sm mb-2">The agents see who calls what before they change code, so they miss fewer side effects.</p>
+            <p class="text-muted text-xs">Used by: <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-wiki</code></p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <code class="text-accent font-mono text-sm font-bold">playwright</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
+            </div>
+            <p class="text-muted-light text-sm mb-2">The QA review drives the browser live (screenshots, console, network) instead of reading saved images.</p>
+            <p class="text-muted text-xs">Used by: <code class="font-mono">add-review</code></p>
+          </div>
+          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <code class="text-accent font-mono text-sm font-bold">design</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">skill</span>
+            </div>
+            <p class="text-muted-light text-sm mb-2">UI plans get a style, palette and type choice from a design library instead of defaults.</p>
+            <p class="text-muted text-xs">Used by: <code class="font-mono">add-plan</code></p>
+          </div>
+        </div>
+        <p class="text-muted text-xs mb-8">Not sure which to enable? <a href="#setup" class="text-accent hover:underline">/add-setup</a> offers each one with a recommendation for your project.</p>
 
         <!-- gitnexus -->
         <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6">
