@@ -1030,7 +1030,7 @@ import "../styles/global.css";
               <div class="h-px bg-white/10 my-0.5"></div>
               <button id="eco-fullscreen" title="Fullscreen" class="eco-ctrl"><svg id="eco-fs-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/></svg></button>
             </div>
-            <div class="absolute bottom-3 left-3 text-[10px] text-muted-light/70 font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
+            <div class="absolute bottom-3 left-3 text-xs text-muted-light/70 font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
               scroll to zoom · drag to pan · click to inspect
             </div>
           </div>
@@ -1039,7 +1039,7 @@ import "../styles/global.css";
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <p id="eco-panel-name" class="font-mono text-foreground font-bold text-sm break-all leading-tight"></p>
-                  <p id="eco-panel-type" class="font-mono text-[10px] uppercase tracking-widest mt-0.5"></p>
+                  <p id="eco-panel-type" class="font-mono text-xs uppercase tracking-widest mt-0.5"></p>
                 </div>
                 <button id="eco-panel-close" class="text-muted hover:text-foreground text-xs leading-none shrink-0">✕</button>
               </div>
@@ -1522,13 +1522,13 @@ import "../styles/global.css";
         var inc = n.incomers('node');
         var html = '';
         if (out.length) {
-          html += '<div><span class="text-foreground font-mono text-[10px] uppercase tracking-wide">Loads / Dispatches</span><ul class="mt-1 space-y-0.5">';
-          out.each(function(x) { html += '<li class="font-mono text-[10px] truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
+          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">Loads / Dispatches</span><ul class="mt-1 space-y-0.5">';
+          out.each(function(x) { html += '<li class="font-mono text-xs truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
           html += '</ul></div>';
         }
         if (inc.length) {
-          html += '<div><span class="text-foreground font-mono text-[10px] uppercase tracking-wide">Used by</span><ul class="mt-1 space-y-0.5">';
-          inc.each(function(x) { html += '<li class="font-mono text-[10px] truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
+          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">Used by</span><ul class="mt-1 space-y-0.5">';
+          inc.each(function(x) { html += '<li class="font-mono text-xs truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
           html += '</ul></div>';
         }
         document.getElementById('eco-panel-body').innerHTML = html;
@@ -1563,7 +1563,7 @@ import "../styles/global.css";
         var listStyle = g.collapsed ? ' style="display:none"' : '';
         var chevStyle = g.collapsed ? ' style="transform:rotate(-90deg)"' : '';
         return '<div data-type="' + g.type + '" data-collapsed="' + collapsedAttr + '">' +
-          '<button type="button" class="eco-group-toggle font-mono text-[10px] uppercase tracking-widest mb-1.5 px-2 w-full flex items-center justify-between hover:bg-white/[0.03] rounded py-0.5 transition-colors" style="color:' + g.color + '">' +
+          '<button type="button" class="eco-group-toggle font-mono text-xs uppercase tracking-widest mb-1.5 px-2 w-full flex items-center justify-between hover:bg-white/[0.03] rounded py-0.5 transition-colors" style="color:' + g.color + '">' +
             '<span class="flex items-center gap-1.5">' +
               '<svg class="eco-chevron w-2.5 h-2.5 transition-transform"' + chevStyle + ' fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>' +
               g.label +

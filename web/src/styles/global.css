@@ -28,7 +28,7 @@
   --color-surface: #050505;
   --color-accent: #00ff88;
   --color-accent-dim: #00cc6a;
-  --color-muted: #666666;
+  --color-muted: #8a8a8a;
   --color-muted-light: #999999;
   --color-foreground: #e8e8e8;
 
@@ -145,7 +145,7 @@ body::before {
 .flow-cmd {
   display: block;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   color: #00ff88;
 }
