@@ -29,7 +29,7 @@ vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
   outro: vi.fn(),
   spinner: () => ({ start: vi.fn(), stop: vi.fn() }),
-  log: { success: vi.fn(), warn: vi.fn() },
+  log: { success: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
 import { log } from '@clack/prompts';

@@ -168,16 +168,20 @@ function dirExists(dir) {
   }
 }
 
+// The .codeadd/ entries a project commits; they do not mean an install is present.
+const COMMITTED_CODEADD_ENTRIES = new Set(['board.json', 'settings.json', 'wiki']);
+
 /**
- * Does .codeadd/ hold an installation? A fresh clone of a project whose board has moved
- * carries exactly one tracked file there, board.json, and that is not something an
- * install would overwrite.
+ * Does .codeadd/ hold an installation? A fresh clone of a project carries up to three
+ * committed entries there — board.json, settings.json and wiki/ — and none of them is
+ * something an install would overwrite. Anything else (the manifest, the commands, the
+ * skills) means an installation is already in place.
  * @param {string} dir
  * @returns {boolean}
  */
-function addDirHoldsInstall(dir) {
+export function addDirHoldsInstall(dir) {
   try {
-    return fs.existsSync(dir) && fs.readdirSync(dir).some((name) => name !== 'board.json');
+    return fs.existsSync(dir) && fs.readdirSync(dir).some((name) => !COMMITTED_CODEADD_ENTRIES.has(name));
   } catch {
     return false;
   }

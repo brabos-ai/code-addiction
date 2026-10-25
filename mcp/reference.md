@@ -79,6 +79,8 @@ guessing it on the way in.
 | `review` | `attachment` | `dir` | — | `id` |
 <!-- /generated:TYPES -->
 
+`setup-receipt` is kept for legacy markdown receipts, which must still index. Current receipts live in the `qa` section of `.codeadd/settings.json` and are not documents.
+
 ⛔ **A type absent from this table is REPORTED, never demoted.** A document may
 declare `kind:` in its own frontmatter and it then counts, whatever its type —
 OKF again: a consumer "MUST NOT reject a bundle because of … unknown `type`

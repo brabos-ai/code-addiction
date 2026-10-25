@@ -9,6 +9,7 @@ import {
   PRESERVE_PATTERNS,
   writeManifest,
   resolveInstallSource,
+  addDirHoldsInstall,
 } from '../src/installer.js';
 
 let tmpDir;
@@ -416,5 +417,28 @@ describe('shouldPreserve (L1.1)', () => {
     expect(Array.isArray(PRESERVE_PATTERNS)).toBe(true);
     expect(PRESERVE_PATTERNS.length).toBeGreaterThan(0);
     for (const p of PRESERVE_PATTERNS) expect(p).toBeInstanceOf(RegExp);
+  });
+});
+
+describe('addDirHoldsInstall', () => {
+  const codeadd = () => path.join(tmpDir, '.codeadd');
+
+  it('is false for a clone that carries only the committed project files', () => {
+    fs.mkdirSync(path.join(codeadd(), 'wiki'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd(), 'board.json'), '{}');
+    fs.writeFileSync(path.join(codeadd(), 'settings.json'), '{"schema":1}');
+    fs.writeFileSync(path.join(codeadd(), 'wiki', 'index.md'), '# wiki');
+    expect(addDirHoldsInstall(codeadd())).toBe(false);
+  });
+
+  it('is true as soon as the manifest is present next to them', () => {
+    fs.mkdirSync(path.join(codeadd(), 'wiki'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd(), 'settings.json'), '{"schema":1}');
+    fs.writeFileSync(path.join(codeadd(), 'manifest.json'), '{}');
+    expect(addDirHoldsInstall(codeadd())).toBe(true);
+  });
+
+  it('is false when .codeadd/ does not exist', () => {
+    expect(addDirHoldsInstall(codeadd())).toBe(false);
   });
 });

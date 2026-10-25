@@ -321,6 +321,7 @@ changes nothing about that.
 ALWAYS:
 - Edit `framwork/.codeadd/`, never a generated provider directory
 - Register a new command, skill or agent in `provider-map.json`
+- Persist a command's project config in its own section of `.codeadd/settings.json`, following `add--settings` — never in a new file
 - Run `npm test` after any registry change
 
 NEVER:

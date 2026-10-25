@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
@@ -537,6 +538,204 @@ export function syncBoardDefinitions(ctx, exec = defaultExec) {
   throw new Error(`board definitions sync failed: ${why}`);
 }
 
+// ---------------------------------------------------------------------------
+// 0005 — the QA config and receipt move into .codeadd/settings.json
+// ---------------------------------------------------------------------------
+
+/**
+ * The last `add-qa-setup` shape shipped before the QA state moved into
+ * `.codeadd/settings.json` (v1.6.0). A receipt that recorded exactly this shape
+ * was current, so the migration does the re-materialize and stamps the new one.
+ */
+export const PRE_SETTINGS_QA_SHAPE = 'sha256:25b937ee17628d6b';
+
+const QA_OLD_CONFIG = 'docs/qa/config.json';
+const QA_OLD_RECEIPT = 'docs/qa/qa-setup.md';
+// Frontmatter keys of the markdown receipt that have no meaning as JSON fields.
+const QA_RECEIPT_DROPPED = new Set(['id', 'type', 'created', 'updated', 'related', 'command']);
+
+/** YAML reads an unquoted date as a Date; the settings file keeps ISO date strings. */
+function plainJson(value) {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (Array.isArray(value)) return value.map(plainJson);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, plainJson(v)]));
+  }
+  return value;
+}
+
+/** The `## Decision Log` table rows, as `qa.log` entries, in file order. */
+function decisionLogEntries(content) {
+  const entries = [];
+  for (const line of sectionBody(content, 'Decision Log').split('\n')) {
+    if (!line.trim().startsWith('|')) continue;
+    const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+    if (cells.length < 4) continue;
+    if (/^date$/i.test(cells[0]) || /^:?-{2,}:?$/.test(cells[0])) continue;
+    entries.push({
+      date: cells[0],
+      item: 'qa-setup',
+      decision: cells[2],
+      reason: cells.slice(3).join(' | '),
+      shape: cells[1],
+    });
+  }
+  return entries;
+}
+
+function sha256Of(text) {
+  return 'sha256:' + crypto.createHash('sha256').update(text).digest('hex');
+}
+
+function readJsonFile(full, label) {
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(full, 'utf8'));
+  } catch (err) {
+    throw new Error(`${label} is not readable JSON: ${err.message}`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${label} is not a JSON object`);
+  }
+  return parsed;
+}
+
+/**
+ * Move `docs/qa/config.json` and `docs/qa/qa-setup.md` into the `qa` section of
+ * `.codeadd/settings.json` (schema: the `add--settings` skill).
+ *
+ * Reads and parses EVERYTHING before it writes anything, so a malformed old file
+ * throws with nothing changed — the failure is reported, not recorded, and the next
+ * update retries. It changes files only and never commits, like 0002.
+ *
+ * @param {{cwd: string, providers: {dest: string}[]}} ctx
+ * @returns {{changes: string[], notes: string[]}}
+ */
+export function migrateQaSettings(ctx) {
+  const configPath = path.join(ctx.cwd, QA_OLD_CONFIG);
+  const receiptPath = path.join(ctx.cwd, QA_OLD_RECEIPT);
+  const hasConfig = fs.existsSync(configPath);
+  const hasReceipt = fs.existsSync(receiptPath);
+  if (!hasConfig && !hasReceipt) return { changes: [], notes: ['no QA setup to migrate'] };
+
+  const changes = [];
+  const notes = [];
+
+  // --- read + parse, nothing written ------------------------------------------------
+  const config = hasConfig ? readJsonFile(configPath, QA_OLD_CONFIG) : {};
+
+  let frontmatter = {};
+  let receiptText = '';
+  if (hasReceipt) {
+    receiptText = fs.readFileSync(receiptPath, 'utf8');
+    frontmatter = readFrontmatter(receiptText);
+    if (!frontmatter) throw new Error(`${QA_OLD_RECEIPT} has no readable frontmatter`);
+  }
+
+  const settingsPath = path.join(ctx.cwd, '.codeadd', 'settings.json');
+  const settings = fs.existsSync(settingsPath) ? readJsonFile(settingsPath, '.codeadd/settings.json') : { schema: 1 };
+  const existingQa = settings.qa && typeof settings.qa === 'object' && !Array.isArray(settings.qa) ? settings.qa : null;
+
+  // --- build the qa section ---------------------------------------------------------
+  const receiptFields = {};
+  for (const [key, value] of Object.entries(plainJson(frontmatter))) {
+    if (!QA_RECEIPT_DROPPED.has(key)) receiptFields[key] = value;
+  }
+
+  const recorded = typeof receiptFields['setup-shape'] === 'string' ? receiptFields['setup-shape'] : '';
+  if (recorded === PRE_SETTINGS_QA_SHAPE) {
+    let shipped = '';
+    try {
+      const contracts = readJsonFile(path.join(ctx.cwd, '.codeadd', 'contracts.json'), '.codeadd/contracts.json');
+      const shape = contracts.contracts && contracts.contracts['add-qa-setup'] && contracts.contracts['add-qa-setup'].shape;
+      if (typeof shape === 'string' && /^sha256:[0-9a-f]+$/.test(shape)) shipped = shape;
+    } catch {
+      shipped = '';
+    }
+    if (shipped) {
+      receiptFields['setup-shape'] = shipped;
+    } else {
+      notes.push('.codeadd/contracts.json has no readable add-qa-setup shape; the recorded setup-shape was copied unchanged, so /add-qa-setup will flag the project STALE');
+    }
+  }
+
+  // The generated qa-project skill names the old config path; rewrite it and refresh its hash.
+  const materialized = Array.isArray(receiptFields.materialized) ? receiptFields.materialized : [];
+  const skillRels = new Set(ctx.providers.map((p) => `${p.dest}/skills/qa-project/SKILL.md`));
+  for (const entry of materialized) {
+    if (entry && typeof entry.path === 'string' && /qa-project\/SKILL\.md$/.test(entry.path)) skillRels.add(entry.path);
+  }
+  const skillRewrites = [];
+  if (!existingQa) {
+    for (const rel of skillRels) {
+      const full = path.join(ctx.cwd, rel);
+      if (!fs.existsSync(full)) continue;
+      const before = fs.readFileSync(full, 'utf8');
+      const after = before
+        .split(`\`${QA_OLD_CONFIG}\``).join('`.codeadd/settings.json` (`qa`)')
+        .split(QA_OLD_CONFIG).join('.codeadd/settings.json');
+      if (after !== before) skillRewrites.push({ rel, full, after });
+    }
+  }
+  if (materialized.length) {
+    receiptFields.materialized = materialized.map((entry) => {
+      if (!entry || typeof entry !== 'object') return entry;
+      if (entry.path === QA_OLD_CONFIG) return { path: '.codeadd/settings.json', owner: 'shared', hash: null };
+      const rewrite = skillRewrites.find((r) => r.rel === entry.path);
+      if (rewrite && entry.hash) return { ...entry, hash: sha256Of(rewrite.after) };
+      return entry;
+    });
+  }
+
+  const log = decisionLogEntries(receiptText);
+  const migrationEntry = {
+    date: new Date().toISOString().slice(0, 10),
+    item: 'qa-setup',
+    decision: 'migrated to .codeadd/settings.json',
+    reason: 'migration 0005',
+  };
+  if (receiptFields['setup-shape']) migrationEntry.shape = receiptFields['setup-shape'];
+  log.push(migrationEntry);
+
+  const incoming = { ...config, ...receiptFields };
+  if (hasReceipt) incoming.log = log;
+
+  // --- write ------------------------------------------------------------------------
+  if (existingQa) {
+    // Merge without overwriting: the user's section wins, and the old files stay.
+    const merged = { ...existingQa };
+    for (const [key, value] of Object.entries(incoming)) {
+      if (!Object.prototype.hasOwnProperty.call(merged, key)) merged[key] = value;
+    }
+    settings.qa = merged;
+    notes.push(`.codeadd/settings.json already has a qa section; merged the keys it lacked and kept ${QA_OLD_CONFIG} and ${QA_OLD_RECEIPT} for you to review`);
+  } else {
+    settings.qa = incoming;
+  }
+  const ordered = { schema: settings.schema ?? 1, ...settings };
+  fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+  fs.writeFileSync(settingsPath, JSON.stringify(ordered, null, 2) + '\n', 'utf8');
+  changes.push('wrote the qa section of .codeadd/settings.json');
+
+  if (existingQa) return { changes, notes };
+
+  for (const r of skillRewrites) {
+    fs.writeFileSync(r.full, r.after, 'utf8');
+    changes.push(`rewrote ${r.rel}: config path now .codeadd/settings.json`);
+  }
+  for (const [has, rel, full] of [[hasConfig, QA_OLD_CONFIG, configPath], [hasReceipt, QA_OLD_RECEIPT, receiptPath]]) {
+    if (!has) continue;
+    fs.unlinkSync(full);
+    changes.push(`removed ${rel}`);
+  }
+  const qaDir = path.join(ctx.cwd, 'docs', 'qa');
+  if (fs.existsSync(qaDir) && fs.readdirSync(qaDir).length === 0) {
+    fs.rmdirSync(qaDir);
+    changes.push('removed docs/qa/ (empty)');
+  }
+  return { changes, notes };
+}
+
 export const MIGRATIONS = [
   {
     id: '0001-prune-legacy-orphans',
@@ -557,6 +756,11 @@ export const MIGRATIONS = [
     id: '0004-sync-board-definitions',
     description: 'Add the default statuses an existing board definitions file lacks — writes the board branch through backlog-commit.cjs',
     run: syncBoardDefinitions,
+  },
+  {
+    id: '0005-qa-settings',
+    description: 'Move docs/qa/config.json and the qa-setup receipt into the qa section of .codeadd/settings.json — changes files only, no commit',
+    run: migrateQaSettings,
   },
 ];
 

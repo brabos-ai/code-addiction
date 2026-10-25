@@ -5,16 +5,20 @@ import { PROVIDERS } from './providers.js';
 const BLOCK_START = '# ADD - managed by code-addiction';
 const BLOCK_END = '# END ADD';
 
-// .codeadd/ holds the installed framework AND one committed file, board.json,
-// which says where the project's board lives. git cannot re-include a file
-// inside an ignored DIRECTORY, so the directory line becomes a contents line
-// plus an exception.
+// .codeadd/ holds the installed framework AND three committed entries:
+// board.json (where the project's board lives), settings.json (the project's
+// settings, one section per command) and wiki/ (the generated project wiki).
+// git cannot re-include a file inside an ignored DIRECTORY, so the directory
+// line becomes a contents line plus exceptions. `!.codeadd/wiki/` works
+// because `.codeadd/*` ignores only the direct children of .codeadd/, so the
+// wiki directory itself is un-ignored and everything under it follows.
 const CODEADD_DIR_LINE = '.codeadd/';
-const CODEADD_PAIR = ['.codeadd/*', '!.codeadd/board.json'];
+const CODEADD_PAIR = ['.codeadd/*', '!.codeadd/board.json', '!.codeadd/settings.json', '!.codeadd/wiki/'];
 
 /**
  * Get the list of directories to add to .gitignore.
- * Always includes the .codeadd pair (`.codeadd/*` + `!.codeadd/board.json`).
+ * Always includes the .codeadd group (`.codeadd/*` plus the exceptions for the
+ * committed `board.json`, `settings.json` and `wiki/`).
  * Adds provider dest dirs for each selected key.
  * @param {string[]} selectedKeys
  * @returns {string[]}

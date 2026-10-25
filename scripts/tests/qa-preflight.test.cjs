@@ -34,8 +34,27 @@ function writeManifest(base, content) {
   h.write(path.join(base, '.codeadd', 'manifest.json'), content);
 }
 
+const SETTINGS = ['.codeadd', 'settings.json'];
+
+/** Merge fields into the `qa` section of .codeadd/settings.json, keeping what is there. */
+function mergeQa(base, fields) {
+  const file = path.join(base, ...SETTINGS);
+  let doc = { schema: 1 };
+  if (fs.existsSync(file)) doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+  doc.qa = { ...(doc.qa || {}), ...fields };
+  h.write(file, JSON.stringify(doc, null, 2));
+}
+
+/** Value fields of the qa section; text that is not JSON is written raw (a broken file). */
 function writeConfig(base, content) {
-  h.write(path.join(base, 'docs', 'qa', 'config.json'), content);
+  let fields;
+  try {
+    fields = JSON.parse(content);
+  } catch {
+    h.write(path.join(base, ...SETTINGS), content);
+    return;
+  }
+  mergeQa(base, fields);
 }
 
 // ─── Phase A: feature state (raw manifest read) ──────────────────────────────
@@ -80,7 +99,7 @@ test('qa-preflight#005 — malformed manifest → QA_FEATURE_STATE=unset, still 
   assert.match(res.output, /QA_PROJECT_SKILL=/);
 });
 
-// ─── Phase A: config.json + short-circuit of dependent probes ────────────────
+// ─── Phase A: .codeadd/settings.json (qa) + short-circuit of dependent probes ────────────────
 
 test('qa-preflight#006 — config missing → QA_CONFIG=missing, baseUrl probes not-probed', (t) => {
   const base = project(t);
@@ -284,11 +303,10 @@ const BROKEN_ROWS = [
 ];
 
 function writeReceipt(base, { shape, version } = {}) {
-  const lines = ['---'];
-  if (shape) lines.push(`setup-shape: ${shape}`);
-  if (version) lines.push(`framework-version: ${version}`);
-  lines.push('---', '', '# QA setup', '');
-  h.write(path.join(base, 'docs', 'qa', 'qa-setup.md'), lines.join('\n'));
+  const fields = { 'first-run': '2026-07-27', 'last-run': '2026-07-27' };
+  if (shape) fields['setup-shape'] = shape;
+  if (version) fields['framework-version'] = version;
+  mergeQa(base, fields);
 }
 
 function writeSidecar(base, contracts) {
@@ -341,4 +359,37 @@ test('qa-preflight#029 — another contract carrying changed_in does not leak in
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_CONTRACT_CHANGED_IN=unknown/);
   assert.doesNotMatch(res.output, /9\.9\.9/);
+});
+
+test('qa-preflight#030 — malformed .codeadd/settings.json → QA_CONFIG=broken and QA_RECEIPT=broken, no stack trace', (t) => {
+  const base = project(t);
+  h.write(path.join(base, '.codeadd', 'settings.json'), '{not json');
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONFIG=broken/);
+  assert.match(res.output, /QA_RECEIPT=broken/);
+  assert.match(res.output, /QA_CONTRACT_MATCH=not-probed/);
+  assert.doesNotMatch(res.output, /\.cjs:\d+|SyntaxError/);
+});
+
+test('qa-preflight#031 — .codeadd/settings.json without a qa section reads as missing config and missing receipt', (t) => {
+  const base = project(t);
+  h.write(path.join(base, '.codeadd', 'settings.json'), JSON.stringify({ schema: 1, setup: { 'last-run': '2026-10-25' } }));
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONFIG=missing/);
+  assert.match(res.output, /QA_RECEIPT=missing/);
+  assert.match(res.output, /QA_CONTRACT_MATCH=not-probed/);
+});
+
+test('qa-preflight#032 — values and a current receipt in .codeadd/settings.json → CONFIG, RECEIPT and CONTRACT_MATCH ok', (t) => {
+  const base = project(t);
+  writeConfig(base, '{"baseUrl":"https://app.example.com"}');
+  writeReceipt(base, { shape: SHIPPED, version: '1.7.0' });
+  writeSidecar(base, { 'add-qa-setup': { shape: SHIPPED, changed_in: '1.7.0', paths: [] } });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.match(res.output, /QA_CONFIG=ok/);
+  assert.match(res.output, /QA_RECEIPT=ok/);
+  assert.match(res.output, /QA_CONTRACT_MATCH=ok/);
 });

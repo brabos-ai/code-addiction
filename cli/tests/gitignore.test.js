@@ -24,6 +24,8 @@ describe('getInstalledDirs', () => {
     const dirs = getInstalledDirs([]);
     expect(dirs).toContain('.codeadd/*');
     expect(dirs).toContain('!.codeadd/board.json');
+    expect(dirs).toContain('!.codeadd/settings.json');
+    expect(dirs).toContain('!.codeadd/wiki/');
     expect(dirs).not.toContain('.codeadd/');
   });
 
@@ -35,7 +37,7 @@ describe('getInstalledDirs', () => {
 
   it('returns only the .codeadd pair when no providers selected', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json', '!.codeadd/settings.json', '!.codeadd/wiki/']);
   });
 
   it('includes all known providers when all are selected', () => {
@@ -49,7 +51,7 @@ describe('getInstalledDirs', () => {
 
   it('silently ignores unknown provider keys', () => {
     const dirs = getInstalledDirs(['unknown-provider']);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json', '!.codeadd/settings.json', '!.codeadd/wiki/']);
   });
 
   it('every provider entry has a trailing slash (the .codeadd pair is a pattern)', () => {
@@ -227,10 +229,19 @@ describe('the .codeadd pair (board.json stays committable)', () => {
     spawnSync('git', ['init', '-q'], { cwd: tmpDir });
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/board.json');
+    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n!.codeadd/settings.json\n!.codeadd/wiki/');
     expect(content.split('\n')).not.toContain('.codeadd/');
     fs.mkdirSync(path.join(tmpDir, '.codeadd'));
     expect(gitIgnored(tmpDir, '.codeadd/board.json')).toBe(false);
+    expect(gitIgnored(tmpDir, '.codeadd/manifest.json')).toBe(true);
+  });
+
+  it('git keeps .codeadd/settings.json and .codeadd/wiki/ committable, and still ignores the manifest', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
+    fs.mkdirSync(path.join(tmpDir, '.codeadd', 'wiki'), { recursive: true });
+    expect(gitIgnored(tmpDir, '.codeadd/settings.json')).toBe(false);
+    expect(gitIgnored(tmpDir, '.codeadd/wiki/index.md')).toBe(false);
     expect(gitIgnored(tmpDir, '.codeadd/manifest.json')).toBe(true);
   });
 
@@ -252,7 +263,7 @@ describe('the .codeadd pair (board.json stays committable)', () => {
     fs.writeFileSync(gitignorePath, '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n# END ADD\n', 'utf8');
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(gitignorePath, 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n.claude/');
+    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n!.codeadd/settings.json\n!.codeadd/wiki/\n.claude/');
     expect(content.split('\n')).not.toContain('.codeadd/');
   });
 });

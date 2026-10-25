@@ -123,6 +123,7 @@
     "add--qa-migration":                {},
     "add--qa-spec":                     {},
     "add--security-audit":              {},
+    "add--settings":                    {},
     "add--setup-contract":              {},
     "add--subagent-driven-development": {},
     "add--tasks-checklist":             {},

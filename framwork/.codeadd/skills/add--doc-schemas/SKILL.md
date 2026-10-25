@@ -33,6 +33,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - skill: add--doc-schemas/references/receipt.md
 - skill: add--doc-schemas/references/review.md
 - skill: add--doc-schemas/references/strategy.md
+- skill: add--settings
 -->
 
 ## Overview
@@ -293,7 +294,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 | `history` | `references/history.md` | changelog |
 | `strategy` | `references/strategy.md` | prd |
 | ~~`marketing`~~ | **retired** | `saas-copy` and `landing-page` were dropped with their category file; nothing writes either, and a command asking for one gets no schema |
-| `receipt` | `references/receipt.md` | setup-receipt |
+| `receipt` | `references/receipt.md` | setup-receipt (legacy — current receipts are sections of `.codeadd/settings.json`; schema in `add--settings`) |
 
 **Loading discipline.** A command that produces, say, a `feature` loads this `SKILL.md` (universal rules + ID + gate) plus `references/new-feature.md` (its category). It does NOT load every category file — JIT by category.
 
