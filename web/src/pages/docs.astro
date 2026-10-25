@@ -1247,6 +1247,8 @@ import "../styles/global.css";
     // The map is generated: node scripts/graph.js ecosystem --write emits
     // web/public/ecosystem.json from the build sidecar. Never hand-edit it.
     function initEcosystem(eco) {
+      // The reader may have navigated away while Cytoscape and the data were loading.
+      if (!document.getElementById('eco-cy')) return;
       var nodes = eco.nodes;
       var edges = eco.edges;
 
@@ -1670,6 +1672,8 @@ import "../styles/global.css";
           return r.text();
         })
         .then(function (src) {
+          // The reader may have navigated away while the file was loading.
+          if (!target.isConnected) return;
           target.textContent = src;
           var s = document.createElement('script');
           s.type = 'module';
@@ -1681,7 +1685,8 @@ import "../styles/global.css";
             "background: '#050505', primaryColor: '#0b1f17', primaryTextColor: '#e8e8e8', primaryBorderColor: '#00ff88'," +
             "secondaryColor: '#111111', tertiaryColor: '#050505', lineColor: '#00cc6a', textColor: '#e8e8e8'," +
             "fontFamily: '\"Outfit Variable\", Outfit, sans-serif' } });" +
-            "mermaid.run({ nodes: [document.getElementById('artefact-graph')] });";
+            "var graphNode = document.getElementById('artefact-graph');" +
+            "if (graphNode) Promise.resolve(mermaid.run({ nodes: [graphNode] })).catch(function (e) { console.warn('Diagram render skipped', e); });";
           document.body.appendChild(s);
         })
         .catch(function (e) {

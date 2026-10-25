@@ -383,3 +383,11 @@ test('F20: document-level handlers are released before the page is swapped', () 
     assert.match(src, /signal:/, `${name}: document listeners carry no abort signal`);
   }
 });
+
+test('F20: a script that outlives its page binds once and guards work that finishes after a navigation', () => {
+  assert.match(read('src/components/CommandLine.astro'), /__commandLineBound/);
+  const docs = DOCS();
+  assert.match(docs, /if \(!document\.getElementById\('docs-sidebar'\)\) return;/);
+  assert.match(docs, /if \(!target\.isConnected\) return;/);
+  assert.match(docs, /if \(!document\.getElementById\('eco-cy'\)\) return;/);
+});

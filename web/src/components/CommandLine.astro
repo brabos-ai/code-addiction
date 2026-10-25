@@ -40,6 +40,10 @@ const box = bare
     sel?.addRange(range);
   }
 
+  // The client router can evaluate this script again on a later visit; bind once.
+  const bound = window as unknown as { __commandLineBound?: boolean };
+  if (!bound.__commandLineBound) {
+  bound.__commandLineBound = true;
   document.addEventListener("click", async (event) => {
     const btn = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-copy]");
     if (!btn) return;
@@ -64,4 +68,5 @@ const box = bare
       status.textContent = "";
     }, 1500);
   });
+  }
 </script>
