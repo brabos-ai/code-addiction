@@ -680,7 +680,9 @@ describe('0005-qa-settings (0066B)', () => {
     const res = runMigrations(ctx(), [], { registry: MIGRATIONS.filter((m) => m.id === '0005-qa-settings') });
     expect(res.failed).toEqual([]);
 
-    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    const git = (...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], { cwd: tmpDir });
+    git('init', '-q', '-b', 'main');
+    git('commit', '-q', '--allow-empty', '-m', 'init');
     const scripts = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
     const pre = spawnSync(process.execPath, [path.join(scripts, 'qa-preflight.cjs'), 'a'], { cwd: tmpDir, encoding: 'utf8' });
     expect(pre.stdout).toContain('QA_RECEIPT=ok');
