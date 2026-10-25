@@ -214,3 +214,19 @@ test('F9: Escape closes the menus, and the lightbox is a native dialog opened wi
   assert.match(DOCS(), /'Escape'|"Escape"/);
   assert.doesNotMatch(HOME(), /id="flowchart-modal"[^>]*class="hidden/);
 });
+
+// ------------------------------------------------------------ F10 where am I
+test('F10: sidebar link order equals the order of the sections in the page', () => {
+  const docs = DOCS();
+  const sections = [...docs.matchAll(/<section id="([^"]+)"/g)].map(m => m[1]);
+  const aside = docs.match(/<aside id="docs-sidebar"[\s\S]*?<\/aside>/)[0];
+  const links = [...aside.matchAll(/<li><a href="#([^"]+)"/g)].map(m => m[1]);
+  assert.deepEqual(links, sections);
+});
+
+test('F10: an IntersectionObserver over section[id] sets aria-current on the sidebar link', () => {
+  const docs = DOCS();
+  assert.match(docs, /new IntersectionObserver/);
+  assert.match(docs, /section\[id\]/);
+  assert.match(docs, /aria-current/);
+});
