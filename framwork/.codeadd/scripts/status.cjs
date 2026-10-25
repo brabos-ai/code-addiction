@@ -34,9 +34,11 @@
  * subcommand deliberately runs before those guards, exactly as the shell did,
  * so it works outside a repository.
  *
- * FRONTMATTER IS BOUNDED. The setup receipt's `setup-shape` is read only
- * between the first `---` and the closing `---`, CRLF-tolerant, so a Decision
- * Log row that also names a shape can never leak into the recorded value.
+ * THE RECEIPT IS JSON. The setup receipt is the receipt fields of the `qa`
+ * section of `.codeadd/settings.json` (schema: add--settings), and `setup-shape` is
+ * read from that one key, so a `log` entry that also names a shape can never
+ * leak into the recorded value. A file that does not parse counts as QA state
+ * without a current receipt (STALE) and never crashes the script.
  *
  * Dependencies: Node >= 22.19.0 built-ins and `git`. No bash, no WSL, and no
  * import-time I/O in the sibling modules it requires.
@@ -377,18 +379,37 @@ function firstHeading(file) {
 // ─── Setup-receipt helpers ───────────────────────────────────────────────────
 
 /**
- * The recorded `setup-shape` from the receipt FRONTMATTER only: between the
- * first `---` line and the closing `---`. CRLF-tolerant; the first match wins.
+ * The `qa` section of .codeadd/settings.json.
+ *   { state: 'absent' }          no file, or a file with no qa section
+ *   { state: 'broken' }          the file does not parse (or qa is not an object)
+ *   { state: 'ok', qa: {...} }   the section
  */
-function recordedSetupShape(content) {
-  const lines = content.split('\n').map((l) => l.replace(/\r$/, ''));
-  if (!/^---$/.test(lines[0] || '')) return '';
-  for (let i = 1; i < lines.length; i++) {
-    if (/^---$/.test(lines[i])) break;
-    const m = /^setup-shape:[ \t]*sha256:([0-9a-f]+)[ \t]*$/.exec(lines[i]);
-    if (m) return 'sha256:' + m[1];
+function readQaSection(cwd) {
+  const file = path.join(cwd, '.codeadd', 'settings.json');
+  if (!isFile(file)) return { state: 'absent' };
+  let doc;
+  try {
+    doc = JSON.parse(read(file));
+  } catch {
+    return { state: 'broken' };
   }
-  return '';
+  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return { state: 'broken' };
+  if (!Object.prototype.hasOwnProperty.call(doc, 'qa')) return { state: 'absent' };
+  if (doc.qa === null || typeof doc.qa !== 'object' || Array.isArray(doc.qa)) return { state: 'broken' };
+  return { state: 'ok', qa: doc.qa };
+}
+
+const hasKey = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+/** Does the qa section hold a receipt field? That is what "a receipt exists" means now. */
+function hasReceipt(qa) {
+  return ['setup-shape', 'first-run', 'last-run'].some((k) => hasKey(qa, k));
+}
+
+/** The recorded `setup-shape`: a bare `sha256:<hex>` or ''. */
+function recordedSetupShape(qa) {
+  const v = qa['setup-shape'];
+  return typeof v === 'string' && /^sha256:[0-9a-f]+$/.test(v) ? v : '';
 }
 
 /** The shipped shape from contracts.json, found after the `add-qa-setup` key. */
@@ -403,9 +424,16 @@ function shippedSetupShape(content) {
   return '';
 }
 
-/** QA state exists on disk without a receipt. */
-function setupMaterialized(cwd) {
-  if (isFile(path.join(cwd, 'docs', 'qa', 'config.json'))) return true;
+/**
+ * QA state exists on disk without a receipt: a qa section holding value fields only,
+ * a settings file that does not parse (unreadable state is STALE, never absent), or
+ * the generated qa-project skill.
+ */
+function setupMaterialized(cwd, section) {
+  if (section.state === 'broken') return true;
+  if (section.state === 'ok' && ['baseUrl', 'viewports', 'bootHint', 'authSeed'].some((k) => hasKey(section.qa, k))) {
+    return true;
+  }
   for (const d of ['.claude', '.agents', '.agent', '.cursor', '.opencode']) {
     if (isFile(path.join(cwd, d, 'skills', 'qa-project', 'SKILL.md'))) return true;
   }
@@ -841,11 +869,11 @@ function main(argv) {
   }
 
   // SETUP SHAPE — materialized-state staleness for add-qa-setup.
-  const receipt = path.join(cwd, 'docs', 'qa', 'qa-setup.md');
+  const section = readQaSection(cwd);
   const sidecar = path.join(cwd, '.codeadd', 'contracts.json');
-  if (isFile(receipt)) {
+  if (section.state === 'ok' && hasReceipt(section.qa)) {
     say('SETUP_QA:present');
-    const recorded = recordedSetupShape(read(receipt));
+    const recorded = recordedSetupShape(section.qa);
     const shipped = isFile(sidecar) ? shippedSetupShape(read(sidecar)) : '';
     if (recorded && shipped) {
       if (recorded !== shipped) {
@@ -858,7 +886,7 @@ function main(argv) {
       say('SETUP_QA_STALE:yes');
       say('SETUP_QA_HINT:QA receipt carries no readable setup-shape — /add-qa-setup');
     }
-  } else if (setupMaterialized(cwd)) {
+  } else if (setupMaterialized(cwd, section)) {
     say('SETUP_QA:stale');
     say('SETUP_QA_STALE:yes');
     say('SETUP_QA_HINT:QA state exists without a current receipt — /add-qa-setup');
