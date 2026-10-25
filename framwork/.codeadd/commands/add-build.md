@@ -733,15 +733,15 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 **Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
-- **Database:** Entities, query types, migration file, Repository, barrel exports
-- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, module registration
-- **Workers:** Worker, Processor, queue config, error handling, module registration
+- **Database:** Entities, query types, migration file, Repository, barrel exports (if the project uses them)
+- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, registration per project DI convention
+- **Workers:** Worker, Processor, queue config, error handling, registration per project DI convention
 - **Frontend:** Pages, Components, state store, Hooks, mirror DTOs, API integration, forms
   - MANDATORY: Load skill `add--frontend-development` first
   - The frontend skill will check for design.md → if missing, auto-load ux-design/SKILL.md
 
 **Skills Reference (MANDATORY):**
-- Backend: skill `add--backend-development` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
+- Backend: skill `add--backend-development` (RESTful, DTOs, project conventions)
 - Database: skill `add--database-development` (Entities, Migrations, query types, Repositories)
 - Frontend: skill `add--frontend-development` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 

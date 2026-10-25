@@ -49,7 +49,7 @@ const section = (text, heading) => {
   return block(text, new RegExp(`^${escaped}\\s*$`), /^## /);
 };
 
-const step = (text, id) => block(text, new RegExp(`^## STEP ${id.replace('.', '\\.')}\\b`), /^## STEP /);
+const step = (text, id) => block(text, new RegExp(`^#{2,4} STEP ${id.replace('.', '\\.')}\\b`), /^#{2,4} STEP /);
 
 const firstNonBlankAfterHeading = (text, heading) => {
   const body = section(text, heading).split('\n').slice(1);
