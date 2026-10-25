@@ -114,7 +114,7 @@ describe('wiki stack conventions — L1 source guard', () => {
     expect(text).toContain('drift:');
     const lines = text.split('\n');
     expect(lines.some((l) => /backfill/i.test(l) && l.includes('add-done')), 'a line naming backfill and add-done').toBe(true);
-    const uses = block(text, /<!-- uses:/, /-->/);
+    const uses = block(text, /<!-- uses:/, /--!?>/);
     expect(uses).toContain('skill: add--architecture-discovery');
   });
 
