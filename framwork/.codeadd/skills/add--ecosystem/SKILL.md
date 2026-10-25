@@ -251,7 +251,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--feature-discovery | add-plan (direct) |
 | add--feature-specification | add-new (STEP 4, the single writer of about.md), add-plan via discovery-agent |
 | add--doc-schemas | add-audit, add-brainstorm, add-plan, add-build, add-hotfix, add-done, add-pull-request, add-wiki, add-diagnose, add-qa-setup, add-review |
-| add--architecture-discovery | add-wiki (direct); add-diagnose, add-hotfix, add-plan (via architecture-agent) |
+| add--architecture-discovery | add-wiki (direct); add-brainstorm (greenfield foundations); add-diagnose, add-hotfix, add-plan (via architecture-agent) |
 | add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-wiki — the commands that load it |
 | add--wiki-maintenance | add-wiki (update mode), add-done (STEP 4.9) |
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
@@ -295,7 +295,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | backlog-commit.cjs | add--backlog — the ONE write route: resolve the board clone, take its lock, fast-forward, write, commit and push the `board` branch, from any branch or worktree, with durable recovery refs on every failed publication. It reports `ROUTE=board` and `BOARD_DIR` |
 | backlog-board.cjs | add--backlog — the one module that knows where the board lives: the resolver (`CODEADD_BOARD_DIR`, then `.codeadd/board.json`), the project key, the clone on first use, the lock and the throttled read sync. Every backlog reader and writer goes through it |
 | backlog-git.cjs | add--backlog — the git primitives the board module and the publication entry compose: clone, fetch, ahead/behind, fast-forward, rebase-once and push of the `board` branch, `git show` at a sha, and the recovery refs |
-| migrate-context-files.cjs | add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
+| migrate-context-files.cjs | add-brainstorm, add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
 ## Main Flows
