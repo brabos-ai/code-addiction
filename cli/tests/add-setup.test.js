@@ -250,8 +250,10 @@ describe('F7 — AGENTS.md, README and the web docs', () => {
     expect(pluginPara).toContain('/add-setup');
     expect(pluginPara).toContain('after the user confirms');
     expect(read(path.join(root, 'README.md'))).toContain('/add-setup');
-    const docs = read(path.join(root, 'web/src/pages/docs.astro'));
-    expect(docs).toMatch(/<code[^>]*>\/add-setup<\/code>/);
+    const docsPage = read(path.join(root, 'web/src/pages/docs.astro'));
+    const enPath = path.join(root, 'web/src/i18n/en.ts');
+    const docs = docsPage + (fs.existsSync(enPath) ? read(enPath) : '');
+    expect(docs).toMatch(/<code[^>]*>\/add-setup<\/code>|\{ name: "\/add-setup"/);
   });
 });
 

@@ -297,7 +297,9 @@ describe('0070 L1 — build-side unit', () => {
 
   it('L1.7 (F5) installer and docs copy read tdd-pipeline at source', () => {
     expect(read(path.join(ROOT, 'cli', 'src', 'installer.js'))).not.toMatch(/TDD is enabled by default/);
-    expect(read(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro'))).toMatch(/tdd-pipeline/);
+    const enPath = path.join(ROOT, 'web', 'src', 'i18n', 'en.ts');
+    const docsCopy = read(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro')) + (fs.existsSync(enPath) ? read(enPath) : '');
+    expect(docsCopy).toMatch(/tdd-pipeline/);
   });
 });
 
