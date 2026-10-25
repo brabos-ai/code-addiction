@@ -355,3 +355,31 @@ test('F19: the Why-card spotlight follows the pointer on hover devices only, nev
   assert.match(home, /hover: hover/);
   assert.match(home, /prefers-reduced-motion: reduce/);
 });
+
+// -------------------------------------------------- F20 page transition
+test('F20: every inline script that binds handlers binds on astro:page-load', () => {
+  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+    const scripts = [...src.matchAll(/<script is:inline>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+    assert.ok(scripts.length > 0, `${name}: no inline script found`);
+    for (const [i, body] of scripts.entries()) {
+      if (/addEventListener/.test(body)) {
+        assert.match(body, /document\.addEventListener\('astro:page-load'/, `${name} script #${i + 1} binds handlers without astro:page-load`);
+      }
+    }
+  }
+});
+
+test('F20: the layout turns on the client router and the navs share a transition name', () => {
+  const layout = read('src/layouts/Layout.astro');
+  assert.match(layout, /import \{ ClientRouter \} from "astro:transitions"/);
+  assert.match(layout, /<ClientRouter \/>/);
+  assert.match(HOME(), /<nav[^>]*transition:name="site-nav"/);
+  assert.match(DOCS(), /<nav[^>]*transition:name="site-nav"/);
+});
+
+test('F20: document-level handlers are released before the page is swapped', () => {
+  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+    assert.match(src, /astro:before-swap/, `${name}: nothing releases document listeners`);
+    assert.match(src, /signal:/, `${name}: document listeners carry no abort signal`);
+  }
+});
