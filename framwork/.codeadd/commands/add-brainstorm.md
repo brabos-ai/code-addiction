@@ -191,6 +191,8 @@ IF you have decided the path:
 | **bounded** | a well-scoped change to a flow **that already exists in this repo** | `Path: bounded — questions, then a short design in chat.` |
 | **architectural** | a new subsystem, a change that restructures how parts fit together, or one that alters an interface others depend on | `Path: architectural — full exploration and a brainstorm document.` |
 
+**When `GREENFIELD=yes` the path is always `architectural`**, because there is no existing flow to modify. State it as `Path: architectural (greenfield): stack foundations first, then full exploration.`
+
 **The user can still change it, unprompted.** If they say the path is wrong, re-classify and carry on.
 What is removed is the question, not their ability to answer it.
 
