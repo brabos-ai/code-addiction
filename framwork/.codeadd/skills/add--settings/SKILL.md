@@ -158,7 +158,7 @@ A receipt is the record a command leaves so a later framework release can comput
 ### Hard bans
 
 - A `materialized` entry with `owner: shared` carrying a non-null `hash`.
-- A `setup-shape` value that is neither a bare `sha256:` + 16 hex nor `"none"` in a section whose command has no contract.
+- A `setup-shape` value that is not a bare `sha256:` + 16 hex in a section whose command has a contract, and neither a bare `sha256:` + 16 hex nor `"none"` in a section whose command has no contract.
 - Editing or removing an existing `log` entry.
 - Narration, instructions or aspirational language in any `log` entry.
 - Rewriting `first-run`.

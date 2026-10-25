@@ -40,7 +40,7 @@ STEP add-setup.close: Close                     → final report + one next comm
 
 ```
 IF THE BATCH HAS NOT BEEN ANSWERED:
-  ⛔ DO NOT USE: Bash to install a tool, run codeadd modify, or write any file
+  ⛔ DO NOT USE: Bash to install a tool, run codeadd modify, or write any file (the one exception is the record of STEP add-setup.record, which the greenfield stop and the nothing-to-ask path write without a reply)
   ⛔ DO NOT: Enable, install or run anything — the diagnosis is read-only
   ✅ DO: Print the batch and WAIT for the reply
 
@@ -93,6 +93,8 @@ The items are every row of `Features`, every row of `Plugins`, and `qa-setup`, `
 | **decided** | The name is in `offered`, nothing drifted | One summary line: name, `offered` value, latest `log` reason, date. Not asked |
 | **drift** | `offered` says `enabled` or `already-on` but the item is now off in the manifest (a fresh clone, or a manual disable) | Asked again, showing both states |
 | **removed** | An `offered` key is no longer in the tables or the item list | One note line: "no longer offered by this version". Not asked. The key stays |
+
+Three exceptions to the table: `tdd-pipeline` is on by default, but on a first run (name absent from `offered`) it is still asked, as keep on or turn off. `qa-setup` with `SETUP_QA_STALE:yes` counts as **drift**, so a stale QA setup is offered again as a re-run of `/add-qa-setup` only. `board` recorded `unavailable` counts as **drift** once `.codeadd/board.json` exists. For a `board` that is unavailable now, the batch still prints one note line saying a board cannot be created from the product today and the feature stays off.
 
 Newness is the item NAME absent from `offered`. Never compare `framework-version` to decide it. A release that adds no item asks nothing. A `declined` item is never re-asked unless the user names it to revisit in the reply.
 
@@ -164,7 +166,7 @@ Only accepted items run. When none is accepted, go to STEP add-setup.record.
 Enabling a feature or plugin rewrites the installed command files, so the order is fixed and restricted to the accepted items. Each sub-step runs only when it has an accepted item.
 
 1. **Install the external tools** of the accepted items (gitnexus, ui-ux-pro-max). The per-item yes is the install confirmation, because the batch showed the exact commands. Follow `{{skill:add--dev-environment-setup/SKILL.md}}`: detect, run only non-interactive commands without elevated rights, verify each tool with its trivial check (`gitnexus --version`). A command that needs `sudo` or an interactive installer is shown for the user to run; WAIT, then verify.
-2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show exactly the accepted items enabled. Any mismatch is a failure.
+2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure.
 3. **`gitnexus setup`** when gitnexus is accepted and not yet wired, then **`gitnexus analyze`** from the repo root. If `gitnexus setup` prompts, show it for the user to run, then verify.
 4. **Re-read the installed command file from disk** (never a copy read before step 2) and run `{{cmd:add-qa-setup}}` inline, when `qa-setup` is accepted. Inline follows the same-session rule of `{{skill:add--delivery-mode/SKILL.md}}`: the same agent, the same session, read the command and run it from its first step, with the `## Setup answers` block in the session.
 5. **MCP checkpoint.** When gitnexus is enabled, check that its MCP server answers in this session (ask it to list the indexed repos). A newly wired server usually loads only in a new session. If it does not answer, STOP after step 4: tell the user to restart the session or reload MCP and run `/add-setup` again, then go to STEP add-setup.record. The second run proposes only the wiki.
@@ -174,17 +176,17 @@ Enabling a feature or plugin rewrites the installed command files, so the order 
 
 ## STEP add-setup.record: Write the record
 
-Load `{{skill:add--settings/SKILL.md}}` before writing. It owns the file rules, the `setup` schema and the JSON check. This step runs at the end of EVERY run: also when nothing was accepted, when the run stopped at the MCP checkpoint and when it stopped on a failure.
+Load `{{skill:add--settings/SKILL.md}}` before writing. It owns the file rules and the `setup` schema. This step runs at the end of EVERY run: also when nothing was accepted, when the run stopped at the MCP checkpoint and when it stopped on a failure. The two STOPs that precede any write (no manifest, a `.codeadd/settings.json` that does not parse) skip it.
 
 Read the file (absent = `{ "schema": 1 }`), merge only the `setup` section, and write it back. Never touch another section, and never drop a key you do not know. Set:
 
 - `setup-shape` to `"none"` — this command has no contract.
 - `framework-version` to the `version` in the manifest. It is informational and never compared.
 - `first-run` once, never rewritten. `last-run` to today.
-- `offered.<item>` to `enabled`, `already-on`, `declined`, `unavailable` or `failed` for each item decided or run in this run. An item that did not run keeps its previous value. A removed item's key stays.
+- `offered.<item>` to one of the values `add--settings` lists for `offered`, for each item decided or run in this run. An item that did not run keeps its previous value. A removed item's key stays.
 - Write one `log` entry per decided item: `{ date, item, decision, reason }`, `declined` included. The reason is the user's, or the detected one when the user gave none. A reversed decision on revisit updates `offered.<item>` and appends a NEW entry. An existing entry is never edited. Old reasons are never lost.
 
-Then run the JSON check of `add--settings` over the file: it parses, the `setup` section matches the schema, and any `qa` section is unchanged.
+Then run this check over the file: it parses, the `setup` section matches the schema, and any `qa` section is unchanged.
 
 **`version-record`.** On yes, list `.codeadd/settings.json` in the report as a file to commit and run no git command. On no, append the line `.codeadd/settings.json` after the `# END ADD` line of `.gitignore` (once). With no managed block, report the `git check-ignore` result and write nothing.
 

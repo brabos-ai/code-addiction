@@ -254,3 +254,17 @@ describe('F7 — AGENTS.md, README and the web docs', () => {
     expect(docs).toMatch(/<code[^>]*>\/add-setup<\/code>/);
   });
 });
+
+describe('review fixes — re-run edges of the command', () => {
+  it('asks tdd-pipeline on a first run, re-offers a stale QA setup and a board that became available', () => {
+    const src = setupSrc();
+    expect(src).toMatch(/`tdd-pipeline` is on by default, but on a first run[^\n]*still asked/);
+    expect(src).toMatch(/`qa-setup` with `SETUP_QA_STALE:yes` counts as \*\*drift\*\*/);
+    expect(src).toMatch(/`board` recorded `unavailable` counts as \*\*drift\*\* once `\.codeadd\/board\.json` exists/);
+  });
+
+  it('the record step names the STOPs that skip it, and add--settings keeps the ban for a section with a contract', () => {
+    expect(setupSrc()).toMatch(/no manifest[^\n]*does not parse[^\n]*skip it/);
+    expect(read(settingsPath)).toMatch(/not a bare `sha256:` \+ 16 hex in a section whose command has a contract/);
+  });
+});

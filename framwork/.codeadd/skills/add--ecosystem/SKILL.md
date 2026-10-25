@@ -376,7 +376,7 @@ a next activity — and a command resolving one of those rows offers nothing at 
 | add-audit | project healthy | none | No action needed |
 | codeadd install | always | `/add-setup` | A fresh install has no features, plugins, QA setup or wiki chosen yet; the guided setup offers each one |
 | add-setup | greenfield | `/add-brainstorm` | An empty repo has nothing to analyze; the brainstorm decides the stack, then `/add-setup` runs again |
-| add-setup | stopped at the MCP checkpoint | `/add-setup` | A newly wired MCP server loads only in a new session; run `/add-setup` again and it proposes only the wiki |
+| add-setup | stopped at the MCP checkpoint, or on a failure | `/add-setup` | A newly wired MCP server loads only in a new session; run `/add-setup` again and it proposes only the wiki. After a failure, fix the cause and run it again |
 | add-setup | done | `/add-new` (or `/add-brainstorm` when the user has no idea yet) | The project is set up; the next step is work |
 | codeadd update | always; when `.codeadd/wiki/` exists also the wiki refresh | `/add-setup` (reviews what is new since the setup record), then `/add-wiki update` when `.codeadd/wiki/` exists | The update can add features or plugins and can change the artefacts the wiki was mapped from; review the new items, then refresh the wiki incrementally |
 
