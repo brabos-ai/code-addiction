@@ -270,3 +270,32 @@ test('F14: the map is 60vh tall on a phone and the node list is not hidden there
   assert.match(docs, /id="eco-cy"[^>]*h-\[60vh\]/);
   assert.doesNotMatch(docs, /id="eco-sidebar" class="hidden lg:flex/);
 });
+
+// ------------------------------------------------------------ F17 Pagefind
+test('F17: the web build indexes dist with pagefind and pagefind is a devDependency', () => {
+  const pkg = JSON.parse(read('package.json'));
+  assert.match(pkg.scripts.build, /^astro build && pagefind --site dist$/);
+  assert.ok(pkg.devDependencies && pkg.devDependencies.pagefind, 'pagefind missing from devDependencies');
+});
+
+test('F17: the docs body is tagged for indexing and every section heading has an anchor id', () => {
+  const docs = DOCS();
+  assert.match(docs, /<main[^>]*data-pagefind-body/);
+  const sections = [...docs.matchAll(/<section id="([^"]+)"[^>]*>\s*(?:<p[^>]*>[^<]*<\/p>\s*)?<(h[12])([^>]*)>/g)];
+  assert.ok(sections.length >= 14, `only ${sections.length} sections matched`);
+  for (const [, id, , attrs] of sections) assert.match(attrs, /\bid="/, `section ${id} heading has no id`);
+});
+
+test('F17: a search trigger opens on click and on Ctrl+K / Cmd+K, and the nav drops the repeated links', () => {
+  const docs = DOCS();
+  assert.match(docs, /id="docs-search-open"/);
+  assert.match(docs, /e(vent)?\.(ctrlKey|metaKey)[\s\S]{0,80}\.key\.toLowerCase\(\) === 'k'/);
+  const nav = docs.match(/<nav class="fixed top-0[\s\S]*?<\/nav>/)[0];
+  for (const h of ['#commands', '#graph', '#flows']) assert.ok(!nav.includes(`href="${h}"`), `nav still links ${h}`);
+});
+
+test('F17: #eco-search has an accessible name and the list has an empty state', () => {
+  const docs = DOCS();
+  assert.match(docs.match(/<input id="eco-search"[^>]*>/)[0], /aria-label="[^"]+"/);
+  assert.match(docs, /id="eco-empty"/);
+});
