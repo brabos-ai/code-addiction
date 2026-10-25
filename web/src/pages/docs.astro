@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import CommandLine from "../components/CommandLine.astro";
 import "../styles/global.css";
 ---
 
@@ -115,13 +116,13 @@ import "../styles/global.css";
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
           <div><span class="text-muted select-none"># install in your project</span></div>
-          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span></div>
+          <CommandLine command="npx codeadd install" bare />
           <div class="pt-2"><span class="text-muted select-none"># install specific version</span></div>
-          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --version v2.0.1</span></div>
+          <CommandLine command="npx codeadd install --version v2.0.1" bare />
           <div class="pt-2"><span class="text-muted select-none"># install from a specific branch</span></div>
-          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install --branch feature-xyz</span></div>
+          <CommandLine command="npx codeadd install --branch feature-xyz" bare />
           <div class="pt-2"><span class="text-muted select-none"># already installed? shows Modify / Update / Reinstall / Cancel</span></div>
-          <div><span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span></div>
+          <CommandLine command="npx codeadd install" bare />
         </div>
 
         <h3 class="font-display font-semibold text-lg mt-8 mb-4">What gets installed</h3>
@@ -146,48 +147,48 @@ import "../styles/global.css";
         <p class="text-muted-light mb-6">After installing, use these CLI commands to manage your setup:</p>
 
         <div class="space-y-3">
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd doctor</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd doctor" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Check environment health — Node, Git, installation status</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd validate</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd validate" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Validate file integrity via SHA-256 hashes</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd validate --repair</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd validate --repair" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Restore missing or modified files from the release</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd update</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd update" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Update to latest release, or re-pull current branch</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd uninstall</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd uninstall" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Clean removal of all Code Addiction files (user files are kept)</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd uninstall --force</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd uninstall --force" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Skip confirmation prompt during uninstall</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd features</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd features" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline, docs-pruning, board)</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd plugins" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">List, enable, or disable plugins (e.g. GitNexus, Playwright, Design). An enabled plugin whose tool is not detected is named in install/update output</span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd providers</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd providers" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">List providers, or add / remove one: <code class="text-foreground">providers list|add &lt;name&gt;|remove &lt;name&gt; [--force]</code>. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd modify</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd modify" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Interactive screen to edit providers, features and plugins of an existing installation in one place. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
           </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd config show</code>
+          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+            <CommandLine command="npx codeadd config show" bare class="sm:shrink-0" />
             <span class="text-muted-light text-sm">Display installation configuration. Add <code class="text-foreground">--verbose</code> to check for updates</span>
           </div>
         </div>
@@ -711,11 +712,7 @@ import "../styles/global.css";
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">Turn it on</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground break-all" id="cmd-am-install">npx codeadd install --providers claude --enable-feature agent-mode</span>
-                <button onclick="copyCmd('cmd-am-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd install --providers claude --enable-feature agent-mode" />
               <p class="text-muted text-xs">Already using codeadd? Run <code class="font-mono">npx codeadd modify --providers claude --force --enable-feature agent-mode</code>.</p>
             </div>
           </div>
@@ -824,30 +821,18 @@ import "../styles/global.css";
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">1 — Install GitNexus</p>
             <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">gitnexus --version</code>.</p>
-            <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-              <span class="text-accent select-none">$</span>
-              <span class="flex-1 text-foreground" id="cmd-gn-install">npm install -g gitnexus</span>
-              <button onclick="copyCmd('cmd-gn-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-            </div>
+            <CommandLine command="npm install -g gitnexus" />
           </div>
 
           <!-- Step 2: Enable -->
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-gn-enable">npx codeadd plugins enable gitnexus</span>
-                <button onclick="copyCmd('cmd-gn-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins enable gitnexus" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
                 <span class="text-muted select-none"># to disable later</span>
               </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-gn-disable">npx codeadd plugins disable gitnexus</span>
-                <button onclick="copyCmd('cmd-gn-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins disable gitnexus" />
             </div>
           </div>
 
@@ -856,16 +841,8 @@ import "../styles/global.css";
             <p class="text-foreground text-sm font-semibold mb-2">3 — Wire and index (once per repo)</p>
             <p class="text-muted-light text-xs mb-2">Run these after enabling. Re-run <code class="font-mono">analyze</code> after large changes.</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-gn-setup">gitnexus setup</span>
-                <button onclick="copyCmd('cmd-gn-setup', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-gn-analyze">gitnexus analyze</span>
-                <button onclick="copyCmd('cmd-gn-analyze', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="gitnexus setup" />
+              <CommandLine command="gitnexus analyze" />
             </div>
             <p class="text-muted text-xs mt-2">Verify: ask Claude to run <code class="font-mono">gitnexus list_repos</code> (or <code class="font-mono">/mcp</code>) — this repo must appear indexed. If it does not, commands silently fall back to grep.</p>
           </div>
@@ -892,30 +869,18 @@ import "../styles/global.css";
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">1 — Install Playwright MCP</p>
             <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">npx --yes @playwright/mcp@latest --version</code>. Run <code class="font-mono">/add-qa-setup</code> for a guided, per-OS install of chromium + the Playwright MCP server.</p>
-            <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-              <span class="text-accent select-none">$</span>
-              <span class="flex-1 text-foreground" id="cmd-pw-install">npx --yes @playwright/mcp@latest --version</span>
-              <button onclick="copyCmd('cmd-pw-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-            </div>
+            <CommandLine command="npx --yes @playwright/mcp@latest --version" />
           </div>
 
           <!-- Step 2: Enable -->
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-pw-enable">npx codeadd plugins enable playwright</span>
-                <button onclick="copyCmd('cmd-pw-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins enable playwright" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
                 <span class="text-muted select-none"># to disable later</span>
               </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-pw-disable">npx codeadd plugins disable playwright</span>
-                <button onclick="copyCmd('cmd-pw-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins disable playwright" />
             </div>
           </div>
 
@@ -924,16 +889,8 @@ import "../styles/global.css";
             <p class="text-foreground text-sm font-semibold mb-2">3 — Set up and run QA (once per project)</p>
             <p class="text-muted-light text-xs mb-2">Scaffold QA config after enabling, then run the audit per feature.</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-pw-setup">/add-qa-setup</span>
-                <button onclick="copyCmd('cmd-pw-setup', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-pw-run">/add-review &lt;feature-id&gt;</span>
-                <button onclick="copyCmd('cmd-pw-run', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="/add-qa-setup" />
+              <CommandLine command={"/add-review <feature-id>"} />
             </div>
             <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add-review</code> cannot drive the browser.</p>
           </div>
@@ -961,29 +918,13 @@ import "../styles/global.css";
             <p class="text-foreground text-sm font-semibold mb-2">1 — Install ui-ux-pro-max (one of two official routes)</p>
             <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction looks for <code class="font-mono">ui-ux-pro-max/SKILL.md</code> in the project and home skill folders of every supported provider, and in Claude's installed plugins list. In Claude Code:</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-market-add">/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill</span>
-                <button onclick="copyCmd('cmd-design-market-add', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-market-install">/plugin install ui-ux-pro-max@ui-ux-pro-max-skill</span>
-                <button onclick="copyCmd('cmd-design-market-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill" />
+              <CommandLine command="/plugin install ui-ux-pro-max@ui-ux-pro-max-skill" />
             </div>
             <p class="text-muted-light text-xs mt-3 mb-2">Any provider, with the official CLI (not the stale <code class="font-mono">uipro-cli</code> package):</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-cli-install">npm install -g ui-ux-pro-max-cli</span>
-                <button onclick="copyCmd('cmd-design-cli-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-cli-init">uipro init --ai &lt;claude|codex|cursor|antigravity|opencode|zcode&gt;</span>
-                <button onclick="copyCmd('cmd-design-cli-init', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npm install -g ui-ux-pro-max-cli" />
+              <CommandLine command={"uipro init --ai <claude|codex|cursor|antigravity|opencode|zcode>"} />
             </div>
           </div>
 
@@ -991,35 +932,17 @@ import "../styles/global.css";
           <div>
             <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
             <div class="space-y-2">
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-enable">npx codeadd plugins enable design</span>
-                <button onclick="copyCmd('cmd-design-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins enable design" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
                 <span class="text-muted select-none"># to disable later</span>
               </div>
-              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-accent select-none">$</span>
-                <span class="flex-1 text-foreground" id="cmd-design-disable">npx codeadd plugins disable design</span>
-                <button onclick="copyCmd('cmd-design-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
-              </div>
+              <CommandLine command="npx codeadd plugins disable design" />
             </div>
             <p class="text-muted text-xs mt-2">Python note: the skill's search script needs Python 3. Check <code class="font-mono">python3 --version</code> (Windows: <code class="font-mono">py --version</code>). Without Python the agents skip the search and use the design core. Code Addiction never installs Python. After a Claude plugin install, restart the session or run <code class="font-mono">/reload-plugins</code>.</p>
           </div>
 
         </div>
 
-        <script is:inline>
-          function copyCmd(id, btn) {
-            var text = document.getElementById(id).textContent;
-            navigator.clipboard.writeText(text).then(function() {
-              var orig = btn.textContent;
-              btn.textContent = '✓';
-              setTimeout(function() { btn.textContent = orig; }, 1500);
-            });
-          }
-        </script>
       </section>
 
       <!-- PROVIDERS -->

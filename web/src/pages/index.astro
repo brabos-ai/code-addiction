@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import CommandLine from "../components/CommandLine.astro";
 import "../styles/global.css";
 ---
 
@@ -62,12 +63,7 @@ import "../styles/global.css";
 
       <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 fade-up fade-up-delay-3">
         <!-- Install command -->
-        <div class="group relative bg-white/5 border border-white/10 rounded-lg px-5 py-3 font-mono text-sm hover:border-accent/30 transition-colors cursor-pointer"
-             onclick="navigator.clipboard.writeText('npx codeadd install')">
-          <span class="text-muted">$</span>
-          <span class="text-foreground ml-2">npx codeadd install</span>
-          <span class="ml-3 text-muted text-xs group-hover:text-accent transition-colors">copy</span>
-        </div>
+        <CommandLine command="npx codeadd install" />
 
         <a
           href="https://github.com/brabos-ai/code-addiction"
@@ -219,9 +215,7 @@ import "../styles/global.css";
         <div>
           <span class="text-muted select-none"># install in your project</span>
         </div>
-        <div>
-          <span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span>
-        </div>
+        <CommandLine command="npx codeadd install" bare />
       </div>
 
       <div class="mt-8">
