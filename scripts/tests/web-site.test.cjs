@@ -480,3 +480,7 @@ test('i18n F5: CommandLine holds none of the English literals; its script reads 
   assert.match(c, /dataset/);
   assert.match(c, /__commandLineBound/);
 });
+
+test('i18n F9: en.ts holds the skills list as { name, desc } entries', () => {
+  assert.match(I18N('en.ts'), /\{ name: "ux-design", desc: "/);
+});
