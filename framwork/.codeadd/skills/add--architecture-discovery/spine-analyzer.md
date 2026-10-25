@@ -127,7 +127,7 @@ a rule, trimmed to what's needed.]
 | Entity language | language | form (interface, class, dataclass, struct, schema) | path:line or none | detected |
 ```
 
-- Evidence on a `detected` row is `path:line` (1-2 refs) or the literal `none`; Value `none` means "not detected / not used".
+- Evidence on a `detected` row is `path:line` (1-2 refs; Barrels adds the count) or the literal `none`; Value `none` means "not detected / not used".
 - `Source` is `detected` (written from code) or `decided` (a decision taken before code exists). On a `decided` row, Evidence names the decision record (e.g. `BRN-<slug>`) and may carry `drift: <path:line>`.
 - The page TL;DR says that `decided` rows are intent, not evidence.
 - Frontmatter `sources` must cover every Evidence path, per the Wiki Page Contract.

@@ -64,7 +64,7 @@ Search ONLY for what exists in the project:
 - Status: enabled/disabled
 - Policies: where defined
 - Pattern: by tenant_id, user_id, etc
-- The policy and the tenant key it uses (domain-local detail; the project-wide Tenancy row lives in [Stack Conventions](../conventions.md#stack-conventions))
+- The policy and the tenant key it uses (domain-local detail; the project-wide Tenancy row lives in [Stack Conventions](../conventions.md#stack-conventions; in a tiny wiki, which has no conventions.md, `../index.md#stack-conventions`))
 
 ### 6. Reusable Abstractions (CRITICAL — prevents duplication)
 - Base repository class (if exists) — agents MUST extend instead of creating raw queries
@@ -170,7 +170,7 @@ Config: `{"orm":"[name]","entities":"[path glob]","repositories":"[path glob]"}`
 
 [Topic sentence: status, policy pattern.]
 Config: `{"status":"[enabled/disabled]","policies":"[path]","pattern":"[by tenant_id/user_id/etc]"}`
-Tenant key and policy: [key the policy uses] — see [Stack Conventions](../conventions.md#stack-conventions) for the project-wide row.
+Tenant key and policy: [key the policy uses] — see [Stack Conventions](../conventions.md#stack-conventions; in a tiny wiki, which has no conventions.md, `../index.md#stack-conventions`) for the project-wide row.
 
 ```sql
 -- [path:line]
@@ -198,7 +198,7 @@ Entity naming: [singular/plural, PascalCase]
 Migration naming: [timestamp prefix, CLI command to create]
 Repository placement: [co-located or separate]
 New entity registration: [how to register with ORM]
-Tenant key pattern (if multi-tenant): [FK and index shape] — see [Stack Conventions](../conventions.md#stack-conventions)
+Tenant key pattern (if multi-tenant): [FK and index shape] — see [Stack Conventions](../conventions.md#stack-conventions; in a tiny wiki, which has no conventions.md, `../index.md#stack-conventions`)
 
 ## Seeding
 

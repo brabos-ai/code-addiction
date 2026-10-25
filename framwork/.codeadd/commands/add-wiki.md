@@ -458,7 +458,7 @@ Follow ALL instructions.
 - Root configs (package.json, turbo.json, tsconfig, etc.)
 - Existing docs (README, docs/) as primary source material
 - Validation Gates detection
-- Existing conventions.md Stack Conventions rows, if any (decided rows are kept)
+- Existing Stack Conventions rows, if any, from conventions.md or the folded `### Stack Conventions` in index.md (decided rows are kept)
 
 ## TASK
 1. WRITE .codeadd/wiki/architecture.md — system shape, boundaries, layer rules (type: explanation)
@@ -665,8 +665,8 @@ CLAUDE.md and no GEMINI.md:
 1. **DELETE FIRST** any existing section referencing `project-patterns` or `pattern-search.sh`
    (legacy Implementation Patterns pointer) — migration cleanup, before writing anything else
 2. **## Architecture Contract** — Apps table (`app | kind | path | entry`) + layer hierarchy rule
-   + import rules (compact JSON). When the Stack Conventions table has Tenancy = `yes` and
-   Source = `detected`, add ONE line under it:
+   + import rules (compact JSON). When the Stack Conventions table has a Tenancy Value that starts with `yes` and
+   Source = `detected`, add ONE line under it (`<key>` is the key in Value, `<enforcement>` is the Where cell):
    `Multi-tenancy: every query is scoped by <key> (<enforcement>) — see .codeadd/wiki/conventions.md#stack-conventions`
    (tiny mode, where the table is folded: `.codeadd/wiki/index.md#stack-conventions`).
    Nothing else from the table enters AGENTS.md
