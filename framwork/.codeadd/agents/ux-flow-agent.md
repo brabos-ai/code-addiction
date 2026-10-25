@@ -41,6 +41,11 @@ Inspect the project's design system by searching and reading relevant files. Eac
 5. **Frontend Readiness Check (early exit).** If the project has no frontend at all, report `frontend_false` to the dispatching command and STOP — do not write any temp file, do not proceed to Step 1. Otherwise classify: new project (fewer than 5 components — use `add--ux-design` skill defaults) or established (5+ components — MUST follow the patterns found in this inspection).
 6. If `HAS_FOUNDATIONS=true`, read `docs/design-system.md` and use its tokens over ad-hoc inference.
 
+<!-- slot:design.direction fallback="fallbacks/empty.md" -->
+<!-- plugin:design:direction -->
+<!-- /plugin:design:direction -->
+<!-- /slot:design.direction -->
+
 Write the inspection to temp `design-context.md` (extractive JSON, no prose):
 
 ```json

@@ -152,8 +152,9 @@ function stepRefFiles() {
 describe('slot membership map v2', () => {
   it('freezes the slot membership map and its nonempty fallbacks', () => {
     // 71 memberships in 64 slots before agent-mode; every agent-mode slot holds exactly one member (F10-F21).
+    // 64 -> 68: the four design plugin slots, one member each (0065B, F3).
     expect(MAP.membershipCount).toBe(TOTAL_POINTS());
-    expect(MAP.slotCount).toBe(64 + agentModePoints());
+    expect(MAP.slotCount).toBe(68 + agentModePoints());
     const members = MAP.resources.flatMap((r) => r.slots.flatMap((s) => s.sourceOrder));
     expect(members).toHaveLength(TOTAL_POINTS());
     // Nonempty fallbacks: plan-specs, plus every agent-mode.* slot (plan 2026-10-09T184411-PLAN--agent-mode-feature, F24).

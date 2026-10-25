@@ -31,6 +31,11 @@ Use the component inventory in `design-context.md` (from `@ux-flow-agent` Step 0
 5. Flow context per layout — note where the user comes from and where they go next, per `design-flow.md`.
 6. Emit the `## Design Contract` block: the dimensions table rows this feature commits to, inherited from `design-context.md`'s constraints — restate only this feature's commitments and justified deviations; an undefined dimension is `unknown — <why>`, never invented.
 
+<!-- slot:design.layout fallback="fallbacks/empty.md" -->
+<!-- plugin:design:layout -->
+<!-- /plugin:design:layout -->
+<!-- /slot:design.layout -->
+
 ## Output
 
 Write temp `design-layout.md`:
