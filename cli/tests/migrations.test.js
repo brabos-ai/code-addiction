@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
@@ -18,6 +21,7 @@ import {
   runMigrations,
   migrate,
   syncBoardDefinitions,
+  migrateQaSettings,
 } from '../src/migrations.js';
 
 let tmpDir;
@@ -426,5 +430,263 @@ describe('0004-sync-board-definitions (0057B)', () => {
     const done = runMigrations({ cwd: tmpDir, providers: [] }, [], { registry: ok });
     expect(done.applied).toEqual(['0004-sync-board-definitions']);
     expect(done.changes).toEqual(['board definitions: added shaped']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 0005-qa-settings (0066B)
+// ---------------------------------------------------------------------------
+
+describe('0005-qa-settings (0066B)', () => {
+  const OLD_SHAPE = 'sha256:25b937ee17628d6b';
+  const NEW_SHAPE = 'sha256:5a8b5405851bf4d8';
+  const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const SKILL = '.claude/skills/qa-project/SKILL.md';
+  const SKILL_OLD = [
+    '# qa-project',
+    '1. Probe `baseUrl` (from `docs/qa/config.json`).',
+    '2. Boot with `<boot command / config.json bootHint>`.',
+    '',
+  ].join('\n');
+  const sha = (text) => 'sha256:' + crypto.createHash('sha256').update(text).digest('hex');
+  const providers = () => [{ key: 'claude', dest: '.claude' }];
+  const ctx = () => ({ cwd: tmpDir, providers: providers() });
+  const file = (rel) => path.join(tmpDir, rel);
+  const readJson = (rel) => JSON.parse(fs.readFileSync(file(rel), 'utf8'));
+  const put = (rel, text) => {
+    fs.mkdirSync(path.dirname(file(rel)), { recursive: true });
+    fs.writeFileSync(file(rel), text, 'utf8');
+  };
+
+  const CONFIG = {
+    baseUrl: 'http://localhost:5173',
+    viewports: { desktop: [1440, 900], mobile: [375, 812] },
+    bootHint: '<command that starts the app>',
+    authSeed: '<how to sign in as a seeded user>',
+    teamNote: 'kept as is',
+  };
+
+  function receipt(shape = OLD_SHAPE) {
+    return [
+      '---',
+      'id: RCPT-add-qa-setup',
+      'type: setup-receipt',
+      'created: 2026-07-27',
+      'updated: 2026-10-01',
+      'related: []',
+      'command: add-qa-setup',
+      `setup-shape: ${shape}`,
+      'framework-version: 1.6.0',
+      'first-run: 2026-07-27',
+      'last-run: 2026-10-01',
+      'materialized:',
+      '  - path: docs/qa/config.json',
+      '    owner: setup',
+      '    hash: sha256:1f3a',
+      `  - path: ${SKILL}`,
+      '    owner: setup',
+      `    hash: ${sha(SKILL_OLD)}`,
+      '  - path: docs/features/0001F-x/_tests/screens.json',
+      '    owner: shared',
+      '    hash: null',
+      'prereqs:',
+      '  playwright-test: installed',
+      '  playwright-mcp: declined',
+      'qa-pipeline-feature: enabled',
+      'migration:',
+      '  detected: [cypress]',
+      '  decision: declined',
+      '  decided-at: 2026-07-27',
+      '---',
+      '',
+      '## TL;DR',
+      '',
+      'The install record for add-qa-setup.',
+      '',
+      '## Decision Log',
+      '',
+      '| Date | Shape | Decision | Rationale |',
+      '|---|---|---|---|',
+      '| 2026-07-27 | sha256:aaaaaaaaaaaaaaaa | Declined Playwright MCP wiring | Team runs QA in CI only |',
+      `| 2026-10-01 | ${shape} | Re-materialized after a shape change | Shape moved |`,
+      '',
+    ].join('\n');
+  }
+
+  function seedOldProject({ shape = OLD_SHAPE, contracts = true } = {}) {
+    put('docs/qa/config.json', JSON.stringify(CONFIG, null, 2));
+    put('docs/qa/qa-setup.md', receipt(shape));
+    put(SKILL, SKILL_OLD);
+    if (contracts) {
+      put('.codeadd/contracts.json', JSON.stringify({
+        version: 1,
+        contracts: { 'add-qa-setup': { shape: NEW_SHAPE, changed_in: '1.7.0', paths: [] } },
+      }));
+    }
+  }
+
+  it('L2.8 is registered after 0004 and allMigrationIds includes it, sorted', () => {
+    const ids = allMigrationIds();
+    expect(ids).toContain('0005-qa-settings');
+    expect(ids).toEqual([...ids].sort());
+    expect(ids.indexOf('0005-qa-settings')).toBeGreaterThan(ids.indexOf('0004-sync-board-definitions'));
+    expect(MIGRATIONS.find((m) => m.id === '0005-qa-settings').description).toMatch(/settings/i);
+  });
+
+  it('full convert: values, unknown key, receipt fields, log rows, qa-project text and hash, old files deleted', () => {
+    seedOldProject();
+    const out = migrateQaSettings(ctx());
+
+    const doc = readJson('.codeadd/settings.json');
+    expect(doc.schema).toBe(1);
+    expect(doc.qa).toMatchObject({
+      baseUrl: CONFIG.baseUrl,
+      viewports: CONFIG.viewports,
+      bootHint: CONFIG.bootHint,
+      authSeed: CONFIG.authSeed,
+      teamNote: 'kept as is',
+      'framework-version': '1.6.0',
+      'first-run': '2026-07-27',
+      'last-run': '2026-10-01',
+      'qa-pipeline-feature': 'enabled',
+      prereqs: { 'playwright-test': 'installed', 'playwright-mcp': 'declined' },
+      migration: { detected: ['cypress'], decision: 'declined', 'decided-at': '2026-07-27' },
+    });
+    for (const dropped of ['id', 'type', 'created', 'updated', 'related', 'command']) {
+      expect(doc.qa).not.toHaveProperty(dropped);
+    }
+
+    // The Decision Log rows, in order, then the migration entry.
+    expect(doc.qa.log).toHaveLength(3);
+    expect(doc.qa.log[0]).toEqual({
+      date: '2026-07-27',
+      item: 'qa-setup',
+      decision: 'Declined Playwright MCP wiring',
+      reason: 'Team runs QA in CI only',
+      shape: 'sha256:aaaaaaaaaaaaaaaa',
+    });
+    expect(doc.qa.log[1].decision).toBe('Re-materialized after a shape change');
+    expect(doc.qa.log[2]).toMatchObject({
+      item: 'qa-setup',
+      decision: 'migrated to .codeadd/settings.json',
+      reason: 'migration 0005',
+    });
+
+    // materialized: the config entry becomes the shared settings entry; the skill hash is recomputed.
+    const skillText = fs.readFileSync(file(SKILL), 'utf8');
+    expect(skillText).not.toContain('docs/qa/config.json');
+    expect(skillText).toContain('.codeadd/settings.json');
+    expect(doc.qa.materialized).toEqual([
+      { path: '.codeadd/settings.json', owner: 'shared', hash: null },
+      { path: SKILL, owner: 'setup', hash: sha(skillText) },
+      { path: 'docs/features/0001F-x/_tests/screens.json', owner: 'shared', hash: null },
+    ]);
+
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(false);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(false);
+    expect(fs.existsSync(file('docs/qa'))).toBe(false);
+    expect(out.changes.join('\n')).toMatch(/\.codeadd\/settings\.json/);
+    expect(out.changes.join('\n')).toMatch(/removed docs\/qa\/config\.json/);
+  });
+
+  it('no QA setup to migrate → a note, no change, no file written', () => {
+    seedProject();
+    const out = migrateQaSettings(ctx());
+    expect(out.changes).toEqual([]);
+    expect(out.notes).toEqual(['no QA setup to migrate']);
+    expect(fs.existsSync(file('.codeadd/settings.json'))).toBe(false);
+  });
+
+  it('a second run changes nothing', () => {
+    seedOldProject();
+    migrateQaSettings(ctx());
+    const settings = fs.readFileSync(file('.codeadd/settings.json'), 'utf8');
+    const again = migrateQaSettings(ctx());
+    expect(again.changes).toEqual([]);
+    expect(again.notes).toEqual(['no QA setup to migrate']);
+    expect(fs.readFileSync(file('.codeadd/settings.json'), 'utf8')).toBe(settings);
+  });
+
+  it('stamps the shipped shape only when the recorded shape is the last pre-refactor one', () => {
+    seedOldProject({ shape: OLD_SHAPE });
+    migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(NEW_SHAPE);
+  });
+
+  it('copies any other recorded shape unchanged, so the project stays STALE', () => {
+    const other = 'sha256:0123456789abcdef';
+    seedOldProject({ shape: other });
+    migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(other);
+  });
+
+  it('unreadable contracts.json → the recorded shape is copied and a note says why', () => {
+    seedOldProject({ contracts: false });
+    const out = migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(OLD_SHAPE);
+    expect(out.notes.join('\n')).toMatch(/contracts\.json/);
+  });
+
+  it('an existing qa section → merge missing keys only, keep the old files, add a note', () => {
+    seedOldProject();
+    put('.codeadd/settings.json', JSON.stringify({
+      schema: 1,
+      setup: { 'last-run': '2026-10-20' },
+      qa: { baseUrl: 'http://localhost:9999', log: [{ date: '2026-10-20', item: 'x', decision: 'kept', reason: 'r' }] },
+    }));
+    const out = migrateQaSettings(ctx());
+
+    const doc = readJson('.codeadd/settings.json');
+    expect(doc.setup).toEqual({ 'last-run': '2026-10-20' });
+    expect(doc.qa.baseUrl).toBe('http://localhost:9999');
+    expect(doc.qa.bootHint).toBe(CONFIG.bootHint);
+    expect(doc.qa.log).toHaveLength(1);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+    expect(out.notes.join('\n')).toMatch(/already (has|holds) a qa section/);
+  });
+
+  it('a malformed old file throws and deletes nothing', () => {
+    seedOldProject();
+    put('docs/qa/config.json', '{not json');
+    expect(() => migrateQaSettings(ctx())).toThrow(/config\.json/);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+    expect(fs.existsSync(file('.codeadd/settings.json'))).toBe(false);
+    expect(fs.readFileSync(file(SKILL), 'utf8')).toBe(SKILL_OLD);
+  });
+
+  it('a malformed existing .codeadd/settings.json throws and deletes nothing', () => {
+    seedOldProject();
+    put('.codeadd/settings.json', '{not json');
+    expect(() => migrateQaSettings(ctx())).toThrow(/settings\.json/);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+  });
+
+  it('through runMigrations a throw leaves 0005 out of applied', () => {
+    seedOldProject();
+    put('docs/qa/qa-setup.md', '---\n: : not yaml [\n---\n');
+    const registry = MIGRATIONS.filter((m) => m.id === '0005-qa-settings');
+    const res = runMigrations(ctx(), [], { registry });
+    expect(res.applied).toEqual([]);
+    expect(res.failed.map((f) => f.id)).toEqual(['0005-qa-settings']);
+  });
+
+  it('L3.3 a v1.6.0-shaped project with a current setup reads CURRENT afterwards, in both scripts', () => {
+    seedOldProject();
+    // mask host Playwright installs, as the scripts suite does
+    put('node_modules/@playwright/test/package.json', JSON.stringify({ name: '@playwright/test', main: 'not-installed.js' }));
+    const res = runMigrations(ctx(), [], { registry: MIGRATIONS.filter((m) => m.id === '0005-qa-settings') });
+    expect(res.failed).toEqual([]);
+
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    const scripts = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
+    const pre = spawnSync(process.execPath, [path.join(scripts, 'qa-preflight.cjs'), 'a'], { cwd: tmpDir, encoding: 'utf8' });
+    expect(pre.stdout).toContain('QA_RECEIPT=ok');
+    expect(pre.stdout).toContain('QA_CONTRACT_MATCH=ok');
+    const status = spawnSync(process.execPath, [path.join(scripts, 'status.cjs')], { cwd: tmpDir, encoding: 'utf8' });
+    expect(status.stdout).toContain('SETUP_QA:present');
+    expect(status.stdout).not.toContain('SETUP_QA_STALE');
   });
 });
