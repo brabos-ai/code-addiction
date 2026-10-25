@@ -348,12 +348,12 @@ describe('the shipped add-qa-setup contract', () => {
     expect(c.version).toBeUndefined();
     expect(c.recipes).toBeUndefined();
     expect(c.paths.map((p) => p.path)).toEqual([
-      'docs/qa/config.json',
+      '.codeadd/settings.json#qa',
       '<provider skills dir>/qa-project/SKILL.md',
       'FEATURE_DIR/_tests/screens.json',
       '.gitignore',
     ]);
-    expect(c.paths.map((p) => p.owner)).toEqual(['setup', 'setup', 'shared', 'shared']);
+    expect(c.paths.map((p) => p.owner)).toEqual(['shared', 'setup', 'shared', 'shared']);
   });
 
   it('the declaration embeds fenced H2s — the structure cases 3-5 guard', () => {
@@ -417,11 +417,14 @@ describe('the shipped add-qa-setup changed-in', () => {
   it('keeps the shape installed projects already hold and records the version that set it', () => {
     const sidecar = path.join(ROOT, 'framwork', '.codeadd', 'contracts.json');
     const c = extractContract(fs.readFileSync(REAL_COMMAND, 'utf8'), 'add-qa-setup');
-    expect(c.shape).toBe('sha256:25b937ee17628d6b');
-    expect(c.changed_in).toBe('1.5.2');
+    // The shape moved with the settings file: the last pre-refactor shape is sha256:25b937ee17628d6b.
+    expect(c.shape).toMatch(/^sha256:[0-9a-f]{16}$/);
+    expect(c.shape).not.toBe('sha256:25b937ee17628d6b');
+    expect(c.changed_in).toBe('1.7.0');
     expect(fs.existsSync(sidecar), 'sidecar missing — run `node scripts/build.js` first').toBe(true);
     const built = JSON.parse(fs.readFileSync(sidecar, 'utf8')).contracts['add-qa-setup'];
-    expect(built.shape).toBe('sha256:25b937ee17628d6b');
-    expect(built.changed_in).toBe('1.5.2');
+    expect(built.shape).toBe(c.shape);
+    expect(built.changed_in).toBe('1.7.0');
+    expect(built.paths[0]).toMatchObject({ path: '.codeadd/settings.json#qa', owner: 'shared' });
   });
 });

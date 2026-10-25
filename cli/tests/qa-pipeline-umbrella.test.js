@@ -152,7 +152,7 @@ describe('setup contract (0061)', () => {
   it('declares a ## Materializes block carrying every materialized shape', () => {
     expect(src).toMatch(/^## Materializes[ \t]*$/m);
     const block = sliceContractBlock(src);
-    for (const p of ['docs/qa/config.json', '_tests/screens.json', 'qa-project/SKILL.md', '.gitignore']) {
+    for (const p of ['.codeadd/settings.json#qa', '_tests/screens.json', 'qa-project/SKILL.md', '.gitignore']) {
       expect(block).toContain(p);
     }
     expect(block).toMatch(/^shape:\s*sha256:[0-9a-f]{16}\s*$/m);
@@ -209,7 +209,7 @@ describe('setup contract (0061)', () => {
     expect(step5).toContain('migration.detected'); // compares against the recorded fingerprint
     expect(step5).toMatch(/FORCE_MIGRATE/);        // the flag is the override, not the gate
     // The retired proxy may appear ONLY as the ⛔ prohibition against reusing it.
-    for (const line of step5.split('\n').filter((l) => l.includes('docs/qa/config.json'))) {
+    for (const line of step5.split('\n').filter((l) => l.includes('.codeadd/settings.json'))) {
       expect(line).toMatch(/⛔ Do NOT gate/);
     }
   });
