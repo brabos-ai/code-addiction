@@ -35,7 +35,7 @@ function walk(dir, out = []) {
 test('F1: @theme declares --font-display/-body/-mono and no --font-family- key', () => {
   const css = CSS();
   for (const k of ['--font-display', '--font-body', '--font-mono']) {
-    assert.match(css, new RegExp(`${k}\s*:`), `${k} missing from @theme`);
+    assert.match(css, new RegExp(`${k}\\s*:`), `${k} missing from @theme`);
   }
   assert.doesNotMatch(css, /--font-family-/, 'Tailwind v4 reads --font-*, not --font-family-*');
 });
