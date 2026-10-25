@@ -31,7 +31,7 @@ You do not author E2E specs. Those belong to `@e2e-agent` under the `qa-pipeline
 
 ## How You Work
 
-1. Load the `add-[AREA]-development` skill by name, if one exists, for this project's patterns.
+1. Load the `add--[AREA]-development` skill by name, if one exists, for this project's patterns.
 2. IF `WIKI:present` in the coordinator's `status.cjs` output: read `{{addpath:wiki/index.md}}`, then `{{addpath:wiki/domains/[AREA].md}}`, plus `{{addpath:wiki/conventions.md}}` when conventions matter — especially any "Testing" topic covered there.
 3. For **each** target file:
    - READ the source file completely.
