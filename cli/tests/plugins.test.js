@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   loadCatalog,
   validate,
@@ -549,6 +551,250 @@ describe('plugins', () => {
       scaffoldProject(cwd, { providers: ['claude'], pluginName: 'gx', sectionsByCommand: {}, skills: [] });
       const states = getPluginStates(cwd);
       expect(states).toEqual([{ name: 'gx', description: 'graph nav', enabled: false }]);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// design plugin (0065B) — reads the REAL catalog and the REAL source tree.
+// Writes only to os.tmpdir() dirs it deletes.
+// ---------------------------------------------------------------------------
+describe('design plugin (0065B)', () => {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const codeadd = path.join(repoRoot, 'framwork', '.codeadd');
+  const catalog = JSON.parse(fs.readFileSync(path.join(repoRoot, 'cli', 'src', 'plugins.json'), 'utf8'));
+  const read = (...p) => fs.readFileSync(path.join(codeadd, ...p), 'utf8');
+  const design = () => catalog.design;
+
+  describe('catalog shape', () => {
+    it('declares the design entry with its injection targets', () => {
+      const d = design();
+      expect(d).toBeDefined();
+      expect(d.type).toBe('skill');
+      expect(d.skills).toEqual([]);
+      expect(d.injects).toEqual(['add-plan']);
+      expect(d.agents).toEqual([
+        { agent: 'ux-flow-agent', sections: ['direction'] },
+        { agent: 'ux-layout-agent', sections: ['layout'] },
+        { agent: 'ux-agent', sections: ['critique'] },
+      ]);
+      expect(d.homepage).toBe('https://github.com/nextlevelbuilder/ui-ux-pro-max-skill');
+    });
+
+    it('gives both official install routes and the Python note in installHint', () => {
+      const hint = design()?.installHint ?? '';
+      for (const s of [
+        '/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill',
+        '/plugin install ui-ux-pro-max@ui-ux-pro-max-skill',
+        'npm install -g ui-ux-pro-max-cli',
+        'uipro init --ai',
+        'uipro-cli',
+        'Python 3',
+      ]) {
+        expect(hint, s).toContain(s);
+      }
+    });
+
+    it('tells the user how to check Python and reload in postEnableHint', () => {
+      const hint = design()?.postEnableHint ?? '';
+      for (const s of ['python3 --version', 'py --version', '/reload-plugins']) {
+        expect(hint, s).toContain(s);
+      }
+    });
+
+    it('documents the skill type in the schema doc', () => {
+      expect(catalog['$schema-doc'].fields.type).toContain("'skill'");
+    });
+  });
+
+  describe('detect quoting', () => {
+    it('is one node -e with no character special to sh or cmd.exe', () => {
+      expect(design()?.detect ?? '').toMatch(/^node -e "[^"$`%!\\]*"$/);
+    });
+  });
+
+  describe('detect matrix (real detect string)', () => {
+    let proj;
+    let home;
+    let cacheDir;
+    const mk = (root, rel, content = '# skill\n') => {
+      const f = path.join(root, rel);
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.writeFileSync(f, content);
+    };
+    // Temp HOME/USERPROFILE keep the developer's own install from leaking in;
+    // the cache-dir variable is removed unless the case sets it.
+    const run = (cacheEnv) => {
+      const env = { ...process.env, HOME: home, USERPROFILE: home };
+      delete env.CLAUDE_CODE_PLUGIN_CACHE_DIR;
+      if (cacheEnv) env.CLAUDE_CODE_PLUGIN_CACHE_DIR = cacheEnv;
+      try {
+        execSync(design().detect, { cwd: proj, env, stdio: 'ignore' });
+        return 0;
+      } catch (e) {
+        return e.status ?? 1;
+      }
+    };
+    const registry = (plugins) => JSON.stringify({ version: 2, plugins });
+    const entry = [{ scope: 'user', installPath: '/x', version: '2.15.0' }];
+
+    beforeEach(() => {
+      proj = fs.mkdtempSync(path.join(os.tmpdir(), 'design-proj-'));
+      home = fs.mkdtempSync(path.join(os.tmpdir(), 'design-home-'));
+      cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), 'design-cache-'));
+    });
+    afterEach(() => {
+      for (const d of [proj, home, cacheDir]) fs.rmSync(d, { recursive: true, force: true });
+    });
+
+    for (const root of ['.claude', '.cursor', '.agents', '.agent', '.opencode', '.zcode']) {
+      it(`finds the skill in project ${root}/skills`, () => {
+        mk(proj, `${root}/skills/ui-ux-pro-max/SKILL.md`);
+        expect(run()).toBe(0);
+      });
+    }
+
+    for (const rel of ['.claude', '.cursor', '.agents', '.zcode', '.config/opencode']) {
+      it(`finds the skill in home ${rel}/skills`, () => {
+        mk(home, `${rel}/skills/ui-ux-pro-max/SKILL.md`);
+        expect(run()).toBe(0);
+      });
+    }
+
+    it('finds a marketplace install under plugins in installed_plugins.json', () => {
+      mk(home, '.claude/plugins/installed_plugins.json', registry({ 'ui-ux-pro-max@ui-ux-pro-max-skill': entry }));
+      expect(run()).toBe(0);
+    });
+
+    it('finds the marketplace key at the top level too (defensive)', () => {
+      mk(home, '.claude/plugins/installed_plugins.json', JSON.stringify({ 'ui-ux-pro-max@ui-ux-pro-max-skill': entry }));
+      expect(run()).toBe(0);
+    });
+
+    it('reads installed_plugins.json from CLAUDE_CODE_PLUGIN_CACHE_DIR', () => {
+      mk(cacheDir, 'installed_plugins.json', registry({ 'ui-ux-pro-max@ui-ux-pro-max-skill': entry }));
+      expect(run(cacheDir)).toBe(0);
+    });
+
+    it('fails when nothing is installed', () => {
+      expect(run()).not.toBe(0);
+    });
+
+    it('fails for a ui-ux-pro-max dir with no SKILL.md', () => {
+      fs.mkdirSync(path.join(proj, '.claude', 'skills', 'ui-ux-pro-max'), { recursive: true });
+      expect(run()).not.toBe(0);
+    });
+
+    it('fails when installed_plugins.json only lists another plugin', () => {
+      mk(home, '.claude/plugins/installed_plugins.json', registry({ 'other@x': entry }));
+      expect(run()).not.toBe(0);
+    });
+
+    it('fails, without crashing into a false 0, on a malformed installed_plugins.json', () => {
+      mk(home, '.claude/plugins/installed_plugins.json', '{ not json');
+      expect(run()).not.toBe(0);
+    });
+  });
+
+  describe('fragment rules', () => {
+    const files = {
+      'add-plan': ['plugins', 'design', 'fragments', 'add-plan.md'],
+      'ux-flow-agent': ['plugins', 'design', 'fragments', 'agents', 'ux-flow-agent.md'],
+      'ux-layout-agent': ['plugins', 'design', 'fragments', 'agents', 'ux-layout-agent.md'],
+      'ux-agent': ['plugins', 'design', 'fragments', 'agents', 'ux-agent.md'],
+    };
+    const text = (name) => {
+      const f = path.join(codeadd, ...files[name]);
+      return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+    };
+
+    for (const name of Object.keys(files)) {
+      describe(name, () => {
+        it('states the precedence in order', () => {
+          const line = text(name).split('\n').find((l) => l.startsWith('**Precedence:**'));
+          expect(line, 'a **Precedence:** line').toBeDefined();
+          const at = ['inspected', 'docs/design-system.md', 'ui-ux-pro-max', 'add--ux-design'].map((s) => line.indexOf(s));
+          expect(at.every((i) => i >= 0)).toBe(true);
+          expect([...at].sort((a, b) => a - b)).toEqual(at);
+        });
+
+        it('never persists, and every search carries a domain', () => {
+          const t = text(name);
+          expect(t.length).toBeGreaterThan(0);
+          for (const l of t.split('\n')) {
+            if (l.includes('--persist')) expect(l.toLowerCase(), l).toContain('never');
+            if (l.includes('search.py')) expect(/--domain|--design-system/.test(l), l).toBe(true);
+          }
+        });
+
+        it('soft-fails to the design core without Python', () => {
+          const t = text(name);
+          expect(t).toContain('python3');
+          expect(t).toContain('design core');
+        });
+      });
+    }
+
+    it('the add-plan fragment carries the dispatch, consolidation and soft-degrade rules', () => {
+      const t = text('add-plan');
+      for (const s of ['DESIGN_SOURCE=ui-ux-pro-max', 'ux-consolidate', 'design-context.md', 'installPath', 'Soft-degrade']) {
+        expect(t, s).toContain(s);
+      }
+    });
+  });
+
+  describe('slot placement in source (by text)', () => {
+    // Returns the slot's start offset; asserts the exact shape: fallback, one member, nothing else.
+    const slotAt = (src, section) => {
+      const re = new RegExp(
+        `<!-- slot:design\\.${section} fallback="fallbacks/empty\\.md" -->\\s*<!-- plugin:design:${section} -->\\s*<!-- /plugin:design:${section} -->\\s*<!-- /slot:design\\.${section} -->`,
+      );
+      expect(src).toMatch(re);
+      expect(src.match(new RegExp(`<!-- plugin:design:${section} -->`, 'g'))).toHaveLength(1);
+      return src.search(new RegExp(`<!-- slot:design\\.${section} `));
+    };
+
+    it('design.plan sits between the contract gate and the flow dispatch in add-plan', () => {
+      const src = read('commands', 'add-plan.md');
+      const at = slotAt(src, 'plan');
+      const gate = src.indexOf('⛔ A `design.md` with no `## Design Contract`');
+      const next = src.indexOf('#### STEP add-plan.dispatch-ux-flow');
+      expect(gate).toBeGreaterThan(-1);
+      expect(at).toBeGreaterThan(gate);
+      expect(at).toBeLessThan(next);
+    });
+
+    it('design.direction follows item 6 in ux-flow-agent, outside gitnexus.graph', () => {
+      const src = read('agents', 'ux-flow-agent.md');
+      const at = slotAt(src, 'direction');
+      const item6 = src.indexOf('6. If `HAS_FOUNDATIONS=true`');
+      const write = src.indexOf('Write the inspection to temp `design-context.md`');
+      expect(item6).toBeGreaterThan(-1);
+      expect(at).toBeGreaterThan(item6);
+      expect(at).toBeLessThan(write);
+      const gx = src.indexOf('<!-- slot:gitnexus.graph ');
+      const gxEnd = src.indexOf('<!-- /slot:gitnexus.graph -->');
+      expect(at < gx || at > gxEnd).toBe(true);
+    });
+
+    it('design.layout follows item 6 and precedes ## Output in ux-layout-agent', () => {
+      const src = read('agents', 'ux-layout-agent.md');
+      const at = slotAt(src, 'layout');
+      const item6 = src.indexOf('6. Emit the `## Design Contract` block');
+      const out = src.indexOf('\n## Output');
+      expect(item6).toBeGreaterThan(-1);
+      expect(at).toBeGreaterThan(item6);
+      expect(at).toBeLessThan(out);
+    });
+
+    it('design.critique follows item 2 and precedes the next ### Output in ux-agent', () => {
+      const src = read('agents', 'ux-agent.md');
+      const at = slotAt(src, 'critique');
+      const item2 = src.indexOf('2. Adversarially hunt defects');
+      const out = src.indexOf('\n### Output', item2);
+      expect(item2).toBeGreaterThan(-1);
+      expect(at).toBeGreaterThan(item2);
+      expect(at).toBeLessThan(out);
     });
   });
 });
