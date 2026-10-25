@@ -41,8 +41,9 @@ function walkMarkdown(dir) {
 
 /**
  * Body of the section opened by `heading`, up to the next heading of the same
- * or a higher level (or a thematic break). The heading is matched at the start
- * of a line so prose that quotes it never opens the range.
+ * or a higher level, outside code fences: the publish-update section holds
+ * headings and a thematic break inside its own fenced template. The heading is
+ * matched at the start of a line so prose that quotes it never opens the range.
  */
 function section(source, heading) {
   const lines = source.split('\n');
@@ -50,9 +51,12 @@ function section(source, heading) {
   if (from === -1) return null;
   const level = heading.match(/^#+/)[0].length;
   let to = lines.length;
+  let fenced = false;
   for (let i = from + 1; i < lines.length; i++) {
+    if (lines[i].startsWith('```')) fenced = !fenced;
+    if (fenced) continue;
     const m = lines[i].match(/^(#+)\s/);
-    if ((m && m[1].length <= level) || lines[i].trim() === '---') {
+    if (m && m[1].length <= level) {
       to = i;
       break;
     }
