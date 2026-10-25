@@ -218,3 +218,27 @@ describe('F5 — add-help points a new user at add-setup', () => {
     expect(typeG).toMatch(/several[^\n]*`\/add-setup`/);
   });
 });
+
+describe('F6 — the CLI outros and the plugin catalog wording', () => {
+  const cli = (f) => read(path.join(root, 'cli/src', f));
+
+  it('L1.12 the install outro points at /add-setup then /add-help', () => {
+    const src = cli('installer.js');
+    expect(src).toContain('run: /add-setup');
+    expect(src).toContain('run: /add-help');
+    expect(src.indexOf('run: /add-setup')).toBeLessThan(src.indexOf('run: /add-help'));
+    expect(src).toContain('ADD installed successfully!');
+  });
+
+  it('L1.12 the update outro points at /add-setup', () => {
+    const src = cli('updater.js');
+    expect(src).toContain('ADD updated successfully!');
+    expect(src).toMatch(/run\s+\/add-setup to review what is new in this version/);
+  });
+
+  it('L1.12 the plugin catalog says the setup commands may install a tool after the user confirms', () => {
+    const doc = JSON.parse(cli('plugins.json'))['$schema-doc'].description;
+    expect(doc).toContain('may install a tool after the user confirms');
+    expect(doc).toContain('The CLI owns utilization, never installation');
+  });
+});

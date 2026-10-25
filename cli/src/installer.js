@@ -441,8 +441,8 @@ export async function install(cwd, options = {}) {
   outro(
     `ADD installed successfully!\n\n` +
       `Next steps:\n` +
-      `  1. Open your AI editor and run: /add-help\n` +
-      `  2. Ask what you want to build\n\n` +
+      `  1. Open your AI editor and run: /add-setup\n` +
+      `  2. Questions? run: /add-help\n\n` +
       `Docs: https://github.com/brabos-ai/code-addiction`
   );
 }

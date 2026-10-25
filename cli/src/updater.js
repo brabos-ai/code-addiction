@@ -170,5 +170,8 @@ export async function update(cwd, options = {}, scope = 'project') {
   }
 
   log.success(`Updated from v${currentVersion} to ${installSource.manifestVersion}`);
-  outro('ADD updated successfully!');
+  outro(
+    'ADD updated successfully!\n\n' +
+      'Next: open your AI editor and run /add-setup to review what is new in this version.'
+  );
 }
