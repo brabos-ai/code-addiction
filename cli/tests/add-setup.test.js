@@ -199,3 +199,22 @@ describe('F4 — the add-setup command', () => {
     }
   });
 });
+
+describe('F5 — add-help points a new user at add-setup', () => {
+  const help = () => read(path.join(codeadd, 'commands/add-help.md')).replace(/\r\n/g, '\n');
+
+  it('L1.11 names /add-setup in uses and in the Suggestion Table, and keeps the --help-only rule', () => {
+    const src = help();
+    expect(src.slice(0, src.indexOf('-->'))).toContain('- command: /add-setup');
+    expect(src).toMatch(/\| codeadd just installed[^\n]*`\/add-setup`[^\n]*Guided onboarding/);
+    expect(src).toContain('The only `codeadd` command this command runs is `codeadd --help`');
+    expect(src).toContain('Run a `codeadd` command other than `--help`');
+    expect(src).toContain('For a plugin, add nothing about installing the external tool.');
+  });
+
+  it('Type G tells the user to run /add-setup to set several up at once', () => {
+    const src = help();
+    const typeG = src.slice(src.indexOf('### Type G'), src.indexOf('### Type H'));
+    expect(typeG).toMatch(/several[^\n]*`\/add-setup`/);
+  });
+});
