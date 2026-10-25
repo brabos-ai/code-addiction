@@ -75,20 +75,19 @@ body::before {
 }
 
 /* Fade-in animation */
+/* Fade-up: transform only. Text is never hidden at opacity 0, so it is readable
+   without JS, before the animation starts and under reduced motion. */
 @keyframes fadeUp {
   from {
-    opacity: 0;
     transform: translateY(24px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
 .fade-up {
-  opacity: 0;
-  animation: fadeUp 0.6s ease-out forwards;
+  animation: fadeUp 0.6s ease-out both;
 }
 
 .fade-up-delay-1 { animation-delay: 0.1s; }
@@ -155,4 +154,23 @@ body::before {
   font-size: 18px;
   opacity: 0.5;
   user-select: none;
+}
+
+/* Reduced motion: no fade-up, no bounce, no cursor blink, no smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .fade-up,
+  .animate-bounce,
+  .cursor-blink::after {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
