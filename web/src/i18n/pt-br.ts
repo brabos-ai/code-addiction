@@ -284,7 +284,7 @@ export const ptBr: Strings = {
             { cmd: "/add-plan", text: "arquitetura técnica, contrato de UX, quebra em tarefas" },
             { cmd: "/add-build", text: "implementação conduzida por subagents" },
             { cmd: "/add-review", text: "code review automatizado" },
-            { cmd: "/add-done", text: "changelog, docs, merge" },
+            { cmd: "/add-done", text: "changelog, docs e merge" },
           ],
         },
         {

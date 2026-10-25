@@ -62,6 +62,7 @@ test('F2: CommandLine.astro has a labelled copy button, a live region and a wrap
   const c = read('src/components/CommandLine.astro');
   assert.match(c, /<button/);
   assert.match(c, /aria-label=\{`\$\{t\("common\.copy"\)\}: /);
+  assert.match(read('src/i18n/en.ts'), /copy: "Copy"/, 'the accessible name still starts with Copy');
   assert.match(c, /aria-live="polite"/);
   assert.match(c, /min-w-0 break-all/);
 });

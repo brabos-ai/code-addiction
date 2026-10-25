@@ -38,7 +38,6 @@ export const SAME_IN_BOTH: string[] = [
   "docs.flows.nodes.brainstorm",
   "docs.flows.nodes.hotfix",
   "docs.scenarios.items.*.steps.*.cmd",
-  "docs.scenarios.items.0.steps.5.text", // "changelog, docs, merge"
 ];
 
 function leaves(node: unknown, prefix: string, out: Map<string, string>): Map<string, string> {
