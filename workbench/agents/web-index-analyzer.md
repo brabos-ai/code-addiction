@@ -39,26 +39,37 @@ The landing text lives in the two strings modules. You own the `home.*`, `common
 Write to `.tmp/sync/web-index-report.json`:
 
 ```json
-{
-  "target": "web/src/i18n/en.ts",
-  "edits": [
-    {
-      "action": "REPLACE",
-      "old": "<exact verbatim text from en.ts — character-perfect copy>",
-      "new": "<exact replacement>"
-    }
-  ],
-  "manual_items": [
-    {"reason": "...", "detail": "..."}
-  ]
-}
+[
+  {
+    "target": "web/src/i18n/en.ts",
+    "edits": [
+      {
+        "action": "REPLACE",
+        "old": "<exact verbatim text from en.ts — character-perfect copy>",
+        "new": "<exact replacement>"
+      }
+    ],
+    "manual_items": [
+      {"reason": "...", "detail": "..."}
+    ]
+  },
+  {
+    "target": "web/src/i18n/pt-br.ts",
+    "edits": [
+      {
+        "action": "REPLACE",
+        "old": "<exact verbatim text from pt-br.ts>",
+        "new": "<the same change in natural Brazilian Portuguese>"
+      }
+    ],
+    "manual_items": []
+  }
+]
 ```
-
-Every `en.ts` object is followed by its `pt-br.ts` twin, with the same shape and the PT-BR `new`.
 
 **Insertion pattern:** `old` = anchor element already in file, `new` = anchor + `\n` + new content.
 
-**One to four targets.** The report file is an array with one object per target: `web/src/pages/index.astro` (a literal prop), `web/src/data/providers.ts` (a provider change; the `old` text of an edit there is one whole entry line), `web/src/i18n/en.ts` and `web/src/i18n/pt-br.ts` (a copy change, always both). The coordinator iterates over each element and rejects a report where the `en.ts` and `pt-br.ts` copy edits do not pair up.
+**One to four targets.** The report file is an array with one object per target: `web/src/pages/index.astro` (a literal prop), `web/src/data/providers.ts` (a provider change; the `old` text of an edit there is one whole entry line), `web/src/i18n/en.ts` and `web/src/i18n/pt-br.ts` (a copy change, always both). The coordinator iterates over each element. When the `en.ts` and `pt-br.ts` copy edits do not pair up, it applies neither half and sends you again.
 
 ## Rules
 

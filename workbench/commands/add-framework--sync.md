@@ -282,7 +282,8 @@ Each agent is independent. Dispatch ALL simultaneously.
 IF ANY MISSING:
   ⛔ DO NOT USE: Edit on any documentation file
   ✅ DO: Wait for it, or send the missing agent again — this is a retry on a result that never
-     arrived, not a second opinion on one that did
+     arrived, not a second opinion on one that did. A report that arrived with unpaired language
+     edits is the one other case that sends an analyzer again (STEP 5.2)
 
 ---
 
@@ -311,16 +312,17 @@ For deletions: `old` = text to remove, `new` = "".
 
 ### 5.2 Check the Language Pairs, Then Collect and Order Edits
 
-**Check the pairs first.** Every copy edit to `web/src/i18n/en.ts` needs its twin to `web/src/i18n/pt-br.ts` in the same report, and the reverse. When the two sets do not pair up:
+**Check the pairs first.** Every copy edit to `web/src/i18n/en.ts` needs its twin to `web/src/i18n/pt-br.ts` in the same report, and the reverse. Two edits are twins when they change the same key or the same `{ name, desc }` entry (the same `name`), and the counts match one to one. When the two sets do not pair up:
 
 ```
 IF A REPORT'S en.ts EDITS AND pt-br.ts EDITS DO NOT PAIR UP:
   ⛔ DO NOT USE: Edit on web/src/i18n/en.ts or web/src/i18n/pt-br.ts for that report
   ⛔ DO NOT: Apply the half that has a twin
-  ✅ DO: Stop, name the report and the unpaired edits, and ask for that analyzer to run again
+  ✅ DO: Send that one analyzer again, naming the unpaired edits; apply the other reports once it answers
+  ✅ DO: Stop and name the report in the closing summary if the second report is still unpaired
 ```
 
-Then, for each other target file:
+Then, for each target file:
 
 1. Collect ALL edits from all reports targeting that file
 2. Order by position in file — **apply bottom-up** (last occurrence first) to preserve line positions for subsequent edits
@@ -331,6 +333,7 @@ For each edit (in bottom-up order):
 1. Verify `old` text exists verbatim in the file
 2. If found → apply via Edit tool (one call per edit)
 3. If NOT found → skip, add to `[MANUAL]` with reason: "Anchor text not found in file"
+4. If the skipped edit is one half of an `en.ts` / `pt-br.ts` pair → do not apply its twin; add both to `[MANUAL]`, so the two modules never differ by one key
 
 **Apply each edit as an individual Edit tool call. Do NOT batch.**
 
