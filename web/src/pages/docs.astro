@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import CommandLine from "../components/CommandLine.astro";
+import { providers, installDirs } from "../data/providers";
 import "../styles/global.css";
 ---
 
@@ -129,11 +130,11 @@ import "../styles/global.css";
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-relaxed">
           <span class="text-muted">your-project/</span><br/>
           <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← core (always)</span><br/>
-          <span class="text-foreground">├── .claude/</span><span class="text-muted ml-8">← Claude Code</span><br/>
-          <span class="text-foreground">├── .agents/</span><span class="text-muted ml-7">← Codex (OpenAI) + ZCode</span><br/>
-          <span class="text-foreground">├── .agent/</span><span class="text-muted ml-8">← Antigravity</span><br/>
-          <span class="text-foreground">├── .cursor/</span><span class="text-muted ml-6">← Cursor</span><br/>
-          <span class="text-foreground">└── .opencode/</span><span class="text-muted ml-4">← OpenCode</span>
+          {installDirs().map((row, i, all) => (
+            <>
+              <span class="text-foreground inline-block min-w-[11ch]">{i === all.length - 1 ? "└── " : "├── "}{row.dir}</span><span class="text-muted">← {row.labels.join(" + ")}</span>{i < all.length - 1 && <br/>}
+            </>
+          ))}
         </div>
 
         <p class="text-muted text-sm mt-4">
@@ -962,12 +963,13 @@ import "../styles/global.css";
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
-              <tr><td class="py-3 pr-4 text-muted-light">Claude Code</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.claude/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">Codex (OpenAI)</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agents/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">Google Antigravity</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agent/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">Cursor</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.cursor/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">OpenCode</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.opencode/</code></td><td class="py-3 text-muted-light">commands/</td></tr>
-              <tr><td class="py-3 pr-4 text-muted-light">ZCode (Z.ai)</td><td class="py-3 pr-4"><code class="text-accent font-mono text-xs">.agents/</code></td><td class="py-3 text-muted-light">skills/</td></tr>
+              {providers.map((p) => (
+                <tr>
+                  <td class="py-3 pr-4 text-muted-light">{p.name}</td>
+                  <td class="py-3 pr-4"><code class="text-accent font-mono text-xs">{p.dir}</code>{p.agentsDir && <> <span class="text-muted">+</span> <code class="text-accent font-mono text-xs">{p.agentsDir}</code></>}</td>
+                  <td class="py-3 text-muted-light">{p.format}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
