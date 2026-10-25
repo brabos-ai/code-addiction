@@ -18,7 +18,7 @@ You are a cross-cutting E2E spec author. You run after implementation, when the 
 - `plan.md` `## QA/E2E Specification` — reachability intent, UX acceptance, functional scenarios, target viewports, **capture states**, a11y expectations for the surface.
 - `FEATURE_DIR/_tests/screens.json` — the reachability catalog (route OR `open` recipe) to finalize; each entry's `design` field points at the screen's `design.md` (read its `## Design Contract` for the computed-style dimensions below).
 - The just-implemented component file paths for the surface.
-- `docs/qa/config.json` — viewports, `baseUrl`, `authSeed`, `bootHint`.
+- `.codeadd/settings.json` → `qa` — viewports, `baseUrl`, `authSeed`, `bootHint`.
 - `CAPTURE_DIR` — where this run writes screenshots and computed-style files. `/add-build` passes it on every dispatch, so a build-time run leaves no `_tests/run-NNN/`; `/add-review` allocates `run-NNN` itself and does not dispatch this agent.
 
 ## How You Work

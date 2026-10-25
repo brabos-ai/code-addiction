@@ -296,12 +296,14 @@ Format: `type(scope): subject`. Source priority:
 
 ### STEP add-pull-request.publish-create: Create new PR (if no PR exists)
 
+1. Write the body from STEP add-pull-request.body with the file-write tool to `.codeadd/.temp/<random-slug>.md` (create the folder when missing). Never pass the body inline in the shell call.
+2. Create the PR from that file:
+
 ```bash
-gh pr create --title "<title>" --body "$(cat <<'EOF'
-<body from STEP add-pull-request.body>
-EOF
-)"
+gh pr create --title "<title>" --body-file <file>
 ```
+
+3. Delete the temp file, whether the call succeeded or failed.
 
 Capture returned URL.
 
@@ -328,14 +330,14 @@ Capture returned URL.
 Date is today's date (`date +%Y-%m-%d`).
 
 3. Concatenate: `<existing body>\n\n<update section>`.
-4. Apply:
+4. Write the concatenated body with the file-write tool to `.codeadd/.temp/<random-slug>.md` (create the folder when missing). Never pass the body inline in the shell call.
+5. Apply:
 
 ```bash
-gh pr edit <number> --body "$(cat <<'EOF'
-<concatenated body>
-EOF
-)"
+gh pr edit <number> --body-file <file>
 ```
+
+6. Delete the temp file, whether the call succeeded or failed.
 
 ---
 

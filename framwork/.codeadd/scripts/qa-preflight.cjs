@@ -9,6 +9,11 @@
  * Usage: node .codeadd/scripts/qa-preflight.cjs a
  *        node .codeadd/scripts/qa-preflight.cjs b <FEATURE_DIR> [SPEC_GLOB]
  *
+ * Reads the project's `.codeadd/settings.json`, section `qa` (schema: add--settings):
+ *   QA_CONFIG comes from qa.baseUrl; QA_RECEIPT and QA_CONTRACT_* from qa["setup-shape"]
+ *   and qa["framework-version"]. A file that does not parse is broken for both; a file
+ *   with no qa section reads as missing for both.
+ *
  * Output: KEY=STATUS lines. Statuses: ok | missing | broken | not-probed.
  *   On QA_CONTRACT_MATCH=broken only, five more rows say why: the receipt shape and
  *   its framework-version, the shipped shape, the version that last changed it
@@ -197,17 +202,48 @@ function globHasMatch(pattern) {
 
 // --- receipt + contract shape ------------------------------------------------
 
-function readSetupShape(text) {
-  const lines = text.split('\n');
-  if (!lines[0] || !/^---\r?$/.test(lines[0])) return '';
-  for (let i = 1; i < lines.length; i += 1) {
-    if (/^---\r?$/.test(lines[i])) break;
-    if (/^setup-shape:\s*sha256:[0-9a-f]+\s*\r?$/.test(lines[i])) {
-      const m = /sha256:[0-9a-f]+/.exec(lines[i]);
-      return m ? m[0] : '';
-    }
+/**
+ * The `qa` section of .codeadd/settings.json.
+ *   { state: 'absent' }              no file, or a file with no qa section
+ *   { state: 'broken' }              the file does not parse (or qa is not an object)
+ *   { state: 'ok', qa: {...} }       the section
+ */
+function readQaSection(file) {
+  if (!isFile(file)) return { state: 'absent' };
+  let doc;
+  try {
+    doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return { state: 'broken' };
   }
-  return '';
+  if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) return { state: 'broken' };
+  if (!Object.prototype.hasOwnProperty.call(doc, 'qa')) return { state: 'absent' };
+  if (doc.qa === null || typeof doc.qa !== 'object' || Array.isArray(doc.qa)) return { state: 'broken' };
+  return { state: 'ok', qa: doc.qa };
+}
+
+const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+/** Does the section hold any value field (the scaffolded QA values)? */
+function hasValueFields(qa) {
+  return ['baseUrl', 'viewports', 'bootHint', 'authSeed'].some((k) => has(qa, k));
+}
+
+/** Does the section hold any receipt field? */
+function hasReceiptFields(qa) {
+  return ['setup-shape', 'first-run', 'last-run'].some((k) => has(qa, k));
+}
+
+/** A bare `sha256:<hex>`; '' for anything else. */
+function recordedShape(qa) {
+  const v = qa['setup-shape'];
+  return typeof v === 'string' && /^sha256:[0-9a-f]+$/.test(v) ? v : '';
+}
+
+/** Receipt `framework-version`; '' when absent or not a string. */
+function receiptVersion(qa) {
+  const v = qa['framework-version'];
+  return typeof v === 'string' ? v : '';
 }
 
 function readCurrentShape(text) {
@@ -218,18 +254,6 @@ function readCurrentShape(text) {
       const m = /sha256:[0-9a-f]+/.exec(line);
       if (m) return m[0];
     }
-  }
-  return '';
-}
-
-/** Receipt `framework-version`, read inside the frontmatter only; '' when absent. */
-function readReceiptVersion(text) {
-  const lines = text.split('\n');
-  if (!lines[0] || !/^---\r?$/.test(lines[0])) return '';
-  for (let i = 1; i < lines.length; i += 1) {
-    if (/^---\r?$/.test(lines[i])) break;
-    const m = /^framework-version:\s*(\S+)\s*\r?$/.exec(lines[i]);
-    if (m) return m[1];
   }
   return '';
 }
@@ -268,20 +292,17 @@ async function phaseA() {
     write(`QA_FEATURE_STATE=${state}`);
   }
 
-  // config.json — parse + require baseUrl; dependent probes short-circuit.
-  const config = path.resolve(process.cwd(), 'docs', 'qa', 'config.json');
-  if (!isFile(config)) {
+  // .codeadd/settings.json → qa — parse + require baseUrl; dependent probes short-circuit.
+  const settings = readQaSection(path.resolve(process.cwd(), '.codeadd', 'settings.json'));
+  if (settings.state === 'absent' || (settings.state === 'ok' && !hasValueFields(settings.qa))) {
     write('QA_CONFIG=missing');
     write('QA_BASEURL=');
     write('QA_BASEURL_LOCAL=not-probed');
     write('QA_BASEURL_REACHABLE=not-probed');
   } else {
     let baseUrl = null;
-    try {
-      const parsed = JSON.parse(fs.readFileSync(config, 'utf8'));
-      if (typeof parsed.baseUrl === 'string' && parsed.baseUrl) baseUrl = parsed.baseUrl;
-    } catch {
-      baseUrl = null;
+    if (settings.state === 'ok' && typeof settings.qa.baseUrl === 'string' && settings.qa.baseUrl) {
+      baseUrl = settings.qa.baseUrl;
     }
 
     if (baseUrl === null) {
@@ -340,13 +361,12 @@ async function phaseA() {
   write(`QA_PROJECT_SKILL=${skill}`);
 
   // Receipt + shipped shape. Diagnosis only — callers decide block vs work.
-  const receipt = path.resolve(process.cwd(), 'docs', 'qa', 'qa-setup.md');
   const sidecar = path.resolve(process.cwd(), '.codeadd', 'contracts.json');
-  if (!isFile(receipt)) {
+  if (settings.state === 'absent' || (settings.state === 'ok' && !hasReceiptFields(settings.qa))) {
     write('QA_RECEIPT=missing');
     write('QA_CONTRACT_MATCH=not-probed');
   } else {
-    const recorded = readSetupShape(fs.readFileSync(receipt, 'utf8'));
+    const recorded = settings.state === 'ok' ? recordedShape(settings.qa) : '';
     if (!recorded) {
       write('QA_RECEIPT=broken');
       write('QA_CONTRACT_MATCH=not-probed');
@@ -363,7 +383,7 @@ async function phaseA() {
         } else {
           write('QA_CONTRACT_MATCH=broken');
           write(`QA_CONTRACT_RECEIPT_SHAPE=${recorded}`);
-          write(`QA_CONTRACT_RECEIPT_VERSION=${readReceiptVersion(fs.readFileSync(receipt, 'utf8')) || 'unknown'}`);
+          write(`QA_CONTRACT_RECEIPT_VERSION=${receiptVersion(settings.qa) || 'unknown'}`);
           write(`QA_CONTRACT_SHIPPED_SHAPE=${current}`);
           write(`QA_CONTRACT_CHANGED_IN=${readChangedIn(fs.readFileSync(sidecar, 'utf8')) || 'unknown'}`);
           write('QA_CONTRACT_ACTION=/add-qa-setup');

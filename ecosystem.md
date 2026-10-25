@@ -78,6 +78,7 @@ graph LR
   HOTFIX(add-hotfix)
   PULLREQUEST(add-pull-request)
   QASETUP(add-qa-setup)
+  SETUP(add-setup)
   UX(add-ux)
   WIKI(add-wiki)
 
@@ -86,6 +87,7 @@ graph LR
   ARDI{{add--architecture-discovery}}
   BA{{add--backlog}}
   CO{{add--commit}}
+  DEMO{{add--delivery-mode}}
   DEENSE{{add--dev-environment-setup}}
   DOSC{{add--doc-schemas}}
   EC{{add--ecosystem}}
@@ -97,6 +99,7 @@ graph LR
   KNDI{{add--knowledge-discovery}}
   QA{{add--qa}}
   QAMI{{add--qa-migration}}
+  SE{{add--settings}}
   SECO{{add--setup-contract}}
   SUDRDE{{add--subagent-driven-development}}
   TD{{add--tdd}}
@@ -114,8 +117,10 @@ graph LR
   HOTFIX -->|tdd-pipeline| TD
   PULLREQUEST --> CO & DOSC & FIRE & HUIN & IDCO
   PULLREQUEST -->|agent-mode| AGIN
-  QASETUP --> DEENSE & DOSC & FIRE & HUIN & QA & QAMI & SECO & SUDRDE
+  QASETUP --> DEMO & DEENSE & DOSC & FIRE & HUIN & QA & QAMI & SE & SECO & SUDRDE
   QASETUP -->|agent-mode| AGIN
+  SETUP --> DEMO & DEENSE & EC & FIRE & HUIN & SE
+  SETUP -->|agent-mode| AGIN
   UX --> UXDE
   WIKI --> AGMDST & ARDI & DOSC & EC & FIRE & HUIN & SUDRDE & WIMA
   WIKI -->|agent-mode| AGIN

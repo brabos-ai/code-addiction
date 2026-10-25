@@ -1,6 +1,7 @@
 # Wiki Knowledge Base Generator
 
 <!-- uses:
+- mention: /add-setup
 - skill: add--human-interaction (conditional)
 - skill: add--architecture-discovery
 - skill: add--agents-md-style
@@ -24,6 +25,8 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 <!-- feature:agent-mode:interaction -->
 <!-- /feature:agent-mode:interaction -->
 <!-- /slot:agent-mode.interaction -->
+
+**Setup answers.** When this session holds a `## Setup answers` block printed by `{{cmd:add-setup}}`, this command asks nothing that block covers. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
 
 ## Required Skills
 
@@ -630,6 +633,7 @@ IF WRITING THE RUNTIME POLICY:
 Run shipped framework entries with Node (>=22.19.0), e.g. `node .codeadd/scripts/status.cjs`.
 No Bash, WSL or Git Bash is required; the entries are native CommonJS.
 Headless callers (claude -p): read .codeadd/agent-mode/README.md.
+Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline.
 
 [//]: # (codeadd-shell:end)
 ```

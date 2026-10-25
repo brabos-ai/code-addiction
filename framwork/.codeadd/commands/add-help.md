@@ -10,6 +10,7 @@
 - command: /add-new
 - command: /add-plan
 - command: /add-review
+- command: /add-setup
 - script: status.cjs
 - skill: add--dev-environment-setup
 - skill: add--ecosystem
@@ -189,6 +190,8 @@ Three questions, three sources. Answer from them, never from memory.
    - When neither manifest exists, say so: the framework is not installed here.
 3. **How to turn it on:** `codeadd features enable <name>` or `codeadd plugins enable <name>`. Off is the same with `disable`.
 
+To set several up at once, run `/add-setup`.
+
 For a plugin, add nothing about installing the external tool. `codeadd plugins enable` checks the tool is present and prints the install steps itself. Tell the user to run it and follow what it prints.
 
 Include: what it is, on or off, the exact command, and what it changes (the `Injects into` column).
@@ -235,6 +238,7 @@ ALWAYS include at end of response (except if question was only about a specific 
 | Clear bug in production | `/add-hotfix` | Urgent fix |
 | Vague symptom / unsure if bug or feature | `/add-diagnose` | Structured investigative triage before deciding |
 | Does not know where to start | `/add-brainstorm` | Explore ideas |
+| codeadd just installed, or features/plugins never chosen | `/add-setup` | Guided onboarding |
 | node/git/gh missing, or Node older than 22.19.0 | Load `add--dev-environment-setup` skill | Setup dev environment |
 | User asks about terminal setup | Load `add--dev-environment-setup` skill | Guide environment configuration |
 

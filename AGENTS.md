@@ -20,8 +20,8 @@ The inventory below is **generated** — `node scripts/inventory.js` writes it f
 array has a length.
 
 [//]: # (codeadd-inventory:start)
-{"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
-{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
+{"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-setup","add-ux","add-wiki"]}
+{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--settings","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["backlog-board.cjs","backlog-cli.cjs","backlog-commit.cjs","backlog-core.cjs","backlog-git.cjs","backlog-id.cjs","backlog-storage.cjs","build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
@@ -226,7 +226,7 @@ Optional features inject content into commands **post-install**, so they can be 
 
 ## Plugin System
 
-A `plugin` integrates an **external MCP tool** — distinct from a feature. codeadd owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points at the tool's own installer. Disabled by default.
+A `plugin` integrates an **external MCP tool** — distinct from a feature. The CLI owns utilization, never installation: it validates the tool is present, injects additive guidance into commands **and agent definitions**, activates plugin-bound skills, and points at the tool's own installer. The conversational setup commands (`/add-setup`, `/add-qa-setup`) may install a tool after the user confirms. Disabled by default.
 
 | Component | Path |
 |-----------|------|
@@ -246,8 +246,8 @@ A command that materializes state into a user's project declares a `## Materiali
 | Component | Path |
 |---|---|
 | Contract declaration | `## Materializes` H2 in the command source |
-| Receipt schema | `add--doc-schemas/references/receipt.md` |
-| Receipt in user project | `docs/qa/qa-setup.md` |
+| Receipt schema | `add--settings` |
+| Receipt in user project | `.codeadd/settings.json` → `qa` |
 | Comparison procedure | `add--setup-contract` skill |
 | Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 
@@ -273,6 +273,10 @@ Auto-updated by `add-framework--sync` before releases (4 analyzer agents in para
 | `.github/workflows/ci.yml` | Push/PR | Tests and validation |
 | `.github/workflows/release.yml` | Tag push (`v*`) | Build + create GitHub release |
 | `.github/workflows/deploy-web.yml` | Push/PR | Deploy web documentation |
+
+## Shell Calls
+
+Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline. Authoring side: `building-commands`.
 
 ## Where the details live
 

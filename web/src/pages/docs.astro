@@ -298,6 +298,10 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                <code class="text-accent font-mono text-sm">/add-setup</code>
+                <p class="text-muted text-xs mt-0.5">Guided onboarding — offers each feature and plugin with its benefit, sets up the ones you accept</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-ux</code>
                 <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
               </div>
@@ -582,6 +586,7 @@ import "../styles/global.css";
             { name: "add--knowledge-discovery", desc: "Use at the context/discovery step of add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm - consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents." },
             { name: "add--wiki-maintenance", desc: "Use for incremental project-wiki updates - loaded by /add-wiki update (manual drift) and add-done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
             { name: "add--setup-contract", desc: "Use when a state-materializing command starts - compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP 1.5 and STEP 12." },
+            { name: "add--settings", desc: "Use when a command reads or writes the project settings file .codeadd/settings.json - ownership, read/merge/write, the content rule, the qa and setup section schemas and the receipt fields. Consumed by /add-qa-setup and /add-setup." },
             { name: "add--feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds - catches docs that pass every review and still make the reader build the wrong thing." },
             { name: "add--final-report", desc: "Use at a command's closing step - the seven blocks every finishing command reports in, the optional fresh-context continuation handoff and its two-response contract, the banned phrasings, and the self-check. Load at the last step, not at the first." },
             { name: "add--review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document - how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
@@ -1161,6 +1166,7 @@ import "../styles/global.css";
         {data:{id:'add-pull-request',label:'add-pull-request',type:'command'}},
         {data:{id:'add-qa-setup',label:'add-qa-setup',type:'command'}},
         {data:{id:'add-review',label:'add-review',type:'command'}},
+        {data:{id:'add-setup',label:'add-setup',type:'command'}},
         {data:{id:'add-ux',label:'add-ux',type:'command'}},
         {data:{id:'add-wiki',label:'add-wiki',type:'command'}},
         // Agents
@@ -1210,6 +1216,7 @@ import "../styles/global.css";
         {data:{id:'add--qa-spec',label:'qa-spec',type:'skill'}},
         {data:{id:'add--qa-migration',label:'qa-migration',type:'skill'}},
         {data:{id:'add--setup-contract',label:'setup-contract',type:'skill'}},
+        {data:{id:'add--settings',label:'settings',type:'skill'}},
       ];
 
       var RAW = [
@@ -1270,6 +1277,10 @@ import "../styles/global.css";
         ['add-qa-setup','add--dev-environment-setup','loads'],
         ['add-qa-setup','add--qa-migration','loads'],
         ['add-qa-setup','add--setup-contract','loads'],
+        ['add-qa-setup','add--settings','loads'],
+        ['add-setup','add--settings','loads'],
+        ['add-setup','add--ecosystem','loads'],
+        ['add-setup','add--dev-environment-setup','loads'],
         ['add-plan','add--qa-spec','loads'],
         // command → agent (dispatches)
         ['add-build','backend-agent','dispatches'],

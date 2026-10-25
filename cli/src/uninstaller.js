@@ -51,6 +51,21 @@ function walkDir(dir, cwd) {
 }
 
 /**
+ * Is this path project data that lives under .codeadd/ but is not an ADD file?
+ * board.json, settings.json and the wiki are committed by the project; a directory-based
+ * removal has no manifest to tell it so, and must never list them.
+ * @param {string} rel path relative to cwd, forward slashes
+ * @returns {boolean}
+ */
+function isProjectData(rel) {
+  return (
+    rel === '.codeadd/board.json' ||
+    rel === '.codeadd/settings.json' ||
+    rel.startsWith('.codeadd/wiki/')
+  );
+}
+
+/**
  * Remove empty directories recursively (bottom-up).
  * @param {string} dir
  */
@@ -96,7 +111,7 @@ export async function uninstall(cwd, force = false, scope = 'project') {
 
     const allPresent = [];
     for (const dir of dirs) {
-      allPresent.push(...walkDir(path.join(cwd, dir), cwd));
+      allPresent.push(...walkDir(path.join(cwd, dir), cwd).filter((rel) => !isProjectData(rel)));
     }
 
     if (allPresent.length === 0) {

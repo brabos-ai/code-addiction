@@ -102,14 +102,14 @@ short-circuited the row — report it as not probed, never as passing.
 
 | # | Prerequisite | Probe | Severity |
 |---|---|---|---|
-| 1 | `docs/qa/config.json` present + parseable + has `baseUrl` | `QA_CONFIG` | block |
+| 1 | `.codeadd/settings.json` has a parseable `qa` section with `baseUrl` | `QA_CONFIG` | block |
 | 2 | `baseUrl` local/throwaway | `QA_BASEURL_LOCAL` | block — refuse production |
 | 3 | `baseUrl` reachable — boot it when down | `QA_BASEURL_REACHABLE` | boot first (below); **block** only if boot fails — surface the config `bootHint` |
 | 4 | `@playwright/test` functional in the project | `QA_RUNNER` | block |
 | 5 | chromium launchable | `QA_CHROMIUM` | block |
 | 6 | `qa-project` skill present | `QA_PROJECT_SKILL` | block — it carries the run commands |
 | 7 | `playwright` MCP connected | provider MCP listing (not scripted) | **degrade** — read-PNG mode |
-| 8 | Receipt `docs/qa/qa-setup.md` present with readable `setup-shape` | `QA_RECEIPT` | **block** — remedy: `{{cmd:add-qa-setup}}` |
+| 8 | Receipt = `qa.setup-shape` in `.codeadd/settings.json`, present and readable | `QA_RECEIPT` | **block** — remedy: `{{cmd:add-qa-setup}}` |
 | 9 | Receipt `setup-shape` equals shipped `contracts.json` shape | `QA_CONTRACT_MATCH` | **block** — remedy: `{{cmd:add-qa-setup}}` (full re-materialize). Say why from the five rows the preflight prints on `broken`: the QA setup changed in version `QA_CONTRACT_CHANGED_IN` (receipt written by `QA_CONTRACT_RECEIPT_VERSION`), receipt shape `QA_CONTRACT_RECEIPT_SHAPE` against shipped shape `QA_CONTRACT_SHIPPED_SHAPE`; run `QA_CONTRACT_ACTION`. A value of `unknown` is reported as unknown, never guessed |
 
 **Row 3 boots before it blocks.** When `QA_BASEURL_REACHABLE` is not `ok` and rows 1, 2 and 6 held, start the app through the `qa-project` Managed App Lifecycle (`bootHint`, boot in the background, wait until ready) and probe `baseUrl` again. The row blocks only if boot fails, and then it surfaces `bootHint`. The app stays up through capture and the judges, so STEP qa-pipeline.capture finds it running and boots nothing of its own.

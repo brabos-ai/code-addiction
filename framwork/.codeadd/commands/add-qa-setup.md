@@ -6,6 +6,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
 
 <!-- uses:
+- mention: /add-setup
 - skill: add--human-interaction (conditional)
 - skill: add--dev-environment-setup
 - skill: add--doc-schemas
@@ -13,6 +14,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - skill: add--final-report
 - skill: add--qa
 - skill: add--qa-migration
+- skill: add--settings
 - skill: add--setup-contract
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
@@ -26,7 +28,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (`docs/qa/config.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow when the scan finds tooling it has no recorded decision for (confirm-then-dogfood), and proves the setup with the deterministic QA preflight — the first real `/add-review` is what proves QA end to end. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
+Conversational bootstrap for QA validation that proves it works end-to-end. Functionally verifies (not merely detects) the `@playwright/test` runner + chromium + `@playwright/mcp`, installs missing prerequisites with confirmation, generates a project-specific `qa-project` skill, scaffolds the **project-specific QA config** (the `qa` section of `.codeadd/settings.json`) + per-feature reachability-aware screen catalog (`FEATURE_DIR/_tests/screens.json`), autonomously migrates an existing QA flow when the scan finds tooling it has no recorded decision for (confirm-then-dogfood), and proves the setup with the deterministic QA preflight — the first real `/add-review` is what proves QA end to end. Runs BEFORE the `playwright` plugin is enabled — it is the base, non-injected setup.
 
 ---
 
@@ -35,6 +37,8 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 <!-- /feature:agent-mode:interaction -->
 <!-- /slot:agent-mode.interaction -->
 
+**Setup answers.** When this session holds a `## Setup answers` block printed by `{{cmd:add-setup}}`, every stop that block covers takes its answer from it and is not asked again: the feature gate, the install confirmation, the config values and the migration decision. An item the block marks declined is recorded as declined. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
+
 ## Required Skills
 
 Load `{{skill:add--dev-environment-setup/SKILL.md}}` before STEP add-qa-setup.diagnose (OS detection + confirm-before-install methodology).
@@ -42,7 +46,7 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-qa-setup.catalog (fea
 Load `{{skill:add--qa-migration/SKILL.md}}` before STEP add-qa-setup.migration (existing-QA migration sequence + checkpoints).
 Load `{{skill:add--subagent-driven-development/SKILL.md}}` before STEP add-qa-setup.migrate (dispatch template, decision log, review gates — the mechanism the migration dispatch uses).
 Load {{skill:add--setup-contract/SKILL.md}} before STEP add-qa-setup.context (receipt classification, shape comparison, receipt rewrite).
-Load {{skill:add--doc-schemas/SKILL.md}} + its `references/receipt.md` before STEP add-qa-setup.receipt (the `setup-receipt` schema).
+Load {{skill:add--settings/SKILL.md}} before STEP add-qa-setup.config (the `.codeadd/settings.json` rules, the `qa` section schema, the receipt fields and the `log`). It stays in force through STEP add-qa-setup.receipt and STEP add-qa-setup.validate.
 
 ---
 
@@ -56,13 +60,13 @@ STEP add-qa-setup.diagnose: Diagnose + verify        → OS/pkg/node; FUNCTIONAL
 STEP add-qa-setup.install: Install prerequisites    → runner (mandatory) + chromium + MCP (optional) → CONFIRM → execute → functionally verify
 STEP add-qa-setup.migration: Detect migration         → ALWAYS scan; ask only when the detected fingerprint differs from the receipt
 STEP add-qa-setup.qa-project: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (shape from ## Materializes)
-STEP add-qa-setup.config: Scaffold QA config       → docs/qa/config.json (interactive, project-wide; shape from ## Materializes)
+STEP add-qa-setup.config: Scaffold QA config       → .codeadd/settings.json, `qa` value fields (interactive, project-wide; shape from ## Materializes)
 STEP add-qa-setup.catalog: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
 STEP add-qa-setup.ignore: Ignore working evidence  → materialize the dedicated QA block in .gitignore
 STEP add-qa-setup.migrate: Autonomous migration    → IF MIGRATE: dispatch add-new→add-plan→add-build→add-review (checkpoints only)
 STEP add-qa-setup.proof: Setup proof              → qa-preflight.cjs a (+ b when a feature has screens.json); no nested review or build
-STEP add-qa-setup.receipt: Write the receipt       → docs/qa/qa-setup.md (state + decisions; rewritten even on a no-op)
-STEP add-qa-setup.validate: Validation gate         → add--doc-schemas gate against the setup-receipt schema
+STEP add-qa-setup.receipt: Write the receipt       → .codeadd/settings.json, `qa` receipt fields + `qa.log` (rewritten even on a no-op)
+STEP add-qa-setup.validate: Validation gate         → JSON check of the `qa` section against the add--settings schema
 STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) + /add-review for the QA judgement + migration/proof/contract summary
 ```
 
@@ -80,7 +84,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.migration** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
 | **STEP add-qa-setup.migration** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP add-qa-setup.migration** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
-| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only under `docs/qa/`, `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP add-qa-setup.ignore's root `.gitignore`. Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP add-qa-setup.ignore's root `.gitignore`. Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP add-qa-setup.catalog** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add-plan}}` owns content |
 | **STEP add-qa-setup.ignore** | QA evidence block not materialized exactly once | Running migration | Normalize the QA block while preserving installer-managed and user-authored content |
 | **STEP add-qa-setup.migrate** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
@@ -89,7 +93,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.proof** | A preflight row still fails | Dispatching `/add-review` or `/add-build` to prove setup, or looping | Fix it here when install or config can; otherwise report the row and its remedy in the hand-off |
 | **STEP add-qa-setup.context** | Receipt absent but materialized state present | Treating the project as FIRST-RUN | Classify STALE and re-materialize under the merge rules |
 | **STEP add-qa-setup.feature-gate Phase A rows 8–9** | `QA_RECEIPT` or `QA_CONTRACT_MATCH` is not `ok` | Stopping the setup run | Treat as work-to-do — this command is the remedy |
-| **STEP add-qa-setup.receipt** | Always | Editing or deleting an existing Decision Log row | Append only |
+| **STEP add-qa-setup.receipt** | Always | Editing or deleting an existing `qa.log` entry | Append only |
 
 ---
 
@@ -99,11 +103,11 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:25b937ee17628d6b
-changed-in: 1.5.2
+shape: sha256:5a8b5405851bf4d8
+changed-in: 1.7.0
 paths:
-  - path: docs/qa/config.json
-    owner: setup
+  - path: .codeadd/settings.json#qa
+    owner: shared
     step: 7
   - path: <provider skills dir>/qa-project/SKILL.md
     owner: setup
@@ -116,14 +120,18 @@ paths:
     step: 9
 ```
 
-### docs/qa/config.json
+### .codeadd/settings.json#qa
+
+The value fields of the `qa` section. The receipt fields are written by STEP add-qa-setup.receipt and are not part of this shape.
 
 ```json
 {
-  "baseUrl": "http://localhost:5173",
-  "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
-  "bootHint": "how to start the app's dev server (free text, project-specific)",
-  "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
+  "qa": {
+    "baseUrl": "http://localhost:5173",
+    "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
+    "bootHint": "how to start the app's dev server (free text, project-specific)",
+    "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
+  }
 }
 ```
 
@@ -175,14 +183,14 @@ description: Use when authoring E2E specs (/add-build) or judging QA (/add-revie
 
 ## Managed App Lifecycle
 Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this procedure:
-1. **Probe** `baseUrl` (from `docs/qa/config.json`).
-2. If **down**: boot the app as a managed process (this step owns it and tears it down in step 4 — it is not pending work) using `<boot command / config.json bootHint>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
+1. **Probe** `qa.baseUrl` (from `.codeadd/settings.json`).
+2. If **down**: boot the app as a managed process (this step owns it and tears it down in step 4 — it is not pending work) using `<boot command / qa.bootHint in .codeadd/settings.json>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
 3. **Run** the spec(s).
 4. **Teardown** the app **iff we booted it** — never kill a dev server the user already had running.
 5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add-review`** with a flagged note.
 
 ## Auth / Seed
-- `<how an authenticated session is obtained for auth:true surfaces, from config.json.authSeed>`
+- `<how an authenticated session is obtained for auth:true surfaces, from qa.authSeed in .codeadd/settings.json>`
 ```
 ---
 
@@ -207,16 +215,16 @@ Read {{skill:add--dev-environment-setup/SKILL.md}} — reuse its OS-detection + 
 - Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP add-qa-setup.catalog). Config (STEP add-qa-setup.config) is project-wide regardless.
 
 ### STEP add-qa-setup.classify-receipt Classify + compare (add--setup-contract)
-Read `SETUP_QA:` / `SETUP_QA_STALE:` from the STEP add-qa-setup.context output, then run the {{skill:add--setup-contract/SKILL.md}} procedure against `docs/qa/qa-setup.md`.
+Read `SETUP_QA:` / `SETUP_QA_STALE:` from the STEP add-qa-setup.context output, then run the {{skill:add--setup-contract/SKILL.md}} procedure against the `qa` section of `.codeadd/settings.json`.
 
 Outcome sets `SETUP_STATE` for the rest of the run:
 - `FIRST-RUN` — no receipt AND no `owner: setup` path exists. Materialize normally; STEP add-qa-setup.receipt creates the receipt.
 - `CURRENT` — recorded `setup-shape` equals the shipped sidecar `shape`. Drift check only (unless `--upgrade`).
-- `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `config.json`, regenerate `qa-project`, create-if-absent empty `screens.json`).
+- `STALE` — anything else: no receipt but state present, unreadable `setup-shape`, or hash mismatch. Re-materialize under the merge rules (per-key `qa` value fields, regenerate `qa-project`, create-if-absent empty `screens.json`).
 
 Phase A rows 8–9 (`QA_RECEIPT`, `QA_CONTRACT_MATCH`) from `qa-preflight.cjs a` are **work-to-do in this command**, never a stop. The QA preflight `qa-pipeline` injects into `{{cmd:add-review}}` interprets the same rows as `block`.
 
-⛔ `FIRST_RUN` (the old `docs/qa/config.json`-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
+⛔ `FIRST_RUN` (the old config-presence proxy) is RETIRED. Do not reintroduce it. Do not backfill a missing receipt. Do not walk a versioned delta list.
 
 ---
 
@@ -306,7 +314,7 @@ Read `migration.detected` + `migration.decision` from the receipt (empty when `S
 - **ASK** → describe what was detected and ask whether to migrate it into the code-addiction QA pipeline. Set `MIGRATE = true` ONLY on explicit confirmation. Never enter migration mode silently.
 - Record for STEP add-qa-setup.receipt: `migration.detected = DETECTED`, `migration.decision` = `migrated` | `declined` | `none-found`, `migration.decided-at` = today (omit when `none-found`).
 
-⛔ Do NOT gate this step on whether `docs/qa/config.json` exists. That proxy is what made migration permanently unreachable for a project that adopted a test runner after its first setup run.
+⛔ Do NOT gate this step on whether the `qa` section of `.codeadd/settings.json` exists. That proxy is what made migration permanently unreachable for a project that adopted a test runner after its first setup run.
 
 ---
 
@@ -322,14 +330,14 @@ The skeleton to write is declared in `## Materializes` → `<provider skills dir
 
 ## STEP add-qa-setup.config: Scaffold Project QA Config
 
-Target: `docs/qa/config.json` (git-tracked, project-wide).
+Target: the `qa` section of `.codeadd/settings.json` (git-tracked, project-wide). A file with no `qa` section counts as absent: read the file, merge the value fields into `qa`, and write it back without touching any other section. Keep the parsed file in memory as `BEFORE` (an absent file is `{ "schema": 1 }`); STEP add-qa-setup.validate compares against it.
 
 <!-- slot:agent-mode.config-values fallback="fallbacks/agent-mode.add-qa-setup.config-values.md" -->
 <!-- feature:agent-mode:config-values -->
 <!-- /feature:agent-mode:config-values -->
 <!-- /slot:agent-mode.config-values -->
 
-Write the shape declared in `## Materializes` → `docs/qa/config.json`. Values are free-text hints; viewports default to the declared set.
+Write the shape declared in `## Materializes` → `.codeadd/settings.json#qa`. Values are free-text hints; viewports default to the declared set.
 
 ⛔ `baseUrl` MUST point at a local/throwaway environment — the QA judgement actively exercises flows (submits forms, creates records). Never a production URL.
 
@@ -412,49 +420,34 @@ IF A ROW STILL FAILS:
 
 ## STEP add-qa-setup.receipt: Write the Receipt
 
-Target: `docs/qa/qa-setup.md`. Schema: `setup-receipt` in {{skill:add--doc-schemas/SKILL.md}} → `references/receipt.md`. Procedure: {{skill:add--setup-contract/SKILL.md}} step 5.
+Target: the receipt fields of the `qa` section of `.codeadd/settings.json`. Schema: {{skill:add--settings/SKILL.md}}. Procedure: {{skill:add--setup-contract/SKILL.md}} step 4.
 
 Write it on **every** run — including a run that changed nothing. A verified-current run is information, not nothing.
 
-1. **Frontmatter.** `setup-shape` = the shipped hash from `.codeadd/contracts.json` → `contracts["add-qa-setup"].shape` (bare `sha256:<16 hex>`, own line, unquoted). `framework-version` from the manifest (informational). `first-run` preserved byte-identically, or set to today on a true first run. `last-run` = today.
-2. **`materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift.
-3. **`prereqs`** from STEP add-qa-setup.install, `qa-pipeline-feature` from STEP add-qa-setup.feature-gate, `migration` from STEP add-qa-setup.migration. Record `.gitignore` in `materialized` with `owner: shared` and `hash: null`.
-4. **`## Decision Log`.** APPEND one row per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing row. ⛔ Never log narration or instructions — a row records a choice, not a step.
-5. **`## TL;DR`.** State what the doc is, why it exists, and whether the recorded shape matches the shipped one.
+Read the file, merge into `qa`, write it back. ⛔ Never replace the whole file, never touch another section, never drop a key you do not know.
+
+1. **Receipt fields.** `qa["setup-shape"]` = the shipped hash from `.codeadd/contracts.json` → `contracts["add-qa-setup"].shape` (bare `sha256:<16 hex>`). `qa["framework-version"]` from the manifest (informational). `qa["first-run"]` preserved byte-identically, or set to today on a true first run. `qa["last-run"]` = today.
+2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` itself is `owner: shared`.
+3. **`qa.prereqs`** from STEP add-qa-setup.install, `qa["qa-pipeline-feature"]` from STEP add-qa-setup.feature-gate, `qa.migration` from STEP add-qa-setup.migration. Record `.gitignore` in `qa.materialized` with `owner: shared` and `hash: null`.
+4. **`qa.log`.** APPEND one entry `{date, item, decision, reason, shape}` per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing entry. ⛔ Never log narration or instructions — an entry records a choice, not a step.
 
 ---
 
-## STEP add-qa-setup.validate: Validation Gate (add--doc-schemas)
+## STEP add-qa-setup.validate: Validation Gate (add--settings)
 
-Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the command complete until every check passes or warns.
+Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT skip. DO NOT mark the command complete until every check passes.
 
-1. **Frontmatter presence.** Grep `^---$` at line 1. Confirm YAML block closes. Required fields for `setup-receipt`:
-   - `id:` matches the prefix rule in the ID Convention section of this skill
-   - `type: setup-receipt` exact match
-   - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
-   - `related:` is a YAML list (may be empty `[]`)
-   - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
-   If any field is missing: STOP. Fix the doc. Re-run this gate.
-
-2. **TL;DR present and complete.** Grep `^## TL;DR$`. The body MUST convey: what the doc is, why it exists, and the headline outcome/decision. If any is missing: rewrite extractively — do NOT summarize abstractively, do NOT shrink by dropping the headline.
-
-3. **TOC rule.** Count H2 sections (`^## `). If >3 and no `## TOC` / anchor list right after TL;DR: add it. Flat bullets only.
-
-4. **Depth floors met.** For each H2/H3 in the schema, walk the schema's depth-floor list and confirm every required fact is present in the chunk. A section that looks clean but omits required facts is INCOMPLETE. If a floor is unmet: add the missing content. If a fact is genuinely unknowable, write `unknown — <why>` rather than omit.
-
-5. **Non-redundancy / density.** Apply Universal Rules → Voice: every sentence is fact, decision, constraint, link, or signal — never filler. Delete restatements, paraphrase, repetition. Numeric length caps are prohibited.
-
-6. **Doc refs resolve.** For every `{{doc:<ID>}}` in the doc, run reverse grep: `grep -rE "^id: <ID>$" docs/`. Each ref MUST return ≥1 hit. Unresolved refs = WARNING (not error); print them in the command output for the user to fix.
-
-7. **Hard bans absent.** Confirm none of the schema's "Hard bans" items are present (emojis in headers, ASCII art where forbidden, aspirational language, abstractive paraphrase, forbidden content types).
-
-8. **Metadata footer.** Confirm `updated:` in frontmatter matches today's date. If editing an existing doc, confirm original `created:` was preserved.
-
-DO NOT use abstractive summarization to trim a section — summarization loses information the depth floor requires. DO NOT delete required content to make the gate pass — split into linked docs instead, or mark items `unknown — <why>`. DO NOT silently drop unresolved refs — surface them as warnings. DO NOT introduce numeric length caps (e.g. `<200 words`, `~100-150 words`) anywhere in the doc body.
+1. **It parses.** Read the file and parse it as JSON. If it does not parse: STOP. Fix the file. Re-run this gate.
+2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
+3. **Vocabularies.** Every `prereqs.<name>`, `qa-pipeline-feature`, `migration.decision` and `materialized[].owner` holds a value declared in {{skill:add--settings/SKILL.md}}. `migration.detected` is sorted alphabetically.
+4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json` and `.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
+5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
+6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
+7. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
 
 Output at end:
 - `gate: PASS` or `gate: FAIL`
-- list of warnings (orphan refs, `unknown` markers)
+- list of warnings
 - list of fixes applied (if any)
 
 ---
@@ -492,7 +485,7 @@ Then, after the seven blocks, tell the user, in order:
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/qa/qa-setup.md` | The receipt whose shape hash decides whether setup is current |
+| The `qa` section of `.codeadd/settings.json` | The receipt whose shape hash decides whether setup is current |
 | `${FEATURE_DIR}/about.md` | The feature the audit judges |
 | {{skill:add--qa/SKILL.md}} | What the audit's QA sections measure |
 
