@@ -217,6 +217,9 @@ CROSS-APP:
 MODE: standard | tiny
 
 tiny = ~10 or fewer primary source items across all apps.
+tiny is NOT chosen when {{addpath:wiki/conventions.md}} already exists (for example written by
+/add-brainstorm for a greenfield project): that run takes the standard path, so the existing page
+and its `decided` Stack Conventions rows keep one home.
 IF tiny:
   - Keep only the 1-2 most relevant domain analyzers in the dispatch plan
     (primary classification first); every other area → Backlog entry
@@ -455,22 +458,24 @@ Follow ALL instructions.
 - Root configs (package.json, turbo.json, tsconfig, etc.)
 - Existing docs (README, docs/) as primary source material
 - Validation Gates detection
+- Existing conventions.md Stack Conventions rows, if any (decided rows are kept)
 
 ## TASK
 1. WRITE .codeadd/wiki/architecture.md — system shape, boundaries, layer rules (type: explanation)
-2. WRITE .codeadd/wiki/conventions.md — project-wide naming/error-handling/style/ID rules (type: reference);
+2. WRITE .codeadd/wiki/conventions.md — project-wide naming/error-handling/style/ID rules (type: reference),
+   including the fixed `## Stack Conventions` table (7 rows, evidence or none, Source column);
    canonical home for cross-cutting conventions — domain-local conventions stay in domains/<area>.md and link
    here instead of restating
 3. WRITE .codeadd/wiki/workflows.md — dev workflows, validation gates, release, testing entry points (type: how-to)
    Every page: mandatory frontmatter (id/type/area/description/sources/commit/generated/tags) + TL;DR + TOC
    (if >100 lines) + topic-first ## chunks with path:line refs + ## Related footer. No structural facts baked in.
-4. Return: FILES_WRITTEN, TOPICS count per page
+4. Return: FILES_WRITTEN, TOPICS count per page, STACK_CONVENTIONS
 
 ## OUTPUT
 Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpath:wiki/workflows.md}}
 ```
 
-**FOLD MODE (MODE=tiny from STEP add-wiki.determine-mode-recorded):** append to the spine analyzer's prompt: "TINY REPO — do NOT write files. Return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules, path:line refs) in your report. The coordinator folds them into index.md at STEP add-wiki.hub."
+**FOLD MODE (MODE=tiny from STEP add-wiki.determine-mode-recorded):** append to the spine analyzer's prompt: "TINY REPO — do NOT write files. Return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules, path:line refs) in your report. The coordinator folds them into index.md at STEP add-wiki.hub. The conventions section carries a `### Stack Conventions` sub-heading and the Stack Conventions table verbatim, outside the ≤15-line cap."
 
 **DISPATCH RULES:**
 - RUN ALL analyzers IN PARALLEL
@@ -486,6 +491,7 @@ Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpa
 **Gate Check Checklist:**
 - [ ] All `{{addpath:wiki/domains/*.md}}` files from the dispatch plan exist
 - [ ] Spine — standard mode: `{{addpath:wiki/architecture.md}}`, `{{addpath:wiki/conventions.md}}`, `{{addpath:wiki/workflows.md}}` exist. Tiny mode (STEP add-wiki.determine-mode-recorded): NO spine files expected; instead the spine analyzer's report contains the three folded sections
+- [ ] Stack Conventions — standard mode: `{{addpath:wiki/conventions.md}}` has `## Stack Conventions` with all seven row keys (Tenancy, DI, Barrels, Layering, Validation, ORM / data access, Entity language). Tiny mode: the spine report's folded conventions section has `### Stack Conventions` with all seven row keys. Both modes: the spine report carries `STACK_CONVENTIONS`. This is a presence check only; the `index.md` fold happens later, so this step never looks at `index.md`
 - [ ] `docs/code-quality-review.md` exists
 - [ ] Every wiki page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
 - [ ] All wiki pages contain the mandatory body sections (TL;DR, TOC if >100 lines, topic chunks, Related footer)
@@ -566,6 +572,7 @@ Everything cut goes to the Backlog with its source anchor — never silently dro
 - [ ] Every page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
 - [ ] Budgets respected (§STEP add-wiki.budgets)
 - [ ] Terminology has ≤ 15 entries
+- [ ] Tiny mode only: the folded `## Conventions` section of `index.md` carries `### Stack Conventions` with all seven row keys, copied verbatim from the spine report
 
 IF the gate fails → fix `index.md` or the pages. Do NOT proceed to STEP add-wiki.agents-md until the bijection holds.
 
@@ -649,6 +656,7 @@ Apply ALL content rules from that skill.
 
 ## INPUTS TO READ
 1. .codeadd/wiki/index.md and every page it links (frontmatter descriptions)
+2. The Stack Conventions table (conventions.md, or the folded `### Stack Conventions` in index.md)
 
 ## TASK
 Update AGENTS.md — the only context file — with these sections, in order. Write no
@@ -657,7 +665,11 @@ CLAUDE.md and no GEMINI.md:
 1. **DELETE FIRST** any existing section referencing `project-patterns` or `pattern-search.sh`
    (legacy Implementation Patterns pointer) — migration cleanup, before writing anything else
 2. **## Architecture Contract** — Apps table (`app | kind | path | entry`) + layer hierarchy rule
-   + import rules (compact JSON)
+   + import rules (compact JSON). When the Stack Conventions table has Tenancy = `yes` and
+   Source = `detected`, add ONE line under it:
+   `Multi-tenancy: every query is scoped by <key> (<enforcement>) — see .codeadd/wiki/conventions.md#stack-conventions`
+   (tiny mode, where the table is folded: `.codeadd/wiki/index.md#stack-conventions`).
+   Nothing else from the table enters AGENTS.md
 3. **## Technical Spec** — compact JSON only, one object per line, max 10 words per value
 4. **Project Knowledge Base managed block** — find markers `[//]: # (codeadd-wiki:start)` /
    `[//]: # (codeadd-wiki:end)`. If present, REPLACE the block between them. If absent, APPEND
