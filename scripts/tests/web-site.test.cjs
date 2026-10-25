@@ -419,3 +419,16 @@ test('i18n F1: the Astro config routes en (default, unprefixed) and pt-br', () =
   assert.match(cfg, /locales:\s*\[\s*["']en["']\s*,\s*["']pt-br["']\s*\]/);
   assert.match(cfg, /routing:\s*\{[^}]*prefixDefaultLocale:\s*false/);
 });
+
+test('i18n F2: the strings modules exist, pt-br is typed Strings, and the guards run at module load', () => {
+  for (const f of ['en.ts', 'pt-br.ts', 'index.ts']) assert.ok(exists(`src/i18n/${f}`), `${f} missing`);
+  assert.match(I18N('pt-br.ts'), /:\s*Strings\b/);
+  assert.match(I18N('en.ts'), /export type Strings\b/);
+  const idx = I18N('index.ts');
+  assert.match(idx, /export (function|const) useT\b/);
+  assert.match(idx, /export (function|const) localeHref\b/);
+  assert.match(idx, /export (function|const) alternateUrls\b/);
+  assert.match(idx, /SAME_IN_BOTH/);
+  assert.match(idx, /^assertParity\(\);/m, 'parity guard must run at top level');
+  assert.match(idx, /^assertTranslated\(\);/m, 'same-value guard must run at top level');
+});
