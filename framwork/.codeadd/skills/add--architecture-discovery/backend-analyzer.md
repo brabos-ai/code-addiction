@@ -92,6 +92,7 @@ Search ONLY for what exists in the project:
 - Module/feature organization (by domain? by layer? by feature?)
 - Import ordering conventions
 - Dependency injection pattern (constructor, decorator, factory)
+- Where the tenant key is taken from the auth context and applied (domain-local only; the project-wide Tenancy row lives in [Stack Conventions](../conventions.md#stack-conventions))
 - Where new files of each type should be placed
 - How new endpoints/routes are registered
 - **Principle: the agent must follow the established pattern, not invent a new one**
@@ -122,6 +123,8 @@ grep -rE "extends (Http)?Exception|throw new" --include="*.ts" | head -5
 # 6. Find auth
 grep -rE "JwtService|passport|@UseGuards" --include="*.ts" | head -5
 ```
+
+Also run the Tenancy and Barrels searches defined in `{{skill:add--architecture-discovery/SKILL.md}}` → Stack Convention Signals. Use what they find for domain-local detail only; the project-wide rows belong to the spine's Stack Conventions table.
 
 ## Output Format
 
@@ -239,6 +242,7 @@ Module organization: [by domain/layer/feature]
 New endpoint registration: [how]
 New service placement: [where]
 Import ordering: [convention if any]
+Tenant key (if the project is multi-tenant): [where it is read from the auth context, where it is applied] — see [Stack Conventions](../conventions.md#stack-conventions)
 
 ## Testing
 
