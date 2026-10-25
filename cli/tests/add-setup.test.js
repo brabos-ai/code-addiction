@@ -95,3 +95,22 @@ describe('F2 — add--ecosystem carries the Benefit column and the routing rows'
     expect(lines(src).find((l) => l.startsWith('| status.cjs |'))).toContain('add-setup');
   });
 });
+
+describe('F3 — the two inline commands honor a Setup answers block', () => {
+  for (const name of ['add-qa-setup', 'add-wiki']) {
+    it(`L1.4 ${name} carries the paragraph between the slot and Required Skills`, () => {
+      const src = read(path.join(codeadd, `commands/${name}.md`)).replace(/\r\n/g, '\n');
+      const slotEnd = src.indexOf('<!-- /slot:agent-mode.interaction -->');
+      const para = src.indexOf('`## Setup answers`');
+      const skills = src.indexOf('\n## Required Skills');
+      expect(slotEnd).toBeGreaterThan(-1);
+      expect(para).toBeGreaterThan(slotEnd);
+      expect(skills).toBeGreaterThan(para);
+    });
+  }
+
+  it('L1.4 the add-qa-setup contract shape did not move', () => {
+    const src = read(path.join(codeadd, 'commands/add-qa-setup.md'));
+    expect(src).toContain('shape: sha256:5a8b5405851bf4d8');
+  });
+});

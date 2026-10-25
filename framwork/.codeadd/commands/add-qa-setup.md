@@ -36,6 +36,8 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 <!-- /feature:agent-mode:interaction -->
 <!-- /slot:agent-mode.interaction -->
 
+**Setup answers.** When this session holds a `## Setup answers` block printed by `/add-setup`, every stop that block covers takes its answer from it and is not asked again: the feature gate, the install confirmation, the config values and the migration decision. An item the block marks declined is recorded as declined. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
+
 ## Required Skills
 
 Load `{{skill:add--dev-environment-setup/SKILL.md}}` before STEP add-qa-setup.diagnose (OS detection + confirm-before-install methodology).
