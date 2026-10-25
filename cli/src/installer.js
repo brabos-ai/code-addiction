@@ -175,7 +175,7 @@ function dirExists(dir) {
  * @param {string} dir
  * @returns {boolean}
  */
-function addDirHoldsInstall(dir) {
+export function addDirHoldsInstall(dir) {
   try {
     return fs.existsSync(dir) && fs.readdirSync(dir).some((name) => name !== 'board.json');
   } catch {
