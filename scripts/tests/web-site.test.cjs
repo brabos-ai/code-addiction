@@ -256,3 +256,17 @@ test('F11: :root declares color-scheme: dark and Mermaid gets brand themeVariabl
   assert.match(CSS(), /:root\s*\{[^}]*color-scheme:\s*dark/);
   assert.match(DOCS(), /themeVariables/);
 });
+
+// ------------------------------------------------- F14 the map reads the file
+test('F14: docs.astro carries no inline node literal and fetches /ecosystem.json', () => {
+  const docs = DOCS();
+  assert.doesNotMatch(docs, /\{data:\{id:'add',/);
+  assert.doesNotMatch(docs, /var RAW = \[/);
+  assert.match(docs, /fetch\('\/ecosystem\.json'\)/);
+});
+
+test('F14: the map is 60vh tall on a phone and the node list is not hidden there', () => {
+  const docs = DOCS();
+  assert.match(docs, /id="eco-cy"[^>]*h-\[60vh\]/);
+  assert.doesNotMatch(docs, /id="eco-sidebar" class="hidden lg:flex/);
+});
