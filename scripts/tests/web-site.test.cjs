@@ -327,7 +327,12 @@ test('F18: the typing effect is a transform-only mask, added by JS, and off unde
 // ------------------------------------------- F19 scroll reveal and spotlight
 test('F19: reveal targets are marked in the HTML but only the page script hides them', () => {
   const home = HOME();
-  assert.ok((home.match(/data-reveal/g) || []).length >= 8, 'section headers and Why cards must carry data-reveal');
+  // Decided 9: at most 1-2 animated elements per view. A section header is one element (its h2), the
+  // Why cards reveal as one grid, so a view never animates more than two.
+  assert.equal((home.match(/data-reveal/g) || []).length, 5, 'four section h2 and the Why grid');
+  assert.doesNotMatch(home, /<p data-reveal/, 'eyebrow lines do not animate on their own');
+  assert.doesNotMatch(home, /<div[^>]*(why-card[^>]*data-reveal|data-reveal[^>]*why-card)/, 'cards reveal through their grid');
+  assert.match(home, /<div data-reveal class="grid sm:grid-cols-2 lg:grid-cols-4/);
   assert.doesNotMatch(home, /class="[^"]*\breveal\b/, 'a hidden state in the markup would hide content without JS');
   assert.match(home, /classList\.add\('reveal'\)/);
   assert.match(home, /new IntersectionObserver/);
