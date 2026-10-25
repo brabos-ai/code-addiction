@@ -329,7 +329,7 @@ test('F19: reveal targets are marked in the HTML but only the page script hides 
   const home = HOME();
   // Decided 9: at most 1-2 animated elements per view. A section header is one element (its h2), the
   // Why cards reveal as one grid, so a view never animates more than two.
-  assert.equal((home.match(/data-reveal/g) || []).length, 5, 'four section h2 and the Why grid');
+  assert.equal((home.match(/<\w+ data-reveal/g) || []).length, 5, 'four section h2 and the Why grid');
   assert.doesNotMatch(home, /<p data-reveal/, 'eyebrow lines do not animate on their own');
   assert.doesNotMatch(home, /<div[^>]*(why-card[^>]*data-reveal|data-reveal[^>]*why-card)/, 'cards reveal through their grid');
   assert.match(home, /<div data-reveal class="grid sm:grid-cols-2 lg:grid-cols-4/);

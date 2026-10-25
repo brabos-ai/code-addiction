@@ -113,7 +113,7 @@ import "../styles/global.css";
   <!-- The Development Trail -->
   <section id="trail" class="py-24 px-6">
     <div class="max-w-6xl mx-auto">
-      <p data-reveal class="font-mono text-accent text-xs tracking-widest uppercase mb-4">How it works</p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">How it works</p>
       <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-4">The Development Trail</h2>
       <p class="text-muted-light text-lg mb-12 max-w-2xl">
         Every feature follows a clear path from idea to delivery.
@@ -158,29 +158,29 @@ import "../styles/global.css";
   <!-- Why section -->
   <section id="why" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto">
-      <p data-reveal class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Why teams get addicted</p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Why teams get addicted</p>
       <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-16">Less ceremony. Same quality.</h2>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div data-reveal class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+      <div data-reveal class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">00</div>
           <h3 class="font-display font-semibold text-lg mb-2">Zero ramp-up</h3>
           <p class="text-muted-light text-sm leading-relaxed">New devs ship on day one by following the flow. No wikis to read, no setup guides.</p>
         </div>
 
-        <div data-reveal class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">01</div>
           <h3 class="font-display font-semibold text-lg mb-2">10x fewer decisions</h3>
           <p class="text-muted-light text-sm leading-relaxed">The framework already made the boring ones. You focus on what matters.</p>
         </div>
 
-        <div data-reveal class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">02</div>
           <h3 class="font-display font-semibold text-lg mb-2">Consistent output</h3>
           <p class="text-muted-light text-sm leading-relaxed">Every feature gets discovery, planning, review, and docs. Automatically.</p>
         </div>
 
-        <div data-reveal class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">03</div>
           <h3 class="font-display font-semibold text-lg mb-2">Works with your stack</h3>
           <p class="text-muted-light text-sm leading-relaxed">NestJS, React, any database. Claude, Codex, Antigravity, Cursor, OpenCode, ZCode.</p>
@@ -192,7 +192,7 @@ import "../styles/global.css";
   <!-- Providers -->
   <section class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto text-center">
-      <p data-reveal class="font-mono text-accent text-xs tracking-widest uppercase mb-4">One install, every provider</p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">One install, every provider</p>
       <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-12">Runs everywhere</h2>
 
       <div class="flex flex-wrap items-center justify-center gap-8 text-muted">
@@ -209,7 +209,7 @@ import "../styles/global.css";
   <!-- Get Started -->
   <section id="start" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-3xl mx-auto text-center">
-      <p data-reveal class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Get started</p>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Get started</p>
       <h2 data-reveal class="font-display font-bold text-3xl sm:text-5xl mb-6">One command away</h2>
       <p class="text-muted-light text-lg mb-4">Install Code Addiction in any project. No config needed.</p>
       <p class="text-muted text-sm mb-10">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended) &mdash; no Bash, WSL or Git-Bash needed.</p>
@@ -311,7 +311,8 @@ import "../styles/global.css";
       }, { signal: pageAbort.signal });
     }
 
-    // Scroll reveal and card spotlight. Both are decoration: the markup only carries data-reveal
+    // Scroll reveal and card spotlight. At most two elements animate per view: a section's h2 and,
+    // in the Why section, the card grid as one element. Both are decoration: the markup only carries data-reveal
     // and .why-card, and the hidden state below is added here, so no-JS readers, crawlers and
     // reduced-motion users never meet a hidden element.
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -329,9 +330,8 @@ import "../styles/global.css";
           }, 900);
         });
       }, { threshold: 0.15 });
-      document.querySelectorAll('[data-reveal]').forEach((el, i) => {
+      document.querySelectorAll('[data-reveal]').forEach((el) => {
         el.classList.add('reveal');
-        if (el.classList.contains('why-card')) el.style.transitionDelay = ((i % 4) * 80) + 'ms';
         revealObserver.observe(el);
       });
     }
