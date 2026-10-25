@@ -10,7 +10,7 @@ import "../styles/global.css";
   <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle sidebar">
+        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle sidebar" aria-controls="docs-sidebar" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <a href="/" class="font-display font-bold text-foreground tracking-tight text-lg">
@@ -1075,6 +1075,7 @@ import "../styles/global.css";
 
     function toggleSidebar() {
       const isClosed = sidebar.classList.contains('-translate-x-full');
+      sidebarToggle.setAttribute('aria-expanded', String(isClosed));
       if (isClosed) {
         sidebar.classList.remove('-translate-x-full');
         backdrop.classList.remove('hidden');
@@ -1089,6 +1090,13 @@ import "../styles/global.css";
     if (sidebarToggle && sidebar && backdrop) {
       sidebarToggle.addEventListener('click', toggleSidebar);
       backdrop.addEventListener('click', toggleSidebar);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !sidebar.classList.contains('-translate-x-full') && window.innerWidth < 1024) {
+          toggleSidebar();
+          sidebarToggle.focus();
+        }
+      });
 
       sidebarLinks.forEach(link => {
         link.addEventListener('click', () => {

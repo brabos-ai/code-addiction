@@ -10,7 +10,7 @@ import "../styles/global.css";
   <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu">
+        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu" aria-controls="mobile-menu" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <a href="#" class="font-display font-bold text-foreground tracking-tight text-lg">
@@ -99,7 +99,7 @@ import "../styles/global.css";
       <!-- Flowchart SVG -->
       <div class="w-full relative">
         <button
-          onclick="document.getElementById('flowchart-modal').classList.remove('hidden')"
+          id="flowchart-open"
           class="w-full overflow-hidden rounded-xl border border-white/10 hover:border-accent/30 transition-colors cursor-zoom-in group relative"
           aria-label="View full-size image"
         >
@@ -114,20 +114,20 @@ import "../styles/global.css";
       </div>
 
       <!-- Lightbox -->
-      <div
-        id="flowchart-modal"
-        class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-        onclick="this.classList.add('hidden')"
+      <dialog id="flowchart-modal"
+        aria-label="Development Trail flowchart, full size"
+        class="fixed inset-0 m-0 w-screen h-screen max-w-none max-h-none bg-black/90 p-4 text-white open:flex items-center justify-center backdrop:bg-black/90"
       >
         <button
-          onclick="document.getElementById('flowchart-modal').classList.add('hidden')"
+          id="flowchart-close"
+          type="button"
           class="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
           aria-label="Close"
         >
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
         <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="max-w-full max-h-full rounded-xl"/>
-      </div>
+      </dialog>
     </div>
   </section>
 
@@ -259,15 +259,39 @@ import "../styles/global.css";
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLinks = document.querySelectorAll('.mobile-link');
 
+    function setMobileMenu(open) {
+      mobileMenu.classList.toggle('hidden', !open);
+      mobileMenuToggle.setAttribute('aria-expanded', String(open));
+    }
+
     if (mobileMenuToggle && mobileMenu) {
       mobileMenuToggle.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
+        setMobileMenu(mobileMenu.classList.contains('hidden'));
       });
 
       mobileLinks.forEach(link => {
-        link.addEventListener('click', () => {
-          mobileMenu.classList.add('hidden');
-        });
+        link.addEventListener('click', () => setMobileMenu(false));
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+          setMobileMenu(false);
+          mobileMenuToggle.focus();
+        }
+      });
+    }
+
+    // Flowchart lightbox: a native <dialog>. Esc is built in, and the browser returns
+    // focus to the button that opened it.
+    const flowchartModal = document.getElementById('flowchart-modal');
+    const flowchartOpen = document.getElementById('flowchart-open');
+    const flowchartClose = document.getElementById('flowchart-close');
+    if (flowchartModal && flowchartOpen && flowchartClose) {
+      flowchartOpen.addEventListener('click', () => flowchartModal.showModal());
+      flowchartClose.addEventListener('click', () => flowchartModal.close());
+      // A click on the dialog itself (not on the image or the button) is a backdrop click.
+      flowchartModal.addEventListener('click', (event) => {
+        if (event.target === flowchartModal) flowchartModal.close();
       });
     }
   </script>
