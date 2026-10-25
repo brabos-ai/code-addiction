@@ -18,15 +18,14 @@ import "../styles/global.css";
         </a>
       </div>
       <div class="hidden md:flex items-center gap-6">
+        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label="Search the docs" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>Search</span><kbd class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
         <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors">Home</a>
-        <a href="#commands" class="text-sm text-muted-light hover:text-accent transition-colors">Commands</a>
-        <a href="#graph" class="text-sm text-muted-light hover:text-accent transition-colors">Graph</a>
-        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors">Flows</a>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
           GitHub
         </a>
       </div>
-      <div class="flex md:hidden items-center">
+      <div class="flex md:hidden items-center gap-2">
+        <button type="button" id="docs-search-open-mobile" class="md:hidden flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label="Search the docs" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg></button>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-3 py-1.5 rounded-md transition-colors">
           GitHub
         </a>
@@ -81,12 +80,12 @@ import "../styles/global.css";
     </aside>
 
     <!-- Main content -->
-    <main class="flex-1 lg:ml-64 min-w-0 px-6 sm:px-12 py-12 max-w-4xl">
+    <main class="flex-1 lg:ml-64 min-w-0 px-6 sm:px-12 py-12 max-w-4xl" data-pagefind-body>
 
       <!-- ABOUT -->
       <section id="about" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Getting Started</p>
-        <h1 class="font-display font-extrabold text-4xl sm:text-5xl mb-6">
+        <h1 id="about-heading" class="font-display font-extrabold text-4xl sm:text-5xl mb-6">
           What is Code<br/><span class="text-accent glow">Addiction</span>?
         </h1>
         <p class="text-muted-light text-lg leading-relaxed mb-6">
@@ -112,7 +111,7 @@ import "../styles/global.css";
 
       <!-- INSTALL -->
       <section id="install" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
+        <h2 id="install-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
         <p class="text-muted-light mb-6">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended). Works on Windows, macOS and Linux &mdash; no Bash, WSL or Git-Bash needed.</p>
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
@@ -144,7 +143,7 @@ import "../styles/global.css";
 
       <!-- QUICKSTART -->
       <section id="quickstart" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Quickstart</h2>
+        <h2 id="quickstart-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Quickstart</h2>
         <p class="text-muted-light mb-6">After installing, use these CLI commands to manage your setup:</p>
 
         <div class="space-y-3">
@@ -200,7 +199,7 @@ import "../styles/global.css";
 
       <!-- SETUP -->
       <section id="setup" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
+        <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
         <p class="text-muted-light mb-6">
           <code class="text-accent font-mono text-sm">/add-setup</code> is the guided onboarding for a fresh or updated install.
           It checks your project, then offers every feature and <a href="#plugins" class="text-accent hover:underline">plugin</a> with its benefit
@@ -241,7 +240,7 @@ import "../styles/global.css";
       <!-- COMMANDS -->
       <section id="commands" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Commands</h2>
+        <h2 id="commands-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Commands</h2>
         <p class="text-muted-light mb-8">
           Every command is a slash command you type in your AI coding assistant.
           They orchestrate discovery, planning, implementation, and delivery.
@@ -359,7 +358,7 @@ import "../styles/global.css";
       <!-- ARTEFACT GRAPH -->
       <section id="graph" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Artefact graph</h2>
+        <h2 id="graph-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Artefact graph</h2>
         <p class="text-muted-light mb-8">
           How the commands hand off to each other. Generated by the build from each command's own
           declaration, so it cannot drift from what ships &mdash; a test fails if this picture and
@@ -386,7 +385,7 @@ import "../styles/global.css";
       <!-- FLOWS -->
       <section id="flows" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Flows</h2>
+        <h2 id="flows-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Flows</h2>
         <p class="text-muted-light mb-8">
           Pick the shortest path that fits. Less ceremony, same quality.
         </p>
@@ -491,7 +490,7 @@ import "../styles/global.css";
       <!-- SCENARIOS -->
       <section id="scenarios" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Scenarios</h2>
+        <h2 id="scenarios-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Scenarios</h2>
         <p class="text-muted-light mb-8">Real-world examples of when to use each flow.</p>
 
         <div class="space-y-6">
@@ -590,7 +589,7 @@ import "../styles/global.css";
       <!-- SKILLS -->
       <section id="skills" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Skills</h2>
+        <h2 id="skills-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Skills</h2>
         <p class="text-muted-light mb-8">
           Skills are specialized knowledge modules loaded by commands.
           They provide domain expertise for backend, frontend, database, UX, security, and more.
@@ -651,7 +650,7 @@ import "../styles/global.css";
 
       <!-- OPTIONAL FEATURES -->
       <section id="features" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Optional Features</h2>
+        <h2 id="features-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Optional Features</h2>
         <p class="text-muted-light mb-6">
           Features are toggleable behaviors injected into commands via fragment files.
           Enable or disable them with <code class="text-accent font-mono text-xs">npx codeadd features enable|disable &lt;name&gt;</code>.
@@ -703,7 +702,7 @@ import "../styles/global.css";
 
       <!-- AGENT MODE -->
       <section id="agent-mode" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Agent Mode</h2>
+        <h2 id="agent-mode-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Agent Mode</h2>
         <p class="text-muted-light mb-6">
           Hand your bot a card or a slug and let it ship. With Agent Mode, an assistant like Grok Bot runs plan, build,
           review and release on its own. It asks only what matters, all at once, and you approve the PR.
@@ -765,7 +764,7 @@ import "../styles/global.css";
 
       <!-- PLUGINS -->
       <section id="plugins" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
+        <h2 id="plugins-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
         <p class="text-muted-light mb-6">
           Plugins integrate external tools (MCP servers or skills you install) into ADD commands. Code Addiction handles utilization —
           it validates the tool is present, injects guidance into commands and agents, and activates
@@ -948,7 +947,7 @@ import "../styles/global.css";
 
       <!-- PROVIDERS -->
       <section id="providers" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Providers</h2>
+        <h2 id="providers-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Providers</h2>
         <p class="text-muted-light mb-8">
           Code Addiction generates provider-specific files so the same commands work across AI assistants.
         </p>
@@ -980,7 +979,7 @@ import "../styles/global.css";
 
       <!-- STRUCTURE -->
       <section id="structure" class="mb-20">
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-6">Project Structure</h2>
+        <h2 id="structure-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Project Structure</h2>
         <p class="text-muted-light mb-6">
           The Code Addiction repository is organized as follows:
         </p>
@@ -1000,7 +999,7 @@ import "../styles/global.css";
       <!-- ECOSYSTEM MAP -->
       <section id="ecosystem" class="mb-20">
         <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
-        <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Ecosystem Map</h2>
+        <h2 id="ecosystem-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Ecosystem Map</h2>
         <p class="text-muted-light mb-6">
           Interactive map of commands, skills, and agents. Hover a node to highlight its connections. Click to inspect.
         </p>
@@ -1013,7 +1012,7 @@ import "../styles/global.css";
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#34d399"></span>Agents</span>
           </div>
           <div class="flex items-center gap-2 ml-auto flex-wrap">
-            <input id="eco-search" type="text" placeholder="Search..." class="bg-white/[0.04] border border-white/10 rounded-md px-2.5 py-1 text-xs text-foreground placeholder-muted focus:border-accent/40 font-mono w-32"/>
+            <input id="eco-search" type="text" placeholder="Filter nodes..." aria-label="Filter the ecosystem map nodes" class="bg-white/[0.04] border border-white/10 rounded-md px-2.5 py-1 text-xs text-foreground placeholder-muted focus:border-accent/40 font-mono w-32"/>
             <button data-filter="all" class="eco-btn text-xs px-3 py-1 rounded-md border border-accent bg-accent text-surface font-mono">All</button>
             <button data-filter="command" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Commands</button>
             <button data-filter="skill" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Skills</button>
@@ -1048,6 +1047,7 @@ import "../styles/global.css";
               <div id="eco-panel-body" class="text-xs text-muted-light space-y-2 mt-3 max-h-48 overflow-y-auto"></div>
             </div>
             <div id="eco-browse" class="flex-1 overflow-y-auto p-3 space-y-3 min-h-0"></div>
+            <p id="eco-empty" class="hidden p-4 text-xs text-muted-light">No node matches. Try a name such as <code class="font-mono">add-plan</code>, <code class="font-mono">doc-schemas</code> or <code class="font-mono">qa</code>.</p>
           </aside>
         </div>
       </section>
@@ -1066,6 +1066,16 @@ import "../styles/global.css";
       </footer>
     </main>
   </div>
+
+  <!-- Docs search: Pagefind UI, loaded on first open -->
+  <dialog id="docs-search" aria-label="Search the docs" class="m-auto mt-20 w-[min(42rem,calc(100vw-2rem))] max-h-[80vh] overflow-y-auto rounded-xl border border-white/10 bg-[#0a0a0f] p-4 text-foreground backdrop:bg-black/70">
+    <div class="flex items-center justify-between mb-3">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase">Search the docs</p>
+      <button type="button" id="docs-search-close" class="text-muted-light hover:text-foreground text-sm" aria-label="Close search">Esc</button>
+    </div>
+    <div id="docs-search-ui"></div>
+    <p id="docs-search-fallback" class="hidden text-sm text-muted-light">Search runs on the built site. Run <code class="font-mono">npm run build</code> in <code class="font-mono">web/</code> and open the preview.</p>
+  </dialog>
 
   <script is:inline>
     const sidebarToggle = document.getElementById('docs-sidebar-toggle');
@@ -1106,6 +1116,56 @@ import "../styles/global.css";
         });
       });
     }
+
+    // Docs search. The Pagefind UI is built into dist/pagefind by `npm run build`, so it is
+    // fetched on first open instead of weighing down every page view.
+    (function () {
+      var dialog = document.getElementById('docs-search');
+      var openers = [document.getElementById('docs-search-open'), document.getElementById('docs-search-open-mobile')];
+      var closeBtn = document.getElementById('docs-search-close');
+      if (!dialog || typeof dialog.showModal !== 'function') return;
+      var loaded = false;
+      function loadUi() {
+        if (loaded) return;
+        loaded = true;
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = '/pagefind/pagefind-ui.css';
+        document.head.appendChild(css);
+        var js = document.createElement('script');
+        js.src = '/pagefind/pagefind-ui.js';
+        js.onload = function () {
+          new window.PagefindUI({ element: '#docs-search-ui', showSubResults: true, showImages: false, resetStyles: false, translations: { placeholder: 'Search the docs' } });
+          var input = dialog.querySelector('.pagefind-ui__search-input');
+          if (input) input.focus();
+        };
+        js.onerror = function () {
+          loaded = false;
+          document.getElementById('docs-search-fallback').classList.remove('hidden');
+        };
+        document.head.appendChild(js);
+      }
+      function openSearch() {
+        if (!dialog.open) dialog.showModal();
+        loadUi();
+        var input = dialog.querySelector('.pagefind-ui__search-input');
+        if (input) input.focus();
+      }
+      openers.forEach(function (b) { if (b) b.addEventListener('click', openSearch); });
+      if (closeBtn) closeBtn.addEventListener('click', function () { dialog.close(); });
+      // A click on the dialog itself (outside its content) is a backdrop click.
+      dialog.addEventListener('click', function (event) {
+        if (event.target === dialog) { dialog.close(); return; }
+        // Picking a result follows its link; the dialog should not stay over the page.
+        if (event.target.closest && event.target.closest('a')) dialog.close();
+      });
+      document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          openSearch();
+        }
+      });
+    })();
 
     // Scroll-spy: the sidebar link of the section being read carries aria-current.
     if ('IntersectionObserver' in window) {
@@ -1470,6 +1530,7 @@ import "../styles/global.css";
       function applyListFilter() {
         var q = listState.query;
         var f = listState.filter;
+        var total = 0;
         document.querySelectorAll('#eco-browse > div').forEach(function(group) {
           var groupType = group.dataset.type;
           var groupVisible = (f === 'all' || f === groupType);
@@ -1482,7 +1543,9 @@ import "../styles/global.css";
           group.style.display = (groupVisible && visibleCount > 0) ? '' : 'none';
           var countEl = group.querySelector('[data-count]');
           if (countEl) countEl.textContent = visibleCount;
+          total += visibleCount;
         });
+        document.getElementById('eco-empty').classList.toggle('hidden', total > 0);
       }
 
       document.querySelectorAll('.eco-btn').forEach(function(btn) {

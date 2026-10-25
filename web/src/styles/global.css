@@ -183,3 +183,22 @@ body::before {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Anchors land below the fixed nav */
+section[id],
+h1[id],
+h2[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* Pagefind search dialog, in the site's colours */
+#docs-search {
+  --pagefind-ui-primary: #00ff88;
+  --pagefind-ui-text: #e8e8e8;
+  --pagefind-ui-background: #0a0a0f;
+  --pagefind-ui-border: #2a2a2a;
+  --pagefind-ui-tag: #1a1a1a;
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-font: var(--font-body);
+}
