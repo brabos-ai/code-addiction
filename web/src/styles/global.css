@@ -196,6 +196,39 @@ body::before {
   }
 }
 
+/* Scroll reveal. The page script adds .reveal to [data-reveal] elements, so the hidden state
+   exists only where JS runs and never under reduced motion. Opacity and transform only. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pointer-following spotlight on the Why cards: hover devices only. */
+@media (hover: hover) {
+  .why-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .why-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(0, 255, 136, 0.09), transparent 70%);
+  }
+  .why-card:hover::before {
+    opacity: 1;
+  }
+}
+
 /* Reduced motion: no fade-up, no bounce, no cursor blink, no smooth scroll */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -208,6 +241,14 @@ body::before {
     animation: none;
   }
   .js-typing .term-line::after {
+    display: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .why-card::before {
     display: none;
   }
   *,
