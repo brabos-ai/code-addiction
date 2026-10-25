@@ -19,7 +19,7 @@
 
 Record the directory as `${DESIGN_SKILL_DIR}`. None found → say in one line that ui-ux-pro-max was not found, set no `DESIGN_SOURCE`, and continue with the design core.
 
-**Pass `DESIGN_SOURCE=ui-ux-pro-max ${DESIGN_SKILL_DIR}` in the prompt of all three UX dispatches** — `@ux-flow-agent`, `@ux-layout-agent` and `@ux-agent` — **including the generic subagents the Soft-degrade lines dispatch** when an agent is not available. Those subagents have no agent fragment, so this line is the only way the source reaches them. Tell them the same rules: the precedence above, every search carries a query and `--domain <x>` or `--design-system`, never `--persist`, and a missing `python3` (Windows: `py`) or a failed search is one line in the temp output, then the design core.
+**Add exactly one item to the "pass ONLY" list of each of the three UX dispatch prompts: `DESIGN_SOURCE=ui-ux-pro-max ${DESIGN_SKILL_DIR}`.** That covers `@ux-flow-agent`, `@ux-layout-agent` and `@ux-agent`, **including the generic subagents the Soft-degrade lines dispatch** when an agent is not available. Those subagents have no agent fragment, so this line is the only way the source reaches them. Tell them the same rules: the precedence above, every search carries a query and `--domain <x>` or `--design-system`, never `--persist`, and a missing `python3` (Windows: `py`) or a failed search is one line in the temp output, then the design core.
 
 **At STEP add-plan.ux-consolidate, reject any ui-ux-pro-max value that contradicts a `design-context.md` constraint** (an inspected token, component or pattern). Keep the inspected value and say which one was kept.
 

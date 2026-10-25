@@ -278,6 +278,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--feature-specification (about.md) | add-review (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add--ux-design (design.md) | add-review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add-review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
+| design (plugin) | add-plan (design step), ux-flow-agent (direction), ux-layout-agent (layout), ux-agent (critique) — enhancement only; the design core runs without it |
 | status.cjs | add-help, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-ux |
 | init.cjs | add-new — seeds the feature's documents on first use |
 | qa-preflight.cjs | add-qa-setup, add-review — checks the QA runner is installed and configured before any evidence is gathered |
