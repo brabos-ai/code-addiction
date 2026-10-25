@@ -31,7 +31,7 @@ describe('add--settings skill (L1.5)', () => {
   it('never says settings.json without the .codeadd/ prefix', () => {
     const text = read(skillPath);
     const bare = [...text.matchAll(/settings\.json/g)].filter(
-      (m) => text.slice(Math.max(0, m.index - 8), m.index) !== '.codeadd/'
+      (m) => text.slice(Math.max(0, m.index - 9), m.index) !== '.codeadd/'
     );
     expect(bare).toHaveLength(0);
   });
