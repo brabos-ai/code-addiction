@@ -259,6 +259,7 @@ Current consumer: `add-qa-setup` only. `add-wiki` keeps its own git-based `.meta
 |------|---------|
 | `web/src/pages/index.astro` | Landing page |
 | `web/src/pages/docs.astro` | Documentation page |
+| `web/src/i18n/en.ts`, `web/src/i18n/pt-br.ts` | Site copy per locale — EN default at `/`, PT-BR at `/pt-br/`; edited by `add-framework--sync`, both in one run |
 | `web/public/commands.svg` | Visual command map |
 | `web/public/flows.svg` | Workflow flows diagram |
 | `web/public/flowchart.svg` | Architecture flowchart |
