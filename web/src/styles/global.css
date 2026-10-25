@@ -1,18 +1,44 @@
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "@fontsource-variable/outfit";
+@import "@fontsource-variable/jetbrains-mono";
 
 @import "tailwindcss";
+
+/* Syne (h1/h2 and display labels): only the Latin 600 and 800 faces, self-hosted from
+   @fontsource/syne. font-display: optional keeps the Outfit-to-Syne swap from shifting layout:
+   if the face is not ready on first paint the page keeps the fallback. Layout.astro preloads
+   the 800 face so the hero heading normally has it in time. */
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 600;
+  src: url("@fontsource/syne/files/syne-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: "Syne";
+  font-style: normal;
+  font-display: optional;
+  font-weight: 800;
+  src: url("@fontsource/syne/files/syne-latin-800-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 
 @theme {
   --color-surface: #050505;
   --color-accent: #00ff88;
   --color-accent-dim: #00cc6a;
-  --color-muted: #666666;
+  --color-muted: #8a8a8a;
   --color-muted-light: #999999;
   --color-foreground: #e8e8e8;
 
-  --font-family-display: "Syne", sans-serif;
-  --font-family-body: "Outfit", sans-serif;
-  --font-family-mono: "JetBrains Mono", monospace;
+  --font-display: "Syne", sans-serif;
+  --font-body: "Outfit Variable", "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", monospace;
+}
+
+:root {
+  color-scheme: dark;
 }
 
 html {
@@ -22,7 +48,7 @@ html {
 body {
   background-color: #050505;
   color: #e8e8e8;
-  font-family: "Outfit", sans-serif;
+  font-family: var(--font-body);
   overflow-x: hidden;
 }
 
@@ -53,20 +79,19 @@ body::before {
 }
 
 /* Fade-in animation */
+/* Fade-up: transform only. Text is never hidden at opacity 0, so it is readable
+   without JS, before the animation starts and under reduced motion. */
 @keyframes fadeUp {
   from {
-    opacity: 0;
     transform: translateY(24px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
 .fade-up {
-  opacity: 0;
-  animation: fadeUp 0.6s ease-out forwards;
+  animation: fadeUp 0.6s ease-out both;
 }
 
 .fade-up-delay-1 { animation-delay: 0.1s; }
@@ -93,6 +118,17 @@ body::before {
   text-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1);
 }
 
+/* Keyboard focus: one visible ring for every control */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Docs sidebar: the section being read */
+#docs-sidebar a[aria-current="true"] {
+  color: var(--color-accent);
+}
+
 /* Selection */
 ::selection {
   background: rgba(0, 255, 136, 0.2);
@@ -106,7 +142,7 @@ body::before {
   border: 1px solid #00ff88;
   border-radius: 8px;
   background: rgba(0, 255, 136, 0.04);
-  font-family: "Syne", sans-serif;
+  font-family: var(--font-display);
   font-size: 13px;
   font-weight: 600;
   color: #e8e8e8;
@@ -116,8 +152,8 @@ body::before {
 
 .flow-cmd {
   display: block;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
   font-weight: 500;
   color: #00ff88;
 }
@@ -127,4 +163,118 @@ body::before {
   font-size: 18px;
   opacity: 0.5;
   user-select: none;
+}
+
+/* Terminal session: the text is plain HTML. The typing effect is a mask that slides off each
+   line (transform only) and exists only when the page script adds .js-typing, so no-JS readers,
+   crawlers and reduced-motion users see every line from the first paint. */
+.term-line {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  white-space: pre;
+}
+
+.js-typing .term-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #0a0a0a;
+}
+
+.js-typing.is-typing .term-line::after {
+  animation: termReveal 0.7s steps(30, end) both;
+  animation-delay: calc(var(--i) * 0.45s);
+}
+
+@keyframes termReveal {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(101%);
+  }
+}
+
+/* Scroll reveal. The page script adds .reveal to [data-reveal] elements, so the hidden state
+   exists only where JS runs and never under reduced motion. Opacity and transform only. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pointer-following spotlight on the Why cards: hover devices only. */
+@media (hover: hover) {
+  .why-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .why-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(0, 255, 136, 0.09), transparent 70%);
+  }
+  .why-card:hover::before {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion: no fade-up, no bounce, no cursor blink, no smooth scroll */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .fade-up,
+  .animate-bounce,
+  .cursor-blink::after,
+  .js-typing .term-line::after {
+    animation: none;
+  }
+  .js-typing .term-line::after {
+    display: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .why-card::before {
+    display: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Anchors land below the fixed nav */
+section[id],
+h1[id],
+h2[id] {
+  scroll-margin-top: 4.5rem;
+}
+
+/* Pagefind search dialog, in the site's colours */
+#docs-search {
+  --pagefind-ui-primary: #00ff88;
+  --pagefind-ui-text: #e8e8e8;
+  --pagefind-ui-background: #0a0a0f;
+  --pagefind-ui-border: #2a2a2a;
+  --pagefind-ui-tag: #1a1a1a;
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-font: var(--font-body);
 }

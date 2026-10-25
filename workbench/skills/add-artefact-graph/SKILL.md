@@ -46,7 +46,7 @@ relationships, because prose that names an artefact and prose that depends on on
 
 | Interface | Reach | Verbs |
 |---|---|---|
-| `node scripts/graph.js <verb>` | Every provider. All five can shell out | `impact`, `dependencies`, `neighbors`, `path`, `orphans`, `stats`, `history` — plus `mermaid`, which is CLI-only |
+| `node scripts/graph.js <verb>` | Every provider. All five can shell out | `impact`, `dependencies`, `neighbors`, `path`, `orphans`, `stats`, `history` — plus `mermaid` and `ecosystem`, which are CLI-only (both write a docs-site file) |
 | The artefact-graph MCP (`mcp/server.mjs --corpus=artefacts`) | Only where MCP is configured | all eleven |
 
 **Where both implement a verb, they answer identically — by design and by assertion.** Both read the

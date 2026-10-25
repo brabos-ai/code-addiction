@@ -24,7 +24,7 @@ Computes diff since last release, regenerates the ecosystem map, dispatches 4 an
 **STEPS IN ORDER:**
 ```
 STEP 1: Compute Change Payload    → git diff LAST_TAG..HEAD + ecosystem scan + inconsistency check
-STEP 2: Regenerate Ecosystem Map  → deterministic from scan data (no agent)
+STEP 2: Regenerate Ecosystem Map  → deterministic from scan data (no agent); 2.1 the two site graphs
 STEP 3: Regenerate ecosystem.md   → 3 Mermaid graphs from STEP 1.3 scan data (no agent)
 STEP 4: Dispatch 4 Analyzer Agents → READ-ONLY, PARALLEL, each writes report to .tmp/sync/
 STEP 5: Apply Edits               → coordinator reads all reports, applies via Edit tool (single writer)
@@ -41,8 +41,8 @@ IF CHANGE PAYLOAD NOT BUILT (STEP 1 not complete):
   ✅ DO: Complete STEP 1 first
 
 IF AGENT REPORTS NOT ALL RECEIVED (STEP 4 not complete):
-  ⛔ DO NOT USE: Edit on README.md, docs.astro, index.astro, or *.svg
-  ⛔ DO NOT USE: Write on README.md, docs.astro, index.astro, or *.svg
+  ⛔ DO NOT USE: Edit on README.md, docs.astro, index.astro, web/src/data/providers.ts, or *.svg
+  ⛔ DO NOT USE: Write on README.md, docs.astro, index.astro, web/src/data/providers.ts, or *.svg
   ⛔ DO NOT: Apply any edits
   ✅ DO: Wait for all 4 report files to exist in .tmp/sync/
 
@@ -196,6 +196,23 @@ Use the EXACT same format as the existing map:
 
 Before writing: show diff of what changed (added/removed/changed entries). Then write the file.
 
+### 2.1 Regenerate the site graphs
+
+The sidecar is current here, so the two graphs the docs site draws are regenerated from it:
+
+```bash
+node scripts/graph.js mermaid --write      # web/public/artefact-graph.mmd
+node scripts/graph.js ecosystem --write    # web/public/ecosystem.json
+```
+
+The first is the Mermaid graph in the docs "Graph" section. The second is the **site Ecosystem Map**, the
+interactive map in the docs "Ecosystem Map" section. Say "site Ecosystem Map" for it every time: this STEP
+also regenerates the `add--ecosystem` skill at `framwork/.codeadd/skills/add--ecosystem/SKILL.md`, which is a
+different artefact with a similar name.
+
+Both files are generated output. No analyzer agent reads or edits them, and nobody edits them by hand: a hand edit
+is erased by the next run. The closing report in STEP 6 lists both files, each as regenerated or unchanged.
+
 ---
 
 ## STEP 3: Regenerate ecosystem.md
@@ -243,7 +260,7 @@ Each agent is independent. Dispatch ALL simultaneously.
    - **Output:** `.tmp/sync/readme-report.json`
 
 2. **web-docs-analyzer** [read-only, standard]
-   - **Prompt:** Read `.tmp/sync/change-payload.json` and `web/src/pages/docs.astro`. Analyze commands grid, skills grid, flows section, providers table. Write Update Report to `.tmp/sync/web-docs-report.json`.
+   - **Prompt:** Read `.tmp/sync/change-payload.json` and `web/src/pages/docs.astro`. Analyze commands grid, skills grid and flows section. It does not edit the providers table: a provider change is the web-index report's. Write Update Report to `.tmp/sync/web-docs-report.json`.
    - **Output:** `.tmp/sync/web-docs-report.json`
 
 3. **web-index-analyzer** [read-only, standard]
@@ -287,7 +304,7 @@ Read all 4 report files. Each report follows this schema:
 }
 ```
 
-**Note:** `svg-report.json` is an array of report objects (one per SVG file). Iterate over each element.
+**Note:** a report file holds either one report object or an array of them. `svg-report.json` is always an array (one object per SVG file); the web-index report is an array when it targets both `web/src/pages/index.astro` and `web/src/data/providers.ts`. Iterate over each element.
 
 For insertions: `old` = anchor text already in file, `new` = anchor text + newline + new content.
 For deletions: `old` = text to remove, `new` = "".
@@ -331,8 +348,11 @@ Then print the sync report (omit empty sections):
 - README.md: N edits applied
 - web/src/pages/docs.astro: N edits applied
 - web/src/pages/index.astro: N edits applied
+- web/src/data/providers.ts: N edits applied
 - web/public/commands.svg: N edits applied
-[omit files with 0 edits]
+- web/public/artefact-graph.mmd: regenerated or unchanged (STEP 2.1)
+- web/public/ecosystem.json: regenerated or unchanged (STEP 2.1)
+[omit files with 0 edits, except the two STEP 2.1 lines, which always print]
 
 ### Manual Items Required
 ⚠️ [FILE] — [reason]: [detail]
@@ -388,7 +408,8 @@ ALWAYS:
 
 NEVER:
 - Apply edits before all 4 reports are received and verified
-- Let agents write directly to README.md, docs.astro, index.astro, or SVG files
+- Let agents write directly to README.md, docs.astro, index.astro, web/src/data/providers.ts (edited only by the coordinator, from a report), or SVG files
+- Edit `web/public/artefact-graph.mmd` or `web/public/ecosystem.json` by hand: STEP 2.1 regenerates both
 - Modify framwork/.codeadd/commands/ or skill files (except ecosystem map in STEP 2)
 - Write to provider directories (framwork/.claude/, framwork/.agent/, etc.)
 - Create commits or stage files — leave all changes uncommitted
