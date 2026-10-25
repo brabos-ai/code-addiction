@@ -233,6 +233,26 @@ Real code examples, one per topic, trimmed.>
 - Relative markdown links to real file paths only — **never wikilinks `[[page]]`**.
 - Page size: **300 lines target, 500 hard cap.** Split into a `wiki/domains/<area>/` subdirectory only once a page exceeds the cap — never preemptively.
 
+## Stack Convention Signals
+
+Shared by every analyzer: this is the ONE place detection of the seven stack conventions is defined. The spine analyzer owns the `## Stack Conventions` table in `{{addpath:wiki/conventions.md}}`; area analyzers run these searches for domain-local detail and link to the table. This section does not restate the Wiki Page Contract.
+
+**Stack-agnostic.** Every search names markers across languages. Search schema, migration, entity and data-access code of whatever stack the repo uses; never assume one. A row whose signal is not found has Value `none` (or `no` for Tenancy and Barrels) and Evidence `none`.
+
+| Row | Search | Decision rule |
+|---|---|---|
+| Tenancy | Key regex `tenant_id\|tenantId\|account_id\|accountId\|organization_id\|org_id` in schema, migrations and entities, AND scoping: RLS (`ENABLE ROW LEVEL SECURITY`, `CREATE POLICY`, `current_setting(`) or a filter on that key in data-access code (repository, query scope, middleware, schema-per-tenant) | `yes` needs the key on 2+ tables/entities plus at least one filter or policy. A key column with no scoping gives `no`, with the evidence of what was seen (a single-tenant app can still have an `account_id` FK to its users). When `yes`: Value carries the key, Where carries the enforcement |
+| DI | Container/registration markers: `@Injectable`, `@Module(`, `providers:`, `container.(register\|bind)`, `services.Add(Scoped\|Singleton\|Transient)`, `Depends(`, `fx.Provide`, `inversify`, `tsyringe`, `awilix`, `wire.Build`, `@Autowired`, `@Inject` | Markers found → the container name; Where carries the registration location. None, but constructors receive their collaborators → `manual constructor injection`. Otherwise `none` |
+| Barrels | Files named `index.(ts\|js\|tsx\|mjs)`, `__init__.py` or `mod.rs` whose non-blank lines are ONLY re-exports | `yes` when 3+ such files follow a consistent folder pattern; Where carries the scope (package roots only, every `entities/` folder). Evidence = one example + the count |
+| Validation | Validation library in the manifests (`package.json`, `pyproject.toml`, `*.csproj`, `go.mod`, `Cargo.toml`, `composer.json`, `Gemfile`, `build.gradle`, `pom.xml`) | Manifest entry confirmed by one usage `path:line`; Where carries where it runs (boundary, DTO, schema) |
+| ORM / data access | ORM, query builder or raw driver in the same manifests | Manifest entry confirmed by one usage `path:line`; Where carries repository pattern yes/no |
+| Entity language | The form entities take: interface, class, dataclass, struct, schema, record | One entity file confirms the language and the form, as `path:line` |
+| Layering | Phase 1 — Architecture Contract above | Summarise the layer order and import direction; link `architecture.md`, do not restate it |
+
+**Polyglot repos.** When apps disagree, Value is the dominant one and the Where cell carries a short per-app note. Domain pages carry the detail.
+
+**Sources budget.** The page's frontmatter `sources` must cover every Evidence path, within the budget the Wiki Page Contract sets. Use broad globs (for example `**/migrations/**`) so eight cover seven rows.
+
 ## Implementation Patterns Reference
 
 - **AGENTS.md** = WHERE things are (structure, paths, layers) + a pointer to the wiki

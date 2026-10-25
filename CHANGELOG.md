@@ -13,6 +13,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Root-level README for public onboarding
 - Agent team section (`## 10`) in the agent-mode guide, and two role files, `roles/product-pm.md` and `roles/chief-engineer.md`
 - Agent-mode board management guide (`agent-mode/board-management.md`): who writes the board, how each stage is mirrored to an external tracker, and how concurrent writes behave
+- `/add-wiki` writes a fixed `## Stack Conventions` table (tenancy, DI, barrels, layering, validation, ORM / data access, entity language) in the wiki's `conventions.md`, with detection defined once in `add--architecture-discovery`. `/add-wiki update` backfills it once into an older wiki and never overwrites a `decided` row. The AGENTS.md `Multi-tenancy:` line appears only after a full `/add-wiki` run, since `update` never regenerates the Architecture Contract
 
 ### Removed
 - Five generic skills no command or agent loaded: `add--stripe`, `add--plan-based-features`, `add--optimizing-git-workflow`, `add--project-scaffolding`, `add--skill-creator`. **`codeadd update` deletes them from your install, local edits included.** To author skills, install the native plugin: `/plugin install skill-creator@claude-plugins-official` (marketplace: `/plugin marketplace add anthropics/claude-plugins-official`)
