@@ -113,3 +113,30 @@ test('F5: no 10px text in either page or the flow-diagram label', () => {
   assert.doesNotMatch(DOCS(), /text-\[10px\]/);
   assert.doesNotMatch(CSS(), /font-size:\s*10px/);
 });
+
+// ---------------------------------------------------------- F6 reduced motion
+test('F6: a prefers-reduced-motion block turns off fade-up, bounce, cursor blink and smooth scroll', () => {
+  const css = CSS();
+  const at = css.indexOf('@media (prefers-reduced-motion: reduce)');
+  assert.ok(at >= 0, 'no reduced-motion block');
+  const block = css.slice(at);
+  for (const s of ['.fade-up', '.animate-bounce', '.cursor-blink', 'scroll-behavior']) {
+    assert.ok(block.includes(s), `${s} not covered`);
+  }
+});
+
+test('F6: hero text never starts at opacity 0', () => {
+  const css = CSS();
+  const rule = css.match(/\.fade-up\s*\{[^}]*\}/);
+  assert.ok(rule, '.fade-up rule missing');
+  assert.doesNotMatch(rule[0], /opacity:\s*0\b/);
+  const kf = css.match(/@keyframes fadeUp\s*\{[\s\S]*?\n\}/);
+  assert.ok(kf, 'fadeUp keyframes missing');
+  assert.doesNotMatch(kf[0], /opacity:\s*0\b/);
+});
+
+test('F6: the Cytoscape zoom and fit calls honour reduced motion', () => {
+  const docs = DOCS();
+  assert.match(docs, /prefers-reduced-motion/);
+  assert.doesNotMatch(docs, /\{\s*duration:\s*(350|180)\s*\}/, 'animate() still has a fixed duration');
+});
