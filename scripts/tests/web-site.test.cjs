@@ -73,3 +73,13 @@ test('F2: neither page keeps a hand-rolled clipboard handler, cmd- id or copyCmd
     assert.doesNotMatch(src, /copyCmd\(/, `${name}: copyCmd`);
   }
 });
+
+// ------------------------------------------------------ F3 mobile overflow
+test('F3: the home hero section clips its glow and the docs main can shrink', () => {
+  const hero = HOME().match(/<section class="min-h-screen[^>]*>/);
+  assert.ok(hero, 'hero section not found');
+  assert.match(hero[0], /overflow-hidden/);
+  const main = DOCS().match(/<main class="flex-1 lg:ml-64[^>]*>/);
+  assert.ok(main, 'docs main not found');
+  assert.match(main[0], /min-w-0/);
+});
