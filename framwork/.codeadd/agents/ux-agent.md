@@ -139,7 +139,7 @@ The QA fix wave routes every `design-spec` finding to you — `spec-gap`, `ux`/`
 ## Constraints (all modes)
 
 - Propose solutions within the project's existing design system and component library
-- Prefer standard patterns (shadcn, Tailwind) over custom implementations
+- Prefer the project's existing components and styling over custom implementations
 - Mobile-first: every layout starts from smallest viewport
 - Accessibility is non-negotiable (WCAG 2.1 AA minimum)
 - You are a leaf agent — do NOT dispatch other agents

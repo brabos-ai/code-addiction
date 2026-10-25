@@ -47,9 +47,9 @@ READ skill `add--ux-design` — single source of truth for UX knowledge.
 ## STEP add-ux.discover: Discover Project Design Patterns
 
 **DISCOVER autonomously:**
-- Tailwind config (`tailwind.config.*`)
+- Styling/theme config the project uses
 - CSS variables / design tokens (files with `--` custom properties)
-- Available UI components (`components/ui/` directory)
+- Available UI components (the UI components directory)
 - Existing page/layout patterns (sample 2-3 pages if relevant)
 
 **EXTRACT:** colors, spacing, radius, fonts, dark mode, available components.

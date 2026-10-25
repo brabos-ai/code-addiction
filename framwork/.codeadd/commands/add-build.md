@@ -695,7 +695,7 @@ ${INTERFACES}
 ${GLOBAL_CONSTRAINTS}
 
 ## MANDATORY: Load Development Skill
-Read: skill add-${AREA}-development (patterns, validation, code style)
+Read: skill add--${AREA}-development (patterns, validation, code style)
 - For Frontend: skill will auto-load ux-design if design.md exists
 - Component/library APIs: follow the project's own docs per {{addpath:wiki/conventions.md}} / AGENTS.md
 
@@ -733,15 +733,15 @@ the contract — record it as a ledger line and reconcile `BASE..HEAD` against `
 
 **Paths and build commands are project-specific. Consult AGENTS.md for exact locations and commands.**
 
-- **Database:** Entities, query types, migration file, Repository, barrel exports
-- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, module registration
-- **Workers:** Worker, Processor, queue config, error handling, module registration
+- **Database:** Entities, query types, migration file, Repository, barrel exports (if the project uses them)
+- **Backend:** Module structure, DTOs, Commands, Events, Controller, Service, registration per project DI convention
+- **Workers:** Worker, Processor, queue config, error handling, registration per project DI convention
 - **Frontend:** Pages, Components, state store, Hooks, mirror DTOs, API integration, forms
   - MANDATORY: Load skill `add--frontend-development` first
   - The frontend skill will check for design.md → if missing, auto-load ux-design/SKILL.md
 
 **Skills Reference (MANDATORY):**
-- Backend: skill `add--backend-development` (RESTful, IoC, DTOs, CQRS, Multi-tenancy)
+- Backend: skill `add--backend-development` (RESTful, DTOs, project conventions)
 - Database: skill `add--database-development` (Entities, Migrations, query types, Repositories)
 - Frontend: skill `add--frontend-development` (Types, Hooks, State, API, Forms, Routing + auto-loads ux-design)
 
@@ -855,7 +855,7 @@ ${GLOBAL_CONSTRAINTS}
 
 ## Self-Bootstrap (FIRST STEP)
 1. Run: node .codeadd/scripts/status.cjs
-2. Read skill: add-${AREA}-development
+2. Read skill: add--${AREA}-development
 3. Read skill: add--tasks-checklist (tick rules, [!] semantics, "non-trivial change")
 4. Read ALL files in FILES_CREATED and FILES_MODIFIED below; IF REVIEW_PACKAGE is not "none", read it too — it is the area's committed diff
 5. Read plan.md (prose contracts) and tasks.md (canonical checklist)

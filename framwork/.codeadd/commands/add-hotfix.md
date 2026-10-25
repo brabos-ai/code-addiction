@@ -27,7 +27,7 @@
 -->
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
-> **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
+> **ARCHITECTURE REFERENCE:** Use the project wiki ({{addpath:wiki/conventions.md}}, {{addpath:wiki/architecture.md}}) as source of patterns; `AGENTS.md` for structure and commands.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
 > **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/`; relationships live in the `about.md` `## Relations` section
 
@@ -405,7 +405,7 @@ Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its procedure. **If `
 **FRONTEND FIXES:**
 If bug in frontend:
 1. READ skill `add--ux-design`
-2. Follow patterns (mobile-first, shadcn, Tailwind v3)
+2. Follow patterns (mobile-first, the project's component library and styling per conventions)
 
 **DO NOT:**
 - Refactor unrelated code

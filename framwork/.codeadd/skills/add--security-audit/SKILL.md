@@ -9,7 +9,7 @@ description: |
 **Use for:** Validate security, audit codebase, identify vulnerabilities
 **Do not use for:** Writing security fixes, dependency upgrades, incident response, general code review
 
-**Reference:** Always consult `AGENTS.md` for general project standards.
+**Reference:** Project conventions: follow `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ `{{addpath:wiki/domains/<area>.md}}`); a one-line critical rule may live in `AGENTS.md`. If absent, apply the agnostic defaults and follow the nearest existing code; never impose tenancy, DI registration or barrels unless the project uses them.
 
 ---
 
@@ -17,17 +17,20 @@ description: |
 
 ### A01 — Broken Access Control (CRITICAL)
 
-Multi-tenant rules:
+When row `Tenancy` = yes (the key is the recorded one, e.g. `account_id`):
 
-- [ ] ALL queries filter by `account_id`
-- [ ] `account_id` from JWT (NEVER body)
+- [ ] ALL queries filter by the recorded tenant key — a query missing it is CRITICAL
+- [ ] The tenant key comes from the auth context (NEVER the body)
+
+Always:
+
 - [ ] Ownership validated before UPDATE/DELETE
 - [ ] Guards on protected endpoints
 
-Searches to run:
+Searches to run (examples):
 
-- `grep 'findAll|selectFrom'` → check `account_id` filter
-- `grep '@Body()'` → check no `accountId` from body
+- e.g. `grep 'findAll|selectFrom'` → check the tenant-key filter (when Tenancy = yes)
+- e.g. a body decorator such as `@Body()` → check no tenant key comes from the body
 
 ---
 
@@ -88,7 +91,7 @@ Secrets/env vars: see A02.
 Searches:
 
 - `grep 'origin.*\*'` → open CORS
-- `grep 'process.env'` → use `IConfigurationService`
+- `grep 'process.env'` → use the project's config module
 
 ---
 
@@ -170,9 +173,9 @@ Formula: `score = 10 - (weighted_sum / 5)`
 
 ## Process
 
-1. **Setup:** Read `security.md`, `AGENTS.md`, identify scope files
+1. **Setup:** Read `security.md`, the project conventions (wiki `Stack Conventions`), `AGENTS.md`, identify scope files
 2. **Analyze:** For EACH OWASP category → run searches → verify (no false positives) → classify severity
-3. **Multi-Tenant:** Check ALL queries filter `account_id`, ID from JWT
+3. **Multi-Tenant:** only when row `Tenancy` = yes — check ALL queries filter by the recorded tenant key, ID from the auth context
 4. **Report:** Calculate score, group by severity, create `security-report.md`
 
 ---
@@ -228,10 +231,10 @@ Formula: `score = 10 - (weighted_sum / 5)`
 
 ## False Positive Prevention
 
-Stack-specific protections (NestJS sanitization, Kysely parametrization, React escaping, etc.) and accepted patterns (e.g. `process.env.NODE_ENV`, internal `.raw()`, validated `PartialType`): consult `AGENTS.md` for the project's stack and documented exceptions.
+Stack-specific protections (NestJS sanitization, Kysely parametrization, React escaping, etc.) and accepted patterns (e.g. `process.env.NODE_ENV`, internal `.raw()`, validated `PartialType`): consult the project's conventions (wiki), then `AGENTS.md`, for the project's stack and documented exceptions.
 
 Project patterns:
 
 - Check documented patterns
-- `IConfigurationService` is correct
+- The project's config module is correct
 - Don't report as violation if it follows the docs

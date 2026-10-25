@@ -15,9 +15,9 @@ Stack-agnostic skill for frontend architecture and implementation patterns.
 **Use for:** Pages, State, Data Fetching, Types, API integration, Forms, Routing, Components
 **Do not use for:** UI/Design (ux-design), Backend (backend-development), mobile-native (React Native/Flutter), build tooling/bundler config
 
-**Stack orientation:** Consult `AGENTS.md ## Architecture Contract` for the frontend framework, UI library, state management, and data-fetching tool. Apply the principles below using that framework's APIs.
+**Stack orientation:** Project conventions: follow `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ `{{addpath:wiki/domains/<area>.md}}`); a one-line critical rule may live in `AGENTS.md`. If absent, apply the agnostic defaults and follow the nearest existing code; never impose tenancy, DI registration or barrels unless the project uses them. The defaults are written once in the backend development skill (`backend-development`) → `## Project Conventions First`. Apply the principles below using the framework, UI library, state and data-fetching tools the project records.
 
-**Reference:** Always consult `AGENTS.md` for general project standards.
+**Reference:** Conventions come from the wiki first; `AGENTS.md` is the fallback for general project standards.
 
 ---
 
@@ -37,7 +37,7 @@ The ux-design skill provides the SaaS UX Pattern Library (Dashboard, Settings, B
 
 ## Structure
 
-Organize source files by concern. Exact paths and extensions depend on the framework (see `AGENTS.md`).
+Organize source files by concern. This is a default layout; the project's own structure wins. Exact paths and extensions depend on the framework (see project conventions).
 
 ```
 [frontend-src]/
@@ -52,7 +52,7 @@ Organize source files by concern. Exact paths and extensions depend on the frame
 │   └── layout/                  # Structural components (header, sidebar, footer)
 ├── composables|hooks/           # Data-fetching and reusable logic
 ├── stores/[feature]-store.*     # UI state stores
-├── types/                       # Shared TypeScript interfaces/types
+├── types/                       # Shared types
 ├── lib/api.*                    # Centralized API client
 └── routes.*                     # Route definitions
 ```
@@ -61,7 +61,7 @@ Organize source files by concern. Exact paths and extensions depend on the frame
 
 ## Types (Mirror Backend DTOs)
 
-{"rules":["interfaces not classes","Date fields -> string (JSON serialization)","Enums -> union types (no backend imports)","sync with backend DTOs field-by-field","never use `any`","centralized location"]}
+{"rules":["plain data shapes, not behaviour-carrying classes","Date fields -> string (JSON serialization)","Enums -> union types (no backend imports)","sync with backend DTOs field-by-field","no untyped escape hatches (e.g. `any`)","centralized location"]}
 
 ---
 
@@ -69,7 +69,7 @@ Organize source files by concern. Exact paths and extensions depend on the frame
 
 {"separation":"UI state (local, ephemeral) vs Server state (cache of backend data) — NEVER mix them","requirements":["consistent hierarchical cache keys (e.g. ['resource'], ['resource', id])","loading indicator while fetching","error state handled and displayed","invalidate related cache after mutations","conditional fetching when prerequisites missing (e.g. ID exists)","return library primitives directly — do not wrap unnecessarily"]}
 
-Use the project's data-fetching library (see `AGENTS.md`) to handle server state.
+Use the project's data-fetching library (see project conventions) to handle server state.
 
 ---
 
@@ -79,7 +79,7 @@ Separate state into two categories — never mix them:
 
 | Category | What belongs here | Where it lives |
 |----------|-------------------|----------------|
-| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see `AGENTS.md`) |
+| **UI state** | Sidebar open/close, modals, selections, filters, local toggles | Client-side store (see project conventions) |
 | **Server state** | Data from the backend, CRUD results, cached responses | Data-fetching library cache |
 
 UI state is local and ephemeral — losing it on refresh is acceptable. Server state is a cache of the backend (the source of truth). Never store fetched data in a UI store.
@@ -94,7 +94,7 @@ UI state is local and ephemeral — losing it on refresh is acceptable. Server s
 
 ## Forms
 
-{"patterns":["schema-based validation (Zod or equivalent) for every form","form data type inferred from schema — no manual duplication","schema mirrors the backend DTO for the endpoint","validate on client (UX) AND server (security) — both mandatory","inline validation errors immediately on blur or submit","error messages match the project's language/locale"]}
+{"patterns":["schema-based validation with the project's schema/validation library for every form","form data type inferred from schema — no manual duplication","schema mirrors the backend DTO for the endpoint","validate on client (UX) AND server (security) — both mandatory","inline validation errors immediately on blur or submit","error messages match the project's language/locale"]}
 
 ---
 
@@ -106,7 +106,7 @@ UI state is local and ephemeral — losing it on refresh is acceptable. Server s
 
 ## Routing
 
-{"patterns":["route structure mirrors feature architecture","auth-required routes wrapped in protected-route guard","each route lazy-loaded to reduce initial bundle size","nested routes for shared layouts (sidebar, header)","detail routes use dynamic params (e.g. /users/:id)"]}
+{"patterns":["route structure mirrors feature architecture","auth-required routes wrapped in protected-route guard","each route lazy-loaded to reduce initial bundle size (a default, where the framework supports it)","nested routes for shared layouts (sidebar, header)","detail routes use dynamic params (e.g. /users/:id)"]}
 
 ---
 
@@ -151,7 +151,7 @@ UI state is local and ephemeral — losing it on refresh is acceptable. Server s
 ## Validation Checklist
 
 ### Types
-- [ ] Types synced with backend DTOs, no `any`
+- [ ] Types synced with backend DTOs, no untyped escape hatches (e.g. `any`)
 
 ### Data Fetching & State
 - [ ] Server data in data-fetching library cache, UI state in client store — never mixed
@@ -167,7 +167,7 @@ UI state is local and ephemeral — losing it on refresh is acceptable. Server s
 
 ### Routing
 - [ ] Protected routes guard authenticated sections
-- [ ] Routes lazy-loaded
+- [ ] Routes lazy-loaded (where the framework supports it)
 
 ### UX Integration
 - [ ] UX design skill loaded if no `design.md`
