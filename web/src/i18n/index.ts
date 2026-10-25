@@ -18,10 +18,28 @@ export const SAME_IN_BOTH: string[] = [
   "home.footer.github",
   "home.footer.linkedin",
   "home.footer.npm",
+  // docs: brand and product names
+  "docs.title", // "Docs — Code Addiction": the word "Docs" and the brand are used as is
+  "docs.nav.github",
+  "docs.agentMode.heading", // the name of the agent-mode feature
+  // docs: words Brazilian devs use as is
+  "docs.sidebar.items.skills",
+  "docs.sidebar.items.plugins",
+  "docs.sidebar.items.providers",
+  "docs.skills.heading",
+  "docs.plugins.heading",
+  "docs.providers.heading",
+  "docs.providers.provider",
+  "docs.ecosystem.skills",
+  "docs.ecosystem.agents",
+  "docs.ecosystem.typeSkill",
+  "docs.ecosystem.typeAgent",
+  // docs: command names (flow node labels, scenario step commands) and a list of borrowed words
+  "docs.flows.nodes.brainstorm",
+  "docs.flows.nodes.hotfix",
+  "docs.scenarios.items.*.steps.*.cmd",
+  "docs.scenarios.items.0.steps.5.text", // "changelog, docs, merge"
 ];
-
-// Top-level sections the same-value guard skips while their copy is still being moved.
-export const UNMIGRATED: string[] = ["docs"];
 
 function leaves(node: unknown, prefix: string, out: Map<string, string>): Map<string, string> {
   if (typeof node === "string") {
@@ -92,7 +110,6 @@ function allowedSame(key: string): boolean {
 // A PT value equal to its EN value is English left behind, unless the key is declared.
 function assertTranslated() {
   for (const [k, v] of PT_LEAVES) {
-    if (UNMIGRATED.includes(k.split(".")[0])) continue;
     if (k.split(".").pop() === "name") continue;
     if (v === EN_LEAVES.get(k) && !allowedSame(k)) {
       throw new Error(`i18n: "${k}" is the same in pt-br.ts as in en.ts and is not in SAME_IN_BOTH`);

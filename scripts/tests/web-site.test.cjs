@@ -191,8 +191,9 @@ test('F8: both pages render from providers.ts and keep no hand-written provider 
 });
 
 test('F8: the Antigravity and ZCode caveat survives under the docs table', () => {
-  assert.match(DOCS(), /Antigravity is deferred because/);
-  assert.match(DOCS(), /ZCode reads commands and skills from the same/);
+  const docs = DOCS() + read('src/i18n/en.ts');
+  assert.match(docs, /Antigravity is deferred because/);
+  assert.match(docs, /ZCode reads commands and skills from the same/);
 });
 
 // ------------------------------------------------------ F9 menus and lightbox
@@ -297,7 +298,10 @@ test('F17: a search trigger opens on click and on Ctrl+K / Cmd+K, and the nav dr
 
 test('F17: #eco-search has an accessible name and the list has an empty state', () => {
   const docs = DOCS();
-  assert.match(docs.match(/<input id="eco-search"[^>]*>/)[0], /aria-label="[^"]+"/);
+  // The label is a t() call now; the key it names must exist in en.ts with a non-empty value.
+  const input = docs.match(/<input id="eco-search"[^>]*>/)[0];
+  assert.match(input, /aria-label=(?:"[^"]+"|\{t\("docs\.ecosystem\.filterAria"\)\})/);
+  assert.match(read('src/i18n/en.ts'), /filterAria: "[^"]+"/);
   assert.match(docs, /id="eco-empty"/);
 });
 
@@ -400,7 +404,7 @@ test('F20: a script that outlives its page binds once and guards work that finis
 
 // ------------------------------------------ Lighthouse accessibility findings
 test('Lighthouse a11y: inline links are underlined, the map hint has contrast, the search label matches its text', () => {
-  const docs = DOCS();
+  const docs = DOCS() + read('src/i18n/en.ts');
   assert.doesNotMatch(docs, /class="text-accent hover:underline"/, 'a link inside text must not rely on colour alone');
   assert.doesNotMatch(docs, /text-muted-light\/70/, 'the map hint sits at 3.9:1 with the opacity');
   const btn = docs.match(/<button type="button" id="docs-search-open"[^>]*>/);
@@ -483,4 +487,8 @@ test('i18n F5: CommandLine holds none of the English literals; its script reads 
 
 test('i18n F9: en.ts holds the skills list as { name, desc } entries', () => {
   assert.match(I18N('en.ts'), /\{ name: "ux-design", desc: "/);
+});
+
+test('i18n F10: the untranslated-text guard is fully on (no UNMIGRATED list left)', () => {
+  assert.doesNotMatch(I18N('index.ts'), /UNMIGRATED/);
 });
