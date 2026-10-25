@@ -9,6 +9,11 @@ export const ptBr: Strings = {
     localeEn: "EN",
     localePtBr: "PT-BR",
     skipToContent: "Pular para o conteúdo",
+    copy: "Copiar",
+    copied: "Copiado",
+    copiedStatus: "Copiado para a área de transferência",
+    select: "Selecionar",
+    selectStatus: "Selecionado. Pressione Ctrl+C para copiar",
   },
   layout: {
     htmlLang: "pt-BR",

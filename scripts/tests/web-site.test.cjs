@@ -61,7 +61,7 @@ test('F2: CommandLine.astro has a labelled copy button, a live region and a wrap
   assert.ok(exists('src/components/CommandLine.astro'), 'component missing');
   const c = read('src/components/CommandLine.astro');
   assert.match(c, /<button/);
-  assert.match(c, /aria-label=\{?[`"']Copy/);
+  assert.match(c, /aria-label=\{`\$\{t\("common\.copy"\)\}: /);
   assert.match(c, /aria-live="polite"/);
   assert.match(c, /min-w-0 break-all/);
 });
@@ -469,4 +469,13 @@ test('i18n F4: the cross-page links go through localeHref, never a literal path'
     assert.doesNotMatch(src, /href="\/"/, `${name}: literal / link`);
     assert.match(src, /localeHref\(/, `${name}: no localeHref`);
   }
+});
+
+test('i18n F5: CommandLine holds none of the English literals; its script reads data-* strings', () => {
+  const c = read('src/components/CommandLine.astro');
+  assert.doesNotMatch(c, />Copy</);
+  assert.doesNotMatch(c, /"Copied"/);
+  assert.doesNotMatch(c, /"Selected\. Press Ctrl\+C to copy"/);
+  assert.match(c, /dataset/);
+  assert.match(c, /__commandLineBound/);
 });

@@ -8,6 +8,11 @@ export const en = {
     localeEn: "EN",
     localePtBr: "PT-BR",
     skipToContent: "Skip to content",
+    copy: "Copy",
+    copied: "Copied",
+    copiedStatus: "Copied to clipboard",
+    select: "Select",
+    selectStatus: "Selected. Press Ctrl+C to copy",
   },
   layout: {
     htmlLang: "en",
