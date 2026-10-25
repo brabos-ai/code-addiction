@@ -8,6 +8,7 @@ description: Use for incremental project-wiki updates — loaded by /add-wiki up
 <!-- uses:
 - command: /add-wiki
 - script: done.cjs
+- skill: add--architecture-discovery
 -->
 
 ## Overview
@@ -53,7 +54,7 @@ Nothing relevant changed and the wiki is accurate → edit nothing, report "wiki
              + suggest full /add-wiki if drift looks large
 ```
 
-**Cheap pre-check (manual trigger, before any analysis):** `gitHead` == current HEAD AND worktree clean → report "wiki already current". Still advance `.meta.json` only if `gitHead` differs from current HEAD — if identical, nothing to write; stop here.
+**Cheap pre-check (manual trigger, before any analysis):** `gitHead` == current HEAD AND worktree clean AND the Stack Conventions section is present (`conventions.md` has `## Stack Conventions`; in a tiny wiki, `index.md` has `### Stack Conventions`) → report "wiki already current". Still advance `.meta.json` only if `gitHead` differs from current HEAD — if identical, nothing to write; stop here. A missing Stack Conventions section is NOT "already current": go to the backfill in STEP 5.
 
 ### STEP 3 — CANDIDATES (computed, not judged)
 For each wiki page: candidate iff changed files ∩ frontmatter `sources` globs ≠ ∅. Deterministic, mechanical, runs BEFORE any model judgment — this is the corpus's `sources` frontmatter earning its keep.
@@ -71,6 +72,13 @@ For each candidate + any page you believe is affected beyond the computed set: `
 - **Backlog promotion:** changes touching a backlogged area → document it, remove the Backlog entry. Never let the backlog grow silently.
 - Terminology (hub section) is a hard constraint: edits use canonical terms; new concepts may add a term (cap 15, hub-enforced).
 - Page size caps apply: 300-line target, 500-line hard cap. Over cap on edit → split per `/add-wiki` §5 rules, don't just keep appending.
+- **Stack Conventions is a fixed section.** `## Stack Conventions` (`### Stack Conventions` in a tiny wiki) keeps its seven rows. Edits change row cells in place and never drop or reorder a row. No other formatting change is allowed — "No formatting-only edits" still holds; the section is exempt only from row removal.
+- **A `decided` row is never overwritten by detection.** When code now contradicts it, Evidence gets `drift: <path:line>`, Value and Source stay, and STEP 9 reports the drift. The row flips to `detected` only when code now provides evidence that matches the decision.
+- **One-time Stack Conventions backfill (bounded exception to diff-driven edits).** When `conventions.md` exists without `## Stack Conventions` — or, in a tiny wiki, the folded conventions section of `index.md` lacks `### Stack Conventions` — add the section using `{{skill:add--architecture-discovery/SKILL.md}}` → Stack Convention Signals, and bump that page's stamps (STEP 6).
+  - The backfill runs on the `/add-wiki update` trigger only; it never runs on add-done.
+  - The scan is the Signals searches, repo-wide and read-only.
+  - Extend the page's frontmatter `sources` with broad globs covering every new Evidence path, inside the ≤8-glob budget of the Wiki Page Contract, so the next update selects the page when that evidence changes.
+  - Once the section exists, the next run finds it present and makes no change to it.
 
 ### STEP 6 — STAMPS
 Every EDITED page: bump frontmatter `commit` (current short sha) and `generated` (today). Untouched pages keep their stamps unchanged — that is the entire point of per-page provenance; touching stamps on untouched pages destroys the staleness signal.
@@ -86,7 +94,7 @@ Rewrite `{{addpath:wiki/.meta.json}}` at the END of EVERY completed run, includi
 Advancing `gitHead` on a no-op keeps the staleness signal honest and lets the next run's cheap pre-check fire.
 
 ### STEP 9 — REPORT
-Pages edited / added / removed / promoted from backlog — or explicit "wiki already current". Any wiki-vs-code contradiction noticed mid-session (including ones surfaced by consumption commands reporting drift) is evidence for STEP 4/5 edits — treat it as input, not a side note to discard.
+Pages edited / added / removed / promoted from backlog — or explicit "wiki already current". Also report the Stack Conventions backfill outcome (added, already present, or not applicable) and one line per `decided` row in drift (`drift: <row key> — <path:line>`). Any wiki-vs-code contradiction noticed mid-session (including ones surfaced by consumption commands reporting drift) is evidence for STEP 4/5 edits — treat it as input, not a side note to discard.
 
 ## Common Rationalizations (BLOCKED)
 
