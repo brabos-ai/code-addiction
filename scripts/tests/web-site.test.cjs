@@ -193,3 +193,24 @@ test('F8: the Antigravity and ZCode caveat survives under the docs table', () =>
   assert.match(DOCS(), /Antigravity is deferred because/);
   assert.match(DOCS(), /ZCode reads commands and skills from the same/);
 });
+
+// ------------------------------------------------------ F9 menus and lightbox
+test('F9: both menu toggles expose aria-controls and aria-expanded', () => {
+  const home = HOME().match(/<button id="mobile-menu-toggle"[^>]*>/);
+  const docs = DOCS().match(/<button id="docs-sidebar-toggle"[^>]*>/);
+  assert.ok(home && docs, 'toggle button not found');
+  for (const t of [home[0], docs[0]]) {
+    assert.match(t, /aria-controls="[^"]+"/);
+    assert.match(t, /aria-expanded="false"/);
+  }
+  assert.match(home[0], /aria-controls="mobile-menu"/);
+  assert.match(docs[0], /aria-controls="docs-sidebar"/);
+});
+
+test('F9: Escape closes the menus, and the lightbox is a native dialog opened with showModal', () => {
+  assert.match(HOME(), /<dialog id="flowchart-modal"/);
+  assert.match(HOME(), /\.showModal\(\)/);
+  assert.match(HOME(), /'Escape'|"Escape"/);
+  assert.match(DOCS(), /'Escape'|"Escape"/);
+  assert.doesNotMatch(HOME(), /id="flowchart-modal"[^>]*class="hidden/);
+});
