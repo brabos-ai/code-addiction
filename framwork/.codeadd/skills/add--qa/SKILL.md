@@ -1,6 +1,6 @@
 ---
 name: add--qa
-description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add-review and both judges.
+description: Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) — the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the `.codeadd/settings.json` qa section and screens.json formats. Consumed by /add-review and both judges.
 ---
 
 # add--qa — QA Validation Methodology
@@ -8,6 +8,7 @@ description: Use when running agent-judged QA validation (read-PNG by default; t
 <!-- uses:
 - skill: add--doc-schemas
 - skill: add--id-convention
+- skill: add--settings
 - mention: add--qa/references/coordinator.md
 - mention: @test-agent
 - mention: @e2e-agent
@@ -37,7 +38,7 @@ Prerequisite install (chromium + Playwright MCP) and config scaffolding are NOT 
 
 ## When NOT to Use
 
-- Installing prereqs or scaffolding `config.json`/`screens.json` → `/add-qa-setup`.
+- Installing prereqs or scaffolding the `qa` section of `.codeadd/settings.json` or `screens.json` → `/add-qa-setup`.
 - Static code review (no rendered result) → `/add-review`.
 - Unit/integration test generation → `/add-build` (tdd-pipeline feature, via `@test-agent`).
 
@@ -61,7 +62,7 @@ The persisted spec (or, with the plugin, live driving) **captures and exercises*
 
 `@ux-agent` receives NO axe results and NO computed-style JSON; `@qa-agent` receives no `design.md` judgement content. Handing either the other's input is a dispatch error. Coverage is the **coordinator's** reconciliation, in the evidence step's own coverage sub-step, computed once and handed to both — never a judge's finding. (It was cited as STEP 4.4 here, which was wrong before the QA steps moved and is a step number this skill should not carry at all: the number lives in the fragment that owns the step.)
 
-Viewports (v1, configurable in `config.json`): desktop 1440, tablet 768, mobile 375.
+Viewports (v1, configurable in `qa.viewports` of `.codeadd/settings.json`): desktop 1440, tablet 768, mobile 375.
 
 **Read-PNG mode:** with the plugin off, both judges work from the persisted PNGs + axe/assertion/computed-style artifacts (no `browser_*`); with it on, they additionally live-drive.
 
@@ -112,13 +113,15 @@ Each finding is also tagged `type: ux | functional | a11y | spec-gap`. An *expec
 
 > **Source of truth: `/add-qa-setup`.** These blocks are a read-time reference for the run command + agent (which *consume* the files). `/add-qa-setup` is the canonical **scaffolder** — it runs before this plugin skill exists, so it carries the authoritative shape. If the two ever diverge, `/add-qa-setup` wins; update it, then mirror here.
 
-`docs/qa/config.json` (project-wide; scaffolded by `/add-qa-setup`):
+The `qa` section of `.codeadd/settings.json` (project-wide; scaffolded by `/add-qa-setup`; the receipt fields next to these values are specified in `add--settings`):
 ```json
 {
-  "baseUrl": "http://localhost:5173",
-  "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
-  "bootHint": "how to start the app's dev server (free text, project-specific)",
-  "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
+  "qa": {
+    "baseUrl": "http://localhost:5173",
+    "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
+    "bootHint": "how to start the app's dev server (free text, project-specific)",
+    "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
+  }
 }
 ```
 
@@ -143,7 +146,7 @@ feature: <feature-id>
 scope: [<SFxx>, ...]
 method: <read-png | read-png+live-drive> — dual-judge (@ux-agent review ∥ @qa-agent) (Level C)
 specs: { about: <about.md ref>, design: <design.md ref> }
-viewports: <from docs/qa/config.json>
+viewports: <from qa.viewports in .codeadd/settings.json>
 judged-contract: sha256:<design.md provenance hash>
 ---
 

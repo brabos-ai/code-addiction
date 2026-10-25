@@ -25,7 +25,7 @@ Read: about.md (RF/RN + acceptance criteria), the consolidated design.md STEP ad
       (UX contract — resolved per the `feature-design` Location rule in the doc schemas:
       SF-level first, feature-level fallback),
       plan-database.md/plan-backend.md/plan-frontend.md (if exist),
-      FEATURE_DIR/_tests/screens.json (if exists), and docs/qa/config.json (viewport defaults).
+      FEATURE_DIR/_tests/screens.json (if exists), and the `qa` section of `.codeadd/settings.json` (viewport defaults).
 Produce a code-free QA/E2E spec — ONE row per screen design.md declares: reachability
       intent, UX acceptance, functional scenarios (apply the CRUD heuristic on data-entity
       surfaces: create/read/update/delete/list), target viewports, capture states, a11y expectations.

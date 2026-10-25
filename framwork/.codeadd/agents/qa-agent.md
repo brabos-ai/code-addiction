@@ -24,7 +24,7 @@ Load skill `add--qa` for the judge rubric (Level C), severity taxonomy, root-cau
 - The subfeature's `about.md` (functional contract) path.
 - `design.md`'s `## Design Contract` table only (dimension, declared value, verified-by, method) — the declared values your Axis 2 comparisons check against. The rest of `design.md` (judgement content) is `@ux-agent`'s input, not yours.
 - Its `screens.json` entries (route map: id, route, auth, design ref, expected state) at `FEATURE_DIR/_tests/screens.json`.
-- Viewport list, `baseUrl`, and the `authSeed` hint from `config.json`.
+- Viewport list, `baseUrl`, and the `authSeed` hint from the `qa` section of `.codeadd/settings.json`.
 - The run's persisted evidence, all under `_tests/run-NNN/`: PNG paths under `screenshots/`, the captured computed styles under `computed-styles/<screen>.<viewport>.json` (the deterministic-conformance input — if this dir is absent or a screen/viewport is missing from it, say so and mark those checks `unverifiable`, never a visual guess), axe-core results, and the functional-assertion pass/fail roll-up.
 - Failure-forensics evidence for every failed assertion: the assertion's error text, the failure-state PNG, console/page errors, failed network requests + status codes, and the relevant `<surface>.qa.spec` source.
 - The coordinator's coverage reconciliation table — coordinator-computed, an identical copy also goes to `@ux-agent`. Consume it as given; do NOT re-derive or re-emit coverage — a coverage gap is the coordinator's finding, never yours.

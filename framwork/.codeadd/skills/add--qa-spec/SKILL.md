@@ -31,7 +31,7 @@ description: Generate a code-free QA/E2E specification (reachability intent, UX 
 - `design.md` — UX contract (layout/hierarchy/spacing/tokens/state). Resolve it per the `feature-design` **Location** rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback).
 - Area `plan-*.md` (plan-database.md, plan-backend.md, plan-frontend.md) — technical contracts, if they exist.
 - `FEATURE_DIR/_tests/screens.json` — the existing catalog (scaffolded by `add-qa-setup`, or written by a previous plan run). Absent on a first run.
-- `docs/qa/config.json` — default viewport set (required to resolve the viewports column).
+- `.codeadd/settings.json` → `qa.viewports` — default viewport set (required to resolve the viewports column).
 
 ## QA/E2E Case Generation
 
@@ -41,7 +41,7 @@ Emit **one row per surface/subfeature that `design.md` declares** — never skip
 - **UX acceptance criteria** — tied to `design.md` (layout/hierarchy/spacing/tokens/state).
 - **Functional E2E scenarios** — given/when/then per acceptance criterion. **CRUD heuristic:** when a surface manages a data entity (a form that persists, or a listing), enumerate create / read / update / delete / list as distinct scenarios. Where `about.md` has no acceptance criterion for an operation, still list it and mark the row a **gap** — never invent the criterion.
 - **Capture states** — the UI states to screenshot for the surface, from the canonical vocabulary: `default`, `empty`, `filled`, `submitted`, `list`, `detail`, `created`, `updated`, `deleted`, `error`, `success`. A data-entity surface typically yields `empty,filled,list`. A single-state surface uses `default`. These map 1:1 to the screenshot files `<screen>.<state>.<viewport>.png`.
-- **Target viewports** — default from `docs/qa/config.json`; per-surface override when the design demands it.
+- **Target viewports** — default from `qa.viewports` in `.codeadd/settings.json`; per-surface override when the design demands it.
 - **a11y expectations** — which surfaces carry explicit a11y acceptance (labels, focus trap, contrast, keyboard nav, etc.).
 
 ## Output 1 — `plan-qa-spec.md`

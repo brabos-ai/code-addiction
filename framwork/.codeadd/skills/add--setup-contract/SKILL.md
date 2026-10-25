@@ -6,7 +6,7 @@ description: Use when a state-materializing command starts — compare the recei
 # Setup Shape Comparison
 
 <!-- uses:
-- skill: add--doc-schemas
+- skill: add--settings
 - mention: add--wiki-maintenance
 - command: /add-qa-setup
 - script: status.cjs
@@ -31,8 +31,8 @@ Procedure for comparing a project's materialized state with the shape the framew
 
 | Input | Source |
 |---|---|
-| `RECEIPT_PATH` | ``<command's doc root>/<command name without `add.`>.md`` — `add-qa-setup` → `docs/qa/qa-setup.md` |
-| `RECORDED` | `setup-shape` in the receipt frontmatter (`sha256:` + 16 hex) |
+| `RECEIPT_PATH` | The command's section of `.codeadd/settings.json` — `add-qa-setup` → section `qa` |
+| `RECORDED` | `qa["setup-shape"]` (`sha256:` + 16 hex) |
 | `CURRENT` | `contracts.<command>.shape` in `{{addpath:contracts.json}}` |
 | `SIGNAL` | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 | `FORCE_UPGRADE` | `--upgrade` flag on the calling command |
@@ -65,7 +65,7 @@ Materialized state is present when any `owner: setup` path declared in the comma
 Apply the calling command's merge rules. For `add-qa-setup`:
 
 - `qa-project` skill: always regenerate.
-- `docs/qa/config.json`: per-key merge. Keep every existing key, including extras. Fill missing declared keys with defaults. Never drop a user key. Drift-check applies: report a user-edited value that differs from the default; do not silently overwrite it.
+- The `qa` value fields (`baseUrl`, `viewports`, `bootHint`, `authSeed`): per-key merge. Keep every existing key, including extras. Fill missing declared keys with defaults. Never drop a user key. Drift-check applies: report a user-edited value that differs from the default; do not silently overwrite it.
 - `screens.json`: leave it if it exists; write `{ "feature": "<id>", "screens": [] }` only when absent.
 - `.gitignore`: idempotent `ensure-ignore`.
 - Missing declared paths: create.
@@ -80,24 +80,24 @@ For every `materialized` entry with `owner: setup` that this run did not just re
 
 ⛔ Entries with `owner: shared` carry `hash: null` and are checked for **existence only**.
 
-### 4. Rewrite the receipt — always
+### 4. Rewrite the receipt fields and `qa.log` — always
 
 Rewrite the receipt on **every** run, including a verified-current no-op.
 
 - `setup-shape` = `CURRENT` (the shipped hash).
-- Advance `last-run` and `updated` to today.
-- Preserve `first-run` and `created` byte-identically.
+- Advance `last-run` to today.
+- Preserve `first-run` byte-identically.
 - Refresh `framework-version` from the manifest (informational only).
 - Refresh `owner: setup` hashes for any file this run rewrote.
-- Append one Decision Log row per behaviour-changing decision taken this run — never for the no-op itself.
+- Append one `log` entry per behaviour-changing decision taken this run — never for the no-op itself.
 
-Schema and field vocabulary: `{{skill:add--doc-schemas/SKILL.md}}` → `references/receipt.md`.
+Schema and field vocabulary: `{{skill:add--settings/SKILL.md}}`.
 
 ## Refusal Rules (hard)
 
 | Situation | Response |
 |---|---|
-| Receipt frontmatter is unparseable | Treat as STALE. Do not invent a `setup-shape` |
+| `.codeadd/settings.json` is unparseable or the `qa` section holds no readable `setup-shape` | Treat as STALE. Do not invent a `setup-shape` |
 | A merge item is ambiguous | Surface the item verbatim and ask. Do not improvise |
 
 ## Rules
@@ -105,12 +105,12 @@ Schema and field vocabulary: `{{skill:add--doc-schemas/SKILL.md}}` → `referenc
 ALWAYS:
 - Rewrite the receipt on every run, including no-ops
 - Treat `owner: shared` paths as existence-checked only
-- Keep every existing `config.json` key on a STALE merge
+- Keep every existing `qa` value field on a STALE merge
 
 NEVER:
 - Read a changelog, release notes, or command diff to decide what to change
 - Reconstruct a missing receipt at a historical integer
 - Execute a versioned delta list
 - Treat no-receipt-plus-state as FIRST-RUN
-- Overwrite a user-authored `config.json` key with a default without confirmation
-- Edit or remove an existing Decision Log row
+- Overwrite a user-authored `qa` value field with a default without confirmation
+- Edit or remove an existing `log` entry
