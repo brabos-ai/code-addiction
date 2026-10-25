@@ -90,3 +90,26 @@ test('F4: one global :focus-visible rule in the accent colour, and no focus:outl
   assert.doesNotMatch(HOME(), /focus:outline-none/);
   assert.doesNotMatch(DOCS(), /focus:outline-none/);
 });
+
+// -------------------------------------------------------------- F5 contrast
+function luminance(hex) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map(v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+};
+
+test('F5: --color-muted reaches 4.5:1 against the #050505 surface', () => {
+  const m = CSS().match(/--color-muted:\s*(#[0-9a-fA-F]{6})/);
+  assert.ok(m, '--color-muted not found');
+  assert.ok(contrast(m[1], '#050505') >= 4.5, `${m[1]} is ${contrast(m[1], '#050505').toFixed(2)}:1`);
+});
+
+test('F5: no 10px text in either page or the flow-diagram label', () => {
+  assert.doesNotMatch(HOME(), /text-\[10px\]/);
+  assert.doesNotMatch(DOCS(), /text-\[10px\]/);
+  assert.doesNotMatch(CSS(), /font-size:\s*10px/);
+});
