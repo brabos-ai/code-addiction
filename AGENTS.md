@@ -21,7 +21,7 @@ array has a length.
 
 [//]: # (codeadd-inventory:start)
 {"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-ux","add-wiki"]}
-{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
+{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--settings","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
 {"scripts":["backlog-board.cjs","backlog-cli.cjs","backlog-commit.cjs","backlog-core.cjs","backlog-git.cjs","backlog-id.cjs","backlog-storage.cjs","build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
 {"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
@@ -246,8 +246,8 @@ A command that materializes state into a user's project declares a `## Materiali
 | Component | Path |
 |---|---|
 | Contract declaration | `## Materializes` H2 in the command source |
-| Receipt schema | `add--doc-schemas/references/receipt.md` |
-| Receipt in user project | `docs/qa/qa-setup.md` |
+| Receipt schema | `add--settings` |
+| Receipt in user project | `.codeadd/settings.json` → `qa` |
 | Comparison procedure | `add--setup-contract` skill |
 | Signal | `SETUP_QA:` / `SETUP_QA_STALE:` from `status.cjs` |
 
