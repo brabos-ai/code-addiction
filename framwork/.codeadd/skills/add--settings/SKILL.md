@@ -1,6 +1,6 @@
 ---
 name: add--settings
-description: Use when a command persists project configuration or a setup record — the project settings file .codeadd/settings.json, who owns it, how a command reads, merges and writes its own section, the content rule, the qa section schema and the receipt fields.
+description: Use when a command persists project configuration or a setup record — the project settings file .codeadd/settings.json, who owns it, how a command reads, merges and writes its own section, the content rule, the `qa` and `setup` section schemas and the receipt fields.
 ---
 
 # Project Settings — `.codeadd/settings.json`
@@ -32,7 +32,7 @@ description: Use when a command persists project configuration or a setup record
 
 - **Location:** always the project root's `.codeadd/settings.json`, also on a `--global` install, because settings are per project.
 - **Top level:** `{ "schema": 1, "qa": {…}, "setup": {…} }`. One section per command; a section appears when its command first writes it.
-- **Only commands write it**, each only its own section. `/add-qa-setup` writes `qa`.
+- **Only commands write it**, each only its own section. `/add-qa-setup` writes `qa`. `/add-setup` writes `setup`.
 - **Scripts only read it** (`qa-preflight.cjs`, `status.cjs`). A malformed file reads as `broken` or STALE, never as a crash.
 - **The CLI writes it only through migration `0005-qa-settings`.** It never rewrites it on install, update or modify.
 - **Always say `.codeadd/settings.json` in full.** The bare name is ambiguous with the editor's own settings file.
@@ -97,13 +97,44 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
 
 Value fields follow the per-key merge rule in `{{skill:add--setup-contract/SKILL.md}}`: keys the user authored are kept.
 
+## Section `setup`
+
+Written by `/add-setup`, which has no `## Materializes` block, so `setup-shape` is the literal `"none"`. It records what was offered, what the user decided and why. It uses the receipt fields below and the same read → merge → write rule.
+
+```json
+{
+  "schema": 1,
+  "setup": {
+    "setup-shape": "none",
+    "framework-version": "1.7.0",
+    "first-run": "2026-10-25",
+    "last-run": "2026-10-25",
+    "offered": {
+      "qa-pipeline": "enabled", "playwright": "enabled", "gitnexus": "declined", "design": "enabled",
+      "board": "unavailable", "agent-mode": "declined", "tdd-pipeline": "already-on", "docs-pruning": "declined",
+      "qa-setup": "enabled", "wiki": "enabled", "version-record": "enabled"
+    },
+    "log": [
+      { "date": "2026-10-25", "item": "gitnexus", "decision": "declined", "reason": "team already uses another code index" }
+    ]
+  }
+}
+```
+
+| Field | Rule |
+|---|---|
+| `setup.offered.<item>` | One key per item ever offered: each feature and plugin by its name in the ecosystem Features and Plugins tables, plus `qa-setup`, `wiki` and `version-record`. One of: `enabled` (this run turned it on), `already-on` (it was on before the run), `declined` (offered, user said no), `unavailable` (cannot be done here, for example `board` without `.codeadd/board.json`), `failed` (attempted, the check still fails). An item that did not run keeps its previous value |
+| `setup.log[]` | Append-only. Entry: `{ date, item, decision, reason }`. One entry per item decided in a run, `declined` included. A reversed decision is a NEW entry. `reason` is the user's reason, or the detected one when the user gave none |
+
+An item is new when its name is absent from `offered`. `framework-version` is never compared to decide that.
+
 ## Receipt Fields
 
 A receipt is the record a command leaves so a later framework release can compute whether the project's state is current, and so a deliberate `no` is never mistaken for an unfinished install. The receipt fields live in the command's section, next to its values. They are the generic part of the schema: any command with a section uses the same names.
 
 | Field | Rule |
 |---|---|
-| `setup-shape` | The shipped shape hash in force when the recorded state was materialized: `sha256:` + 16 hex. Read by `status.cjs` and `qa-preflight.cjs` |
+| `setup-shape` | The shipped shape hash in force when the recorded state was materialized: `sha256:` + 16 hex, or the literal `"none"` for a section whose command declares no `## Materializes`. Read by `status.cjs` and `qa-preflight.cjs` |
 | `framework-version` | Informational only. Never compared to compute staleness — a release that did not touch the command must stay silent |
 | `first-run` | ISO date of the first setup run. Never rewritten once set |
 | `last-run` | ISO date of the most recent run, **including a verified-current no-op**. A run that changed nothing still advances it |
@@ -121,12 +152,12 @@ A receipt is the record a command leaves so a later framework release can comput
 
 - **Append-only.** Never edit or delete an existing entry. A reversed decision is a NEW entry, not an edit.
 - **Decisions only, never instructions.** An entry records a choice that changes behaviour: a declined prerequisite, a declined migration, a STALE re-materialize. Never step-by-step narration, never "next time do X".
-- **One entry per decision**, with the `setup-shape` in force when it was taken.
+- **One entry per decision**, with the `setup-shape` in force when it was taken — a section with `setup-shape: "none"` carries no `shape` key.
 
 ### Hard bans
 
 - A `materialized` entry with `owner: shared` carrying a non-null `hash`.
-- A `setup-shape` value that is not a bare `sha256:` + 16 hex.
+- A `setup-shape` value that is neither a bare `sha256:` + 16 hex nor `"none"` in a section whose command has no contract.
 - Editing or removing an existing `log` entry.
 - Narration, instructions or aspirational language in any `log` entry.
 - Rewriting `first-run`.
@@ -136,6 +167,7 @@ A receipt is the record a command leaves so a later framework release can comput
 
 - `qa-preflight.cjs` reads `qa.baseUrl` for `QA_CONFIG`, and `qa["setup-shape"]` with `qa["framework-version"]` for `QA_RECEIPT`.
 - `status.cjs` reads `qa["setup-shape"]` for `SETUP_QA`.
+- No script reads `setup`.
 - A file with no `qa` section reads as missing config and missing receipt. A file that does not parse reads as `broken` in `qa-preflight.cjs` and as STALE in `status.cjs`.
 
 ## Git
