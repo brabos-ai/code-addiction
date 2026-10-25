@@ -33,7 +33,7 @@ You are a backend implementation specialist. Your role is to implement server-si
 <!-- /plugin:gitnexus:graph -->
 <!-- /slot:gitnexus.graph -->
 
-3. Implement following the project's layer structure (`wiki/architecture.md`)
+3. Implement following the project's layer structure ({{addpath:wiki/architecture.md}})
 4. Validate build passes after implementation
 5. Report files created/modified and decisions made
 

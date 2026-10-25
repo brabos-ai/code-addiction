@@ -124,7 +124,7 @@ Examples:
 
 **Code that is not registered the way the project registers it does NOT work at runtime.**
 
-Check registration per the project's DI convention (row `DI`): every new service, repository, handler, guard and controller is registered, and exported where other modules use it, exactly as neighbouring code does. When row `DI` names no container, this check is `N/A` and scores full points. When it is `none` or absent, judge consistency with the neighbouring code.
+Check registration per the project's DI convention (row `DI`): every new service, repository, handler, guard and controller is registered, and exported where other modules use it, exactly as neighbouring code does. When row `DI` names no container (`none` or `no`), this check is `N/A` and scores full points. When the row is absent (no wiki), judge consistency with the neighbouring code.
 
 Barrel exports are checked only when row `Barrels` = yes.
 

@@ -26,7 +26,7 @@ Skill for backend API implementation following universal architectural principle
 
 ## Project Conventions First
 
-Read in this order: `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ the area page under `{{addpath:wiki/domains/<area>.md}}`), then `AGENTS.md` `## Architecture Contract` / `## Technical Spec` for stack facts. In a tiny wiki the same table sits in `{{addpath:wiki/index.md}}` → `### Stack Conventions`. A recorded row wins over the default below. A row that says `none` means the project does not use the thing: follow the nearest existing code.
+Read in this order: `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ the area page under `{{addpath:wiki/domains/<area>.md}}`), then `AGENTS.md` `## Architecture Contract` / `## Technical Spec` for stack facts. In a tiny wiki the same table sits in `{{addpath:wiki/index.md}}` → `### Stack Conventions`. A recorded row wins over the default below. A row that says `none` (or `no`, for `Tenancy` and `Barrels`) means the project does not use the thing: follow the nearest existing code.
 
 Agnostic defaults, used only when nothing is recorded (the other dev skills link here and do not copy this list):
 

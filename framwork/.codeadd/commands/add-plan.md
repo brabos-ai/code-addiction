@@ -39,7 +39,7 @@
 - script: status.cjs
 -->
 
-> **ARCHITECTURE REFERENCE:** Use the project wiki (`wiki/conventions.md`, `wiki/architecture.md`) as source of patterns; `AGENTS.md` for structure and commands.
+> **ARCHITECTURE REFERENCE:** Use the project wiki ({{addpath:wiki/conventions.md}}, {{addpath:wiki/architecture.md}}) as source of patterns; `AGENTS.md` for structure and commands.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARGS:** `/add-plan [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
@@ -500,7 +500,7 @@ ${RELATED_WORK}
 
   ### Events
   {"XxxCreatedEvent":{"payload":"id","consumers":"AuditWorker"}}
-  (+ tenant key in the payload when Tenancy = yes)
+  (+ tenant key in the payload when the recorded Tenancy row = yes)
 
   ### Workers (if applicable)
   {"queue-name":{"job":"JobName","trigger":"Event/Schedule","action":"what it does"}}

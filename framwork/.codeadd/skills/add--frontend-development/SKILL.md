@@ -167,7 +167,7 @@ UI state is local and ephemeral — losing it on refresh is acceptable. Server s
 
 ### Routing
 - [ ] Protected routes guard authenticated sections
-- [ ] Routes lazy-loaded
+- [ ] Routes lazy-loaded (where the framework supports it)
 
 ### UX Integration
 - [ ] UX design skill loaded if no `design.md`

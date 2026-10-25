@@ -454,8 +454,8 @@ Output the audit as a table with columns: Item, Type, Expected, Found at, Status
 ### STEP add-review.scope Detect Scope
 
 Based on changed files, determine which reviewers to dispatch:
-- **frontend**: the changed files fall in the frontend area named by the Architecture Contract / `wiki/architecture.md` (with neither, judge from the file types)
-- **backend**: the changed files fall in the backend area named by the Architecture Contract / `wiki/architecture.md` (with neither, judge from the file types)
+- **frontend**: the changed files fall in the frontend area named by the Architecture Contract / {{addpath:wiki/architecture.md}} (with neither, judge from the file types)
+- **backend**: the changed files fall in the backend area named by the Architecture Contract / {{addpath:wiki/architecture.md}} (with neither, judge from the file types)
 - **owasp** (conditional): the diff touches a sensitive area — authentication, payment, file upload,
   input handling/validation, or session/token paths. This is a fourth signal, independent of
   frontend/backend — a sensitive backend file triggers both.
@@ -572,7 +572,7 @@ prompt: |
 
   **Patterns (Critical):** DI/registration per project convention (barrels only if used), REST API (noun-based URLs, 201/204 codes), DTOs (the project's validation layer, no raw objects, global validation)
 
-  **Architecture:** layer direction per `wiki/architecture.md` / Architecture Contract; no domain imports from outer; no business logic in controllers; SOLID principles (SRP, O/C, DIP)
+  **Architecture:** layer direction per {{addpath:wiki/architecture.md}} / Architecture Contract; no domain imports from outer; no business logic in controllers; SOLID principles (SRP, O/C, DIP)
 
   **Database:** Migrations with up/down; query types regenerated; parametrized queries; no manual (de)serialisation the driver already does
 
