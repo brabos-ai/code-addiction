@@ -1,4 +1,7 @@
 ---
+import syne800 from "@fontsource/syne/files/syne-latin-800-normal.woff2?url";
+import outfitLatin from "@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2?url";
+
 interface Props {
   title: string;
   description?: string;
@@ -23,6 +26,8 @@ const {
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
 
+    <link rel="preload" as="font" type="font/woff2" href={syne800} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={outfitLatin} crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title}</title>
   </head>
