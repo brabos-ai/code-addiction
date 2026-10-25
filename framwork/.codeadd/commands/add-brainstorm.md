@@ -269,6 +269,51 @@ and the plan reviewer fails a plan whose work cannot be traced to it. Corrected 
 **Where a later answer contradicts the drafted objective, the objective is what changes.** It was a
 draft; the questions are how it stops being one.
 
+### STEP add-brainstorm.greenfield-foundations Decide the stack foundations — GREENFIELD ONLY
+
+```
+IF GREENFIELD IS NOT yes:
+  ⛔ DO NOT: Run this sub-step or mention it to the user
+  ✅ DO: Go straight to STEP add-brainstorm.sections-close — nothing changes
+
+IF GREENFIELD=yes:
+  ✅ DO: Run it right after STEP add-brainstorm.draft-objective-first, before any other question
+```
+
+**There is no code and no recorded convention to read, so this sub-step is where the foundations are
+decided.** Ask ONE "foundations" question with five items, sent as one recommended stack pack. The items
+depend on each other (the data access depends on the language), so the user accepts the pack whole or
+changes single items.
+
+1. **Language/runtime and framework** for each app (backend, frontend or both).
+2. **Tenancy:** single-tenant or multi-tenant. Multi-tenant also needs the key name and how it is enforced (app-layer filter or database row-level security).
+3. **Layering/architecture style:** the simplest style that fits. A DI container only when the chosen framework provides one. Barrel files off by default.
+4. **Validation** library.
+5. **Data access/ORM and database.**
+
+**Every item carries a recommendation and a named precedent**, by STEP add-brainstorm.bring-outside-in.
+An item the request already names is pre-filled and only confirmed. A follow-up goes only to an item the
+user changed, one per turn. In agent mode the five items go into the numbered batch with a RECOMMENDED
+line each, through the existing `cadence` and `structured-ask` slots.
+
+**Stop kind — deciding.** No delivery mode exists yet.
+
+**Consult the architecture skills as a gate on every recommendation.** Load
+`{{skill:add--backend-architecture/SKILL.md}}` and/or `{{skill:add--frontend-architecture/SKILL.md}}`,
+by the apps chosen in item 1. Their lists — "Over-Engineering Signals" (backend) and
+"Over-engineering signals" (frontend) — decide what may be recommended: the simplest option the drafted objective needs, no
+layer or pattern without a present need, a DI container only when the framework provides one, barrels off
+by default.
+
+```
+IF NAMING A LANGUAGE, FRAMEWORK OR LIBRARY IN THE QUESTION:
+  ⛔ DO NOT: Present any of them as a default
+  ✅ DO: Label each as an example ("for example …") or as the named precedent for a recommendation
+```
+
+The decisions become Key Decisions rows in the `Decision | Serves | Rationale` table, and STEP
+add-brainstorm.write-intent-file carries them into the foundation files. The `brainstorm` schema does not change.
+
 ### STEP add-brainstorm.sections-close The sections to close
 
 **Which sections run is decided by the path.**
