@@ -55,3 +55,21 @@ test('F1: web/package.json lists the three fontsource packages', () => {
     assert.ok(deps[p], `${p} missing from dependencies`);
   }
 });
+
+// ------------------------------------------------- F2 one CommandLine component
+test('F2: CommandLine.astro has a labelled copy button, a live region and a wrapping command', () => {
+  assert.ok(exists('src/components/CommandLine.astro'), 'component missing');
+  const c = read('src/components/CommandLine.astro');
+  assert.match(c, /<button/);
+  assert.match(c, /aria-label=\{?[`"']Copy/);
+  assert.match(c, /aria-live="polite"/);
+  assert.match(c, /min-w-0 break-all/);
+});
+
+test('F2: neither page keeps a hand-rolled clipboard handler, cmd- id or copyCmd', () => {
+  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+    assert.doesNotMatch(src, /onclick="navigator\.clipboard/, `${name}: inline clipboard onclick`);
+    assert.doesNotMatch(src, /id="cmd-/, `${name}: cmd- id`);
+    assert.doesNotMatch(src, /copyCmd\(/, `${name}: copyCmd`);
+  }
+});
