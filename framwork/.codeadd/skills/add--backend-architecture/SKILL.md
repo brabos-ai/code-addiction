@@ -17,6 +17,8 @@ description: Guides backend architecture decisions — over-engineering, folder 
 
 Guide architectural decisions for backend projects. Language and framework agnostic. Choose between Vertical Slice, Clean Architecture, Simple Modular, or a Combined strategy based on project context.
 
+When the project already has recorded conventions (`{{addpath:wiki/conventions.md}}` → `## Stack Conventions`), treat them as the current state; recommend changes against them, not from scratch.
+
 **Use for:** Choosing architecture patterns, organizing features, structuring folders, deciding boundaries, avoiding over-engineering.
 
 ## When NOT to Use

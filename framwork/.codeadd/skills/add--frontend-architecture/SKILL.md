@@ -16,6 +16,8 @@ description: Frontend architecture consultant for project structure, folder orga
 
 Guide structural decisions for frontend projects. Choose the **simplest** pattern that keeps the team productive as the project grows.
 
+When the project already has recorded conventions (`{{addpath:wiki/conventions.md}}` → `## Stack Conventions`), treat them as the current state; recommend changes against them, not from scratch.
+
 ---
 
 ## Framework Detection
@@ -99,7 +101,7 @@ src/
 
 Rules:
 - Features own their components, hooks, types
-- Cross-feature imports go through `index.ts` public API only — never internal files
+- Cross-feature imports go through `index.ts` public API only (if the project uses barrels) — never internal files
 - `shared/` = truly reusable, domain-agnostic code only
 - Pages are thin — compose features, no business logic
 
