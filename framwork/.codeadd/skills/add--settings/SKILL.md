@@ -7,6 +7,7 @@ description: Use when a command persists project configuration or a setup record
 
 <!-- uses:
 - command: /add-qa-setup
+- command: /add-setup
 - script: qa-preflight.cjs
 - script: status.cjs
 - skill: add--setup-contract

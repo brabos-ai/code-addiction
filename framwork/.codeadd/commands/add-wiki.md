@@ -1,6 +1,7 @@
 # Wiki Knowledge Base Generator
 
 <!-- uses:
+- mention: /add-setup
 - skill: add--human-interaction (conditional)
 - skill: add--architecture-discovery
 - skill: add--agents-md-style
@@ -25,7 +26,7 @@ Discovery coordinator that dispatches specialized analyzer agents based on app c
 <!-- /feature:agent-mode:interaction -->
 <!-- /slot:agent-mode.interaction -->
 
-**Setup answers.** When this session holds a `## Setup answers` block printed by `/add-setup`, this command asks nothing that block covers. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
+**Setup answers.** When this session holds a `## Setup answers` block printed by `{{cmd:add-setup}}`, this command asks nothing that block covers. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
 
 ## Required Skills
 

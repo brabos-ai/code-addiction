@@ -114,3 +114,88 @@ describe('F3 — the two inline commands honor a Setup answers block', () => {
     expect(src).toContain('shape: sha256:5a8b5405851bf4d8');
   });
 });
+
+const setupPath = path.join(codeadd, 'commands/add-setup.md');
+const setupSrc = () => read(setupPath).replace(/\r\n/g, '\n');
+const stepSection = (src, id) => {
+  const start = src.indexOf(`\n## STEP ${id}`);
+  expect(start, `STEP ${id} exists`).toBeGreaterThan(-1);
+  const next = src.indexOf('\n## ', start + 5);
+  return src.slice(start, next === -1 ? undefined : next);
+};
+
+describe('F4 — the add-setup command', () => {
+  it('L1.5 exists and names its sources', () => {
+    expect(fs.existsSync(setupPath)).toBe(true);
+    const src = setupSrc();
+    for (const s of ['status.cjs', 'manifest.json', 'gitnexus --version', 'codeadd modify', 'add--dev-environment-setup', 'add--delivery-mode', '## Setup answers', 'Benefit']) {
+      expect(src, `add-setup.md names ${s}`).toContain(s);
+    }
+  });
+
+  it('L1.6 asks per item, runs only accepted items, in the fixed order, with the MCP checkpoint', () => {
+    const src = setupSrc();
+    expect(src).toContain('yes/no');
+    expect(src).toMatch(/only (the )?accepted items/i);
+    expect(src).toMatch(/MCP checkpoint/);
+    const exec = stepSection(src, 'add-setup.execute');
+    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((s) => exec.indexOf(s));
+    for (const i of order) expect(i).toBeGreaterThan(-1);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(exec).toContain('MCP checkpoint');
+  });
+
+  it('L1.7 carries no dispatch word, no agent-mode slot, no contract block, no git staging or commit', () => {
+    const src = setupSrc();
+    expect(src).not.toMatch(/\bDISPATCH\b/);
+    expect(src).not.toContain('<!-- slot:agent-mode');
+    expect(src).not.toContain('## Materializes');
+    expect(src).not.toContain('git add');
+    expect(src).not.toContain('git commit');
+  });
+
+  it('keeps benefit text and the greenfield rule out of the command', () => {
+    const src = setupSrc();
+    const bt = (h) => tableRows(sectionOf(eco(), h));
+    for (const t of [bt('## Features'), bt('## Plugins')]) {
+      const col = t.header.indexOf('Benefit');
+      for (const r of t.rows) expect(src, `${r[0]} benefit is not copied`).not.toContain(r[col]);
+    }
+    expect(src).toContain('cmd:add-brainstorm');
+    expect(src).not.toContain('git ls-files --cached --others');
+  });
+
+  it('L1.8 writes the setup record, merges only setup and handles re-runs', () => {
+    const src = setupSrc();
+    for (const s of ['.codeadd/settings.json', '`setup`', 'setup-shape', '"none"', 'framework-version', 'offered', 'log']) {
+      expect(src, `record names ${s}`).toContain(s);
+    }
+    expect(src).toMatch(/one `log` entry per (decided )?item/);
+    expect(src).toMatch(/absent from `offered`/);
+    expect(src).toMatch(/declined[^\n]*(unless|until)[^\n]*revisit/i);
+    expect(src).toMatch(/only the `setup` section/);
+    expect(src).toMatch(/does not parse[^\n]*(STOP|stop)/);
+    expect(src).toMatch(/no longer offered/);
+  });
+
+  it('L1.9 offers version-record, recommended yes, and on no appends the line after # END ADD', () => {
+    const src = setupSrc();
+    expect(src).toContain('version-record');
+    expect(src).toMatch(/version-record[^\n]*recommended[^\n]*yes/i);
+    expect(src).toContain('# END ADD');
+  });
+
+  it('L1.10 is registered and is not an agent-mode command', async () => {
+    const map = JSON.parse(read(path.join(root, 'framwork/provider-map.json')));
+    expect(Object.keys(map.commands)).toContain('add-setup');
+    expect(FEATURES['agent-mode'].commands).not.toContain('add-setup');
+  });
+
+  it('F1/F2/F3 deferred edges: the graph names add-setup from the contracts it reads', () => {
+    expect(read(settingsPath)).toContain('- command: /add-setup');
+    expect(eco()).toContain('- mention: /add-setup');
+    for (const name of ['add-qa-setup', 'add-wiki']) {
+      expect(read(path.join(codeadd, `commands/${name}.md`))).toContain('{{cmd:add-setup}}');
+    }
+  });
+});

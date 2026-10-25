@@ -81,6 +81,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: /add-plan
 - mention: /add-pull-request
 - mention: /add-qa-setup
+- mention: /add-setup
 - mention: /add-review
 - mention: /add-wiki
 - mention: build-setup.cjs
