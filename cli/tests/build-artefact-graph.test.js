@@ -950,7 +950,8 @@ describe('node inventory snapshot', () => {
       // skill 64 -> 59: add--stripe, add--plan-based-features, add--optimizing-git-workflow,
       // add--project-scaffolding and add--skill-creator removed; nothing loaded them
       // (ticket 0060B, plan 2026-10-24T182329-PLAN--remove-generic-skills, F1).
-      skill: 59,
+      // skill 59 -> 60: add--settings, the project settings file (ticket 0066B, plan 2026-10-25T053315-PLAN--qa-settings, F4).
+      skill: 60,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1138,10 +1139,11 @@ describe('node inventory snapshot', () => {
     // 228 -> 204: the five generic skills removed with their 19 references (0060B, F1).
     // 204 -> 197: the seven bundled library docs of add--ux-design removed (0061B, F2).
     // 197 -> 202: the design plugin node and its four fragments (0065B, F2).
-    expect(nodes).toHaveLength(202 + agentModeFragments() + shippedScriptsCount);
+    // 202 -> 203: add--settings, the project settings skill (0066B, F4); it declares, so 142 -> 143.
+    expect(nodes).toHaveLength(203 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(142 + agentModeFragments());
+    expect(nodes.filter((n) => n.declares)).toHaveLength(143 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {
