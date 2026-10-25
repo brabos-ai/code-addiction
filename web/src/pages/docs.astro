@@ -3,19 +3,19 @@ import Layout from "../layouts/Layout.astro";
 import CommandLine from "../components/CommandLine.astro";
 import { providers, installDirs } from "../data/providers";
 import LanguageToggle from "../components/LanguageToggle.astro";
-import { useT, localeHref } from "../i18n";
+import { useT, localeHref, type NamedEntry } from "../i18n";
 import "../styles/global.css";
 
 const locale = Astro.currentLocale ?? "en";
 const t = useT(locale);
 ---
 
-<Layout title="Docs — Code Addiction">
+<Layout title={t("docs.title")}>
   <!-- Nav -->
   <nav transition:name="site-nav" class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle sidebar" aria-controls="docs-sidebar" aria-expanded="false">
+        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label={t("docs.nav.toggleSidebar")} aria-controls="docs-sidebar" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <a href={localeHref(locale, "")} class="font-display font-bold text-foreground tracking-tight text-lg">
@@ -23,17 +23,17 @@ const t = useT(locale);
         </a>
       </div>
       <div class="hidden md:flex items-center gap-6">
-        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>Search</span><kbd aria-hidden="true" class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
-        <a href={localeHref(locale, "")} class="text-sm text-muted-light hover:text-accent transition-colors">Home</a>
+        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>{t("docs.nav.search")}</span><kbd aria-hidden="true" class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
+        <a href={localeHref(locale, "")} class="text-sm text-muted-light hover:text-accent transition-colors">{t("docs.nav.home")}</a>
         <LanguageToggle />
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("docs.nav.github")}
         </a>
       </div>
       <div class="flex md:hidden items-center gap-2">
-        <button type="button" id="docs-search-open-mobile" class="md:hidden flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label="Search the docs" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg></button>
+        <button type="button" id="docs-search-open-mobile" class="md:hidden flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label={t("docs.nav.searchAria")} aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg></button>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-3 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("docs.nav.github")}
         </a>
       </div>
     </div>
@@ -50,37 +50,37 @@ const t = useT(locale);
         <div class="lg:hidden pb-2 mb-2">
           <a href={localeHref(locale, "")} class="flex items-center gap-2 text-accent hover:text-accent-dim transition-colors font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Home
+            {t("docs.sidebar.backToHome")}
           </a>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Getting Started</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.gettingStarted")}</p>
           <ul class="space-y-2">
-            <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">About</a></li>
-            <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">Installation</a></li>
-            <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">Quickstart</a></li>
-            <li><a href="#setup" class="text-muted-light hover:text-foreground transition-colors">Guided Setup</a></li>
+            <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.about")}</a></li>
+            <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.install")}</a></li>
+            <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.quickstart")}</a></li>
+            <li><a href="#setup" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.setup")}</a></li>
           </ul>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Reference</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.reference")}</p>
           <ul class="space-y-2">
-            <li><a href="#commands" class="text-muted-light hover:text-foreground transition-colors">Commands</a></li>
-            <li><a href="#graph" class="text-muted-light hover:text-foreground transition-colors">Graph</a></li>
-            <li><a href="#flows" class="text-muted-light hover:text-foreground transition-colors">Flows</a></li>
-            <li><a href="#scenarios" class="text-muted-light hover:text-foreground transition-colors">Scenarios</a></li>
+            <li><a href="#commands" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.commands")}</a></li>
+            <li><a href="#graph" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.graph")}</a></li>
+            <li><a href="#flows" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.flows")}</a></li>
+            <li><a href="#scenarios" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.scenarios")}</a></li>
           </ul>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Deep Dive</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.deepDive")}</p>
           <ul class="space-y-2">
-            <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
-            <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
-            <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">Agent Mode</a></li>
-            <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">Plugins</a></li>
-            <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
-            <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
-            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
+            <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.skills")}</a></li>
+            <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.features")}</a></li>
+            <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.agentMode")}</a></li>
+            <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.plugins")}</a></li>
+            <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.providers")}</a></li>
+            <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.structure")}</a></li>
+            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.ecosystem")}</a></li>
           </ul>
         </div>
       </nav>
@@ -91,22 +91,16 @@ const t = useT(locale);
 
       <!-- ABOUT -->
       <section id="about" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Getting Started</p>
-        <h1 id="about-heading" class="font-display font-extrabold text-4xl sm:text-5xl mb-6">
-          What is Code<br/><span class="text-accent glow">Addiction</span>?
-        </h1>
-        <p class="text-muted-light text-lg leading-relaxed mb-6">
-          Code Addiction is a spec-driven framework for AI coding assistants.
-          It standardizes how features go from idea to production through structured,
-          repeatable workflows — installed in any project with a single command.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.gettingStarted")}</p>
+        <h1 id="about-heading" class="font-display font-extrabold text-4xl sm:text-5xl mb-6" set:html={t("docs.about.heading")} />
+        <p class="text-muted-light text-lg leading-relaxed mb-6">{t("docs.about.intro")}</p>
         <div class="grid sm:grid-cols-3 gap-4">
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">.codeadd/</div>
-            <p class="text-muted-light text-sm">Shared core: commands, scripts, skills, templates</p>
+            <p class="text-muted-light text-sm">{t("docs.about.coreDesc")}</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">Provider adapters</div>
+            <div class="text-accent font-mono text-sm mb-2">{t("docs.about.adaptersTitle")}</div>
             <p class="text-muted-light text-sm">Claude, Codex, Antigravity, Cursor, OpenCode, ZCode</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
@@ -118,24 +112,24 @@ const t = useT(locale);
 
       <!-- INSTALL -->
       <section id="install" class="mb-20">
-        <h2 id="install-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
-        <p class="text-muted-light mb-6">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended). Works on Windows, macOS and Linux &mdash; no Bash, WSL or Git-Bash needed.</p>
+        <h2 id="install-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.install.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.install.requirements")} />
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
-          <div><span class="text-muted select-none"># install in your project</span></div>
+          <div><span class="text-muted select-none">{t("docs.install.commentInstall")}</span></div>
           <CommandLine command="npx codeadd install" bare />
-          <div class="pt-2"><span class="text-muted select-none"># install specific version</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentVersion")}</span></div>
           <CommandLine command="npx codeadd install --version v2.0.1" bare />
-          <div class="pt-2"><span class="text-muted select-none"># install from a specific branch</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentBranch")}</span></div>
           <CommandLine command="npx codeadd install --branch feature-xyz" bare />
-          <div class="pt-2"><span class="text-muted select-none"># already installed? shows Modify / Update / Reinstall / Cancel</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentExisting")}</span></div>
           <CommandLine command="npx codeadd install" bare />
         </div>
 
-        <h3 class="font-display font-semibold text-lg mt-8 mb-4">What gets installed</h3>
+        <h3 class="font-display font-semibold text-lg mt-8 mb-4">{t("docs.install.whatInstalled")}</h3>
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-relaxed">
           <span class="text-muted">your-project/</span><br/>
-          <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← core (always)</span><br/>
+          <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← {t("docs.install.coreAlways")}</span><br/>
           {installDirs().map((row, i, all) => (
             <>
               <span class="text-foreground inline-block min-w-[11ch]">{i === all.length - 1 ? "└── " : "├── "}{row.dir}</span><span class="text-muted">← {row.labels.join(" + ")}</span>{i < all.length - 1 && <br/>}
@@ -143,61 +137,21 @@ const t = useT(locale);
           ))}
         </div>
 
-        <p class="text-muted text-sm mt-4">
-          Framework scripts are Node entries — <code class="font-mono text-xs">node .codeadd/scripts/&lt;entry&gt;.cjs</code> — so no Bash, WSL or Git-Bash is required on any platform.
-        </p>
+        <p class="text-muted text-sm mt-4" set:html={t("docs.install.scriptsNote")} />
       </section>
 
       <!-- QUICKSTART -->
       <section id="quickstart" class="mb-20">
-        <h2 id="quickstart-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Quickstart</h2>
-        <p class="text-muted-light mb-6">After installing, use these CLI commands to manage your setup:</p>
+        <h2 id="quickstart-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.quickstart.heading")}</h2>
+        <p class="text-muted-light mb-6">{t("docs.quickstart.intro")}</p>
 
         <div class="space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd doctor" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Check environment health — Node, Git, installation status</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd validate" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Validate file integrity via SHA-256 hashes</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd validate --repair" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Restore missing or modified files from the release</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd update" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Update to latest release, or re-pull current branch</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd uninstall" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Clean removal of all Code Addiction files (user files are kept)</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd uninstall --force" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Skip confirmation prompt during uninstall</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd features" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline, docs-pruning, board)</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd plugins" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List, enable, or disable plugins (e.g. GitNexus, Playwright, Design). An enabled plugin whose tool is not detected is named in install/update output</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd providers" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List providers, or add / remove one: <code class="text-foreground">providers list|add &lt;name&gt;|remove &lt;name&gt; [--force]</code>. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd modify" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Interactive screen to edit providers, features and plugins of an existing installation in one place. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd config show" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Display installation configuration. Add <code class="text-foreground">--verbose</code> to check for updates</span>
-          </div>
+          {t<NamedEntry[]>("docs.quickstart.items").map((item) => (
+            <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <CommandLine command={item.name} bare class="sm:shrink-0" />
+              <span class="text-muted-light text-sm" set:html={item.desc} />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -206,156 +160,55 @@ const t = useT(locale);
 
       <!-- SETUP -->
       <section id="setup" class="mb-20">
-        <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
-        <p class="text-muted-light mb-6">
-          <code class="text-accent font-mono text-sm">/add-setup</code> is the guided onboarding for a fresh or updated install.
-          It checks your project, then offers every feature and <a href="#plugins" class="text-accent underline underline-offset-2 hover:text-accent-dim">plugin</a> with its benefit
-          in <strong>one numbered list</strong>, with a recommended answer for each. Reply once, for example <code class="font-mono text-xs">1 yes, 2 no</code> or <code class="font-mono text-xs">all recommended</code>.
-        </p>
+        <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.setup.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.setup.intro")} />
 
         <div class="grid sm:grid-cols-3 gap-4 mb-6">
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">1 &mdash; Check</div>
-            <p class="text-muted-light text-sm">Reads the project (code, frontend, wiki, QA setup) and what is already on. Changes nothing.</p>
-          </div>
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">2 &mdash; Offer</div>
-            <p class="text-muted-light text-sm">One numbered list. Items already on, or declined before, are not asked again.</p>
-          </div>
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">3 &mdash; Run</div>
-            <p class="text-muted-light text-sm">Only the items you accept: tool installs, one <code class="font-mono text-xs">codeadd modify</code>, <code class="font-mono text-xs">/add-qa-setup</code> and <code class="font-mono text-xs">/add-wiki</code>.</p>
-          </div>
+          {t<{ title: string; desc: string }[]>("docs.setup.steps").map((step) => (
+            <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <div class="text-accent font-mono text-sm mb-2" set:html={step.title} />
+              <p class="text-muted-light text-sm" set:html={step.desc} />
+            </div>
+          ))}
         </div>
 
         <div class="space-y-3">
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">When to run</span>
-            <span class="text-muted-light text-sm">Once after <code class="font-mono text-xs text-foreground">codeadd install</code> or <code class="font-mono text-xs text-foreground">codeadd update</code>. After an update it asks only about items that are new in that version.</span>
-          </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">Where choices live</span>
-            <span class="text-muted-light text-sm">Every decision and its reason is recorded in <code class="font-mono text-xs text-foreground">.codeadd/settings.json</code>. Commit this file so teammates and future updates see what was enabled and why.</span>
-          </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">Empty project</span>
-            <span class="text-muted-light text-sm">With no code yet, it offers nothing and points you to <code class="font-mono text-xs text-foreground">/add-brainstorm</code>. Run it again once the foundations exist.</span>
-          </div>
+          {t<{ label: string; desc: string }[]>("docs.setup.rows").map((row) => (
+            <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <span class="text-accent font-mono text-sm whitespace-nowrap">{row.label}</span>
+              <span class="text-muted-light text-sm" set:html={row.desc} />
+            </div>
+          ))}
         </div>
       </section>
 
       <!-- COMMANDS -->
       <section id="commands" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 id="commands-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Commands</h2>
-        <p class="text-muted-light mb-8">
-          Every command is a slash command you type in your AI coding assistant.
-          They orchestrate discovery, planning, implementation, and delivery.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.reference")}</p>
+        <h2 id="commands-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.commands.heading")}</h2>
+        <p class="text-muted-light mb-8">{t("docs.commands.intro")}</p>
 
         <!-- Commands Map -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-12">
-          <!-- Discovery -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Discovery</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-brainstorm</code>
-                <p class="text-muted text-xs mt-0.5">Explore ideas (read-only); decides stack foundations on an empty repo</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-new</code>
-                <p class="text-muted text-xs mt-0.5">AI-guided feature discovery → <code class="text-foreground">about.md</code></p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-wiki</code>
-                <p class="text-muted text-xs mt-0.5">Generate a portable project wiki (.codeadd/wiki/)</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Planning -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Planning</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-plan</code>
-                <p class="text-muted text-xs mt-0.5">Technical Planning Orchestrator — dispatches UX Design, Database, Backend and Frontend agents. Sole writer of <code class="text-foreground">design.md</code> (STEP 8.1) for UI-touching features</p>
+          {t<{ title: string; items: NamedEntry[] }[]>("docs.commands.groups").map((group) => (
+            <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+              <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">{group.title}</h3>
+              <div class="space-y-2.5">
+                {group.items.map((cmd) => (
+                  <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                    {cmd.name === "/add-setup" ? (
+                      <a href="#setup" class="text-accent font-mono text-sm underline underline-offset-2 hover:text-accent-dim">{cmd.name}</a>
+                    ) : cmd.name === "/add-hotfix" ? (
+                      <code class="text-accent font-mono text-sm" style="color:#ff4444">{cmd.name}</code>
+                    ) : (
+                      <code class="text-accent font-mono text-sm">{cmd.name}</code>
+                    )}
+                    <p class="text-muted text-xs mt-0.5" set:html={cmd.desc} />
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-
-          <!-- Implementation -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Implementation</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-build</code>
-                <p class="text-muted text-xs mt-0.5">Development Execution Specialist — closes each delivery unit with its own Final Review</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quality -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Quality</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-review</code>
-                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Dispatches an OWASP Top 10 pass alongside the area review when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them. Optional — <code class="text-foreground">/add-build</code> runs its own Final Review, and <code class="text-foreground">/add-done</code> accepts whichever verdict is most recent</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-audit</code>
-                <p class="text-muted text-xs mt-0.5">Full project health analysis</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-diagnose</code>
-                <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only); persists the diagnosis for <code class="text-foreground">/add-hotfix</code> to reuse</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests the QA judgement via <code class="text-foreground">/add-review</code></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Delivery -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Delivery</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-done</code>
-                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges. Hotfix close-out requires a passed Review receipt in <code class="text-foreground">about.md</code>. Deploy is not part of a delivery - it runs after <code class="text-foreground">/add-done</code>, through your own deploy process</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-pull-request</code>
-                <p class="text-muted text-xs mt-0.5">Idempotent PR - creates new PR or appends update section if one is already open. Generates feature changelog on feature branches</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm" style="color:#ff4444">/add-hotfix</code>
-                <p class="text-muted text-xs mt-0.5">Emergency fix with global ID (H[NNNN]) — reuses an accepted <code class="text-foreground">/add-diagnose</code> when available</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Utility -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Utilities</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-help</code>
-                <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <a href="#setup" class="text-accent font-mono text-sm underline underline-offset-2 hover:text-accent-dim">/add-setup</a>
-                <p class="text-muted text-xs mt-0.5">Guided onboarding — offers each feature and plugin with its benefit, sets up the ones you accept</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-ux</code>
-                <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
