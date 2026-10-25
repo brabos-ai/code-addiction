@@ -432,3 +432,15 @@ test('i18n F2: the strings modules exist, pt-br is typed Strings, and the guards
   assert.match(idx, /^assertParity\(\);/m, 'parity guard must run at top level');
   assert.match(idx, /^assertTranslated\(\);/m, 'same-value guard must run at top level');
 });
+
+test('i18n F3: the layout sets lang from the locale and emits hreflang, canonical and og:locale', () => {
+  const layout = read('src/layouts/Layout.astro');
+  assert.doesNotMatch(layout, /<html lang="en"/);
+  assert.match(layout, /<html lang=\{/);
+  assert.match(layout, /hreflang="en"/);
+  assert.match(layout, /hreflang="pt-BR"/);
+  assert.match(layout, /hreflang="x-default"/);
+  assert.match(layout, /rel="canonical"/);
+  assert.match(layout, /property="og:locale"/);
+  assert.match(layout, /og:locale:alternate/);
+});
