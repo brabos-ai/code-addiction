@@ -1766,7 +1766,10 @@ import "../styles/global.css";
           // flowchart parser between minors before now.
           s.textContent =
             "import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs';" +
-            "mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'strict' });" +
+            "mermaid.initialize({ startOnLoad: false, theme: 'base', securityLevel: 'strict', themeVariables: {" +
+            "background: '#050505', primaryColor: '#0b1f17', primaryTextColor: '#e8e8e8', primaryBorderColor: '#00ff88'," +
+            "secondaryColor: '#111111', tertiaryColor: '#050505', lineColor: '#00cc6a', textColor: '#e8e8e8'," +
+            "fontFamily: '\"Outfit Variable\", Outfit, sans-serif' } });" +
             "mermaid.run({ nodes: [document.getElementById('artefact-graph')] });";
           document.body.appendChild(s);
         })

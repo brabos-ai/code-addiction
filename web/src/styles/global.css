@@ -37,6 +37,10 @@
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", monospace;
 }
 
+:root {
+  color-scheme: dark;
+}
+
 html {
   scroll-behavior: smooth;
 }
