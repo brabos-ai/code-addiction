@@ -646,7 +646,7 @@ On the first push, ask whether to push the branch and open the PR, as one number
 
 | Answer | Do |
 |---|---|
-| Yes | `git push -u origin <branch>`, then `gh pr create`. Report the PR URL |
+| Yes | `git push -u origin <branch>`, then write the PR body with the file-write tool to `.codeadd/.temp/<random-slug>.md`, run `gh pr create --body-file <file>` and delete the file, as in the publish recipe in `framwork/.codeadd/commands/add-pull-request.md`. Report the PR URL |
 | No | Say the work is committed locally and that `/add-framework--done` pushes and opens the PR when it runs |
 
 **Why the second behaviour exists:** asking again on the second build of the same branch is noise —

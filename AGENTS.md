@@ -274,6 +274,10 @@ Auto-updated by `add-framework--sync` before releases (4 analyzer agents in para
 | `.github/workflows/release.yml` | Tag push (`v*`) | Build + create GitHub release |
 | `.github/workflows/deploy-web.yml` | Push/PR | Deploy web documentation |
 
+## Shell Calls
+
+Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline. Authoring side: `building-commands`.
+
 ## Where the details live
 
 This file deliberately stops at the overview. Load the owner when you need the mechanics.

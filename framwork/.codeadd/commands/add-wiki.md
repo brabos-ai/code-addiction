@@ -633,6 +633,7 @@ IF WRITING THE RUNTIME POLICY:
 Run shipped framework entries with Node (>=22.19.0), e.g. `node .codeadd/scripts/status.cjs`.
 No Bash, WSL or Git Bash is required; the entries are native CommonJS.
 Headless callers (claude -p): read .codeadd/agent-mode/README.md.
+Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline.
 
 [//]: # (codeadd-shell:end)
 ```
