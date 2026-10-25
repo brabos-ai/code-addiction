@@ -66,4 +66,3 @@ NEVER:
 - Write to docs.astro directly — you are READ-ONLY, coordinator applies edits
 - Change surrounding structure unnecessarily — minimal diffs only
 - Invent changes not driven by the Change Payload
-- Report an edit to the Providers table, the site Ecosystem Map or the artefact graph — each is generated or owned elsewhere

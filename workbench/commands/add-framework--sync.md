@@ -41,8 +41,8 @@ IF CHANGE PAYLOAD NOT BUILT (STEP 1 not complete):
   ✅ DO: Complete STEP 1 first
 
 IF AGENT REPORTS NOT ALL RECEIVED (STEP 4 not complete):
-  ⛔ DO NOT USE: Edit on README.md, docs.astro, index.astro, or *.svg
-  ⛔ DO NOT USE: Write on README.md, docs.astro, index.astro, or *.svg
+  ⛔ DO NOT USE: Edit on README.md, docs.astro, index.astro, web/src/data/providers.ts, or *.svg
+  ⛔ DO NOT USE: Write on README.md, docs.astro, index.astro, web/src/data/providers.ts, or *.svg
   ⛔ DO NOT: Apply any edits
   ✅ DO: Wait for all 4 report files to exist in .tmp/sync/
 
@@ -260,7 +260,7 @@ Each agent is independent. Dispatch ALL simultaneously.
    - **Output:** `.tmp/sync/readme-report.json`
 
 2. **web-docs-analyzer** [read-only, standard]
-   - **Prompt:** Read `.tmp/sync/change-payload.json` and `web/src/pages/docs.astro`. Analyze commands grid, skills grid, flows section, providers table. Write Update Report to `.tmp/sync/web-docs-report.json`.
+   - **Prompt:** Read `.tmp/sync/change-payload.json` and `web/src/pages/docs.astro`. Analyze commands grid, skills grid and flows section. It does not edit the providers table: a provider change is the web-index report's. Write Update Report to `.tmp/sync/web-docs-report.json`.
    - **Output:** `.tmp/sync/web-docs-report.json`
 
 3. **web-index-analyzer** [read-only, standard]
@@ -352,7 +352,7 @@ Then print the sync report (omit empty sections):
 - web/public/commands.svg: N edits applied
 - web/public/artefact-graph.mmd: regenerated or unchanged (STEP 2.1)
 - web/public/ecosystem.json: regenerated or unchanged (STEP 2.1)
-[omit files with 0 edits]
+[omit files with 0 edits, except the two STEP 2.1 lines, which always print]
 
 ### Manual Items Required
 ⚠️ [FILE] — [reason]: [detail]
