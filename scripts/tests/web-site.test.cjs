@@ -299,3 +299,27 @@ test('F17: #eco-search has an accessible name and the list has an empty state', 
   assert.match(docs.match(/<input id="eco-search"[^>]*>/)[0], /aria-label="[^"]+"/);
   assert.match(docs, /id="eco-empty"/);
 });
+
+// -------------------------------------------------------- F18 terminal session
+test('F18: a static /add-plan to /add-build session sits between the hero and the trail, in the HTML', () => {
+  const home = HOME();
+  const at = home.indexOf('id="session"');
+  assert.ok(at > home.indexOf('<!-- Hero -->'), 'session block missing or before the hero');
+  assert.ok(at < home.indexOf('id="trail"'), 'session block must come right after the hero');
+  const block = home.slice(at, home.indexOf('id="trail"'));
+  assert.match(block, /\/add-plan/);
+  assert.match(block, /\/add-build/);
+  assert.doesNotMatch(block, /<video/);
+});
+
+test('F18: the typing effect is a transform-only mask, added by JS, and off under reduced motion', () => {
+  const css = CSS();
+  assert.match(css, /\.js-typing \.term-line::after/);
+  const kf = css.match(/@keyframes termReveal\s*\{[\s\S]*?\n\}/);
+  assert.ok(kf, 'termReveal keyframes missing');
+  assert.match(kf[0], /transform:/);
+  assert.doesNotMatch(kf[0], /(width|opacity|height|left)\s*:/);
+  const rm = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(rm.includes('.term-line'), 'reduced-motion block does not cover .term-line');
+  assert.doesNotMatch(css.match(/\.term-line\s*\{[^}]*\}/)[0], /opacity:\s*0/);
+});
