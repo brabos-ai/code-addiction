@@ -639,12 +639,23 @@ test('status#048 WIKI: unreachable sha (well-formed but nonexistent commit) yiel
 
 // ─── SETUP CONTRACT (materialized-state staleness) ───────────────────
 
+const SETTINGS = path.join('.codeadd', 'settings.json');
+
+/** The setup receipt is the receipt fields of the qa section of .codeadd/settings.json. */
 function mkReceipt(r, shape, crlf = false) {
-  const nl = crlf ? '\r\n' : '\n';
-  const body =
-    `---${nl}type: setup-receipt${nl}setup-shape: ${shape}${nl}---${nl}${nl}` +
-    `## Decision Log${nl}${nl}| d | setup-shape: sha256:deadbeefdeadbeef | x |${nl}`;
-  writeIn(r, path.join('docs', 'qa', 'qa-setup.md'), body);
+  const doc = {
+    schema: 1,
+    qa: {
+      'setup-shape': shape,
+      'first-run': '2026-07-27',
+      'last-run': '2026-07-27',
+      // another shape named in the log must never be read as the recorded one
+      log: [{ date: '2026-07-27', item: 'x', decision: 'x', reason: 'x', shape: 'sha256:deadbeefdeadbeef' }],
+    },
+  };
+  let body = JSON.stringify(doc, null, 2) + '\n';
+  if (crlf) body = body.replace(/\n/g, '\r\n');
+  writeIn(r, SETTINGS, body);
 }
 
 function mkSidecar(r, shape) {
@@ -664,7 +675,7 @@ test('status#049 SETUP_QA: absent when no QA state exists', (t) => {
 
 test('status#050 SETUP_QA: stale when config.json exists without a receipt', (t) => {
   const r = repo(t);
-  writeIn(r, path.join('docs', 'qa', 'config.json'), '{}\n');
+  writeIn(r, SETTINGS, JSON.stringify({ schema: 1, qa: { baseUrl: 'http://localhost:3000' } }) + '\n');
   const res = status(r);
   assert.equal(res.status, 0);
   has(res, 'SETUP_QA:stale');
@@ -714,7 +725,7 @@ test('status#053 SETUP_QA: stale when recorded shape differs from shipped', (t) 
 
 test('status#054 SETUP_QA: a malformed setup-shape is stale, never guessed current', (t) => {
   const r = repo(t);
-  writeIn(r, path.join('docs', 'qa', 'qa-setup.md'), '---\nsetup-shape: v1\n---\n');
+  writeIn(r, SETTINGS, JSON.stringify({ schema: 1, qa: { 'setup-shape': 'v1' } }) + '\n');
   mkSidecar(r, 'sha256:aaaaaaaaaaaaaaaa');
   const res = status(r);
   assert.equal(res.status, 0);
@@ -750,6 +761,27 @@ test('status#057 SETUP_QA: the Decision Log body never leaks into the recorded v
   has(res, 'SETUP_QA:present');
   hasNot(res, 'SETUP_QA_STALE');
   hasNot(res, 'deadbeef');
+});
+
+test('status#061 SETUP_QA: a malformed .codeadd/settings.json is stale, with no stack trace', (t) => {
+  const r = repo(t);
+  writeIn(r, SETTINGS, '{not json');
+  mkSidecar(r, 'sha256:aaaaaaaaaaaaaaaa');
+  const res = status(r);
+  assert.equal(res.status, 0);
+  has(res, 'SETUP_QA:stale');
+  has(res, 'SETUP_QA_STALE:yes');
+  has(res, 'SETUP_QA_HINT:QA state exists without a current receipt — /add-qa-setup');
+  hasNot(res, 'SyntaxError');
+});
+
+test('status#062 SETUP_QA: .codeadd/settings.json without a qa section is absent', (t) => {
+  const r = repo(t);
+  writeIn(r, SETTINGS, JSON.stringify({ schema: 1, setup: { 'last-run': '2026-10-25' } }) + '\n');
+  const res = status(r);
+  assert.equal(res.status, 0);
+  has(res, 'SETUP_QA:absent');
+  hasNot(res, 'SETUP_QA_STALE');
 });
 
 // ─── next-id <PREFIX> subcommand (reimplements next-id.sh) ───────────
