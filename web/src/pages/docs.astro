@@ -1022,9 +1022,9 @@ import "../styles/global.css";
         </div>
 
         <!-- Graph + browse sidebar -->
-        <div class="flex gap-4 items-start">
+        <div class="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
           <div id="eco-graph-wrap" class="flex-1 relative min-w-0">
-            <div id="eco-cy" class="rounded-xl border border-white/10 bg-[#0a0a0f]" style="height:720px"></div>
+            <div id="eco-cy" class="h-[60vh] lg:h-[720px] rounded-xl border border-white/10 bg-[#0a0a0f] text-sm text-muted-light p-4"></div>
             <div class="absolute top-3 right-3 flex flex-col gap-1 bg-[#0a0a0f]/80 border border-white/10 rounded-lg p-1 backdrop-blur-sm">
               <button id="eco-zoom-in" title="Zoom in" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-6H6"/></svg></button>
               <button id="eco-zoom-out" title="Zoom out" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg></button>
@@ -1036,7 +1036,7 @@ import "../styles/global.css";
               scroll to zoom · drag to pan · click to inspect
             </div>
           </div>
-          <aside id="eco-sidebar" class="hidden lg:flex w-60 shrink-0 rounded-xl border border-white/10 bg-white/[0.02] flex-col" style="height:720px">
+          <aside id="eco-sidebar" class="flex w-full lg:w-60 h-[360px] lg:h-[720px] shrink-0 rounded-xl border border-white/10 bg-white/[0.02] flex-col">
             <div id="eco-inspect" class="hidden border-b border-white/10 p-4 shrink-0">
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
@@ -1173,187 +1173,11 @@ import "../styles/global.css";
       });
     }
 
-    function initEcosystem() {
-      var nodes = [
-        // Commands
-        {data:{id:'add',label:'add',type:'command'}},
-        {data:{id:'add-audit',label:'add-audit',type:'command'}},
-        {data:{id:'add-brainstorm',label:'add-brainstorm',type:'command'}},
-        {data:{id:'add-build',label:'add-build',type:'command'}},
-        {data:{id:'add-diagnose',label:'add-diagnose',type:'command'}},
-        {data:{id:'add-done',label:'add-done',type:'command'}},
-        {data:{id:'add-hotfix',label:'add-hotfix',type:'command'}},
-        {data:{id:'add-new',label:'add-new',type:'command'}},
-        {data:{id:'add-plan',label:'add-plan',type:'command'}},
-        {data:{id:'add-pull-request',label:'add-pull-request',type:'command'}},
-        {data:{id:'add-qa-setup',label:'add-qa-setup',type:'command'}},
-        {data:{id:'add-review',label:'add-review',type:'command'}},
-        {data:{id:'add-setup',label:'add-setup',type:'command'}},
-        {data:{id:'add-ux',label:'add-ux',type:'command'}},
-        {data:{id:'add-wiki',label:'add-wiki',type:'command'}},
-        // Agents
-        {data:{id:'architecture-agent',label:'architecture',type:'agent'}},
-        {data:{id:'backend-agent',label:'backend',type:'agent'}},
-        {data:{id:'database-agent',label:'database',type:'agent'}},
-        {data:{id:'discovery-agent',label:'discovery',type:'agent'}},
-        {data:{id:'doc-reviewer-agent',label:'doc-reviewer',type:'agent'}},
-        {data:{id:'feature-history-agent',label:'feature-history',type:'agent'}},
-        {data:{id:'fix-agent',label:'fix',type:'agent'}},
-        {data:{id:'frontend-agent',label:'frontend',type:'agent'}},
-        {data:{id:'git-history-agent',label:'git-history',type:'agent'}},
-        {data:{id:'qa-agent',label:'qa',type:'agent'}},
-        {data:{id:'e2e-agent',label:'e2e',type:'agent'}},
-        {data:{id:'reviewer-agent',label:'reviewer',type:'agent'}},
-        {data:{id:'system-design-agent',label:'system-design',type:'agent'}},
-        {data:{id:'test-agent',label:'test',type:'agent'}},
-        {data:{id:'ux-agent',label:'ux',type:'agent'}},
-        {data:{id:'ux-flow-agent',label:'ux-flow',type:'agent'}},
-        {data:{id:'ux-layout-agent',label:'ux-layout',type:'agent'}},
-        // Skills
-        {data:{id:'add--doc-schemas',label:'doc-schemas',type:'skill'}},
-        {data:{id:'add--ecosystem',label:'ecosystem',type:'skill'}},
-        {data:{id:'add--ux-design',label:'ux-design',type:'skill'}},
-        {data:{id:'add--id-convention',label:'id-convention',type:'skill'}},
-        {data:{id:'add--backend-development',label:'backend-dev',type:'skill'}},
-        {data:{id:'add--frontend-development',label:'frontend-dev',type:'skill'}},
-        {data:{id:'add--tasks-checklist',label:'tasks-checklist',type:'skill'}},
-        {data:{id:'add--database-development',label:'database-dev',type:'skill'}},
-        {data:{id:'add--investigation',label:'investigation',type:'skill'}},
-        {data:{id:'add--code-review',label:'code-review',type:'skill'}},
-        {data:{id:'add--security-audit',label:'security-audit',type:'skill'}},
-        {data:{id:'add--architecture-discovery',label:'arch-discovery',type:'skill'}},
-        {data:{id:'add--feature-discovery',label:'feature-discovery',type:'skill'}},
-        {data:{id:'add--delivery-validation',label:'delivery-validation',type:'skill'}},
-        {data:{id:'add--health-check',label:'health-check',type:'skill'}},
-        {data:{id:'add-doc-reviewer',label:'doc-reviewer',type:'skill'}},
-        {data:{id:'add--agents-md-style',label:'agents-md-style',type:'skill'}},
-        {data:{id:'add--dev-environment-setup',label:'dev-env-setup',type:'skill'}},
-        {data:{id:'add--commit',label:'commit',type:'skill'}},
-        {data:{id:'add--feature-specification',label:'feature-spec',type:'skill'}},
-        {data:{id:'add--backend-architecture',label:'backend-arch',type:'skill'}},
-        {data:{id:'add--frontend-architecture',label:'frontend-arch',type:'skill'}},
-        {data:{id:'add--tdd',label:'tdd',type:'skill'}},
-        {data:{id:'add--test-specification',label:'test-specification',type:'skill'}},
-        {data:{id:'add--qa',label:'qa',type:'skill'}},
-        {data:{id:'add--qa-spec',label:'qa-spec',type:'skill'}},
-        {data:{id:'add--qa-migration',label:'qa-migration',type:'skill'}},
-        {data:{id:'add--setup-contract',label:'setup-contract',type:'skill'}},
-        {data:{id:'add--settings',label:'settings',type:'skill'}},
-      ];
-
-      var RAW = [
-        // command → skill (loads)
-        ['add','add--ecosystem','loads'],
-        ['add','add--dev-environment-setup','loads'],
-        ['add-audit','add--doc-schemas','loads'],
-        ['add-audit','add--health-check','loads'],
-        ['add-audit','add--investigation','loads'],
-        ['add-brainstorm','add--doc-schemas','loads'],
-        ['add-brainstorm','add--ecosystem','loads'],
-        ['add-build','add--doc-schemas','loads'],
-        ['add-build','add--id-convention','loads'],
-        ['add-build','add--tasks-checklist','loads'],
-        ['add-build','add--ux-design','loads'],
-        ['add-build','add--database-development','loads'],
-        ['add-build','add--backend-development','loads'],
-        ['add-build','add--frontend-development','loads'],
-        ['add-diagnose','add--doc-schemas','loads'],
-        ['add-diagnose','add--ecosystem','loads'],
-        ['add-diagnose','add--investigation','loads'],
-        ['add-done','add--doc-schemas','loads'],
-        ['add-done','add--id-convention','loads'],
-        ['add-done','add--ecosystem','loads'],
-        ['add-hotfix','add--doc-schemas','loads'],
-        ['add-hotfix','add--id-convention','loads'],
-        ['add-hotfix','add--investigation','loads'],
-        ['add-hotfix','add--ux-design','loads'],
-        ['add-hotfix','add--ecosystem','loads'],
-        ['add-new','add--doc-schemas','loads'],
-        ['add-new','add--id-convention','loads'],
-        ['add-new','add--feature-discovery','loads'],
-        ['add-new','add--feature-specification','loads'],
-        ['add-new','add-doc-reviewer','loads'],
-        ['add-plan','add--doc-schemas','loads'],
-        ['add-plan','add--id-convention','loads'],
-        ['add-plan','add--backend-development','loads'],
-        ['add-plan','add--database-development','loads'],
-        ['add-plan','add--frontend-development','loads'],
-        ['add-plan','add--ux-design','loads'],
-        ['add-plan','add--tasks-checklist','loads'],
-        ['add-review','add--code-review','loads'],
-        ['add-review','add--frontend-development','loads'],
-        ['add-review','add--ux-design','loads'],
-        ['add-review','add--backend-development','loads'],
-        ['add-review','add--database-development','loads'],
-        ['add-review','add--security-audit','loads'],
-        ['add-review','add--delivery-validation','loads'],
-        ['add-review','add--tasks-checklist','loads'],
-        ['add-review','add--investigation','loads'],
-        ['add-ux','add--ux-design','loads'],
-        ['add-wiki','add--doc-schemas','loads'],
-        ['add-wiki','add--architecture-discovery','loads'],
-        ['add-wiki','add--agents-md-style','loads'],
-        ['add-review','add--doc-schemas','loads'],
-        ['add-review','add--qa','loads'],
-        ['add-qa-setup','add--doc-schemas','loads'],
-        ['add-qa-setup','add--dev-environment-setup','loads'],
-        ['add-qa-setup','add--qa-migration','loads'],
-        ['add-qa-setup','add--setup-contract','loads'],
-        ['add-qa-setup','add--settings','loads'],
-        ['add-setup','add--settings','loads'],
-        ['add-setup','add--ecosystem','loads'],
-        ['add-setup','add--dev-environment-setup','loads'],
-        ['add-plan','add--qa-spec','loads'],
-        // command → agent (dispatches)
-        ['add-build','backend-agent','dispatches'],
-        ['add-build','frontend-agent','dispatches'],
-        ['add-build','database-agent','dispatches'],
-        ['add-build','reviewer-agent','dispatches'],
-        ['add-plan','ux-flow-agent','dispatches'],
-        ['add-plan','ux-layout-agent','dispatches'],
-        ['add-plan','ux-agent','dispatches'],
-        ['add-new','discovery-agent','dispatches'],
-        ['add-new','doc-reviewer-agent','dispatches'],
-        ['add-wiki','architecture-agent','dispatches'],
-        ['add-review','qa-agent','dispatches'],
-        ['add-review','ux-agent','dispatches'],
-        ['add-build','e2e-agent','dispatches'],
-        ['add-build','test-agent','dispatches'],
-        ['add-build','fix-agent','dispatches'],
-        ['add-diagnose','discovery-agent','dispatches'],
-        ['add-diagnose','architecture-agent','dispatches'],
-        ['add-diagnose','feature-history-agent','dispatches'],
-        ['add-diagnose','git-history-agent','dispatches'],
-        ['add-hotfix','feature-history-agent','dispatches'],
-        ['add-hotfix','git-history-agent','dispatches'],
-        ['add-hotfix','reviewer-agent','dispatches'],
-        ['add-hotfix','fix-agent','dispatches'],
-        // agent → skill (uses)
-        ['backend-agent','add--backend-development','uses'],
-        ['backend-agent','add--database-development','uses'],
-        ['frontend-agent','add--frontend-development','uses'],
-        ['database-agent','add--database-development','uses'],
-        ['reviewer-agent','add--code-review','uses'],
-        ['reviewer-agent','add--security-audit','uses'],
-        ['ux-agent','add--ux-design','uses'],
-        ['ux-flow-agent','add--ux-design','uses'],
-        ['ux-layout-agent','add--ux-design','uses'],
-        ['discovery-agent','add--feature-discovery','uses'],
-        ['discovery-agent','add--feature-specification','uses'],
-        ['doc-reviewer-agent','add-doc-reviewer','uses'],
-        ['doc-reviewer-agent','add--doc-schemas','uses'],
-        ['architecture-agent','add--architecture-discovery','uses'],
-        ['architecture-agent','add--backend-architecture','uses'],
-        ['architecture-agent','add--frontend-architecture','uses'],
-        ['system-design-agent','add--architecture-discovery','uses'],
-        ['qa-agent','add--qa','uses'],
-        ['ux-agent','add--qa','uses'],
-        ['test-agent','add--tdd','uses'],
-      ];
-
-      var edges = RAW.map(function(r, i) {
-        return {data:{id:'e'+i, source:r[0], target:r[1], type:r[2]}};
-      });
+    // The map is generated: node scripts/graph.js ecosystem --write emits
+    // web/public/ecosystem.json from the build sidecar. Never hand-edit it.
+    function initEcosystem(eco) {
+      var nodes = eco.nodes;
+      var edges = eco.edges;
 
       // Compute degree (connection count) per node for size scaling
       var degreeMap = {};
@@ -1400,6 +1224,7 @@ import "../styles/global.css";
             selector: 'node[type="command"]',
             style: {
               'background-color': '#a78bfa',
+              'label': 'data(label)',
             }
           },
           {
@@ -1725,8 +1550,19 @@ import "../styles/global.css";
           .then(function() { return loadScript(LAYOUT_BASE_CDN); })
           .then(function() { return loadScript(COSE_BASE_CDN); })
           .then(function() { return loadScript(COSE_BILKENT_CDN); })
+          .then(function() {
+            return fetch('/ecosystem.json').then(function(r) {
+              if (!r.ok) throw new Error('HTTP ' + r.status);
+              return r.json();
+            });
+          })
           .then(initEcosystem)
-          .catch(function(err) { console.error('Ecosystem load failed:', err); });
+          .catch(function(err) {
+            console.error('Ecosystem load failed:', err);
+            // Say what happened. A silent blank panel reads as a broken site.
+            var box = document.getElementById('eco-cy');
+            if (box) box.textContent = 'Ecosystem map unavailable (' + err.message + ').';
+          });
       }
     }, { rootMargin: '300px' });
     observer.observe(section);
