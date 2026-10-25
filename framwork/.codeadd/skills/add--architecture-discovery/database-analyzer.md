@@ -64,6 +64,7 @@ Search ONLY for what exists in the project:
 - Status: enabled/disabled
 - Policies: where defined
 - Pattern: by tenant_id, user_id, etc
+- The policy and the tenant key it uses (domain-local detail; the project-wide Tenancy row lives in [Stack Conventions](../conventions.md#stack-conventions))
 
 ### 6. Reusable Abstractions (CRITICAL — prevents duplication)
 - Base repository class (if exists) — agents MUST extend instead of creating raw queries
@@ -79,6 +80,7 @@ Search ONLY for what exists in the project:
 - Repository file placement (co-located with entity? separate folder?)
 - How new entities are registered with the ORM
 - How new migrations are created (CLI command)
+- The tenant key's FK and index pattern (if the project is multi-tenant)
 - **Principle: the agent must follow the established pattern**
 
 ### 8. Seeding (IF EXISTS)
@@ -105,6 +107,8 @@ cat .env .env.example .env.local 2>/dev/null | grep -i "database\|db_\|postgres\
 # 5. Read a migration/entity file to understand the pattern
 # (choose a file after discovering where they are)
 ```
+
+Also run the Tenancy search defined in `{{skill:add--architecture-discovery/SKILL.md}}` → Stack Convention Signals. Use what it finds for the RLS policy and the tenant key's FK/index pattern only; the project-wide Tenancy row belongs to the spine's Stack Conventions table.
 
 ## Output Format
 
@@ -166,6 +170,7 @@ Config: `{"orm":"[name]","entities":"[path glob]","repositories":"[path glob]"}`
 
 [Topic sentence: status, policy pattern.]
 Config: `{"status":"[enabled/disabled]","policies":"[path]","pattern":"[by tenant_id/user_id/etc]"}`
+Tenant key and policy: [key the policy uses] — see [Stack Conventions](../conventions.md#stack-conventions) for the project-wide row.
 
 ```sql
 -- [path:line]
@@ -193,6 +198,7 @@ Entity naming: [singular/plural, PascalCase]
 Migration naming: [timestamp prefix, CLI command to create]
 Repository placement: [co-located or separate]
 New entity registration: [how to register with ORM]
+Tenant key pattern (if multi-tenant): [FK and index shape] — see [Stack Conventions](../conventions.md#stack-conventions)
 
 ## Seeding
 
