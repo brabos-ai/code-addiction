@@ -1,6 +1,6 @@
 {
   "$schema-doc": {
-    "description": "Plugin catalog — external-tool integrations. codeadd owns utilization, never installation. Each entry keyed by plugin name. Schema per entry:",
+    "description": "Plugin catalog — external-tool integrations. The CLI owns utilization, never installation: it detects the tool and never installs it. The conversational setup commands (/add-setup, /add-qa-setup) may install a tool after the user confirms. Each entry keyed by plugin name. Schema per entry:",
     "fields": {
       "type": "string — 'mcp' | 'script' | 'http' | 'skill'. No code reads this field: it labels the tool, and 'skill' means a skill the user installs.",
       "description": "string — one-line summary shown in `plugins list`.",

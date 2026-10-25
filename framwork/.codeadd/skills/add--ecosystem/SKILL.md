@@ -81,6 +81,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: /add-plan
 - mention: /add-pull-request
 - mention: /add-qa-setup
+- mention: /add-setup
 - mention: /add-review
 - mention: /add-wiki
 - mention: build-setup.cjs
@@ -132,6 +133,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add-plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP add-plan.ux-design UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP qa-pipeline.qa-spec) when qa-pipeline feature enabled. STEP add-plan.review dispatches `@plan-reviewer-agent` before completion. **STEP add-plan.cross-sf-review (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add--backend-development, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--feature-discovery, add--final-report, add--frontend-development, add--id-convention, add--knowledge-discovery, add--plan-review, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--ux-design |
 | add-pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--id-convention |
 | add-qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add--delivery-mode, add--dev-environment-setup, add--doc-schemas, add--final-report, add--qa, add--qa-migration, add--settings, add--setup-contract, add--subagent-driven-development |
+| add-setup | Guided onboarding — diagnoses the project, offers each feature and plugin with its benefit in one batch, and runs the setup pieces for the accepted items | add--delivery-mode, add--dev-environment-setup, add--ecosystem, add--final-report, add--settings |
 | add-review | Feature Review Specialist — read-only on code. Code review + spec-compliance audit + the absorbed QA validation (preflight / evidence / judgement), which arrives with the `qa-pipeline` feature and then self-gates on the `/add-qa-setup` receipt — two gates: the feature decides whether the steps exist, the receipt decides whether they can run. Dispatches `@reviewer-agent` in `MODE: owasp` alongside the frontend/backend reviewer(s), conditional on the diff touching a sensitive area (auth, payment, upload, input handling, session/token). Skips the spec audit and that OWASP pass when the build's Final review (`passed` or `ruled N`, with its `Final review head:` line) still covers the tree — no source change since that commit. Consolidates every finding class into one `## Fix Routing` table and writes a versioned `review-NNN.md`; `/add-build` applies the routes and appends the resolution annex. Optional — `/add-done` accepts the build's own final review; the most recent verdict wins | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development, add--tasks-checklist |
 | add-ux | Quick UX - loads add--ux-design and applies to user's free-form instruction | add--ux-design |
 | add-wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add-wiki update` runs incremental maintenance | add--agents-md-style, add--architecture-discovery, add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--subagent-driven-development, add--wiki-maintenance |
@@ -150,15 +152,15 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add-build, add-pull-request, add-review |
 | add--cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` | add-build, add-plan |
 | add--database-development | Data architecture: entities, repositories, migrations, naming — stack-agnostic | add-build, add-plan |
-| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, same-session automatic handoff, and its publish-question terminus | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
+| add--delivery-mode | The two delivery modes (`confirm` / `automatic`), their carriers and stops, same-session automatic handoff, and its publish-question terminus | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-setup, add-wiki |
 | add--delivery-validation | Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass | (none) |
-| add--dev-environment-setup | Detect OS, diagnose missing tools, install Node/git/gh and verify the Node floor | add-help, add-qa-setup |
+| add--dev-environment-setup | Detect OS, diagnose missing tools, install Node/git/gh and verify the Node floor | add-help, add-qa-setup, add-setup |
 | add--doc-schemas | Canonical schemas, stable IDs, universal doc rules, validation gate (the `setup-receipt` schema is legacy; current receipts are sections of `.codeadd/settings.json`, schema in `add--settings`) — single source of truth for all generated docs | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
-| add--ecosystem | Consolidated ecosystem view (source of truth) | add-help, add-audit, add-diagnose, add-done, add-hotfix, add-wiki |
+| add--ecosystem | Consolidated ecosystem view (source of truth) | add-help, add-audit, add-diagnose, add-done, add-hotfix, add-setup, add-wiki |
 | add--feature-discovery | Feature discovery process, codebase analysis | add-plan |
 | add--feature-readback | Cold-read comprehension readback of a closed doc set — says back what it understood would be built and marks every gap the reader filled in; no questions, no verdict. Runs after the pre-delivery review's fixes land | (none) |
 | add--feature-specification | Single writer of about.md — reads the brainstorm intent file, extracts closed decisions without asking, and asks only what's still open | add-new |
-| add--final-report | The closing shape every command that finishes work reports in — TL;DR, what was delivered, how it works, files touched, where it plugs in, what is out of scope, what needs attention. Loaded at the closing step, not at STEP 1 | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki |
+| add--final-report | The closing shape every command that finishes work reports in — TL;DR, what was delivered, how it works, files touched, where it plugs in, what is out of scope, what needs attention. Loaded at the closing step, not at STEP 1 | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-setup, add-wiki |
 | add--frontend-architecture | Frontend architecture consultant: Simple Component-Based, Feature-Based, FSD — React/Vue/Angular-aware | add-brainstorm |
 | add--frontend-development | Frontend architecture: state, data fetching, components, forms, routing — stack-agnostic | add-build, add-plan |
 | add--gitnexus | [plugin-bound] Code knowledge-graph navigation via GitNexus MCP — call graph, refs, blast-radius, trace flows, safe refactors. Enabled by `codeadd plugins enable gitnexus` | (plugin-bound) |
@@ -174,7 +176,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--resource-path-convention | Path convention for referencing commands/skills/scripts across providers | (none) |
 | add--review-discipline | HOW review is dispatched: the counts, what makes a second dispatch legal (apply then re-gate), how a readback divergence is handled at the one site that dispatches a readback, and the one boundary where a verdict may reach disk | add-build, add-new, add-plan |
 | add--security-audit | OWASP checklist, RLS, secrets, multi-tenancy | (none) |
-| add--settings | The project settings file `.codeadd/settings.json` — ownership, read/merge/write, the content rule, the `qa` section schema and the receipt fields | add-qa-setup |
+| add--settings | The project settings file `.codeadd/settings.json` — ownership, read/merge/write, the content rule, the `qa` and `setup` section schemas and the receipt fields | add-qa-setup, add-setup |
 | add--setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE | add-qa-setup |
 | add--subagent-driven-development | Subagent coordination with quality gates | add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki |
 | add--tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add-build, add-plan, add-review |
@@ -213,23 +215,23 @@ for accepted manual instructions; the route itself remains unchanged.
 
 ## Features
 
-| Feature | Default | Injects into | Purpose |
-|---------|---------|--------------|---------|
-| tdd-pipeline | enabled | add-plan, add-build, add-review, add-hotfix | RED-GREEN-REFACTOR discipline + contract-test specs + unit/integration generation |
-| qa-pipeline | disabled | add-plan, add-build, add-review | E2E spec authoring + routed QA correction + the agent QA judgement in add-review |
-| docs-pruning | disabled | add-done | Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written |
-| board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app is not distributed yet, so a fresh install has neither the board nor a `.codeadd/board.json` |
-| agent-mode | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki | Commands for a bot that drives them headless — every question in one numbered batch with a recommendation, no interactive tool, no continuation offer, a closing that ends on the next command. Off by default: the commands keep their human wording |
+| Feature | Default | Injects into | Purpose | Benefit |
+|---------|---------|--------------|---------|---------|
+| tdd-pipeline | enabled | add-plan, add-build, add-review, add-hotfix | RED-GREEN-REFACTOR discipline + contract-test specs + unit/integration generation | Every change starts from a failing test, so a regression is caught before it ships. |
+| qa-pipeline | disabled | add-plan, add-build, add-review | E2E spec authoring + routed QA correction + the agent QA judgement in add-review | UI changes are checked in a real browser before you merge, so a broken screen is caught in review. |
+| docs-pruning | disabled | add-done | Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written | Keeps the docs folder small by deleting a feature's planning files after it merges. It deletes feature scaffolding, so turn it on only if you do not want those files kept. |
+| board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app is not distributed yet, so a fresh install has neither the board nor a `.codeadd/board.json` | Tickets move through the pipeline phases on their own, so the board shows where the work is. Needs an existing `.codeadd/board.json`. |
+| agent-mode | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki | Commands for a bot that drives them headless — every question in one numbered batch with a recommendation, no interactive tool, no continuation offer, a closing that ends on the next command. Off by default: the commands keep their human wording | A bot can run the commands without a person, with every question in one batch. Leave it off if a person types the commands. |
 
 Enable/disable via `codeadd features enable|disable|list <name>` — fragments are injected into the installed commands post-install. The split is canonical in add--qa's *Feature vs plugin* statement and is not restated here: `qa-pipeline` decides whether the QA flow exists at all, and the `playwright` plugin below only adds live driving to a judge the feature already supplied — enabling the plugin does not enable the pipeline.
 
 ## Plugins
 
-| Plugin | Type | Description | Injects into | Plugin skill |
-|--------|------|-------------|--------------|--------------|
-| gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add-new, add-plan, add-build, add-diagnose, add-hotfix, add-done, add-wiki + 9 agents (discovery, architecture, system-design, backend, database, frontend, ux, ux-flow, reviewer) | add--gitnexus |
-| playwright | mcp | Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP | add-review (command), qa-agent (agent) | — (add--qa is now default) |
-| design | skill | Adds ui-ux-pro-max (installed by you) as the style, palette, typography and chart source for the plan's design step | add-plan (command) + 3 agents (ux-flow, ux-layout, ux critique) | — (uses your installed ui-ux-pro-max) |
+| Plugin | Type | Description | Injects into | Plugin skill | Benefit |
+|--------|------|-------------|--------------|--------------|---------|
+| gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add-new, add-plan, add-build, add-diagnose, add-hotfix, add-done, add-wiki + 9 agents (discovery, architecture, system-design, backend, database, frontend, ux, ux-flow, reviewer) | add--gitnexus | The agents see who calls what before they change code, so they miss fewer side effects. |
+| playwright | mcp | Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP | add-review (command), qa-agent (agent) | — (add--qa is now default) | The QA review drives the browser live (screenshots, console, network) instead of reading saved images. |
+| design | skill | Adds ui-ux-pro-max (installed by you) as the style, palette, typography and chart source for the plan's design step | add-plan (command) + 3 agents (ux-flow, ux-layout, ux critique) | — (uses your installed ui-ux-pro-max) | UI plans get a style, palette and type choice from a design library instead of defaults. |
 
 Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
 
@@ -242,9 +244,9 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--database-development | add-build, add-plan |
 | add--ux-design | add-ux, add-build, add-review, add-hotfix, add-plan; the three UX agents (ux-flow-agent, ux-layout-agent, ux-agent) declare it as a skill — its `critique-rubric.md` is the critic's canonical rubric and `design-contract.md` the layout/contract notation |
 | add--code-review | add-build; @reviewer-agent, @security-agent, @conformance-agent and @failure-analysis-agent declare it as a skill |
-| add--final-report | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-wiki — every command that finishes work. The `add-help` command and add-ux are exempt: a router and an instruction transformer finish none |
+| add--final-report | add-audit, add-brainstorm, add-build, add-diagnose, add-done, add-hotfix, add-new, add-plan, add-pull-request, add-qa-setup, add-review, add-setup, add-wiki — every command that finishes work. The `add-help` command and add-ux are exempt: a router and an instruction transformer finish none |
 | add--security-audit | @security-agent and @reviewer-agent declare it as a skill |
-| add--settings | add-qa-setup (STEP add-qa-setup.config, STEP add-qa-setup.receipt, STEP add-qa-setup.validate) |
+| add--settings | add-qa-setup (STEP add-qa-setup.config, STEP add-qa-setup.receipt, STEP add-qa-setup.validate), add-setup (STEP add-setup.record) |
 | add--setup-contract | add-qa-setup (STEP add-qa-setup.classify-receipt compare + STEP add-qa-setup.receipt rewrite) |
 | add--qa-migration | add-qa-setup (STEP add-qa-setup.migration scan + STEP add-qa-setup.migrate, and `--migrate`) |
 | add--subagent-driven-development | add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki (`references/dispatch-rules.md` — read before any dispatch: a fresh dispatch leaves the engine's resume/session fields empty, only an id an earlier dispatch returned is passed) |
@@ -255,16 +257,16 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--feature-specification | add-new (STEP 4, the single writer of about.md), add-plan via discovery-agent |
 | add--doc-schemas | add-audit, add-brainstorm, add-plan, add-build, add-hotfix, add-done, add-pull-request, add-wiki, add-diagnose, add-qa-setup, add-review |
 | add--architecture-discovery | add-wiki (direct); add-brainstorm (greenfield foundations); add-diagnose, add-hotfix, add-plan (via architecture-agent) |
-| add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-wiki — the commands that load it |
+| add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-setup, add-wiki — the commands that load it |
 | add--wiki-maintenance | add-wiki (update mode), add-done (STEP 4.9) |
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
 | add--investigation | add-diagnose (primary, agent-dispatched mode), add-hotfix (STEP 6.1 escalation, agent-dispatched mode), add-review (STEP 5.1 ambiguous findings), add-audit (STEP 7.1 ambiguous findings) |
-| add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
+| add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
 | add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
 | add--agent-interaction | the same 12 commands, when `agent-mode` is enabled |
 | add--commit | add-build, add-pull-request, add-review — every command that commits mid-workflow |
 | add--cross-sf-consistency | add-plan (STEP add-plan.cross-sf-review consumes its findings), add-plan (STEP add-plan.consistency, FULL pass) and add-build (Loop End, DELTA pass) via consistency-agent |
-| add--dev-environment-setup | add-help (environment triage), add-qa-setup (runner install) |
+| add--dev-environment-setup | add-help (environment triage), add-qa-setup (runner install), add-setup (tool installs) |
 | add--qa | add-qa-setup, add-review (QA judgement), add-plan; @qa-agent declares it as a skill |
 | add--id-convention | add-plan, add-build, add-hotfix, add-done, add-new, add-pull-request (all ID allocation and branch naming; SF-qualified design IDs cover the `feature-design` doc type from add--doc-schemas' `references/new-feature.md`; add-build's build-setup.cjs enforces the format at branch creation) |
 | add--tasks-checklist | add-plan, add-build, add-review (tasks.md schema and tick rules) |
@@ -282,7 +284,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--ux-design (design.md) | add-review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add-review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
 | design (plugin) | add-plan (design step), ux-flow-agent (direction), ux-layout-agent (layout), ux-agent (critique) — enhancement only; the design core runs without it |
-| status.cjs | add-help, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-ux |
+| status.cjs | add-help, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-setup, add-ux |
 | init.cjs | add-new — seeds the feature's documents on first use |
 | qa-preflight.cjs | add-qa-setup, add-review — checks the QA runner is installed and configured before any evidence is gathered |
 | hotfix-gates.cjs | add-diagnose (diagnosis-baseline), add-hotfix (check, snapshot, fingerprint), add-done (review-validate) |
@@ -372,7 +374,11 @@ a next activity — and a command resolving one of those rows offers nothing at 
 | add-audit | critical issues found | `/add-new` per issue | Create features to fix findings |
 | add-qa-setup | prereqs + config ready | `/add-review` | Its QA sections validate the rendered result (UX + functional) — optionally `codeadd plugins enable playwright` first for live driving |
 | add-audit | project healthy | none | No action needed |
-| codeadd update | `.codeadd/wiki/` exists | `/add-wiki update` | The update can change the artefacts the wiki was mapped from; refresh it incrementally |
+| codeadd install | always | `/add-setup` | A fresh install has no features, plugins, QA setup or wiki chosen yet; the guided setup offers each one |
+| add-setup | greenfield | `/add-brainstorm` | An empty repo has nothing to analyze; the brainstorm decides the stack, then `/add-setup` runs again |
+| add-setup | stopped at the MCP checkpoint, or on a failure | `/add-setup` | A newly wired MCP server loads only in a new session; run `/add-setup` again and it proposes only the wiki. After a failure, fix the cause and run it again |
+| add-setup | done | `/add-new` (or `/add-brainstorm` when the user has no idea yet) | The project is set up; the next step is work |
+| codeadd update | always; when `.codeadd/wiki/` exists also the wiki refresh | `/add-setup` (reviews what is new since the setup record), then `/add-wiki update` when `.codeadd/wiki/` exists | The update can add features or plugins and can change the artefacts the wiki was mapped from; review the new items, then refresh the wiki incrementally |
 
 ⛔ **Never propose a feature nobody asked for at `add-done`.** The `was feature / was epic / was
 hotfix` rows fire on the branch's own history, which is a fact. A branch merged with no stated next

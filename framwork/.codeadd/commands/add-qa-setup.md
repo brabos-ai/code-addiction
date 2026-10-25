@@ -6,6 +6,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 # QA Setup - Prerequisites, Config Bootstrap & End-to-End Verification
 
 <!-- uses:
+- mention: /add-setup
 - skill: add--human-interaction (conditional)
 - skill: add--dev-environment-setup
 - skill: add--doc-schemas
@@ -35,6 +36,8 @@ Conversational bootstrap for QA validation that proves it works end-to-end. Func
 <!-- feature:agent-mode:interaction -->
 <!-- /feature:agent-mode:interaction -->
 <!-- /slot:agent-mode.interaction -->
+
+**Setup answers.** When this session holds a `## Setup answers` block printed by `{{cmd:add-setup}}`, every stop that block covers takes its answer from it and is not asked again: the feature gate, the install confirmation, the config values and the migration decision. An item the block marks declined is recorded as declined. A stop the block does not cover asks as usual, on the human path and on the agent-mode path. Skip the closing offer, because `/add-setup` owns the closing. On any failure, stop and return to `/add-setup`.
 
 ## Required Skills
 
