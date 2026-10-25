@@ -268,7 +268,7 @@ describe('the real emitted graph', () => {
     //
     // Its 81 rows were first generated as real dependency edges, and because
     // eight commands load this skill, every artefact it lists inherited ~83
-    // transitive dependants. `impact add--stripe` — a leaf nothing uses —
+    // transitive dependants. `impact` on a leaf skill, since removed, that nothing used —
     // returned 84, one MORE than add--doc-schemas, the actual hub. The headline
     // query had become a constant.
     //
@@ -284,7 +284,7 @@ describe('the real emitted graph', () => {
     // The property C1 destroyed and the wave-5 consumers grade on. The
     // unbounded closure saturates over a densely cross-referencing command
     // layer, so depth 1 is what carries signal.
-    const leaf = impact(real, 'product/skill/add--stripe', { depth: 1 }).length;
+    const leaf = impact(real, 'product/skill/add--delivery-validation', { depth: 1 }).length;
     const hub = impact(real, 'product/skill/add--doc-schemas', { depth: 1 }).length;
 
     expect(leaf).toBe(0);

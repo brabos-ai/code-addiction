@@ -118,7 +118,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Feature metadata | `node .codeadd/scripts/status.cjs` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
 | Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add--knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
-| Architecture reference | `AGENTS.md` | Config, DI, repo, CQRS, naming, multi-tenancy, security, file structure |
+| Architecture reference | wiki `conventions.md` (+ area pages), `AGENTS.md` fallback | Config, DI, repo, naming, tenancy, security, structure — as the project defines them |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
 
 **Success Criteria:** ALL context loaded. Proceed to STEP add-review.spec-audit.
@@ -333,17 +333,18 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
 ### STEP add-review.load-project-architecture Load Project Architecture Reference
 
-Read AGENTS.md and **extract from specification:**
+Read the `## Stack Conventions` table in {{addpath:wiki/conventions.md}} first (tiny wiki: {{addpath:wiki/index.md}} → `### Stack Conventions`), then `AGENTS.md` as fallback, and **extract from specification:**
 - Configuration patterns (env vars, configs)
-- DI patterns (service injection)
+- DI patterns (service injection) (as recorded; skip when none)
 - Repository patterns
-- CQRS patterns (if applicable)
 - Naming conventions
-- Multi-tenancy rules (if applicable)
+- Multi-tenancy rules (as recorded; skip when none)
 - Security rules
 - Expected file structure
 
-**AGENTS.md is the source of truth** for validating code.
+When a row is `none`, fall back to consistency with the neighbouring code.
+
+Recorded conventions are the source of truth for validating code; `AGENTS.md` is the fallback.
 
 ### STEP add-review.read-all-changed Read ALL Changed Files (Gate 2)
 
@@ -453,8 +454,8 @@ Output the audit as a table with columns: Item, Type, Expected, Found at, Status
 ### STEP add-review.scope Detect Scope
 
 Based on changed files, determine which reviewers to dispatch:
-- **frontend**: `apps/frontend/**` detected
-- **backend**: `apps/backend/**` OR `libs/**` detected
+- **frontend**: the changed files fall in the frontend area named by the Architecture Contract / {{addpath:wiki/architecture.md}} (with neither, judge from the file types)
+- **backend**: the changed files fall in the backend area named by the Architecture Contract / {{addpath:wiki/architecture.md}} (with neither, judge from the file types)
 - **owasp** (conditional): the diff touches a sensitive area — authentication, payment, file upload,
   input handling/validation, or session/token paths. This is a fourth signal, independent of
   frontend/backend — a sensitive backend file triggers both.
@@ -519,16 +520,16 @@ prompt: |
   1. Run: node .codeadd/scripts/status.cjs
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/frontend.md}} (+ {{addpath:wiki/conventions.md}})
-  4. Read changed files: [list from FILES_TO_REVIEW with apps/frontend/** pattern]
+  4. Read changed files: [files in the frontend area per the Architecture Contract]
   5. Read skills: add--frontend-development (PRIMARY), add--code-review, add--ux-design (ONLY if HAS_DESIGN=false — a design.md resolved at SF level counts, so never load it as a substitute for an epic's subfeature contract)
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
   ${TASK_DOCUMENTS}
 
   ## VALIDATION CHECKLIST
-  - [ ] React patterns: Hooks, composition, state management, TanStack Query
+  - [ ] Framework patterns: composition, state and data fetching per project conventions
   - [ ] UX: every `## Design Contract` dimension in each resolved design.md verified against the code, responsive, accessibility (ARIA), loading/error states
-  - [ ] Code: No `any` types, no console.log, no dead code, no hardcoded values
+  - [ ] Code: no untyped escape hatches (e.g. `any`), no console.log, no dead code, no hardcoded values
   - [ ] Security: XSS sanitized, URLs validated, no sensitive data in localStorage
   - [ ] Contracts: Frontend types match backend DTOs, API calls use correct endpoints
   - [ ] Patterns: State, component structure, styling, HTTP client follow documented patterns
@@ -561,7 +562,7 @@ prompt: |
   1. Run: node .codeadd/scripts/status.cjs
   2. Read ALL files listed in TASK_DOCUMENTS
   3. IF WIKI:present: read {{addpath:wiki/domains/backend.md}} + {{addpath:wiki/domains/database.md}} (+ {{addpath:wiki/conventions.md}})
-  4. Read changed files: [list from FILES_TO_REVIEW with apps/backend/** OR libs/** pattern]
+  4. Read changed files: [files in the backend area per the Architecture Contract]
   5. Read skills: add--backend-development (PRIMARY), add--database-development, add--code-review, add--security-audit, add--delivery-validation
 
   ## TASK_DOCUMENTS (read ALL — source of truth)
@@ -569,15 +570,15 @@ prompt: |
 
   ## VALIDATION CHECKLIST
 
-  **Patterns (Critical):** IoC/DI (providers, imports, barrel exports), REST API (noun-based URLs, 201/204 codes), DTOs (the project's validation layer, no raw objects, global validation)
+  **Patterns (Critical):** DI/registration per project convention (barrels only if used), REST API (noun-based URLs, 201/204 codes), DTOs (the project's validation layer, no raw objects, global validation)
 
-  **Architecture:** Domain ← Repositories ← Services ← Controllers; no domain imports from outer; no business logic in controllers; SOLID principles (SRP, O/C, DIP)
+  **Architecture:** layer direction per {{addpath:wiki/architecture.md}} / Architecture Contract; no domain imports from outer; no business logic in controllers; SOLID principles (SRP, O/C, DIP)
 
   **Database:** Migrations with up/down; query types regenerated; parametrized queries; no manual (de)serialisation the driver already does
 
-  **Security (OWASP):** Parametrized queries, input validation; guards on protected routes; encrypted credentials; no sensitive logs; account_id filtering (multi-tenancy); CORS restricted; the project's dependency audit shows no critical vulnerabilities; explicit DTOs
+  **Security (OWASP):** Parametrized queries, input validation; guards on protected routes; encrypted credentials; no sensitive logs; tenant scoping when Tenancy = yes (a missing key is critical); CORS restricted; the project's dependency audit shows no critical vulnerabilities; explicit DTOs
 
-  **Code Quality:** No `any` types, explicit returns, no console.log, no debugger, no comments, no unused imports, no magic numbers
+  **Code Quality:** no untyped escape hatches (e.g. `any`), explicit returns, no console.log, no debugger, no comments, no unused imports, no magic numbers
 
   **Error Handling:** the framework's error types; throw a not-found error (not null); descriptive messages
 

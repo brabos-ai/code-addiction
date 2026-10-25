@@ -8,7 +8,7 @@ Generate THREE pages at the wiki root: `{{addpath:wiki/architecture.md}}`, `{{ad
 
 **Dispatch:** runs ONCE, ALWAYS — regardless of app classification — in the SAME parallel batch as the area specialists (backend/frontend/database/generic). It is never conditional and never skipped.
 
-**FOLD mode (tiny repos):** when the dispatch prompt says `MODE=tiny`, do NOT write the three files — return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules and path:line refs) in the report instead. The coordinator folds them into `{{addpath:wiki/index.md}}`.
+**FOLD mode (tiny repos):** when the dispatch prompt says `MODE=tiny`, do NOT write the three files — return three compact sections (architecture, conventions, workflows; ≤15 lines each, same content rules and path:line refs) in the report instead. The coordinator folds them into `{{addpath:wiki/index.md}}`. The folded conventions section carries a `### Stack Conventions` sub-heading and the Stack Conventions table verbatim; the table does not count toward the ≤15-line cap.
 
 **Scope rule:** this is the CANONICAL HOME for anything project-wide. Domain-local variants belong on the relevant `wiki/domains/<area>.md` page and MUST link back here instead of restating. When a specialist and the spine disagree on a cross-cutting fact, the spine wins — specialists should be told to defer.
 
@@ -21,6 +21,10 @@ Generate THREE pages at the wiki root: `{{addpath:wiki/architecture.md}}`, `{{ad
 3. Read existing human docs as PRIMARY source material: `README.md`, `docs/**/*.md`, `CONTRIBUTING.md`. If a doc conflicts with what the code actually does, **prefer the code** and note the doc as stale in the relevant page (do not silently drop the discrepancy).
 4. Read Validation Gates Detection results (`{{skill:add--architecture-discovery/SKILL.md}}` → Validation Gates Detection) — feeds `workflows.md` directly.
 5. Read git history for rationale — recent, high-signal only: `git log --oneline -20`, and for genuinely architectural decisions `git log --all --grep="refactor\|migrate\|architecture" --oneline | head -10`. Do NOT mine the full history; a handful of commit messages that explain *why* a boundary exists is the target, not a changelog.
+6. When `{{addpath:wiki/conventions.md}}` (or, in a tiny wiki, the folded conventions section of `{{addpath:wiki/index.md}}`) already exists, read its Stack Conventions rows. A `decided` row is carried into the new page, never replaced by detection:
+   - code that matches it → the row flips to `detected`, with `path:line` Evidence;
+   - code that contradicts it → the row keeps its Value and Source, Evidence gains `drift: <path:line>`, and the drift goes in the report;
+   - no code yet → the row stays as it is.
 
 ## What to Discover — architecture.md (type: explanation)
 
@@ -40,7 +44,8 @@ Project-WIDE rules only — the canonical home for anything that would otherwise
 - Error handling philosophy at the project level (not one service's specific exception class — that's domain-local)
 - Code style: formatting tool, linting rules of note, language-level conventions (async patterns, null-handling, etc.)
 - ID/commit conventions if the project has one (see `{{skill:add--id-convention/SKILL.md}}` if this project uses the ADD framework's own convention; otherwise discover the project's own)
-- Cross-domain patterns used consistently everywhere (e.g., "every package exposes a single index.ts barrel")
+- Cross-domain patterns used consistently everywhere
+- Stack Conventions — the fixed seven-row table (tenancy, DI, barrels, layering, validation, ORM / data access, entity language). Detection is defined in `{{skill:add--architecture-discovery/SKILL.md}}` → Stack Convention Signals; run those searches repo-wide, never restate them here
 
 ## What to Discover — workflows.md (type: how-to)
 
@@ -106,18 +111,38 @@ a rule, trimmed to what's needed.]
 
 **architecture.md sections (skip what doesn't apply):** System Shape, Layer Hierarchy, Boundaries, Entry Points, Why It's Built This Way.
 
-**conventions.md sections (skip what doesn't apply):** Naming, Error Handling, Code Style, ID/Commit Conventions, Cross-Domain Patterns.
+**conventions.md sections:** Stack Conventions (ALWAYS, first after TL;DR), Naming, Error Handling, Code Style, ID/Commit Conventions, Cross-Domain Patterns (skip what doesn't apply, except Stack Conventions).
+
+**`## Stack Conventions` table contract (conventions.md; `### Stack Conventions` in FOLD mode).** Written on every run, with all seven rows in this order, even when every row is `none`:
+
+```markdown
+| Convention | Value | Where / enforcement | Evidence | Source |
+|---|---|---|---|---|
+| Tenancy | yes (key) / no | enforcement, when yes | path:line or none | detected |
+| DI | container / manual constructor injection / none | where registered | path:line or none | detected |
+| Barrels | yes / no | scope, when yes | path:line + count, or none | detected |
+| Layering | layer order and import direction | link to architecture.md | path:line or none | detected |
+| Validation | library | where it runs | path:line or none | detected |
+| ORM / data access | library or raw driver | repository pattern yes/no | path:line or none | detected |
+| Entity language | language | form (interface, class, dataclass, struct, schema) | path:line or none | detected |
+```
+
+- Evidence on a `detected` row is `path:line` (1-2 refs; Barrels adds the count) or the literal `none`; Value `none` means "not detected / not used".
+- `Source` is `detected` (written from code) or `decided` (a decision taken before code exists). On a `decided` row, Evidence names the decision record (e.g. `BRN-<slug>`) and may carry `drift: <path:line>`.
+- The page TL;DR says that `decided` rows are intent, not evidence.
+- Frontmatter `sources` must cover every Evidence path, per the Wiki Page Contract.
 
 **workflows.md sections (skip what doesn't apply):** Local Dev Setup, Validation Gates, Test Workflow, Build Workflow, Release Workflow.
 
-**CRITICAL:** Skip sections that don't exist. Each `##` chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add--doc-schemas/SKILL.md}}` for the output-length doctrine). TOC only includes sections that exist. Full frontmatter schema, body contract, and shared content rules (no-structural-facts, one canonical home, page size caps): see `{{skill:add--architecture-discovery/SKILL.md}}` → Wiki Page Contract.
+**CRITICAL:** Skip sections that don't exist — except `## Stack Conventions`, which is always written with every row present. Each `##` chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when a chunk grows past a natural boundary. No numeric length cap applies (see `{{skill:add--doc-schemas/SKILL.md}}` for the output-length doctrine). TOC only includes sections that exist. Full frontmatter schema, body contract, and shared content rules (no-structural-facts, one canonical home, page size caps): see `{{skill:add--architecture-discovery/SKILL.md}}` → Wiki Page Contract.
 
 ## Critical Rules
 
 **MANDATORY:**
 - Read real config/docs/history to ground every claim
 - Prefer code over stale docs when they disagree — and say so on the page
-- Only include sections that ACTUALLY apply
+- Only include sections that ACTUALLY apply — `## Stack Conventions` is the one exception: always written, all seven rows present, the literal `none` allowed there and nowhere else
+- Carry every `decided` Stack Conventions row forward; detection never replaces it
 - Keep each spine page the single canonical home for its knowledge kind — domain pages link here, never restate
 
 **FORBIDDEN:**
@@ -131,5 +156,6 @@ a rule, trimmed to what's needed.]
 Report back:
 - `FILES_WRITTEN`: the three page paths (`wiki/architecture.md`, `wiki/conventions.md`, `wiki/workflows.md`), each with line count and whether it landed within the 300-line target / 500-line hard cap
 - `TOPICS` per page: the `##` section headers actually written (so the coordinator can validate frontmatter `description`/`tags` reflect real content before deriving the hub)
+- `STACK_CONVENTIONS: tenancy=<yes|no> di=<…> barrels=<yes|no>` — one line, so the coordinator can check the table without re-reading the page; plus one line per `decided` row in drift (`DRIFT: <row key> — <path:line>`)
 - Any discovered stale human doc (README/docs claim contradicted by code) — one line per instance, path + what was stale
 - Any input that was missing (no CI config found, no git history signal, no README) so the coordinator can note gaps in the Backlog

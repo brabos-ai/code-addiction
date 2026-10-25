@@ -39,7 +39,7 @@
 - script: status.cjs
 -->
 
-> **ARCHITECTURE REFERENCE:** Use `AGENTS.md` as source of patterns.
+> **ARCHITECTURE REFERENCE:** Use the project wiki ({{addpath:wiki/conventions.md}}, {{addpath:wiki/architecture.md}}) as source of patterns; `AGENTS.md` for structure and commands.
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARGS:** `/add-plan [F[NNNN]]` — explicit `F[NNNN]` targets a feature off-branch (overrides branch detection).
 
@@ -337,6 +337,11 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
 ⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis and leaves `/add-review`'s contract check with nothing to verify. Never let a provenance match preserve one.
 
+<!-- slot:design.plan fallback="fallbacks/empty.md" -->
+<!-- plugin:design:plan -->
+<!-- /plugin:design:plan -->
+<!-- /slot:design.plan -->
+
 #### STEP add-plan.dispatch-ux-flow DISPATCH @ux-flow-agent (flow & interaction)
 
 - **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
@@ -471,7 +476,7 @@ ${RELATED_WORK}
   ${SUBAGENT_BOOTSTRAP}
 
   ## MANDATORY: Load Backend Development Skill
-  BEFORE designing endpoints, read skill `add--backend-development` (RESTful API, IoC/DI, DTO naming, CQRS, multi-tenancy).
+  BEFORE designing endpoints, read skill `add--backend-development` (RESTful API, DTO naming, project conventions — tenancy/DI only when the project uses them).
 
   ## Your Task
   Create the backend planning section covering: API, Commands, Events, Workers (if needed).
@@ -499,7 +504,8 @@ ${RELATED_WORK}
   {"CreateXxxCommand":{"triggeredBy":"Controller","actions":"Validate, persist, emit event"}}
 
   ### Events
-  {"XxxCreatedEvent":{"payload":"id,accountId","consumers":"AuditWorker"}}
+  {"XxxCreatedEvent":{"payload":"id","consumers":"AuditWorker"}}
+  (+ tenant key in the payload when the recorded Tenancy row = yes)
 
   ### Workers (if applicable)
   {"queue-name":{"job":"JobName","trigger":"Event/Schedule","action":"what it does"}}
@@ -564,7 +570,7 @@ ${RELATED_WORK}
   {"ComponentName":{"location":"components/[folder]/","purpose":"~10 words"}}
 
   ### Hooks & State
-  {"hooks":{"use[Feature]":{"type":"TanStack Query","purpose":"CRUD operations"}},"stores":{"[feature]Store":{"type":"Zustand","purpose":"Local UI state (if needed)"}}}
+  {"hooks":{"use[Feature]":{"type":"[project data-fetching lib]","purpose":"CRUD operations"}},"stores":{"[feature]Store":{"type":"[project store]","purpose":"Local UI state (if needed)"}}}
 
   ### Types (mirror from backend)
   {"TypeName":{"fields":"field1,field2","sourceDTO":"CreateXxxDto"}}
@@ -669,7 +675,7 @@ Separate each section with `---`. **NEVER rewrite or summarize subagent content.
 
 Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in STEP add-plan.ux-design: SF-level first, feature-level fallback). Verify:
 - All entities/tables from discovery → complete schema in plan-database
-- JSONB fields → detailed TypeScript structures
+- JSONB fields → detailed typed structures in the project's language
 - Endpoints → complete request/response DTOs
 - Events/workers → documented payloads and consumers
 - Design components → mapped in plan-frontend
@@ -681,7 +687,7 @@ Read discovery.md and design.md (if exists — resolve per the SCOPE_DIR rule in
 
 IF validation identifies gaps, ADD directly to plan.md. Common gaps:
 - **Missing table schema** → Complete CREATE TABLE with all discovery fields
-- **Missing JSONB structure** → TypeScript interface with detailed field types
+- **Missing JSONB structure** → typed structure in the project's language, with detailed field types
 - **Incomplete API contract** → Request/Response tables (Field | Type | Required | Description)
 
 **Rule:** If discovery.md contains information, it MUST appear in plan.md in actionable form for developer.
@@ -722,7 +728,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 ⛔ **The agent reviews and reports. THIS STEP applies every edit to `plan.md`.** The agent declares
 `readonly: true` and writes nothing — a finding it returns is a `plan.md` edit you make here.
 
-**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing DI registration. STEP add-plan.cross-sf-review is the **in-place fixer**.
+**Purpose:** COMPLETENESS of the subfeature plans as a set — fragmented enums/config, missing fallback behavior, missing registration per the project's DI pattern. STEP add-plan.cross-sf-review is the **in-place fixer**.
 
 **What STEP add-plan.cross-sf-review does NOT own:** DIVERGENCE between two subfeature plans. That belongs to `@consistency-agent` — the read-only judge of the five-dimension rubric in `{{skill:add--cross-sf-consistency/SKILL.md}}` (API contracts, data schema, requirements, design tokens, auth model), dispatched later at STEP add-plan.consistency (`mode: FULL`) and by `/add-build` before an epic's last checkpoint (`mode: DELTA`). Two checks STEP add-plan.cross-sf-review used to derive itself now live there: **Schema ↔ Consumer Alignment** → that agent's dimension 2 (data schema); **Cross-SF Handoff Contracts** → that agent's dimension 1 (API contracts). STEP add-plan.consistency consumes those findings after the judge reports and applies them in place; STEP add-plan.cross-sf-review MUST NOT derive them — one detector, one rubric, never a second verdict.
 
@@ -731,7 +737,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 **Checks to fix in-place — these three, and only these three:**
 1. Shared Resource Centralization (enums/config added ONCE in earliest SF)
 2. Fallback & Degradation (SFs depending on unimplemented SFs have fallback behavior)
-3. Worker/DI Registration (new services have DI tasks)
+3. Worker/DI Registration (new services registered per the project's DI pattern; skip when there is no container)
 
 **Deferred to STEP add-plan.consistency:** a `FULL`-pass `@consistency-agent` finding on dimension 1 (API contracts) or dimension 2 (data schema) arrives there as a concrete `plan.md` edit. Apply it after the pass, not during this earlier cross-SF review. Do NOT open your own schema-alignment or handoff-contract comparison.
 

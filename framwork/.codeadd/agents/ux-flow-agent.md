@@ -28,9 +28,9 @@ You are the FLOW & INTERACTION ARCHITECT. You run first among the UX authoring a
 
 Inspect the project's design system by searching and reading relevant files. Each subsection below is independent — extract only what is specified.
 
-1. **Theme & Tokens.** Analyze tailwind config files and CSS files with custom properties (globals.css, index.css, etc). Extract: colors (primary, secondary, accent, muted, background, foreground, border, destructive), spacing (base unit, common gaps, padding), border-radius values, font families (headings, body, mono), dark mode (yes/no, strategy).
+1. **Theme & Tokens.** Analyze the styling config the project uses (e.g. Tailwind config, CSS custom properties, theme files). Extract: colors (primary, secondary, accent, muted, background, foreground, border, destructive), spacing (base unit, common gaps, padding), border-radius values, font families (headings, body, mono), dark mode (yes/no, strategy).
 2. **Layout Shell.** Find and read layout-related components (layout, shell, sidebar, header, topbar, navbar, footer, app-shell, dashboard-layout, page-layout). Extract: shell (name, path, structure), sidebar (width, collapsible, position), topbar (height, position, contents), content area (max-width, padding, responsive).
-3. **Component Library Audit.** Audit available UI components and check for a component index/exports. Extract: full list of existing UI components with paths, shadcn status (yes/no, which installed).
+3. **Component Library Audit.** Audit available UI components and check for a component index/exports. Extract: full list of existing UI components with paths, component library in use (name, which components are installed).
 
 <!-- slot:gitnexus.graph fallback="fallbacks/empty.md" -->
 <!-- plugin:gitnexus:graph -->
@@ -40,6 +40,11 @@ Inspect the project's design system by searching and reading relevant files. Eac
 4. **Visual Patterns Reference.** Find and read 3-5 representative pages (dashboard, settings, list, detail, form). Extract: page headers, cards, lists, forms, buttons usage patterns.
 5. **Frontend Readiness Check (early exit).** If the project has no frontend at all, report `frontend_false` to the dispatching command and STOP — do not write any temp file, do not proceed to Step 1. Otherwise classify: new project (fewer than 5 components — use `add--ux-design` skill defaults) or established (5+ components — MUST follow the patterns found in this inspection).
 6. If `HAS_FOUNDATIONS=true`, read `docs/design-system.md` and use its tokens over ad-hoc inference.
+
+<!-- slot:design.direction fallback="fallbacks/empty.md" -->
+<!-- plugin:design:direction -->
+<!-- /plugin:design:direction -->
+<!-- /slot:design.direction -->
 
 Write the inspection to temp `design-context.md` (extractive JSON, no prose):
 

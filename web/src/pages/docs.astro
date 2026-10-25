@@ -175,7 +175,7 @@ import "../styles/global.css";
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd plugins</code>
-            <span class="text-muted-light text-sm">List, enable, or disable MCP plugins (e.g. GitNexus, Playwright). An enabled plugin whose tool is not detected is named in install/update output</span>
+            <span class="text-muted-light text-sm">List, enable, or disable plugins (e.g. GitNexus, Playwright, Design). An enabled plugin whose tool is not detected is named in install/update output</span>
           </div>
           <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <code class="text-accent font-mono text-sm whitespace-nowrap">npx codeadd providers</code>
@@ -212,7 +212,7 @@ import "../styles/global.css";
             <div class="space-y-2.5">
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-brainstorm</code>
-                <p class="text-muted text-xs mt-0.5">Explore ideas (read-only)</p>
+                <p class="text-muted text-xs mt-0.5">Explore ideas (read-only); decides stack foundations on an empty repo</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
                 <code class="text-accent font-mono text-sm">/add-new</code>
@@ -554,7 +554,7 @@ import "../styles/global.css";
             { name: "backend-development", desc: "SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic" },
             { name: "frontend-development", desc: "State, data fetching, components, forms, routing — stack-agnostic" },
             { name: "database-development", desc: "Entities, repositories, migrations, naming — stack-agnostic" },
-            { name: "ux-design", desc: "Components, mobile-first, SaaS patterns, shadcn, Tailwind" },
+            { name: "ux-design", desc: "Design direction, UX laws, layout contract, critique rubric, SaaS patterns, mobile-first" },
             { name: "security-audit", desc: "OWASP checklist, RLS, secrets, multi-tenancy" },
             { name: "code-review", desc: "Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID" },
             { name: "feature-discovery", desc: "Discovery process, codebase analysis" },
@@ -563,21 +563,16 @@ import "../styles/global.css";
             { name: "delivery-validation", desc: "Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass" },
             { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
             { name: "add--tasks-checklist", desc: "Use when generating, reading, or ticking tasks.md — defines the canonical 5-section schema, tick rules per section, failure marker semantics, 'non-trivial change' rule, and the architect subagent prompt template" },
-            { name: "stripe", desc: "Stripe integration, price versioning, grandfathering" },
             { name: "token-efficiency", desc: "Use when creating commands, skills, or docs - defines generic compression patterns (minified JSON, abbreviations, glob patterns, single breaks). Load before any write where token density matters." },
             { name: "commit", desc: "Smart commit with auto-generated Conventional Commits messages" },
-            { name: "project-scaffolding", desc: "Guide Node.js project scaffolding - Starter monolith, Scale monorepo, Starter→Scale migration." },
             { name: "health-check", desc: "Tech health check suite: docs, security, architecture, data analysis" },
-            { name: "plan-based-features", desc: "Subscription plan gating — 3-layer PlanFeatures pattern and IPlanService" },
             { name: "dev-environment-setup", desc: "Use when Node, git or gh CLI are missing, or Node is older than 22.19.0 - detects OS, diagnoses gaps, installs missing tools." },
-            { name: "optimizing-git-workflow", desc: "Git global cfg setup - colors, performance, merge conflicts, aliases for new machines" },
             { name: "backend-architecture", desc: "Guides backend architecture decisions - over-engineering, folder structure, slices, layers, feature organization, where code goes." },
             { name: "frontend-architecture", desc: "Frontend architecture consultant for project structure, folder organization, feature boundaries, and scaling decisions. Framework-aware (React, Vue, Angular). Use when user asks about frontend folder structure, \"components folder is a mess\", \"where should this go\", over-engineering, slices, feature folders, or starting/refactoring a frontend project. Guides decisions only - does not implement (use add--frontend-development) or design UI (use ux-design)." },
             { name: "ecosystem", desc: "ADD ecosystem map and framework overview" },
             { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
             { name: "resource-path-convention", desc: "Use when writing commands or skills that reference other commands, skills, or scripts - ensures paths resolve correctly across all providers after installation" },
             { name: "id-convention", desc: "Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs or creating branches - canonical [NNNN][L] format that the scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) expect" },
-            { name: "skill-creator", desc: "Create and structure new ADD skills" },
             { name: "agents-md-style", desc: "Use when generating or updating the project's AGENTS.md - migrates any legacy context file into it first, then defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any AGENTS.md write." },
             { name: "add--tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests - forces a failing test confirmed for the right reason before any production code. Loaded by add-build." },
             { name: "add--test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add-plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
@@ -728,7 +723,7 @@ import "../styles/global.css";
       <section id="plugins" class="mb-20">
         <h2 class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
         <p class="text-muted-light mb-6">
-          Plugins integrate external MCP tools into ADD commands. Code Addiction handles utilization —
+          Plugins integrate external tools (MCP servers or skills you install) into ADD commands. Code Addiction handles utilization —
           it validates the tool is present, injects guidance into commands and agents, and activates
           plugin-bound skills. Plugins are <strong>disabled by default</strong> and require the
           external tool to be installed first.
@@ -867,6 +862,76 @@ import "../styles/global.css";
               </div>
             </div>
             <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add-review</code> cannot drive the browser.</p>
+          </div>
+
+        </div>
+
+        <!-- design -->
+        <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6 mt-6">
+
+          <!-- Header -->
+          <div>
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <code class="text-accent font-mono text-lg font-bold">design</code>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">skill</span>
+            </div>
+            <p class="text-muted-light text-sm mb-1">Makes the design step of <code class="font-mono">/add-plan</code> use ui-ux-pro-max, which you install yourself, as the data source for style, palette, typography and chart choice. Your inspected project tokens and <code class="font-mono">docs/design-system.md</code> still come first, and the design core keeps its notation, rubric and schema gate. Code Addiction ships no copy of the skill and installs nothing.</p>
+            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-plan</code></p>
+            <p class="text-muted text-xs">Injects into agents: <code class="font-mono">ux-flow-agent</code>, <code class="font-mono">ux-layout-agent</code>, <code class="font-mono">ux-agent</code> (critique mode)</p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/nextlevelbuilder/ui-ux-pro-max-skill</a></p>
+          </div>
+
+          <!-- Step 1: Install prerequisite -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">1 — Install ui-ux-pro-max (one of two official routes)</p>
+            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction looks for <code class="font-mono">ui-ux-pro-max/SKILL.md</code> in the project and home skill folders of every supported provider, and in Claude's installed plugins list. In Claude Code:</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-market-add">/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill</span>
+                <button onclick="copyCmd('cmd-design-market-add', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-market-install">/plugin install ui-ux-pro-max@ui-ux-pro-max-skill</span>
+                <button onclick="copyCmd('cmd-design-market-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+            <p class="text-muted-light text-xs mt-3 mb-2">Any provider, with the official CLI (not the stale <code class="font-mono">uipro-cli</code> package):</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-cli-install">npm install -g ui-ux-pro-max-cli</span>
+                <button onclick="copyCmd('cmd-design-cli-install', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-cli-init">uipro init --ai &lt;claude|codex|cursor|antigravity|opencode|zcode&gt;</span>
+                <button onclick="copyCmd('cmd-design-cli-init', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Enable -->
+          <div>
+            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-enable">npx codeadd plugins enable design</span>
+                <button onclick="copyCmd('cmd-design-enable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-muted select-none"># to disable later</span>
+              </div>
+              <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
+                <span class="text-accent select-none">$</span>
+                <span class="flex-1 text-foreground" id="cmd-design-disable">npx codeadd plugins disable design</span>
+                <button onclick="copyCmd('cmd-design-disable', this)" class="plugin-copy-btn text-muted hover:text-accent transition-colors text-xs font-sans ml-2 shrink-0">Copy</button>
+              </div>
+            </div>
+            <p class="text-muted text-xs mt-2">Python note: the skill's search script needs Python 3. Check <code class="font-mono">python3 --version</code> (Windows: <code class="font-mono">py --version</code>). Without Python the agents skip the search and use the design core. Code Addiction never installs Python. After a Claude plugin install, restart the session or run <code class="font-mono">/reload-plugins</code>.</p>
           </div>
 
         </div>

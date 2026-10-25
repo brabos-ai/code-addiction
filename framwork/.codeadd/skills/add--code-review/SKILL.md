@@ -28,7 +28,7 @@ Skill for validating implemented code against project standards.
 - Planning or specifying work — planning belongs to `/add-plan`, which writes `plan.md` against the `feature-plan` schema; specifying belongs to `add--feature-specification`
 - Codebase discovery or architecture analysis (use `add--feature-discovery` / `add--architecture-discovery`)
 
-**Reference:** Always consult `AGENTS.md` for general project standards.
+**Reference:** Project conventions: follow `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ `{{addpath:wiki/domains/<area>.md}}`); a one-line critical rule may live in `AGENTS.md`. If absent, apply the agnostic defaults and follow the nearest existing code; never impose tenancy, DI registration or barrels unless the project uses them.
 
 ---
 
@@ -122,32 +122,22 @@ Examples:
 
 ### 3. IoC Configuration (CRITICAL)
 
-**Code without correct IoC does NOT work at runtime.**
+**Code that is not registered the way the project registers it does NOT work at runtime.**
 
-#### Checklist by component type (lookup)
+Check registration per the project's DI convention (row `DI`): every new service, repository, handler, guard and controller is registered, and exported where other modules use it, exactly as neighbouring code does. When row `DI` names no container (`none` or `no`), this check is `N/A` and scores full points. When the row is absent (no wiki), judge consistency with the neighbouring code.
 
-{"iocChecklist":{"Service":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":false},"Repository":{"decorator":"@Injectable()","providers":"db module","exports":"db module","controllers":false,"indexTs":"libs/"},"Handler":{"decorator":"@Injectable()","providers":"feature module","exports":false,"controllers":false,"indexTs":"NEVER"},"Guard":{"decorator":"@Injectable()","providers":"feature/global","exports":false,"controllers":false,"indexTs":false},"Controller":{"decorator":"@Controller()","providers":false,"exports":false,"controllers":"feature module","indexTs":false}}}
+Barrel exports are checked only when row `Barrels` = yes.
 
-#### Files to verify for IoC
+#### Example (one framework, module-based containers)
 
-| File | Check |
+| Component | Where it must be registered |
 |---|---|
-| `apps/backend/src/app.module.ts` | `imports[]` contains module |
-| `[feature].module.ts` | `providers[]`, `controllers[]`, `imports[]` |
-| `libs/app-database/src/app-database.module.ts` | `providers[]`, `exports[]` for repos |
-| `libs/app-database/src/index.ts` | public repo exports |
-| `libs/app-database/src/types/Database.ts` | new table types |
-| `libs/domain/src/index.ts` | new entity/enum exports |
+| Service / handler / guard | `providers[]` of its feature module |
+| Repository | `providers[]` and `exports[]` of the data module |
+| Controller | `controllers[]` of its feature module |
+| Feature module | `imports[]` of the root module |
 
-#### Common IoC Errors
-
-| Error | Cause | Fix |
-|---|---|---|
-| `Nest can't resolve dependencies of X` | `X` not in `providers[]` or `X`'s dependency not registered | Add `X` and its dependencies to `providers[]` |
-| `X is not a provider` | Missing `@Injectable()` or not registered | Add decorator and register in `providers[]` |
-| `Module X not found` | Module not imported in `AppModule` | Add to `AppModule.imports[]` |
-| `Repository not found` | Repo not exported in db module `exports[]` | Add to `AppDatabaseModule` `exports[]` |
-| 404 on endpoint | Controller not registered or module not imported | Check `controllers[]` and `AppModule.imports[]` |
+Typical symptoms: "cannot resolve dependencies of X" = `X` or its dependency missing from `providers[]`; endpoint 404 = controller not registered or module not imported; repository not found = not exported by its module.
 
 ---
 
@@ -176,7 +166,7 @@ JSONB rules:
 
 - NO double parse
 - NO double stringify
-- Kysely handles automatically
+- The driver/ORM handles it automatically
 
 ---
 
@@ -187,13 +177,14 @@ JSONB rules:
 | Injection | parametrized queries |
 | Auth | guards applied |
 | Data Exposure | no secrets in logs |
-| Access Control | filter by `account_id` |
+| Access Control | guards and ownership checks; tenant scoping when row `Tenancy` = yes |
 | XSS | outputs sanitized |
 
-Multi-tenant:
+Multi-tenant (only when row `Tenancy` = yes):
 
-- EVERY query filters `account_id`
-- `account_id` from JWT, not body
+- EVERY query filters by the recorded tenant key (e.g. `account_id`)
+- The tenant key comes from the auth context, not the body
+- A query missing the key is a CRITICAL finding
 
 ---
 
@@ -209,7 +200,7 @@ Multi-tenant:
 
 ### 8. Code Quality
 
-- No `any` type
+- No untyped escape hatches (e.g. `any`)
 - DTOs follow naming
 - No `console.log` (use logger)
 - No commented code
@@ -222,7 +213,7 @@ Multi-tenant:
 
 - Migration created
 - Has `up` and `down`
-- Kysely types updated
+- Generated query/ORM types regenerated (if the project uses them)
 - Entity exported
 - Repository exported
 
@@ -232,7 +223,7 @@ Multi-tenant:
 
 - New vars in `.env.example`
 - Example values not real
-- Use `IConfigurationService`, not `process.env`
+- Use the project's config module, not direct environment access
 
 ---
 
@@ -251,7 +242,7 @@ Weights and status (lookup):
 
 1. `node .codeadd/scripts/status.cjs`
 2. Read reference skills (backend, database, frontend, security)
-3. Read `AGENTS.md`
+3. Read the project conventions (wiki), then `AGENTS.md`
 4. Identify ALL changed files
 5. Create TodoWrite (see MANDATORY RULE) covering each validation category and changed file
 
@@ -300,9 +291,9 @@ Generate the review report at `docs/features/${featureId}/review-NNN.md` (next n
 
 - Start review without creating TodoWrite
 - Skip Architecture Contract validation (MOST critical)
-- Skip IoC validation
+- Skip DI validation when the project uses a container
 - Report without fixing (review-side)
 - Ignore skill patterns
 - Accept "works" as justification
 - Leave non-compiling code
-- Forget to verify `AppModule.imports[]` or barrel exports in `libs/`
+- Forget to verify registration and barrel exports where the project uses them

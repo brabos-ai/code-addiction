@@ -8,7 +8,6 @@ description: Frontend architecture consultant for project structure, folder orga
 <!-- uses:
 - skill: add--frontend-development
 - mention: add--backend-architecture
-- mention: add--project-scaffolding
 - mention: add--ux-design
 - skill: add--frontend-architecture/references/angular.md
 - skill: add--frontend-architecture/references/react.md
@@ -16,6 +15,8 @@ description: Frontend architecture consultant for project structure, folder orga
 -->
 
 Guide structural decisions for frontend projects. Choose the **simplest** pattern that keeps the team productive as the project grows.
+
+When the project already has recorded conventions (`{{addpath:wiki/conventions.md}}` → `## Stack Conventions`), treat them as the current state; recommend changes against them, not from scratch.
 
 ---
 
@@ -100,7 +101,7 @@ src/
 
 Rules:
 - Features own their components, hooks, types
-- Cross-feature imports go through `index.ts` public API only — never internal files
+- Cross-feature imports go through `index.ts` public API only (if the project uses barrels) — never internal files
 - `shared/` = truly reusable, domain-agnostic code only
 - Pages are thin — compose features, no business logic
 
@@ -150,7 +151,7 @@ features/
 - [ ] User asks how to **implement** a feature (routing, forms, data fetching) — use `add--frontend-development`
 - [ ] User asks about **UI/UX design**, styling, components visuals — use `add--ux-design` / `frontend-design`
 - [ ] User asks about **backend** structure or APIs — use `add--backend-architecture`
-- [ ] User wants to **scaffold** a new project from scratch — use `add--project-scaffolding`
+- [ ] User wants to **scaffold** a new project from scratch
 - [ ] Question is about a specific library's API — use Context7 docs
 
 ---

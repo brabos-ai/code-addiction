@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 114,
-  "slotCount": 106,
+  "membershipCount": 118,
+  "slotCount": 110,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -238,6 +238,24 @@
       "name": "ux",
       "slots": [
         {
+          "id": "design.critique",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "critique"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "critique"
+            }
+          ]
+        },
+        {
           "id": "gitnexus.graph",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -278,6 +296,50 @@
               "namespace": "plugin",
               "name": "gitnexus",
               "section": "graph"
+            }
+          ]
+        },
+        {
+          "id": "design.direction",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "direction"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "direction"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": "agent/ux-layout",
+      "file": "framwork/.codeadd/agents/ux-layout-agent.md",
+      "kind": "agent",
+      "name": "ux-layout",
+      "slots": [
+        {
+          "id": "design.layout",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "layout"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "layout"
             }
           ]
         }
@@ -1602,6 +1664,24 @@
           ]
         },
         {
+          "id": "design.plan",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "plan"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "design",
+              "section": "plan"
+            }
+          ]
+        },
+        {
           "id": "tdd-pipeline.step9",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -2708,6 +2788,70 @@
         {
           "id": "product/command/add-review",
           "via": "INJECTS_INTO"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/design/fragments/add-plan.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-plan",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/agent/ux-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/ux-flow-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/agent/ux-layout-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/skill/add--ux-design",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/design/fragments/agents/ux-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/ux-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--ux-design",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/design/fragments/agents/ux-flow-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/ux-flow-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--ux-design",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/design/fragments/agents/ux-layout-agent.md",
+      "dependencies": [
+        {
+          "id": "product/agent/ux-layout-agent",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/skill/add--ux-design",
+          "via": "USES_SKILL"
         }
       ]
     },

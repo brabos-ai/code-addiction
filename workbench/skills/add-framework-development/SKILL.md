@@ -216,9 +216,17 @@ add-qa/
   references/coordinator.md   ← reference doc
 ```
 
-⛔ **One convention only: `references/`.** It is what `add--skill-creator` prescribes (anti-pattern table + pre-deploy checklist) and what the majority of skills use — `add--doc-schemas`, `add--investigation`, `add--skill-creator`, `add--backend-architecture`, `add--frontend-architecture`, `add--subagent-driven-development`, `add--qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
+⛔ **One convention only: `references/`.** It is what the majority of skills use — `add--doc-schemas`, `add--investigation`, `add--backend-architecture`, `add--frontend-architecture`, `add--subagent-driven-development`, `add--qa`. New subdocs go there regardless of tier; a Tier-2 skill that outgrows one file uses `references/` too, it does not go flat.
 
-**Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`, `add-stripe`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
+To author or test a skill, install the native Claude Code `skill-creator` plugin — the framework no longer ships a skill for it:
+
+```
+/plugin marketplace add anthropics/claude-plugins-official   # first, only if the marketplace is not added yet
+/plugin install skill-creator@claude-plugins-official
+claude plugin install skill-creator@claude-plugins-official   # the same install, from a shell
+```
+
+**Flat siblings are legacy**, not an alternative: `add-ux-design` (14 files), `add-architecture-discovery`, `add-health-check`. Adding a subdoc to one of those may follow its existing flat layout — mixing both inside one skill is worse than either. Do NOT introduce a flat subdoc in a skill that has none.
 
 `scripts/build.js` (`skillStrategy.postWrite`) copies subdirs and siblings recursively, so both layouts distribute identically — the choice is purely about authoring consistency. Reference a subdoc as `{{skill:NAME/references/FILE.md}}` (the `{{skill:}}` resolver matches greedily past `/`).
 

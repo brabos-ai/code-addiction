@@ -9,7 +9,6 @@ description: Guides backend architecture decisions — over-engineering, folder 
 - mention: add--architecture-discovery
 - mention: add--backend-development
 - mention: add--frontend-architecture
-- mention: add--project-scaffolding
 - skill: add--backend-architecture/references/clean-architecture.md
 - skill: add--backend-architecture/references/combined-strategy.md
 - skill: add--backend-architecture/references/universal-rules.md
@@ -18,12 +17,14 @@ description: Guides backend architecture decisions — over-engineering, folder 
 
 Guide architectural decisions for backend projects. Language and framework agnostic. Choose between Vertical Slice, Clean Architecture, Simple Modular, or a Combined strategy based on project context.
 
+When the project already has recorded conventions (`{{addpath:wiki/conventions.md}}` → `## Stack Conventions`), treat them as the current state; recommend changes against them, not from scratch.
+
 **Use for:** Choosing architecture patterns, organizing features, structuring folders, deciding boundaries, avoiding over-engineering.
 
 ## When NOT to Use
 
 - **Code implementation** — use `add--backend-development` instead
-- **Project scaffolding / file generation** — use `add--project-scaffolding` instead
+- **Project scaffolding / file generation**
 - **Discovering existing architecture** — use `add--architecture-discovery` instead
 - **Frontend structure decisions** — use `add--frontend-architecture` instead
 

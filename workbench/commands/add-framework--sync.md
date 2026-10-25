@@ -177,8 +177,8 @@ Three rules when transcribing:
   `mention:`.** This file CATALOGUES the ecosystem; it consumes none of it.
   Declaring its rows as dependencies is not a cosmetic error: eight commands
   load this skill, so every artefact listed here inherits ~82 transitive
-  dependants and `graph.js impact` degrades into a constant — `add-stripe`,
-  which nothing uses, reported 84 before this was fixed. If a regeneration
+  dependants and `graph.js impact` degrades into a constant — a leaf skill
+  that nothing uses reported 84 before this was fixed. If a regeneration
   turns those rows back into `skill:`/`agent:`/`command:`/`script:`, it has
   silently destroyed the query the graph exists for.
 
