@@ -155,6 +155,26 @@ describe('uninstall', () => {
     expect(fs.existsSync(zcodeAgent)).toBe(false);
   });
 
+  it('corrupted-manifest fallback keeps board.json, settings.json and wiki/ (project data)', async () => {
+    const addDir = path.join(tmpDir, '.codeadd');
+    fs.mkdirSync(path.join(addDir, 'wiki'), { recursive: true });
+    fs.mkdirSync(path.join(addDir, 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(addDir, 'board.json'), '{}');
+    fs.writeFileSync(path.join(addDir, 'settings.json'), '{"schema":1}');
+    fs.writeFileSync(path.join(addDir, 'wiki', 'index.md'), '# wiki');
+    fs.writeFileSync(path.join(addDir, 'commands', 'add.md'), '# add');
+    fs.writeFileSync(path.join(addDir, 'manifest.json'), 'not json{{{', 'utf8');
+
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+
+    expect(fs.existsSync(path.join(addDir, 'board.json'))).toBe(true);
+    expect(fs.existsSync(path.join(addDir, 'settings.json'))).toBe(true);
+    expect(fs.readFileSync(path.join(addDir, 'wiki', 'index.md'), 'utf8')).toBe('# wiki');
+    expect(fs.existsSync(path.join(addDir, 'commands', 'add.md'))).toBe(false);
+    expect(fs.existsSync(path.join(addDir, 'manifest.json'))).toBe(false);
+  });
+
   it('global corrupted-manifest fallback removes .config/opencode and keeps .gitignore', async () => {
     // Global install dir that ADD_DIRS does not list — only GLOBAL_ADD_DIRS does
     const ocSkill = path.join(tmpDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md');
