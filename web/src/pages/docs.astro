@@ -18,7 +18,7 @@ import "../styles/global.css";
         </a>
       </div>
       <div class="hidden md:flex items-center gap-6">
-        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label="Search the docs" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>Search</span><kbd class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
+        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>Search</span><kbd aria-hidden="true" class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
         <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors">Home</a>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
           GitHub
@@ -202,7 +202,7 @@ import "../styles/global.css";
         <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
         <p class="text-muted-light mb-6">
           <code class="text-accent font-mono text-sm">/add-setup</code> is the guided onboarding for a fresh or updated install.
-          It checks your project, then offers every feature and <a href="#plugins" class="text-accent hover:underline">plugin</a> with its benefit
+          It checks your project, then offers every feature and <a href="#plugins" class="text-accent underline underline-offset-2 hover:text-accent-dim">plugin</a> with its benefit
           in <strong>one numbered list</strong>, with a recommended answer for each. Reply once, for example <code class="font-mono text-xs">1 yes, 2 no</code> or <code class="font-mono text-xs">all recommended</code>.
         </p>
 
@@ -340,7 +340,7 @@ import "../styles/global.css";
                 <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <a href="#setup" class="text-accent font-mono text-sm hover:underline">/add-setup</a>
+                <a href="#setup" class="text-accent font-mono text-sm underline underline-offset-2 hover:text-accent-dim">/add-setup</a>
                 <p class="text-muted text-xs mt-0.5">Guided onboarding — offers each feature and plugin with its benefit, sets up the ones you accept</p>
               </div>
               <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
@@ -694,7 +694,7 @@ import "../styles/global.css";
               <code class="text-accent font-mono text-sm">agent-mode</code>
               <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Bot wording for headless runs (one numbered question batch, no continue offer). <a href="#agent-mode" class="text-accent hover:underline">Read more</a></p>
+            <p class="text-muted-light text-sm mb-1">Bot wording for headless runs (one numbered question batch, no continue offer). <a href="#agent-mode" class="text-accent underline underline-offset-2 hover:text-accent-dim">Read more</a></p>
             <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-qa-setup</code>, <code class="font-mono">add-pull-request</code>, <code class="font-mono">add-audit</code>, <code class="font-mono">add-wiki</code></p>
           </div>
         </div>
@@ -798,7 +798,7 @@ import "../styles/global.css";
             <p class="text-muted text-xs">Used by: <code class="font-mono">add-plan</code></p>
           </div>
         </div>
-        <p class="text-muted text-xs mb-8">Not sure which to enable? <a href="#setup" class="text-accent hover:underline">/add-setup</a> offers each one with a recommendation for your project.</p>
+        <p class="text-muted text-xs mb-8">Not sure which to enable? <a href="#setup" class="text-accent underline underline-offset-2 hover:text-accent-dim">/add-setup</a> offers each one with a recommendation for your project.</p>
 
         <!-- gitnexus -->
         <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6">
@@ -814,7 +814,7 @@ import "../styles/global.css";
             <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-wiki</code></p>
             <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">ux-flow-agent</code></p>
             <p class="text-muted text-xs">Activates skill: <code class="font-mono">add--gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
-            <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/abhigyanpatwari/GitNexus</a></p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/abhigyanpatwari/GitNexus</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
@@ -862,7 +862,7 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets the /add-review judge pair additionally drive the app live for richer evidence.</p>
             <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-review</code></p>
             <p class="text-muted text-xs">Injects into agent: <code class="font-mono">qa-agent</code></p>
-            <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/microsoft/playwright-mcp</a></p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/microsoft/playwright-mcp</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
@@ -910,7 +910,7 @@ import "../styles/global.css";
             <p class="text-muted-light text-sm mb-1">Makes the design step of <code class="font-mono">/add-plan</code> use ui-ux-pro-max, which you install yourself, as the data source for style, palette, typography and chart choice. Your inspected project tokens and <code class="font-mono">docs/design-system.md</code> still come first, and the design core keeps its notation, rubric and schema gate. Code Addiction ships no copy of the skill and installs nothing.</p>
             <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-plan</code></p>
             <p class="text-muted text-xs">Injects into agents: <code class="font-mono">ux-flow-agent</code>, <code class="font-mono">ux-layout-agent</code>, <code class="font-mono">ux-agent</code> (critique mode)</p>
-            <p class="text-muted text-xs mt-1"><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank" rel="noopener" class="text-accent hover:underline">github.com/nextlevelbuilder/ui-ux-pro-max-skill</a></p>
+            <p class="text-muted text-xs mt-1"><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/nextlevelbuilder/ui-ux-pro-max-skill</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
@@ -1031,7 +1031,7 @@ import "../styles/global.css";
               <div class="h-px bg-white/10 my-0.5"></div>
               <button id="eco-fullscreen" title="Fullscreen" class="eco-ctrl"><svg id="eco-fs-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/></svg></button>
             </div>
-            <div class="absolute bottom-3 left-3 text-xs text-muted-light/70 font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
+            <div class="absolute bottom-3 left-3 text-xs text-muted-light font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
               scroll to zoom · drag to pan · click to inspect
             </div>
           </div>
