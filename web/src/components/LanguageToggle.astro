@@ -1,0 +1,65 @@
+---
+// EN | PT-BR switch. Two plain links to the other language's version of the same page, so it
+// works with no JS; the script only carries the current #anchor over and remembers the choice.
+// It never redirects on load: the reader's click is the only thing that changes language.
+import { useT, alternateUrls } from "../i18n";
+
+interface Props {
+  class?: string;
+}
+
+const { class: extra = "" } = Astro.props;
+const locale = Astro.currentLocale ?? "en";
+const t = useT(locale);
+const urls = alternateUrls(Astro.url);
+const items = [
+  { code: "en", label: t("common.localeEn"), href: new URL(urls.en).pathname },
+  { code: "pt-br", label: t("common.localePtBr"), href: new URL(urls.ptBr).pathname },
+];
+---
+
+<div class:list={["lang-toggle flex items-center gap-1 font-mono text-xs", extra]} role="group" aria-label={t("common.language")}>
+  {items.map((item, i) => (
+    <>
+      {i > 0 && <span class="text-muted" aria-hidden="true">|</span>}
+      {item.code === locale ? (
+        <span aria-current="true" class="text-accent font-medium px-1">{item.label}</span>
+      ) : (
+        <a
+          href={item.href}
+          hreflang={item.code === "pt-br" ? "pt-BR" : "en"}
+          lang={item.code === "pt-br" ? "pt-BR" : "en"}
+          data-locale={item.code}
+          class="text-muted-light hover:text-accent transition-colors px-1 min-h-6 inline-flex items-center"
+        >{item.label}</a>
+      )}
+    </>
+  ))}
+</div>
+
+<script>
+  // Bound per page shown (astro:page-load) and released before the swap, like the inline scripts.
+  // Capture phase: the client router reads the link's href in its own click handler, which was
+  // registered earlier, so the anchor has to be on the href before that handler runs.
+  function initLanguageToggle() {
+    const pageAbort = new AbortController();
+    document.addEventListener("astro:before-swap", () => pageAbort.abort(), { once: true });
+    document.addEventListener(
+      "click",
+      (event) => {
+        const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a[data-locale]");
+        if (!link) return;
+        const target = new URL(link.href);
+        target.hash = location.hash;
+        link.href = target.href;
+        try {
+          localStorage.setItem("codeadd-locale", link.dataset.locale ?? "");
+        } catch {
+          // storage blocked: the choice is simply not remembered
+        }
+      },
+      { capture: true, signal: pageAbort.signal },
+    );
+  }
+  document.addEventListener("astro:page-load", initLanguageToggle);
+</script>

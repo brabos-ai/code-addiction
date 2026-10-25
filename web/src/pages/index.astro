@@ -2,7 +2,12 @@
 import Layout from "../layouts/Layout.astro";
 import CommandLine from "../components/CommandLine.astro";
 import { providers } from "../data/providers";
+import LanguageToggle from "../components/LanguageToggle.astro";
+import { useT, localeHref } from "../i18n";
 import "../styles/global.css";
+
+const locale = Astro.currentLocale ?? "en";
+const t = useT(locale);
 ---
 
 <Layout title="Code Addiction — Spec-driven AI development framework">
@@ -21,7 +26,8 @@ import "../styles/global.css";
         <a href="#trail" class="text-sm text-muted-light hover:text-accent transition-colors">How it works</a>
         <a href="#why" class="text-sm text-muted-light hover:text-accent transition-colors">Why</a>
         <a href="#start" class="text-sm text-muted-light hover:text-accent transition-colors">Get started</a>
-        <a href="/docs" class="text-sm text-muted-light hover:text-accent transition-colors">Docs</a>
+        <a href={localeHref(locale, "docs")} class="text-sm text-muted-light hover:text-accent transition-colors">Docs</a>
+        <LanguageToggle />
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
           GitHub
         </a>
@@ -39,7 +45,8 @@ import "../styles/global.css";
         <a href="#trail" class="mobile-link text-base font-medium text-muted-light hover:text-accent">How it works</a>
         <a href="#why" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Why</a>
         <a href="#start" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Get started</a>
-        <a href="/docs" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Docs</a>
+        <a href={localeHref(locale, "docs")} class="mobile-link text-base font-medium text-muted-light hover:text-accent">Docs</a>
+        <LanguageToggle class="text-sm" />
       </div>
     </div>
   </nav>
@@ -223,7 +230,7 @@ import "../styles/global.css";
 
       <div class="mt-8">
         <a
-          href="/docs"
+          href={localeHref(locale, "docs")}
           class="inline-flex items-center gap-2 text-accent border border-accent/30 hover:bg-accent/10 font-medium px-6 py-3 rounded-lg transition-colors text-sm"
         >
           Read the docs

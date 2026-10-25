@@ -444,3 +444,29 @@ test('i18n F3: the layout sets lang from the locale and emits hreflang, canonica
   assert.match(layout, /property="og:locale"/);
   assert.match(layout, /og:locale:alternate/);
 });
+
+test('i18n F4: pt-br routes wrap the shared pages and both pages render the toggle', () => {
+  for (const f of ['index', 'docs']) {
+    assert.ok(exists(`src/pages/pt-br/${f}.astro`), `pt-br/${f}.astro missing`);
+    assert.match(read(`src/pages/pt-br/${f}.astro`), /import \w+ from "\.\.\/\w*(index|docs|HomePage|DocsPage)\.astro"|views\//);
+  }
+  assert.ok(exists('src/components/LanguageToggle.astro'), 'toggle missing');
+  assert.ok((HOME().match(/<LanguageToggle/g) || []).length >= 2, 'home: nav and mobile menu');
+  assert.ok((DOCS().match(/<LanguageToggle/g) || []).length >= 2, 'docs: nav and sidebar');
+  const t = read('src/components/LanguageToggle.astro');
+  assert.match(t, /aria-current="true"/);
+  assert.match(t, /location\.hash/);
+  assert.match(t, /localStorage/);
+  assert.match(t, /codeadd-locale/);
+  assert.match(t, /astro:page-load/);
+  assert.match(t, /astro:before-swap/);
+  assert.doesNotMatch(t, /location\.replace|location\.href\s*=/);
+});
+
+test('i18n F4: the cross-page links go through localeHref, never a literal path', () => {
+  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+    assert.doesNotMatch(src, /href="\/docs"/, `${name}: literal /docs link`);
+    assert.doesNotMatch(src, /href="\/"/, `${name}: literal / link`);
+    assert.match(src, /localeHref\(/, `${name}: no localeHref`);
+  }
+});
