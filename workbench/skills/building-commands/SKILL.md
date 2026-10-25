@@ -270,7 +270,7 @@ If a JSON example genuinely helps (e.g., showing the shape of an output document
 
 Distributed framework scripts use `node .codeadd/scripts/<name>.cjs`; repository tooling uses its source path under `scripts/`. Write portable argv-based recipes; do not require Bash, POSIX pipelines or shell-specific variable assignment for framework operations.
 
-**A command never prescribes a heredoc or an inline multi-line body.** Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path (`--body-file <file>`, `--record-file <file>`, or the file as the interpreter's argument) and deleted in the same step after use. Short one-liners stay inline. State the delete as an intent ("delete the temp file"), not as a shell-specific command, so it holds on every shell.
+**A command never prescribes a heredoc or an inline multi-line body.** Content longer than about three lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path (`--body-file <file>`, `--record-file <file>`, or the file as the interpreter's argument) and deleted in the same step after use. Short one-liners stay inline. State the delete as an intent ("delete the temp file"), not as a shell-specific command, so it holds on every shell.
 
 ```
 ❌ BAD (inline body):

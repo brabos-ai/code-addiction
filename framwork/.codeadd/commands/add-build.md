@@ -1536,7 +1536,7 @@ separate.
 | Current branch is `main` or `master` | Do NOT offer. Report that the work is committed and needs a branch | `Publish: on-main — nothing offered` |
 | `gh` absent or not authenticated | Ask only whether to push the branch. Never mention a PR | `Publish: no-gh — pushed` or `Publish: no-gh — local` |
 | A PR already exists for this branch | Do NOT ask. Push, and say the existing PR was updated | `Publish: pr-updated <url>` |
-| Otherwise, the user says yes | `git push -u origin <branch>`, then `gh pr create --body-file <file>` — the body goes through a temp file, per the publish recipe of `/add-pull-request`. Report the URL | `Publish: pr-opened <url>` |
+| Otherwise, the user says yes | `git push -u origin <branch>`, then write the PR body with the file-write tool to `.codeadd/.temp/<random-slug>.md`, run `gh pr create --body-file <file>` and delete the file, as in the publish recipe of `/add-pull-request`. Report the URL | `Publish: pr-opened <url>` |
 | Otherwise, the user says no | Nothing is pushed | `Publish: declined — local merge` |
 
 Append it through the script, like every other ledger event:

@@ -65,7 +65,8 @@ function mdFiles(dir, out = []) {
 // itself stays in the fragment, not in this file.
 // 1708 is plan 2026-10-11T124512 (light review loop): +43 over the 1665 at its branch start — the CORRECTION row split and the formatter map in STEP add-build.consume, the gates run and the annex columns in STEP add-build.resolution, and the scope check and the no-round verdict in Final Review, and two lines for the board.deferred-minors slot member. The format map has no other home: it is the build that runs the formatter.
 // 1713 is plan 2026-10-12T114425 (build gates aligned with done): +5 over the 1708 — Loop End step 1 runs converge-gates on a simple feature, the same call the epic path already makes.
-const BUILD_LINE_BUDGET = 1713;
+// 1714 is ticket 0009B (scripts-via-file): +1 over the 1713 — the `- command: /add-pull-request` uses entry the publish row needs.
+const BUILD_LINE_BUDGET = 1714;
 
 describe('L2 — text contract', () => {
   it('L2.1 reviewer-agent documents MODE: feature and keeps task as the default', () => {
