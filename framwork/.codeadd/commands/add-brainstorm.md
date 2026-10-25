@@ -538,12 +538,12 @@ merge is always the user's.
 
 ```
 IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
-  ⛔ DO NOT USE: Write on docs/brainstorm/ for the intent file
+  ⛔ DO NOT USE: Write on docs/brainstorm/ for the intent file, or, on greenfield, on `.codeadd/wiki/conventions.md`, `.codeadd/wiki/index.md`, `.codeadd/wiki/.meta.json` or `AGENTS.md`
   ⛔ DO NOT: Follow /add-new
   ✅ DO: Ask, and WAIT
 
 IF THE ANSWER IS "Keep discussing":
-  ⛔ DO NOT: Write the intent file or print a handoff
+  ⛔ DO NOT: Write the intent file or print a handoff, or, on greenfield, write any of the four foundation files (`conventions.md`, `index.md`, `.meta.json`, `AGENTS.md`)
   ✅ DO: Return to STEP add-brainstorm.explore
 ```
 
