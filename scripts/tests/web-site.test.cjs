@@ -323,3 +323,35 @@ test('F18: the typing effect is a transform-only mask, added by JS, and off unde
   assert.ok(rm.includes('.term-line'), 'reduced-motion block does not cover .term-line');
   assert.doesNotMatch(css.match(/\.term-line\s*\{[^}]*\}/)[0], /opacity:\s*0/);
 });
+
+// ------------------------------------------- F19 scroll reveal and spotlight
+test('F19: reveal targets are marked in the HTML but only the page script hides them', () => {
+  const home = HOME();
+  assert.ok((home.match(/data-reveal/g) || []).length >= 8, 'section headers and Why cards must carry data-reveal');
+  assert.doesNotMatch(home, /class="[^"]*\breveal\b/, 'a hidden state in the markup would hide content without JS');
+  assert.match(home, /classList\.add\('reveal'\)/);
+  assert.match(home, /new IntersectionObserver/);
+});
+
+test('F19: the reveal hidden state is transform and opacity only and is cleared under reduced motion', () => {
+  const css = CSS();
+  const hidden = css.match(/\.reveal\s*\{[^}]*\}/);
+  assert.ok(hidden, '.reveal rule missing');
+  assert.match(hidden[0], /opacity:\s*0/);
+  assert.doesNotMatch(hidden[0], /(width|height|top|left|margin)\s*:/);
+  assert.match(css, /\.reveal\.is-visible\s*\{/);
+  const rm = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(rm.includes('.reveal'), 'reduced-motion block does not cover .reveal');
+});
+
+test('F19: the Why-card spotlight follows the pointer on hover devices only, never under reduced motion', () => {
+  const css = CSS();
+  const home = HOME();
+  assert.match(css, /@media \(hover: hover\)[\s\S]*?\.why-card::before/);
+  assert.match(css, /--mx/);
+  assert.match(home, /pointermove/);
+  assert.match(home, /--mx/);
+  assert.ok((home.match(/why-card/g) || []).length >= 4, 'four Why cards');
+  assert.match(home, /hover: hover/);
+  assert.match(home, /prefers-reduced-motion: reduce/);
+});
