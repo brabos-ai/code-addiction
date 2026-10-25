@@ -1,0 +1,72 @@
+---
+// One runnable command: prompt, command text and a copy button.
+// Every command on the site renders through here so the copy behaviour, the
+// accessible name and the wrapping rule live in one place. The command stays a
+// literal string in the page (a prop), so the sync analyzers can still read it.
+interface Props {
+  command: string;
+  /** Prompt glyph; defaults to "$". Use "" for a slash command line if no prompt is wanted. */
+  prompt?: string;
+  /** No box of its own: the caller already supplies the container. */
+  bare?: boolean;
+  class?: string;
+}
+
+const { command, prompt = "$", bare = false, class: extra = "" } = Astro.props;
+const box = bare
+  ? ""
+  : "bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 hover:border-accent/30 transition-colors";
+---
+
+<div class:list={["command-line flex items-center gap-2 min-w-0 font-mono text-sm", box, extra]}>
+  {prompt && <span class="text-accent select-none">{prompt}</span>}
+  <span class="command-text flex-1 min-w-0 break-all text-foreground">{command}</span>
+  <button
+    type="button"
+    data-copy
+    aria-label={`Copy: ${command}`}
+    class="command-copy shrink-0 min-w-6 min-h-6 px-2 py-0.5 rounded text-xs font-sans text-muted-light hover:text-accent transition-colors"
+  >Copy</button>
+  <span class="sr-only" role="status" aria-live="polite" data-copy-status></span>
+</div>
+
+<script>
+  // Delegated, so one listener serves every command line on the page.
+  function selectText(el: Element) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  // The client router can evaluate this script again on a later visit; bind once.
+  const bound = window as unknown as { __commandLineBound?: boolean };
+  if (!bound.__commandLineBound) {
+  bound.__commandLineBound = true;
+  document.addEventListener("click", async (event) => {
+    const btn = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-copy]");
+    if (!btn) return;
+    const root = btn.closest(".command-line");
+    const textEl = root?.querySelector(".command-text");
+    const status = root?.querySelector("[data-copy-status]");
+    if (!root || !textEl || !status) return;
+    const text = textEl.textContent ?? "";
+    const label = btn.textContent;
+    try {
+      if (!navigator.clipboard) throw new Error("no clipboard");
+      await navigator.clipboard.writeText(text);
+      btn.textContent = "Copied";
+      status.textContent = "Copied to clipboard";
+    } catch {
+      selectText(textEl);
+      btn.textContent = "Select";
+      status.textContent = "Selected. Press Ctrl+C to copy";
+    }
+    window.setTimeout(() => {
+      btn.textContent = label;
+      status.textContent = "";
+    }, 1500);
+  });
+  }
+</script>

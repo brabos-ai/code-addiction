@@ -10,6 +10,8 @@
  *   node scripts/graph.js orphans      [--json]
  *   node scripts/graph.js stats        [--json]
  *   node scripts/graph.js history      <node-id> [--layer product|internal] [--limit N] [--json]
+ *   node scripts/graph.js mermaid      [<node-id>] [--depth N] [--kinds a,b] | --write
+ *   node scripts/graph.js ecosystem    [--write]
  *
  * A node id is `<layer>/<kind>/<name>`, e.g. product/skill/add-doc-schemas.
  * A bare name is resolved when it is unambiguous.
@@ -446,9 +448,10 @@ function mermaidId(nodeId) {
  * once is an unreadable hairball that tells a reader nothing.
  *
  * @param {object} graph
- * @param {{root?: string, depth?: number, kinds?: string[], direction?: string}} opts
- *   root  — centre the diagram on one artefact and walk out from it
- *   kinds — otherwise, include only these node kinds
+ * @param {{root?: string, depth?: number, kinds?: string[], layers?: string[], direction?: string}} opts
+ *   root   — centre the diagram on one artefact and walk out from it
+ *   kinds  — otherwise, include only these node kinds
+ *   layers — keep only nodes of these layers, in either mode
  */
 function toMermaid(graph, opts = {}) {
   const { depth = 2, direction = 'LR' } = opts;
@@ -469,6 +472,13 @@ function toMermaid(graph, opts = {}) {
   }
 
   const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  if (opts.layers) {
+    const layers = new Set(opts.layers);
+    for (const id of [...keep]) {
+      const n = byId.get(id);
+      if (n && !layers.has(n.layer)) keep.delete(id);
+    }
+  }
   const lines = [`flowchart ${direction}`];
 
   for (const id of [...keep].sort()) {
@@ -502,14 +512,93 @@ function toMermaid(graph, opts = {}) {
  * documented command failed the test and replaced the docs diagram with a
  * hairball. Sharing the profile is what makes "regenerate" and "assert current"
  * describe the same picture by construction.
+ *
+ * `layers: ['product']` keeps the internal pipeline out of a public page: its
+ * commands are not installable by a user, and drawing them promises something
+ * the site cannot deliver. Filtering by layer, not by a name prefix, also keeps
+ * an internal skill or agent out the day this profile grows beyond commands.
  */
-const DOCS_PROFILE = { kinds: ['command'], depth: 1 };
+const DOCS_PROFILE = { kinds: ['command'], depth: 1, layers: ['product'] };
 const DOCS_DIAGRAM = path.join(ROOT, 'web', 'public', 'artefact-graph.mmd');
+
+/**
+ * The docs "Ecosystem Map", as Cytoscape elements.
+ *
+ * The map used to be a ~500-line hand-written literal in docs.astro and had
+ * drifted to 29 skills and 17 agents against a shipped 42 and 22. This renders
+ * it from the sidecar, so the site cannot disagree with the build.
+ *
+ * Nodes: product layer, kind command, skill or agent, MINUS anything under
+ * `framwork/.codeadd/plugins/`. A plugin-bundled skill (`add--gitnexus`) is not
+ * part of the core set the installer always lays down, and
+ * `scripts/inventory.js` does not list it either — the two must name the same
+ * artefacts.
+ *
+ * Edges: only the four shapes the map draws. Everything else (HANDS_OFF_TO,
+ * MENTIONS, RUNS_SCRIPT, skill-to-agent DISPATCHES, any edge touching a node
+ * outside the set) is dropped, so the picture stays a map of what loads and
+ * dispatches what rather than the hairball `mermaid` warns about.
+ *
+ * A node id is the artefact NAME (unique across the three kinds today), the
+ * label is the short form the map shows.
+ */
+const ECOSYSTEM_FILE = path.join(ROOT, 'web', 'public', 'ecosystem.json');
+const ECOSYSTEM_KINDS = ['command', 'skill', 'agent'];
+const ECOSYSTEM_EDGES = {
+  'USES_SKILL command>skill': 'loads',
+  'USES_SKILL agent>skill': 'uses',
+  'USES_SKILL skill>skill': 'uses',
+  'DISPATCHES command>agent': 'dispatches',
+};
+const ECOSYSTEM_LABEL = {
+  command: (name) => name,
+  skill: (name) => name.replace(/^add--/, ''),
+  agent: (name) => name.replace(/-agent$/, ''),
+};
+
+function toEcosystem(graph) {
+  const inSet = graph.nodes
+    .filter((n) => n.layer === 'product' && ECOSYSTEM_KINDS.includes(n.kind)
+      && !String(n.path).startsWith('framwork/.codeadd/plugins/'))
+    .sort((a, b) => ECOSYSTEM_KINDS.indexOf(a.kind) - ECOSYSTEM_KINDS.indexOf(b.kind)
+      || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const byId = new Map(inSet.map((n) => [n.id, n]));
+
+  const seen = new Set();
+  const rows = [];
+  for (const e of graph.edges) {
+    const from = byId.get(e.from);
+    const to = byId.get(e.to);
+    if (!from || !to || from === to) continue;
+    const type = ECOSYSTEM_EDGES[`${e.type} ${from.kind}>${to.kind}`];
+    if (!type) continue;
+    const key = `${from.name}|${to.name}|${type}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    rows.push({ source: from.name, target: to.name, type });
+  }
+  rows.sort((a, b) => (a.source < b.source ? -1 : a.source > b.source ? 1 : 0)
+    || (a.target < b.target ? -1 : a.target > b.target ? 1 : 0)
+    || (a.type < b.type ? -1 : a.type > b.type ? 1 : 0));
+
+  return {
+    nodes: inSet.map((n) => ({ data: { id: n.name, label: ECOSYSTEM_LABEL[n.kind](n.name), type: n.kind } })),
+    edges: rows.map((r, i) => ({ data: { id: `e${i}`, ...r } })),
+  };
+}
+
+const NL = String.fromCharCode(10);
+
+/** One element per line: a regenerated file diffs by element, not as one 2,500-line reflow. */
+function formatEcosystem(eco) {
+  const block = (rows) => rows.map((r) => '    ' + JSON.stringify(r)).join(',' + NL);
+  return ['{', '  "nodes": [', block(eco.nodes), '  ],', '  "edges": [', block(eco.edges), '  ]', '}', ''].join(NL);
+}
 
 module.exports = {
   loadGraph, resolve, impact, dependencies, neighbors, orphans, pathBetween, stats, history,
-  toMermaid, mermaidId,
-  DEPENDENCY_TYPES, DEFAULT_GRAPH, DOCS_PROFILE, DOCS_DIAGRAM,
+  toMermaid, mermaidId, toEcosystem,
+  DEPENDENCY_TYPES, DEFAULT_GRAPH, DOCS_PROFILE, DOCS_DIAGRAM, ECOSYSTEM_FILE,
 };
 
 // ---------------------------------------------------------------------------
@@ -590,6 +679,20 @@ function main(argv) {
         );
       }
       return console.log(toMermaid(graph, { root: a, depth, kinds }));
+    }
+    case 'ecosystem': {
+      // Like mermaid, --write always renders the one fixed definition. Without
+      // it the JSON goes to stdout.
+      const out = formatEcosystem(toEcosystem(graph));
+      if (argv.includes('--write')) {
+        fs.mkdirSync(path.dirname(ECOSYSTEM_FILE), { recursive: true });
+        fs.writeFileSync(ECOSYSTEM_FILE, out, 'utf8');
+        const eco = JSON.parse(out);
+        return console.log(
+          `wrote ${path.relative(ROOT, ECOSYSTEM_FILE)} (${eco.nodes.length} nodes, ${eco.edges.length} edges)`,
+        );
+      }
+      return process.stdout.write(out);
     }
     case 'stats':
       return emit(stats(graph), (s) =>

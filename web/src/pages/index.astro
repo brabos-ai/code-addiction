@@ -1,14 +1,16 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import CommandLine from "../components/CommandLine.astro";
+import { providers } from "../data/providers";
 import "../styles/global.css";
 ---
 
 <Layout title="Code Addiction — Spec-driven AI development framework">
   <!-- Nav -->
-  <nav class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
+  <nav transition:name="site-nav" class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu">
+        <button id="mobile-menu-toggle" class="md:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle menu" aria-controls="mobile-menu" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
         <a href="#" class="font-display font-bold text-foreground tracking-tight text-lg">
@@ -17,7 +19,7 @@ import "../styles/global.css";
       </div>
       <div class="hidden md:flex items-center gap-6">
         <a href="#trail" class="text-sm text-muted-light hover:text-accent transition-colors">How it works</a>
-        <a href="#flows" class="text-sm text-muted-light hover:text-accent transition-colors">Flows</a>
+        <a href="#why" class="text-sm text-muted-light hover:text-accent transition-colors">Why</a>
         <a href="#start" class="text-sm text-muted-light hover:text-accent transition-colors">Get started</a>
         <a href="/docs" class="text-sm text-muted-light hover:text-accent transition-colors">Docs</a>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
@@ -35,7 +37,7 @@ import "../styles/global.css";
     <div id="mobile-menu" class="hidden md:hidden border-t border-white/5 bg-surface/95 backdrop-blur-md absolute w-full top-14 left-0 shadow-xl">
       <div class="flex flex-col px-6 py-4 space-y-4">
         <a href="#trail" class="mobile-link text-base font-medium text-muted-light hover:text-accent">How it works</a>
-        <a href="#flows" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Flows</a>
+        <a href="#why" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Why</a>
         <a href="#start" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Get started</a>
         <a href="/docs" class="mobile-link text-base font-medium text-muted-light hover:text-accent">Docs</a>
       </div>
@@ -43,7 +45,7 @@ import "../styles/global.css";
   </nav>
 
   <!-- Hero -->
-  <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-14 relative">
+  <section class="min-h-screen flex flex-col items-center justify-center px-6 pt-14 relative overflow-hidden">
     <!-- Radial gradient glow behind hero -->
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none"></div>
 
@@ -56,18 +58,13 @@ import "../styles/global.css";
       </h1>
 
       <p class="mt-8 text-lg sm:text-xl text-muted-light max-w-xl mx-auto leading-relaxed fade-up fade-up-delay-2 font-light">
-        Structured workflows from discovery to delivery.<br class="hidden sm:block"/>
+        Structured workflows from discovery to delivery. <br class="hidden sm:block"/>
         Installed in seconds. Addictive to use.
       </p>
 
       <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 fade-up fade-up-delay-3">
         <!-- Install command -->
-        <div class="group relative bg-white/5 border border-white/10 rounded-lg px-5 py-3 font-mono text-sm hover:border-accent/30 transition-colors cursor-pointer"
-             onclick="navigator.clipboard.writeText('npx codeadd install')">
-          <span class="text-muted">$</span>
-          <span class="text-foreground ml-2">npx codeadd install</span>
-          <span class="ml-3 text-muted text-xs group-hover:text-accent transition-colors">copy</span>
-        </div>
+        <CommandLine command="npx codeadd install" />
 
         <a
           href="https://github.com/brabos-ai/code-addiction"
@@ -89,11 +86,35 @@ import "../styles/global.css";
     </div>
   </section>
 
+  <!-- Terminal session: static text; the typing effect is a mask added by JS -->
+  <section id="session" class="px-6 pb-24">
+    <div class="max-w-3xl mx-auto">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4 text-center">A session, shortened</p>
+      <h2 class="sr-only">Plan and build a feature in two commands</h2>
+      <div id="session-term" class="rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden">
+        <div class="flex items-center gap-1.5 px-4 py-3 border-b border-white/5" aria-hidden="true">
+          <span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span>
+        </div>
+        <div class="p-6 font-mono text-sm leading-relaxed space-y-1 overflow-x-auto">
+        <span class="term-line" style="--i:0"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-plan checkout-discounts</span></span>
+        <span class="term-line" style="--i:1"><span class="text-muted-light">  </span><span class="text-muted-light">Discovery: 3 questions asked, 3 decisions recorded</span></span>
+        <span class="term-line" style="--i:2"><span class="text-muted-light">  </span><span class="text-muted-light">Plan written: 4 tasks, 2 acceptance tests</span></span>
+        <span class="term-line" style="--i:3"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-build</span></span>
+        <span class="term-line" style="--i:4"><span class="text-muted-light">  </span><span class="text-muted-light">Task 1/4  schema and migration .......... done</span></span>
+        <span class="term-line" style="--i:5"><span class="text-muted-light">  </span><span class="text-muted-light">Task 2/4  discount service ............... done</span></span>
+        <span class="term-line" style="--i:6"><span class="text-muted-light">  </span><span class="text-muted-light">Task 3/4  API endpoint ................... done</span></span>
+        <span class="term-line" style="--i:7"><span class="text-muted-light">  </span><span class="text-muted-light">Task 4/4  checkout form ................. done</span></span>
+        <span class="term-line" style="--i:8"><span class="text-accent">✔ </span><span class="text-accent">Build complete: tests green, ready for /add-review</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- The Development Trail -->
   <section id="trail" class="py-24 px-6">
     <div class="max-w-6xl mx-auto">
       <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">How it works</p>
-      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-4">The Development Trail</h2>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-4">The Development Trail</h2>
       <p class="text-muted-light text-lg mb-12 max-w-2xl">
         Every feature follows a clear path from idea to delivery.
         Pick the trail that fits your task.
@@ -102,64 +123,64 @@ import "../styles/global.css";
       <!-- Flowchart SVG -->
       <div class="w-full relative">
         <button
-          onclick="document.getElementById('flowchart-modal').classList.remove('hidden')"
+          id="flowchart-open"
           class="w-full overflow-hidden rounded-xl border border-white/10 hover:border-accent/30 transition-colors cursor-zoom-in group relative"
-          aria-label="Ver imagem em tamanho completo"
+          aria-label="View full-size image"
         >
           <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="w-full"/>
           <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
             <span class="opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 text-white text-xs font-mono px-3 py-1.5 rounded-lg flex items-center gap-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
-              ampliar
+              enlarge
             </span>
           </div>
         </button>
       </div>
 
       <!-- Lightbox -->
-      <div
-        id="flowchart-modal"
-        class="hidden fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
-        onclick="this.classList.add('hidden')"
+      <dialog id="flowchart-modal"
+        aria-label="Development Trail flowchart, full size"
+        class="fixed inset-0 m-0 w-screen h-screen max-w-none max-h-none bg-black/90 p-4 text-white open:flex items-center justify-center backdrop:bg-black/90"
       >
         <button
-          onclick="document.getElementById('flowchart-modal').classList.add('hidden')"
+          id="flowchart-close"
+          type="button"
           class="absolute top-4 right-4 text-white/60 hover:text-white transition-colors"
-          aria-label="Fechar"
+          aria-label="Close"
         >
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
         <img src="/flowchart.svg" alt="Code Addiction Development Trail Flowchart" class="max-w-full max-h-full rounded-xl"/>
-      </div>
+      </dialog>
     </div>
   </section>
 
   <!-- Why section -->
-  <section id="flows" class="py-24 px-6 border-t border-white/5">
+  <section id="why" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto">
       <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Why teams get addicted</p>
-      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-16">Less ceremony. Same quality.</h2>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-16">Less ceremony. Same quality.</h2>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+      <div data-reveal class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">00</div>
           <h3 class="font-display font-semibold text-lg mb-2">Zero ramp-up</h3>
           <p class="text-muted-light text-sm leading-relaxed">New devs ship on day one by following the flow. No wikis to read, no setup guides.</p>
         </div>
 
-        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">01</div>
           <h3 class="font-display font-semibold text-lg mb-2">10x fewer decisions</h3>
           <p class="text-muted-light text-sm leading-relaxed">The framework already made the boring ones. You focus on what matters.</p>
         </div>
 
-        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">02</div>
           <h3 class="font-display font-semibold text-lg mb-2">Consistent output</h3>
           <p class="text-muted-light text-sm leading-relaxed">Every feature gets discovery, planning, review, and docs. Automatically.</p>
         </div>
 
-        <div class="group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
+        <div class="why-card group p-6 rounded-xl border border-white/5 hover:border-accent/20 transition-all duration-300 bg-white/[0.02]">
           <div class="text-accent font-mono text-2xl mb-4 group-hover:scale-110 transition-transform origin-left">03</div>
           <h3 class="font-display font-semibold text-lg mb-2">Works with your stack</h3>
           <p class="text-muted-light text-sm leading-relaxed">NestJS, React, any database. Claude, Codex, Antigravity, Cursor, OpenCode, ZCode.</p>
@@ -172,37 +193,15 @@ import "../styles/global.css";
   <section class="py-24 px-6 border-t border-white/5">
     <div class="max-w-6xl mx-auto text-center">
       <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">One install, every provider</p>
-      <h2 class="font-display font-bold text-3xl sm:text-4xl mb-12">Runs everywhere</h2>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-4xl mb-12">Runs everywhere</h2>
 
       <div class="flex flex-wrap items-center justify-center gap-8 text-muted">
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.claude/</span>
-          <span class="text-xs">Claude Code</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.agents/</span>
-          <span class="text-xs">Codex (OpenAI)</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.codex/</span>
-          <span class="text-xs">Codex</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.agent/</span>
-          <span class="text-xs">Antigravity</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.cursor/</span>
-          <span class="text-xs">Cursor</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.opencode/</span>
-          <span class="text-xs">OpenCode</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
-          <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">.zcode/</span>
-          <span class="text-xs">ZCode (Z.ai)</span>
-        </div>
+        {providers.map((p) => (
+          <div class="flex flex-col items-center gap-2 hover:text-foreground transition-colors">
+            <span class="font-mono text-sm border border-white/10 px-4 py-2 rounded-lg">{p.dir}{p.agentsDir ? " + " + p.agentsDir : ""}</span>
+            <span class="text-xs">{p.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   </section>
@@ -211,7 +210,7 @@ import "../styles/global.css";
   <section id="start" class="py-24 px-6 border-t border-white/5">
     <div class="max-w-3xl mx-auto text-center">
       <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Get started</p>
-      <h2 class="font-display font-bold text-3xl sm:text-5xl mb-6">One command away</h2>
+      <h2 data-reveal class="font-display font-bold text-3xl sm:text-5xl mb-6">One command away</h2>
       <p class="text-muted-light text-lg mb-4">Install Code Addiction in any project. No config needed.</p>
       <p class="text-muted text-sm mb-10">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended) &mdash; no Bash, WSL or Git-Bash needed.</p>
 
@@ -219,9 +218,7 @@ import "../styles/global.css";
         <div>
           <span class="text-muted select-none"># install in your project</span>
         </div>
-        <div>
-          <span class="text-accent select-none">$ </span><span class="text-foreground">npx codeadd install</span>
-        </div>
+        <CommandLine command="npx codeadd install" bare />
       </div>
 
       <div class="mt-8">
@@ -282,20 +279,100 @@ import "../styles/global.css";
   </footer>
 
   <script is:inline>
+    // The client router swaps the page without a reload, so everything binds on
+    // astro:page-load (once per page shown) and document-level handlers are released
+    // before the swap. A script runs once per document; init runs once per page.
+    function initHome() {
+    const pageAbort = new AbortController();
+    document.addEventListener('astro:before-swap', () => pageAbort.abort(), { once: true });
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileLinks = document.querySelectorAll('.mobile-link');
 
+    function setMobileMenu(open) {
+      mobileMenu.classList.toggle('hidden', !open);
+      mobileMenuToggle.setAttribute('aria-expanded', String(open));
+    }
+
     if (mobileMenuToggle && mobileMenu) {
       mobileMenuToggle.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
+        setMobileMenu(mobileMenu.classList.contains('hidden'));
       });
 
       mobileLinks.forEach(link => {
-        link.addEventListener('click', () => {
-          mobileMenu.classList.add('hidden');
+        link.addEventListener('click', () => setMobileMenu(false));
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+          setMobileMenu(false);
+          mobileMenuToggle.focus();
+        }
+      }, { signal: pageAbort.signal });
+    }
+
+    // Scroll reveal and card spotlight. At most two elements animate per view: a section's h2 and,
+    // in the Why section, the card grid as one element. Both are decoration: the markup only carries data-reveal
+    // and .why-card, and the hidden state below is added here, so no-JS readers, crawlers and
+    // reduced-motion users never meet a hidden element.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reducedMotion && 'IntersectionObserver' in window) {
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          el.classList.add('is-visible');
+          revealObserver.unobserve(el);
+          // Once shown, drop the reveal classes so the element's own hover transitions return.
+          window.setTimeout(() => {
+            el.classList.remove('reveal', 'is-visible');
+            el.style.transitionDelay = '';
+          }, 900);
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('[data-reveal]').forEach((el) => {
+        el.classList.add('reveal');
+        revealObserver.observe(el);
+      });
+    }
+
+    if (!reducedMotion && window.matchMedia('(hover: hover)').matches) {
+      document.querySelectorAll('.why-card').forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+          const box = card.getBoundingClientRect();
+          card.style.setProperty('--mx', (event.clientX - box.left) + 'px');
+          card.style.setProperty('--my', (event.clientY - box.top) + 'px');
         });
       });
     }
+
+    // Terminal session: the text is in the HTML. The typing effect is a mask that only this
+    // script adds, so without JS or under reduced motion the full text is simply there.
+    const sessionTerm = document.getElementById('session-term');
+    if (sessionTerm && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      sessionTerm.classList.add('js-typing');
+      new IntersectionObserver((entries, observer) => {
+        if (entries[0].isIntersecting) {
+          sessionTerm.classList.add('is-typing');
+          observer.disconnect();
+        }
+      }, { threshold: 0.4 }).observe(sessionTerm);
+    }
+
+    // Flowchart lightbox: a native <dialog>. Esc is built in, and the browser returns
+    // focus to the button that opened it.
+    const flowchartModal = document.getElementById('flowchart-modal');
+    const flowchartOpen = document.getElementById('flowchart-open');
+    const flowchartClose = document.getElementById('flowchart-close');
+    if (flowchartModal && flowchartOpen && flowchartClose) {
+      flowchartOpen.addEventListener('click', () => flowchartModal.showModal());
+      flowchartClose.addEventListener('click', () => flowchartModal.close());
+      // A click on the dialog itself (not on the image or the button) is a backdrop click.
+      flowchartModal.addEventListener('click', (event) => {
+        if (event.target === flowchartModal) flowchartModal.close();
+      });
+    }
+    }
+    document.addEventListener('astro:page-load', initHome);
   </script>
 </Layout>

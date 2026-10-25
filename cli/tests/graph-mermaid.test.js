@@ -97,7 +97,34 @@ describe('toMermaid', () => {
   });
 });
 
+describe('the public profile', () => {
+  const INTERNAL = {
+    id: 'internal/command/add-framework--sync', kind: 'command', layer: 'internal',
+    name: 'add-framework--sync', path: 'workbench/commands/add-framework--sync.md',
+    registered: true, providers: [], declares: true,
+  };
+  const WITH_INTERNAL = { nodes: [...G.nodes, INTERNAL], edges: [...G.edges] };
+
+  it('DOCS_PROFILE keeps product nodes only', () => {
+    // Users cannot install an internal command, so the public diagram must not draw one.
+    const out = toMermaid(WITH_INTERNAL, DOCS_PROFILE);
+    expect(out).toContain('add-plan');
+    expect(out).not.toContain('add-framework--');
+  });
+
+  it('a layers option filters root mode too', () => {
+    const edge = { from: 'product/command/add-plan', to: INTERNAL.id, type: 'HANDS_OFF_TO', origin: 'declared', modifier: null };
+    const g = { nodes: WITH_INTERNAL.nodes, edges: [...G.edges, edge] };
+    expect(toMermaid(g, { root: 'product/command/add-plan' })).toContain('add-framework--sync');
+    expect(toMermaid(g, { root: 'product/command/add-plan', layers: ['product'] })).not.toContain('add-framework--');
+  });
+});
+
 describe('the checked-in diagram', () => {
+  it('lists no internal command', () => {
+    expect(fs.readFileSync(DOCS_DIAGRAM, 'utf8')).not.toContain('add-framework--');
+  });
+
   it('is current with the emitted graph', () => {
     // Renders DOCS_PROFILE, the same constant `mermaid --write` uses. Each side
     // previously carried its own options: the documented command emitted 606
