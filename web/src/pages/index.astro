@@ -86,6 +86,30 @@ import "../styles/global.css";
     </div>
   </section>
 
+  <!-- Terminal session: static text; the typing effect is a mask added by JS -->
+  <section id="session" class="px-6 pb-24">
+    <div class="max-w-3xl mx-auto">
+      <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4 text-center">A session, shortened</p>
+      <h2 class="sr-only">Plan and build a feature in two commands</h2>
+      <div id="session-term" class="rounded-xl border border-white/10 bg-[#0a0a0a] overflow-hidden">
+        <div class="flex items-center gap-1.5 px-4 py-3 border-b border-white/5" aria-hidden="true">
+          <span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span><span class="w-2.5 h-2.5 rounded-full bg-white/10"></span>
+        </div>
+        <div class="p-6 font-mono text-sm leading-relaxed space-y-1 overflow-x-auto">
+        <span class="term-line" style="--i:0"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-plan checkout-discounts</span></span>
+        <span class="term-line" style="--i:1"><span class="text-muted-light">  </span><span class="text-muted-light">Discovery: 3 questions asked, 3 decisions recorded</span></span>
+        <span class="term-line" style="--i:2"><span class="text-muted-light">  </span><span class="text-muted-light">Plan written: 4 tasks, 2 acceptance tests</span></span>
+        <span class="term-line" style="--i:3"><span class="text-accent select-none">$ </span><span class="text-foreground">/add-build</span></span>
+        <span class="term-line" style="--i:4"><span class="text-muted-light">  </span><span class="text-muted-light">Task 1/4  schema and migration .......... done</span></span>
+        <span class="term-line" style="--i:5"><span class="text-muted-light">  </span><span class="text-muted-light">Task 2/4  discount service ............... done</span></span>
+        <span class="term-line" style="--i:6"><span class="text-muted-light">  </span><span class="text-muted-light">Task 3/4  API endpoint ................... done</span></span>
+        <span class="term-line" style="--i:7"><span class="text-muted-light">  </span><span class="text-muted-light">Task 4/4  checkout form ................. done</span></span>
+        <span class="term-line" style="--i:8"><span class="text-accent">✔ </span><span class="text-accent">Build complete: tests green, ready for /add-review</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- The Development Trail -->
   <section id="trail" class="py-24 px-6">
     <div class="max-w-6xl mx-auto">
@@ -279,6 +303,19 @@ import "../styles/global.css";
           mobileMenuToggle.focus();
         }
       });
+    }
+
+    // Terminal session: the text is in the HTML. The typing effect is a mask that only this
+    // script adds, so without JS or under reduced motion the full text is simply there.
+    const sessionTerm = document.getElementById('session-term');
+    if (sessionTerm && 'IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      sessionTerm.classList.add('js-typing');
+      new IntersectionObserver((entries, observer) => {
+        if (entries[0].isIntersecting) {
+          sessionTerm.classList.add('is-typing');
+          observer.disconnect();
+        }
+      }, { threshold: 0.4 }).observe(sessionTerm);
     }
 
     // Flowchart lightbox: a native <dialog>. Esc is built in, and the browser returns

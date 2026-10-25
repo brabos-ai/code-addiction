@@ -165,6 +165,37 @@ body::before {
   user-select: none;
 }
 
+/* Terminal session: the text is plain HTML. The typing effect is a mask that slides off each
+   line (transform only) and exists only when the page script adds .js-typing, so no-JS readers,
+   crawlers and reduced-motion users see every line from the first paint. */
+.term-line {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  white-space: pre;
+}
+
+.js-typing .term-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #0a0a0a;
+}
+
+.js-typing.is-typing .term-line::after {
+  animation: termReveal 0.7s steps(30, end) both;
+  animation-delay: calc(var(--i) * 0.45s);
+}
+
+@keyframes termReveal {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(101%);
+  }
+}
+
 /* Reduced motion: no fade-up, no bounce, no cursor blink, no smooth scroll */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -172,8 +203,12 @@ body::before {
   }
   .fade-up,
   .animate-bounce,
-  .cursor-blink::after {
+  .cursor-blink::after,
+  .js-typing .term-line::after {
     animation: none;
+  }
+  .js-typing .term-line::after {
+    display: none;
   }
   *,
   *::before,
