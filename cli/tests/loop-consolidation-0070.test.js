@@ -115,6 +115,7 @@ describe('0070 L1 — build-side unit', () => {
     // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
     // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
     // 71 -> 71 + the agent-mode sections: counted from fragments/agent-mode/ (plan 2026-10-09T184411-PLAN--agent-mode-feature).
+    // 72 -> 76 in BASELINE_POINTS: the four design plugin sections, plugins/design/fragments (0065B, F3).
     expect(sidecarPoints()).toHaveLength(TOTAL_POINTS());
   });
 

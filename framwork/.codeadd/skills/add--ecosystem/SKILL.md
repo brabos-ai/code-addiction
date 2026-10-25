@@ -227,6 +227,7 @@ Enable/disable via `codeadd features enable|disable|list <name>` — fragments a
 |--------|------|-------------|--------------|--------------|
 | gitnexus | mcp | Code knowledge-graph navigation (calls, refs, blast-radius) via MCP | add-new, add-plan, add-build, add-diagnose, add-hotfix, add-done, add-wiki + 9 agents (discovery, architecture, system-design, backend, database, frontend, ux, ux-flow, reviewer) | add--gitnexus |
 | playwright | mcp | Adds live browser driving (screenshots + console/network) to the already-present QA validation via Playwright MCP | add-review (command), qa-agent (agent) | — (add--qa is now default) |
+| design | skill | Adds ui-ux-pro-max (installed by you) as the style, palette, typography and chart source for the plan's design step | add-plan (command) + 3 agents (ux-flow, ux-layout, ux critique) | — (uses your installed ui-ux-pro-max) |
 
 Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are disabled by default and require the external tool to be installed.
 
@@ -277,6 +278,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--feature-specification (about.md) | add-review (functional axis reads acceptance criteria — QA quality is bounded by spec quality) |
 | add--ux-design (design.md) | add-review (@ux-agent review judges the judgement axes vs the `## Design Contract`; @qa-agent checks deterministic conformance vs the computed-style rows) |
 | playwright (plugin) | add-review (drive), qa-agent (drive) — enhancement/live arm; the QA judgement runs without it (read-PNG) |
+| design (plugin) | add-plan (design step), ux-flow-agent (direction), ux-layout-agent (layout), ux-agent (critique) — enhancement only; the design core runs without it |
 | status.cjs | add-help, add-brainstorm, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-ux |
 | init.cjs | add-new — seeds the feature's documents on first use |
 | qa-preflight.cjs | add-qa-setup, add-review — checks the QA runner is installed and configured before any evidence is gathered |

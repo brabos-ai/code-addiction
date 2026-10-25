@@ -2,7 +2,7 @@
   "$schema-doc": {
     "description": "Plugin catalog — external-tool integrations. codeadd owns utilization, never installation. Each entry keyed by plugin name. Schema per entry:",
     "fields": {
-      "type": "string — 'mcp' | 'script' | 'http'. v1 implements only 'mcp'.",
+      "type": "string — 'mcp' | 'script' | 'http' | 'skill'. No code reads this field: it labels the tool, and 'skill' means a skill the user installs.",
       "description": "string — one-line summary shown in `plugins list`.",
       "detect": "string — shell probe; exit-0 means the tool is present (hard gate).",
       "homepage": "string — tool's homepage, printed on validation failure.",
@@ -45,6 +45,21 @@
     "skills": [],
     "agents": [
       { "agent": "qa-agent", "sections": ["drive"] }
+    ]
+  },
+  "design": {
+    "type": "skill",
+    "description": "Adds ui-ux-pro-max (installed by you) as the style, palette, typography and chart source for the plan's design step",
+    "detect": "node -e \"const fs=require('fs'),os=require('os'),p=require('path');const h=os.homedir(),c=process.cwd(),s='ui-ux-pro-max/SKILL.md';const a=['.claude','.cursor','.agents','.agent','.opencode','.zcode'].map(r=>p.join(c,r,'skills',s));const b=['.claude','.cursor','.agents','.zcode'].map(r=>p.join(h,r,'skills',s)).concat(p.join(h,'.config','opencode','skills',s));let ok=a.concat(b).some(f=>fs.existsSync(f));if(ok===false){try{const d=process.env.CLAUDE_CODE_PLUGIN_CACHE_DIR||p.join(h,'.claude','plugins');const j=JSON.parse(fs.readFileSync(p.join(d,'installed_plugins.json'),'utf8'));ok=Object.keys(j.plugins||{}).concat(Object.keys(j)).some(k=>k.startsWith('ui-ux-pro-max@'))}catch(e){}}process.exit(ok?0:1)\"",
+    "homepage": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+    "installHint": "Install ui-ux-pro-max yourself, by one of its two official routes:\n  In Claude Code: /plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill, then /plugin install ui-ux-pro-max@ui-ux-pro-max-skill\n  Any provider: npm install -g ui-ux-pro-max-cli, then uipro init --ai <claude|codex|cursor|antigravity|opencode|zcode>\nDo not use the stale uipro-cli package. Requires Python 3 for its search script. Docs: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+    "postEnableHint": "design enabled: the plan's design step now consults ui-ux-pro-max. Check python3 --version (Windows: py --version); without Python the agents skip the search and use the design core. Restart the session or run /reload-plugins for a Claude plugin install.",
+    "injects": ["add-plan"],
+    "skills": [],
+    "agents": [
+      { "agent": "ux-flow-agent", "sections": ["direction"] },
+      { "agent": "ux-layout-agent", "sections": ["layout"] },
+      { "agent": "ux-agent", "sections": ["critique"] }
     ]
   }
 }

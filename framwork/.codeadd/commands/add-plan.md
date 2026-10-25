@@ -337,6 +337,11 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 
 ⛔ A `design.md` with no `## Design Contract` is not a cosmetic gap — it silently disables `@qa-agent`'s deterministic conformance axis and leaves `/add-review`'s contract check with nothing to verify. Never let a provenance match preserve one.
 
+<!-- slot:design.plan fallback="fallbacks/empty.md" -->
+<!-- plugin:design:plan -->
+<!-- /plugin:design:plan -->
+<!-- /slot:design.plan -->
+
 #### STEP add-plan.dispatch-ux-flow DISPATCH @ux-flow-agent (flow & interaction)
 
 - **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
