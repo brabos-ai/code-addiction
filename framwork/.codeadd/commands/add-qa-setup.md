@@ -327,7 +327,7 @@ The skeleton to write is declared in `## Materializes` → `<provider skills dir
 
 ## STEP add-qa-setup.config: Scaffold Project QA Config
 
-Target: the `qa` section of `.codeadd/settings.json` (git-tracked, project-wide). A file with no `qa` section counts as absent: read the file, merge the value fields into `qa`, and write it back without touching any other section.
+Target: the `qa` section of `.codeadd/settings.json` (git-tracked, project-wide). A file with no `qa` section counts as absent: read the file, merge the value fields into `qa`, and write it back without touching any other section. Keep the parsed file in memory as `BEFORE` (an absent file is `{ "schema": 1 }`); STEP add-qa-setup.validate compares against it.
 
 <!-- slot:agent-mode.config-values fallback="fallbacks/agent-mode.add-qa-setup.config-values.md" -->
 <!-- feature:agent-mode:config-values -->
@@ -417,7 +417,7 @@ IF A ROW STILL FAILS:
 
 ## STEP add-qa-setup.receipt: Write the Receipt
 
-Target: the receipt fields of the `qa` section of `.codeadd/settings.json`. Schema: {{skill:add--settings/SKILL.md}}. Procedure: {{skill:add--setup-contract/SKILL.md}} step 5.
+Target: the receipt fields of the `qa` section of `.codeadd/settings.json`. Schema: {{skill:add--settings/SKILL.md}}. Procedure: {{skill:add--setup-contract/SKILL.md}} step 4.
 
 Write it on **every** run — including a run that changed nothing. A verified-current run is information, not nothing.
 
@@ -438,7 +438,7 @@ Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT s
 2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
 3. **Vocabularies.** Every `prereqs.<name>`, `qa-pipeline-feature`, `migration.decision` and `materialized[].owner` holds a value declared in {{skill:add--settings/SKILL.md}}. `migration.detected` is sorted alphabetically.
 4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json` and `.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
-5. **`log` is append-only.** Compare with the file as it was before this run (the copy read at STEP add-qa-setup.config, or `git show HEAD:.codeadd/settings.json`): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
+5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
 6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
 7. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
 

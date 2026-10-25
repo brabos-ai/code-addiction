@@ -32,7 +32,7 @@ description: Use when a command persists project configuration or a setup record
 
 - **Location:** always the project root's `.codeadd/settings.json`, also on a `--global` install, because settings are per project.
 - **Top level:** `{ "schema": 1, "qa": {…}, "setup": {…} }`. One section per command; a section appears when its command first writes it.
-- **Only commands write it**, each only its own section. `/add-qa-setup` writes `qa`; the future setup command writes `setup`.
+- **Only commands write it**, each only its own section. `/add-qa-setup` writes `qa`.
 - **Scripts only read it** (`qa-preflight.cjs`, `status.cjs`). A malformed file reads as `broken` or STALE, never as a crash.
 - **The CLI writes it only through migration `0005-qa-settings`.** It never rewrites it on install, update or modify.
 - **Always say `.codeadd/settings.json` in full.** The bare name is ambiguous with the editor's own settings file.
@@ -54,7 +54,7 @@ IF A COMMAND WRITES ITS SECTION:
 
 Values, short descriptions and decisions go in `.codeadd/settings.json`. Only prompt-like or long guidance text goes in a `.md` file, referenced from the JSON by a relative path (for example `"notes": "settings/<name>.md"`). No prompts in JSON.
 
-Nothing qualifies for an `.md` reference today: `bootHint` and `authSeed` are one-line hints, so they stay strings. No `.codeadd/settings/` folder exists yet, and none is created until a section needs one.
+`bootHint` and `authSeed` are one-line hints, so they stay strings.
 
 ## Section `qa`
 
@@ -146,3 +146,13 @@ A receipt is the record a command leaves so a later framework release can comput
 
 - `{{skill:add--setup-contract/SKILL.md}}` — the shape comparison that reads the receipt fields.
 - `{{skill:add--doc-schemas/SKILL.md}}` — the legacy markdown receipt category, now a pointer to this skill.
+
+## Rules
+
+ALWAYS:
+- Read, merge and write only your own section
+- Say `.codeadd/settings.json` in full
+
+NEVER:
+- Hash a `shared` entry
+- Edit or delete an existing `log` entry

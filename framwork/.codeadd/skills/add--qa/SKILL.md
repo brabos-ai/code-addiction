@@ -117,7 +117,7 @@ The `qa` section of `.codeadd/settings.json` (project-wide; scaffolded by `/add-
 ```json
 {
   "qa": {
-    "baseUrl": "http://localhost:5173",
+    "baseUrl": "http://localhost:<port>",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
     "bootHint": "how to start the app's dev server (free text, project-specific)",
     "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
