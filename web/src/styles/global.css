@@ -115,6 +115,12 @@ body::before {
   text-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1);
 }
 
+/* Keyboard focus: one visible ring for every control */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
 /* Selection */
 ::selection {
   background: rgba(0, 255, 136, 0.2);
