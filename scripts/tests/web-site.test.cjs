@@ -396,3 +396,14 @@ test('F20: a script that outlives its page binds once and guards work that finis
   assert.match(docs, /if \(!target\.isConnected\) return;/);
   assert.match(docs, /if \(!document\.getElementById\('eco-cy'\)\) return;/);
 });
+
+// ------------------------------------------ Lighthouse accessibility findings
+test('Lighthouse a11y: inline links are underlined, the map hint has contrast, the search label matches its text', () => {
+  const docs = DOCS();
+  assert.doesNotMatch(docs, /class="text-accent hover:underline"/, 'a link inside text must not rely on colour alone');
+  assert.doesNotMatch(docs, /text-muted-light\/70/, 'the map hint sits at 3.9:1 with the opacity');
+  const btn = docs.match(/<button type="button" id="docs-search-open"[^>]*>/);
+  assert.ok(btn, 'desktop search button not found');
+  assert.doesNotMatch(btn[0], /aria-label=/, 'the visible text already names the button; a different label fails label-in-name');
+  assert.match(docs, /<kbd[^>]*aria-hidden="true"/);
+});
