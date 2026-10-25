@@ -18,9 +18,25 @@ Skill for backend API implementation following universal architectural principle
 **Use for:** Routes/Controllers, Services, DTOs, Domain logic, Data access, Error handling
 **Not for:** Frontend (`ux-design`), Database migrations (`database-development`), Security (`security-audit`)
 
-**Stack resolution:** Consult `AGENTS.md ## Architecture Contract` for the framework in use (Express, Fastify, NestJS, Hono, Elysia, etc.). Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
+**Stack resolution:** Project conventions: follow `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ `{{addpath:wiki/domains/<area>.md}}`); a one-line critical rule may live in `AGENTS.md`. If absent, apply the agnostic defaults and follow the nearest existing code; never impose tenancy, DI registration or barrels unless the project uses them. Apply these principles using the framework's idiomatic patterns. The AI already knows each framework's syntax — this skill teaches architecture, not framework tutorials.
 
-**Reference:** Always consult `AGENTS.md` for general project standards.
+**Reference:** Conventions come from the wiki first; `AGENTS.md` is the fallback for general project standards.
+
+---
+
+## Project Conventions First
+
+Read in this order: `{{addpath:wiki/conventions.md}}` → `## Stack Conventions` (+ the area page under `{{addpath:wiki/domains/<area>.md}}`), then `AGENTS.md` `## Architecture Contract` / `## Technical Spec` for stack facts. In a tiny wiki the same table sits in `{{addpath:wiki/index.md}}` → `### Stack Conventions`. A recorded row wins over the default below. A row that says `none` means the project does not use the thing: follow the nearest existing code.
+
+Agnostic defaults, used only when nothing is recorded (the other dev skills link here and do not copy this list):
+
+- **Tenancy** (row `Tenancy`): none. If a feature introduces tenant-scoped data in a project without tenancy, raise it as a planning question. Never add it silently.
+- **DI** (row `DI`): pass collaborators in (constructor/parameters) for testability. Register in a container only if the project has one.
+- **Barrels** (row `Barrels`): do not create new ones. If the folder already has one, add the export.
+- **Entity language** (row `Entity language`): the project's language and the form used by neighbouring entity files.
+- **Validation** (row `Validation`): validate at the boundary with the project's library. Never add a new library. If there is none, flag it in the plan.
+- **Data access** (row `ORM / data access`): use a repository and a mapper (e.g. `toEntity`) only when the project already uses them or persistence naming differs from domain naming.
+- **Layering** (row `Layering`): follow `{{addpath:wiki/architecture.md}}`. The default rule is only "keep HTTP/IO out of business logic".
 
 ---
 
@@ -36,6 +52,8 @@ Skill for backend API implementation following universal architectural principle
 ---
 
 ## Clean Architecture
+
+One common layering, given as an example. The project's own layering (`{{addpath:wiki/architecture.md}}` / row `Layering`) wins.
 
 ```
 domain → application → infrastructure → presentation
@@ -115,22 +133,21 @@ Don't:
 
 ## Dependency Injection / IoC
 
-**EVERY service, repository, and handler MUST be registered in the framework's DI container.**
-
 Principles:
 
-- Services receive dependencies via constructor injection
+- Services receive dependencies via constructor/parameter injection (the default, container or not)
 - Depend on interfaces/abstractions, never concrete implementations
-- Register all components in the framework's container/module system
-- Cross-module dependencies must be explicitly exported/shared
+- Only when row `DI` names a container: register every service, repository and handler in it, and export cross-module dependencies explicitly
 
-**Common DI errors:** Unresolved dependency = not registered. Cross-module failure = not exported. Route 404 = module not loaded. Consult framework docs for idiomatic registration.
+**Common DI errors (with a container):** Unresolved dependency = not registered. Cross-module failure = not exported. Route 404 = module not loaded. Consult framework docs for idiomatic registration.
 
 ---
 
 ## Naming Conventions
 
-File naming (lookup):
+Follow the project's naming. The tables below are examples, not a mandate.
+
+File naming (example, one stack):
 
 | Type | Pattern |
 |---|---|
@@ -148,11 +165,11 @@ Casing rules:
 |---|---|
 | Files | kebab-case or PascalCase (follow project convention) |
 | Classes | PascalCase |
-| Interfaces | `I` + PascalCase |
+| Interfaces | `I` + PascalCase (example; only if the project uses the prefix) |
 | DB columns | snake_case |
 | Variables | camelCase |
 
-**Paths and aliases:** Follow the project's existing import aliases and directory structure. Do not invent new aliases — check `tsconfig.json` paths and existing code.
+**Paths and aliases:** Follow the project's existing import aliases and directory structure. Do not invent new aliases — check the project's alias config (e.g. `tsconfig.json` paths) and existing code.
 
 ---
 
@@ -191,13 +208,15 @@ DTO naming:
 
 ## Repository Pattern
 
+Use a repository (and a mapper such as `toEntity`) only when the project already uses them or persistence naming differs from domain naming (row `ORM / data access`). Otherwise follow the project's data-access style.
+
+When used:
+
 - Interface defined in application/domain layer
 - Implementation in infrastructure layer
 - Services depend on the interface, never the implementation
 - Returns domain entities, not raw rows or ORM-specific objects
 - All data access goes through repositories — no direct DB calls in services
-
-<!-- CQRS section removed — flagged for future split into add-backend-cqrs skill -->
 
 ---
 
@@ -226,7 +245,7 @@ Error mapping:
 
 ## Module / Feature Structure
 
-Organize code by domain/feature, not by technical role. Each feature module contains its own controllers, services, DTOs, and domain logic.
+Organize code by domain/feature, not by technical role. Each feature module contains its own controllers, services, DTOs, and domain logic. The tree below is one example layout; the project's structure wins.
 
 ```
 [feature]/
@@ -250,7 +269,9 @@ Organize code by domain/feature, not by technical role. Each feature module cont
 
 ## Multi-Tenancy
 
-- ALWAYS filter by tenant identifier (e.g., `account_id`) at repository level
+Only when row `Tenancy` = yes. Without it, do not add tenancy; raise it as a planning question instead.
+
+- ALWAYS filter by the recorded tenant key (e.g. `account_id`) at the data-access level
 - Tenant ID extracted from auth context (JWT/session), NEVER from request body
 - Super Admin may access cross-tenant data — explicitly guard this
 - NEVER trust client-provided tenant ID
@@ -259,7 +280,7 @@ Organize code by domain/feature, not by technical role. Each feature module cont
 
 ## Configuration
 
-- **NEVER** access env vars directly in services (`process.env`, `Bun.env`, etc.)
+- **NEVER** read the environment directly in services (e.g. `process.env`)
 - **ALWAYS** use a centralized, typed configuration service/module
 
 Rules:
@@ -288,20 +309,20 @@ Rules:
 - [ ] URLs use nouns, not verbs (no `/getUsers`, `/createOrder`)
 - [ ] Correct HTTP methods (GET=read, POST=create, PUT=full update, PATCH=partial, DELETE=remove)
 - [ ] Correct status codes (POST→201, DELETE→204, GET/PUT/PATCH→200)
-- [ ] URL pattern follows `/api/v1/resource`
+- [ ] URL pattern follows the project's URL/versioning convention
 
 ### Clean Architecture
 
-- [ ] Layer dependencies respected (domain → application → infrastructure → presentation)
+- [ ] Layer dependencies respected (the project's layering; the example order if none is recorded)
 - [ ] Domain has zero I/O or framework dependencies
-- [ ] Repositories return domain entities, not DTOs or raw rows
+- [ ] If the project uses repositories: they return domain entities, not DTOs or raw rows
 
 ### Dependency Injection
 
-- [ ] All services/repositories/handlers registered in DI container
-- [ ] Dependencies injected via constructor, not instantiated directly
+- [ ] If the project uses a DI container: all services/repositories/handlers registered in it
+- [ ] Dependencies injected via constructor/parameters, not instantiated directly
 - [ ] Services depend on interfaces, not concrete implementations
-- [ ] Cross-module dependencies explicitly exported/shared
+- [ ] If the project uses a DI container: cross-module dependencies explicitly exported/shared
 
 ### DTOs
 
@@ -317,9 +338,9 @@ Rules:
 
 ### Multi-Tenancy
 
-- [ ] Every query filters by tenant identifier
-- [ ] Tenant ID extracted from auth context, never from request body
-- [ ] Client-provided tenant ID never trusted
+- [ ] If the project uses tenancy: every query filters by the recorded tenant key
+- [ ] If the project uses tenancy: tenant ID extracted from auth context, never from request body
+- [ ] If the project uses tenancy: client-provided tenant ID never trusted
 
 ### Configuration
 
