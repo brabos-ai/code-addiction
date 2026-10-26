@@ -404,3 +404,60 @@ describe('board-init (CLI helper) -- one real spawn', () => {
     expect(git(proj, ['rev-parse', 'HEAD']).stdout).toBe(head);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 0070B -- no shipped text sends a user to a person for the board
+// ---------------------------------------------------------------------------
+
+describe('board-init -- shipped texts name the route, never a maintainer', () => {
+  const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    if (e.name === 'node_modules' || e.name === 'dist') return [];
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? walk(p) : [p];
+  });
+
+  it('no file under framwork/.codeadd, cli/src or board/src says "framework maintainer"', () => {
+    const offenders = ['framwork/.codeadd', 'cli/src', 'board/src']
+      .flatMap((d) => walk(path.join(ROOT, d)))
+      .filter((f) => /framework maintainer/i.test(fs.readFileSync(f, 'utf8')))
+      .map((f) => path.relative(ROOT, f).replaceAll('\\', '/'));
+    expect(offenders).toEqual([]);
+  });
+
+  it('add--backlog: the branch-missing row and the no-board row name board-init.cjs, migration-required names the README, uses lists the script', () => {
+    const src = read('framwork/.codeadd/skills/add--backlog/SKILL.md');
+    const row = (re) => src.split('\n').find((l) => re.test(l)) ?? '';
+    expect(row(/^\| `ERROR=board-branch-missing` \|/)).toContain('board-init.cjs');
+    expect(row(/^\| no board \(no config, no board file\) \|/)).toContain('board-init.cjs');
+    expect(row(/^\| `ERROR=board-migration-required` \|/)).toContain('https://github.com/brabos-ai/code-addiction#board');
+    expect(src).toMatch(/<!-- uses:[\s\S]*?- script: board-init\.cjs[\s\S]*?-->/);
+  });
+
+  it('add--ecosystem lists board-init.cjs in the script table and as a mention', () => {
+    const src = read('framwork/.codeadd/skills/add--ecosystem/SKILL.md');
+    expect(src).toMatch(/^\| board-init\.cjs \| add--backlog/m);
+    expect(src).toContain('- mention: board-init.cjs');
+  });
+
+  it('agent-mode/board-management.md section 1 says how the board is created', () => {
+    const src = read('framwork/.codeadd/agent-mode/board-management.md');
+    const start = src.indexOf('## 1.');
+    const end = src.indexOf('\n## 2.');
+    expect(start).toBeGreaterThan(-1);
+    const section = src.slice(start, end);
+    expect(section).toMatch(/board-init\.cjs/);
+    expect(section).toMatch(/enabling the `board` feature/i);
+  });
+
+  it('states.tsx keeps its state keys and titles, and the bodies point at the README and board-init', () => {
+    const src = read('board/src/components/states.tsx');
+    for (const key of ['board-migration-required', 'board-branch-missing', 'board-checkout-missing']) {
+      expect(src).toContain(`'${key}'`);
+    }
+    expect(src).toContain('This project’s board has not been moved yet');
+    expect(src).toContain('The board branch does not exist');
+    expect(src).toContain('https://github.com/brabos-ai/code-addiction#board');
+    expect(src).toContain('node .codeadd/scripts/board-init.cjs');
+  });
+});
