@@ -269,7 +269,7 @@ describe('review fixes — re-run edges of the command', () => {
     expect(src).not.toContain('unavailable');
     expect(src).not.toContain('framework maintainer');
     expect(src).toMatch(/\| `board` \| yes when `agent-mode` is accepted or on[^\n]*\| [^\n]*creates the board branch on origin; needs origin with the main branch pushed/);
-    expect(src).toMatch(/recorded `unavailable` is treated as new/);
+    expect(src).toMatch(/legacy value[^\n]*no longer writes is treated as new/);
   });
 
   it('0070B: the execute step reads BOARD= / ERROR= and records enabled or failed, with the no-result rule', () => {
