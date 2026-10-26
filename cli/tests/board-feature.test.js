@@ -20,14 +20,44 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import AdmZip from 'adm-zip';
+
+const mocks = vi.hoisted(() => ({
+  getLatestTag: vi.fn(),
+  getLatestPrerelease: vi.fn(),
+  downloadReleaseAsset: vi.fn(),
+  promptFeatures: vi.fn(),
+  promptProviders: vi.fn(),
+  promptScope: vi.fn(),
+  promptConfirm: vi.fn(),
+  promptGitignore: vi.fn(),
+  promptExistingInstall: vi.fn(),
+}));
+
+vi.mock('../src/github.js', () => ({
+  getLatestTag: mocks.getLatestTag,
+  getLatestPrerelease: mocks.getLatestPrerelease,
+  downloadReleaseAsset: mocks.downloadReleaseAsset,
+}));
+
+vi.mock('../src/prompt.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, ...mocks };
+});
 
 vi.mock('@clack/prompts', async (importOriginal) => {
   const actual = await importOriginal();
   return { ...actual, intro: vi.fn(), outro: vi.fn(), log: { ...actual.log, success: vi.fn(), info: vi.fn(), error: vi.fn(), warn: vi.fn() } };
 });
 
-import { FEATURES, enableFeature, disableFeature } from '../src/features.js';
+import { FEATURES, enableFeature, disableFeature, features } from '../src/features.js';
+import { modify } from '../src/modify.js';
+import { install } from '../src/installer.js';
+import { log } from '@clack/prompts';
+import { initBoardOnEnable, setBoardInitExec } from '../src/board-init.js';
 import { PROVIDERS } from '../src/providers.js';
 import { treeFixture } from './helpers/tree-fixture.js';
 
@@ -141,5 +171,236 @@ describe('board — L6.4: enable order changes no byte', () => {
     for (const f of order) disableFeature(tmp, f);
     for (const f of [...order].reverse()) enableFeature(tmp, f);
     expect(snapshotAll(tmp)).toEqual(first);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 0070B -- enabling the feature creates the board (cli/src/board-init.js)
+// ---------------------------------------------------------------------------
+
+const BOARD_JSON = path.join('.codeadd', 'board.json');
+const SCRIPT_REL = path.join('.codeadd', 'scripts', 'board-init.cjs');
+const OK_RESULT = { status: 0, stdout: 'BOARD=created\nCODE_CHANGES=staged\nSTAGED=.codeadd/board.json\nNext: commit .codeadd/board.json so the team shares the board.\n' };
+
+/** A bare project dir with a stub script in place; the exec is always injected. */
+function stubProject(t, { scope, script = true, boardJson = false } = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'board-init-cli-'));
+  t.cleanups.push(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, '.codeadd', 'scripts'), { recursive: true });
+  if (script) fs.writeFileSync(path.join(dir, SCRIPT_REL), '// stub\n');
+  if (boardJson) fs.writeFileSync(path.join(dir, BOARD_JSON), '{}');
+  if (scope) fs.writeFileSync(path.join(dir, '.codeadd', 'manifest.json'), JSON.stringify({ version: '0.0.0', scope, providers: [], features: {}, plugins: {}, hashes: {} }));
+  return dir;
+}
+
+describe('board-init (CLI helper) -- 0070B', () => {
+  const t = { cleanups: [] };
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => {
+    setBoardInitExec(null);
+    for (const fn of t.cleanups.splice(0)) fn();
+  });
+
+  it('spawns once, with the project as cwd, when board.json is absent', () => {
+    const dir = stubProject(t);
+    const exec = vi.fn(() => OK_RESULT);
+    initBoardOnEnable(dir, 'board', { scope: 'project', exec });
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(exec.mock.calls[0][0].cwd).toBe(dir);
+    expect(log.info).toHaveBeenCalledWith(expect.stringContaining('BOARD=created'));
+    expect(log.warn).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn when board.json exists', () => {
+    const dir = stubProject(t, { boardJson: true });
+    const exec = vi.fn(() => OK_RESULT);
+    initBoardOnEnable(dir, 'board', { scope: 'project', exec });
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn in global scope', () => {
+    const dir = stubProject(t);
+    const exec = vi.fn(() => OK_RESULT);
+    initBoardOnEnable(dir, 'board', { scope: 'global', exec });
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn for any other feature name', () => {
+    const dir = stubProject(t);
+    const exec = vi.fn(() => OK_RESULT);
+    for (const name of Object.keys(FEATURES).filter((n) => n !== 'board')) {
+      initBoardOnEnable(dir, name, { scope: 'project', exec });
+    }
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it('reads the scope from the manifest when none is passed', () => {
+    const dir = stubProject(t, { scope: 'global' });
+    const exec = vi.fn(() => OK_RESULT);
+    initBoardOnEnable(dir, 'board', { exec });
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an ERROR= result', () => ({ status: 1, stdout: 'ERROR=no-remote\nThis project has no origin.\n' }), /ERROR=no-remote/],
+    ['a non-zero exit', () => ({ status: 3, stdout: '' }), /board-init\.cjs/],
+    ['a thrown spawn error', () => { throw new Error('spawn failed'); }, /board-init\.cjs/],
+  ])('%s gives exactly one warning and the enable still returns', (_name, exec, pattern) => {
+    const dir = stubProject(t);
+    expect(() => initBoardOnEnable(dir, 'board', { scope: 'project', exec })).not.toThrow();
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(log.warn.mock.calls[0][0]).toMatch(pattern);
+    expect(log.warn.mock.calls[0][0]).toContain('node .codeadd/scripts/board-init.cjs');
+    expect(log.warn.mock.calls[0][0]).not.toContain('\n');
+  });
+
+  it('a missing script gives exactly one warning and no spawn', () => {
+    const dir = stubProject(t, { script: false });
+    const exec = vi.fn(() => OK_RESULT);
+    initBoardOnEnable(dir, 'board', { scope: 'project', exec });
+    expect(exec).not.toHaveBeenCalled();
+    expect(log.warn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('board-init (CLI helper) -- the four enable entry points reach it', () => {
+  const bfix = treeFixture({
+    prefix: 'board-init-entry-',
+    copy: [
+      ...Object.values(PROVIDERS).map((meta) => ({ src: meta.src, dest: meta.dest, optional: true })),
+      { src: 'framwork/.codeadd', dest: '.codeadd' },
+    ],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: Object.keys(PROVIDERS), features: {}, plugins: {}, hashes: {} },
+    },
+  });
+  let tmp;
+  let exec;
+  const realIsTTY = process.stdin.isTTY;
+  beforeEach(() => {
+    vi.clearAllMocks();
+    tmp = bfix.root();
+    exec = vi.fn(() => OK_RESULT);
+    setBoardInitExec(exec);
+  });
+  afterEach(() => {
+    setBoardInitExec(null);
+    process.stdin.isTTY = realIsTTY;
+    bfix.cleanup();
+  });
+  afterAll(() => bfix.dispose());
+
+  const setScope = (dir, scope) => {
+    const file = path.join(dir, '.codeadd', 'manifest.json');
+    fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), scope }));
+  };
+
+  it('features enable board (non-interactive)', async () => {
+    await features(tmp, ['enable', 'board']);
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(exec.mock.calls[0][0].cwd).toBe(tmp);
+  });
+
+  it('features enable board on a manifest with scope global does not spawn', async () => {
+    setScope(tmp, 'global');
+    await features(tmp, ['enable', 'board']);
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it('features enable <other> does not spawn', async () => {
+    await features(tmp, ['enable', 'tdd-pipeline']);
+    expect(exec).not.toHaveBeenCalled();
+  });
+
+  it('features (interactive menu) reaches it when board is newly ticked', async () => {
+    process.stdin.isTTY = true;
+    mocks.promptFeatures.mockResolvedValue(['board']);
+    await features(tmp, []);
+    expect(exec).toHaveBeenCalledTimes(1);
+  });
+
+  it('modify --enable-feature board', async () => {
+    await modify(tmp, ['--enable-feature', 'board']);
+    expect(exec).toHaveBeenCalledTimes(1);
+    expect(exec.mock.calls[0][0].cwd).toBe(tmp);
+  });
+
+  it('install --enable-feature board reaches it; a plain install does not', async () => {
+    const zip = new AdmZip();
+    zip.addFile('framwork/.codeadd/scripts/board-init.cjs', Buffer.from('// stub\n'));
+    zip.addFile('framwork/.codeadd/injection-points.json', Buffer.from('{"version":1,"points":[]}\n'));
+    zip.addFile('framwork/.agents/skills/add/SKILL.md', Buffer.from('---\nname: add\n---\n'));
+    mocks.getLatestTag.mockResolvedValue('v1.2.3');
+    mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
+    mocks.promptProviders.mockResolvedValue(['codex']);
+    mocks.promptGitignore.mockResolvedValue(true);
+    process.stdin.isTTY = false;
+
+    const withBoard = fs.mkdtempSync(path.join(os.tmpdir(), 'board-init-install-'));
+    const plain = fs.mkdtempSync(path.join(os.tmpdir(), 'board-init-install-'));
+    try {
+      await install(withBoard, { args: ['--providers', 'codex', '--enable-feature', 'board'] });
+      expect(exec).toHaveBeenCalledTimes(1);
+      expect(exec.mock.calls[0][0].cwd).toBe(withBoard);
+      exec.mockClear();
+      await install(plain, { args: ['--providers', 'codex'] });
+      expect(exec).not.toHaveBeenCalled();
+    } finally {
+      fs.rmSync(withBoard, { recursive: true, force: true });
+      fs.rmSync(plain, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('board-init (CLI helper) -- one real spawn', () => {
+  const rfix = treeFixture({
+    prefix: 'board-init-real-',
+    copy: [{ src: 'framwork/.codeadd', dest: '.codeadd' }],
+    manifest: {
+      at: '.codeadd/manifest.json',
+      data: { version: '0.0.0', providers: [], features: {}, plugins: {}, hashes: {} },
+    },
+  });
+  let boardDirEnv;
+  let base;
+  const git = (cwd, args) => spawnSync('git', args, { cwd, encoding: 'utf8' });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    base = fs.mkdtempSync(path.join(os.tmpdir(), 'board-init-real-remote-'));
+    boardDirEnv = process.env.CODEADD_BOARD_DIR;
+    process.env.CODEADD_BOARD_DIR = path.join(base, 'clone');
+    setBoardInitExec(null);
+  });
+  afterEach(() => {
+    if (boardDirEnv === undefined) delete process.env.CODEADD_BOARD_DIR; else process.env.CODEADD_BOARD_DIR = boardDirEnv;
+    fs.rmSync(base, { recursive: true, force: true });
+    rfix.cleanup();
+  });
+  afterAll(() => rfix.dispose());
+
+  it('leaves origin/board, the clone and board.json staged, with no code commit', () => {
+    const bare = path.join(base, 'remote.git');
+    git(base, ['init', '--bare', '-q', '--initial-branch=main', bare]);
+    const proj = rfix.root();
+    git(proj, ['init', '-q', '--initial-branch=main']);
+    git(proj, ['config', 'user.email', 'test@test.com']);
+    git(proj, ['config', 'user.name', 'Test']);
+    git(proj, ['config', 'commit.gpgsign', 'false']);
+    fs.writeFileSync(path.join(proj, 'code.txt'), 'code\n');
+    git(proj, ['add', 'code.txt']);
+    git(proj, ['commit', '-q', '-m', 'seed']);
+    git(proj, ['remote', 'add', 'origin', bare]);
+    git(proj, ['push', '-q', 'origin', 'main']);
+    git(proj, ['remote', 'set-head', 'origin', 'main']);
+    const head = git(proj, ['rev-parse', 'HEAD']).stdout;
+
+    initBoardOnEnable(proj, 'board', { scope: 'project' });
+
+    expect(log.warn).not.toHaveBeenCalled();
+    expect(git(bare, ['rev-parse', '--verify', '--quiet', 'refs/heads/board']).status).toBe(0);
+    expect(fs.existsSync(path.join(process.env.CODEADD_BOARD_DIR, '.git'))).toBe(true);
+    expect(git(proj, ['diff', '--cached', '--name-only']).stdout.trim()).toBe('.codeadd/board.json');
+    expect(git(proj, ['rev-parse', 'HEAD']).stdout).toBe(head);
   });
 });
