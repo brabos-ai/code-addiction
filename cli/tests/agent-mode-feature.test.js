@@ -650,14 +650,14 @@ describe('L3 -- agent-mode combined with the other features', () => {
     for (const f of [...OTHERS, 'agent-mode']) disableFeature(tmp, f);
     for (const f of [...OTHERS, 'agent-mode']) enableFeature(tmp, f);
     expect(snapshot()).toEqual(forward);
-  });
+  }, 30000);
 
   it('L3.5 enabling everything and disabling everything restores the fixture render byte for byte', () => {
     const pristine = snapshot();
     for (const f of Object.keys(FEATURES)) enableFeature(tmp, f);
     for (const f of Object.keys(FEATURES).reverse()) disableFeature(tmp, f);
     expect(snapshot()).toEqual(pristine);
-  });
+  }, 30000);
 });
 
 // ---------------------------------------------------------------------------

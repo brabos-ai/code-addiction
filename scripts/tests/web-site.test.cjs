@@ -61,7 +61,8 @@ test('F2: CommandLine.astro has a labelled copy button, a live region and a wrap
   assert.ok(exists('src/components/CommandLine.astro'), 'component missing');
   const c = read('src/components/CommandLine.astro');
   assert.match(c, /<button/);
-  assert.match(c, /aria-label=\{?[`"']Copy/);
+  assert.match(c, /aria-label=\{`\$\{t\("common\.copy"\)\}: /);
+  assert.match(read('src/i18n/en.ts'), /copy: "Copy"/, 'the accessible name still starts with Copy');
   assert.match(c, /aria-live="polite"/);
   assert.match(c, /min-w-0 break-all/);
 });
@@ -143,7 +144,8 @@ test('F6: the Cytoscape zoom and fit calls honour reduced motion', () => {
 
 // ------------------------------------------------------------- F7 copy slips
 test('F7: home page copy: no Portuguese accessible names, a space before the hero break, Why anchor', () => {
-  const home = HOME();
+  // Home copy lives in en.ts since 0069B; the Portuguese one is correct in pt-br.ts only.
+  const home = HOME() + read('src/i18n/en.ts');
   for (const s of ['Ver imagem', 'ampliar', 'Fechar']) assert.ok(!home.includes(s), `${s} still present`);
   assert.doesNotMatch(home, /#flows/);
   assert.doesNotMatch(home, /id="flows"/);
@@ -190,8 +192,9 @@ test('F8: both pages render from providers.ts and keep no hand-written provider 
 });
 
 test('F8: the Antigravity and ZCode caveat survives under the docs table', () => {
-  assert.match(DOCS(), /Antigravity is deferred because/);
-  assert.match(DOCS(), /ZCode reads commands and skills from the same/);
+  const docs = DOCS() + read('src/i18n/en.ts');
+  assert.match(docs, /Antigravity is deferred because/);
+  assert.match(docs, /ZCode reads commands and skills from the same/);
 });
 
 // ------------------------------------------------------ F9 menus and lightbox
@@ -296,7 +299,10 @@ test('F17: a search trigger opens on click and on Ctrl+K / Cmd+K, and the nav dr
 
 test('F17: #eco-search has an accessible name and the list has an empty state', () => {
   const docs = DOCS();
-  assert.match(docs.match(/<input id="eco-search"[^>]*>/)[0], /aria-label="[^"]+"/);
+  // The label is a t() call now; the key it names must exist in en.ts with a non-empty value.
+  const input = docs.match(/<input id="eco-search"[^>]*>/)[0];
+  assert.match(input, /aria-label=(?:"[^"]+"|\{t\("docs\.ecosystem\.filterAria"\)\})/);
+  assert.match(read('src/i18n/en.ts'), /filterAria: "[^"]+"/);
   assert.match(docs, /id="eco-empty"/);
 });
 
@@ -399,11 +405,91 @@ test('F20: a script that outlives its page binds once and guards work that finis
 
 // ------------------------------------------ Lighthouse accessibility findings
 test('Lighthouse a11y: inline links are underlined, the map hint has contrast, the search label matches its text', () => {
-  const docs = DOCS();
+  const docs = DOCS() + read('src/i18n/en.ts');
   assert.doesNotMatch(docs, /class="text-accent hover:underline"/, 'a link inside text must not rely on colour alone');
   assert.doesNotMatch(docs, /text-muted-light\/70/, 'the map hint sits at 3.9:1 with the opacity');
   const btn = docs.match(/<button type="button" id="docs-search-open"[^>]*>/);
   assert.ok(btn, 'desktop search button not found');
   assert.doesNotMatch(btn[0], /aria-label=/, 'the visible text already names the button; a different label fails label-in-name');
   assert.match(docs, /<kbd[^>]*aria-hidden="true"/);
+});
+
+// ====================================================================
+// 0069B site-i18n — plan docs/plans/2026-10-25T194930-PLAN--site-i18n.md
+// ====================================================================
+const I18N = name => read(`src/i18n/${name}`);
+
+test('i18n F1: the Astro config routes en (default, unprefixed) and pt-br', () => {
+  const cfg = read('astro.config.mjs');
+  assert.match(cfg, /defaultLocale:\s*["']en["']/);
+  assert.match(cfg, /locales:\s*\[\s*["']en["']\s*,\s*["']pt-br["']\s*\]/);
+  assert.match(cfg, /routing:\s*\{[^}]*prefixDefaultLocale:\s*false/);
+});
+
+test('i18n F2: the strings modules exist, pt-br is typed Strings, and the guards run at module load', () => {
+  for (const f of ['en.ts', 'pt-br.ts', 'index.ts']) assert.ok(exists(`src/i18n/${f}`), `${f} missing`);
+  assert.match(I18N('pt-br.ts'), /:\s*Strings\b/);
+  assert.match(I18N('en.ts'), /export type Strings\b/);
+  const idx = I18N('index.ts');
+  assert.match(idx, /export (function|const) useT\b/);
+  assert.match(idx, /export (function|const) localeHref\b/);
+  assert.match(idx, /export (function|const) alternateUrls\b/);
+  assert.match(idx, /SAME_IN_BOTH/);
+  assert.match(idx, /^assertParity\(\);/m, 'parity guard must run at top level');
+  assert.match(idx, /^assertTranslated\(\);/m, 'same-value guard must run at top level');
+});
+
+test('i18n F3: the layout sets lang from the locale and emits hreflang, canonical and og:locale', () => {
+  const layout = read('src/layouts/Layout.astro');
+  assert.doesNotMatch(layout, /<html lang="en"/);
+  assert.match(layout, /<html lang=\{/);
+  assert.match(layout, /hreflang="en"/);
+  assert.match(layout, /hreflang="pt-BR"/);
+  assert.match(layout, /hreflang="x-default"/);
+  assert.match(layout, /rel="canonical"/);
+  assert.match(layout, /property="og:locale"/);
+  assert.match(layout, /og:locale:alternate/);
+});
+
+test('i18n F4: pt-br routes wrap the shared pages and both pages render the toggle', () => {
+  for (const f of ['index', 'docs']) {
+    assert.ok(exists(`src/pages/pt-br/${f}.astro`), `pt-br/${f}.astro missing`);
+    assert.match(read(`src/pages/pt-br/${f}.astro`), /import \w+ from "\.\.\/\w*(index|docs|HomePage|DocsPage)\.astro"|views\//);
+  }
+  assert.ok(exists('src/components/LanguageToggle.astro'), 'toggle missing');
+  assert.ok((HOME().match(/<LanguageToggle/g) || []).length >= 2, 'home: nav and mobile menu');
+  assert.ok((DOCS().match(/<LanguageToggle/g) || []).length >= 2, 'docs: nav and sidebar');
+  const t = read('src/components/LanguageToggle.astro');
+  assert.match(t, /aria-current="true"/);
+  assert.match(t, /location\.hash/);
+  assert.match(t, /localStorage/);
+  assert.match(t, /codeadd-locale/);
+  assert.match(t, /astro:page-load/);
+  assert.match(t, /astro:before-swap/);
+  assert.doesNotMatch(t, /location\.replace|location\.href\s*=/);
+});
+
+test('i18n F4: the cross-page links go through localeHref, never a literal path', () => {
+  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+    assert.doesNotMatch(src, /href="\/docs"/, `${name}: literal /docs link`);
+    assert.doesNotMatch(src, /href="\/"/, `${name}: literal / link`);
+    assert.match(src, /localeHref\(/, `${name}: no localeHref`);
+  }
+});
+
+test('i18n F5: CommandLine holds none of the English literals; its script reads data-* strings', () => {
+  const c = read('src/components/CommandLine.astro');
+  assert.doesNotMatch(c, />Copy</);
+  assert.doesNotMatch(c, /"Copied"/);
+  assert.doesNotMatch(c, /"Selected\. Press Ctrl\+C to copy"/);
+  assert.match(c, /dataset/);
+  assert.match(c, /__commandLineBound/);
+});
+
+test('i18n F9: en.ts holds the skills list as { name, desc } entries', () => {
+  assert.match(I18N('en.ts'), /\{ name: "ux-design", desc: "/);
+});
+
+test('i18n F10: the untranslated-text guard is fully on (no UNMIGRATED list left)', () => {
+  assert.doesNotMatch(I18N('index.ts'), /UNMIGRATED/);
 });

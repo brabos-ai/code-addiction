@@ -1,4 +1,6 @@
 ---
+import { useT } from "../i18n";
+
 // One runnable command: prompt, command text and a copy button.
 // Every command on the site renders through here so the copy behaviour, the
 // accessible name and the wrapping rule live in one place. The command stays a
@@ -13,20 +15,27 @@ interface Props {
 }
 
 const { command, prompt = "$", bare = false, class: extra = "" } = Astro.props;
+const t = useT(Astro.currentLocale ?? "en");
 const box = bare
   ? ""
   : "bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 hover:border-accent/30 transition-colors";
 ---
 
-<div class:list={["command-line flex items-center gap-2 min-w-0 font-mono text-sm", box, extra]}>
+<div
+  class:list={["command-line flex items-center gap-2 min-w-0 font-mono text-sm", box, extra]}
+  data-copied={t("common.copied")}
+  data-copied-status={t("common.copiedStatus")}
+  data-select={t("common.select")}
+  data-select-status={t("common.selectStatus")}
+>
   {prompt && <span class="text-accent select-none">{prompt}</span>}
   <span class="command-text flex-1 min-w-0 break-all text-foreground">{command}</span>
   <button
     type="button"
     data-copy
-    aria-label={`Copy: ${command}`}
+    aria-label={`${t("common.copy")}: ${command}`}
     class="command-copy shrink-0 min-w-6 min-h-6 px-2 py-0.5 rounded text-xs font-sans text-muted-light hover:text-accent transition-colors"
-  >Copy</button>
+  >{t("common.copy")}</button>
   <span class="sr-only" role="status" aria-live="polite" data-copy-status></span>
 </div>
 
@@ -51,17 +60,20 @@ const box = bare
     const textEl = root?.querySelector(".command-text");
     const status = root?.querySelector("[data-copy-status]");
     if (!root || !textEl || !status) return;
+    // The strings are read from the clicked component, so after a client-router swap to the
+    // other language the feedback prints in the new one.
+    const words = (root as HTMLElement).dataset;
     const text = textEl.textContent ?? "";
     const label = btn.textContent;
     try {
       if (!navigator.clipboard) throw new Error("no clipboard");
       await navigator.clipboard.writeText(text);
-      btn.textContent = "Copied";
-      status.textContent = "Copied to clipboard";
+      btn.textContent = words.copied ?? "";
+      status.textContent = words.copiedStatus ?? "";
     } catch {
       selectText(textEl);
-      btn.textContent = "Select";
-      status.textContent = "Selected. Press Ctrl+C to copy";
+      btn.textContent = words.select ?? "";
+      status.textContent = words.selectStatus ?? "";
     }
     window.setTimeout(() => {
       btn.textContent = label;

@@ -32,7 +32,9 @@ const read = (p) => fs.readFileSync(p, 'utf8');
 
 const BRAINSTORM = read(path.join(CODEADD, 'commands', 'add-brainstorm.md'));
 const ECOSYSTEM = read(path.join(CODEADD, 'skills', 'add--ecosystem', 'SKILL.md'));
-const DOCS_ASTRO = read(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro'));
+const EN_TS = path.join(ROOT, 'web', 'src', 'i18n', 'en.ts');
+// The docs copy is the page followed by the EN strings module (copy moved there in 0069B).
+const DOCS_ASTRO = read(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro')) + (fs.existsSync(EN_TS) ? read(EN_TS) : '');
 const APPROVAL_FALLBACK = read(path.join(CODEADD, 'fallbacks', 'agent-mode.add-brainstorm.approval-ask.md'));
 const SPINE = read(path.join(CODEADD, 'skills', 'add--architecture-discovery', 'spine-analyzer.md'));
 const WIKI_MAINT = read(path.join(CODEADD, 'skills', 'add--wiki-maintenance', 'SKILL.md'));

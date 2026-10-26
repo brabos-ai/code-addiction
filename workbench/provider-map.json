@@ -111,10 +111,10 @@
       "description": "Analyzes web/public/*.svg against a Change Payload and returns text-only Update Report. Layout changes go to manual_items. Read-only — reports only, never modifies files."
     },
     "web-docs-analyzer": {
-      "description": "Analyzes web/src/pages/docs.astro against a Change Payload and returns an Update Report with exact old→new edits. Read-only — reports only, never modifies files."
+      "description": "Analyzes web/src/pages/docs.astro and the docs copy in web/src/i18n/en.ts and pt-br.ts against a Change Payload and returns an Update Report with exact old→new edits, every copy edit as an EN and a PT-BR pair. Read-only — reports only, never modifies files."
     },
     "web-index-analyzer": {
-      "description": "Analyzes web/src/pages/index.astro against a Change Payload and returns an Update Report with exact old→new edits. Read-only — reports only, never modifies files."
+      "description": "Analyzes web/src/pages/index.astro, web/src/data/providers.ts and the landing copy in web/src/i18n/en.ts and pt-br.ts against a Change Payload and returns an Update Report with exact old→new edits, every copy edit as an EN and a PT-BR pair. Read-only — reports only, never modifies files."
     }
   }
 }
