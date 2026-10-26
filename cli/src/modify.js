@@ -7,6 +7,7 @@ import { copyRelease, pruneObsolete, shouldPreserve } from './release-copy.js';
 import { downloadReleaseAsset } from './github.js';
 import { fixLineEndings, writeManifest, reportMcpRegistration, reportNotDetectedPlugins } from './installer.js';
 import { readManifest, saveManifest, captureBaselines, loadInjectionSidecar } from './injection-core.js';
+import { initBoardOnEnable } from './board-init.js';
 import {
   FEATURES,
   resolveFeatureName,
@@ -365,6 +366,7 @@ export async function applyDesiredState(targetDir, desired, { force = false } = 
   // functions the `features` and `plugins` subcommands call.
   for (const name of diff.features.enable) {
     enableFeature(targetDir, name);
+    initBoardOnEnable(targetDir, name, { scope });
     warnUninjectedProviders(targetDir, name);
   }
   for (const name of diff.features.disable) disableFeature(targetDir, name);
