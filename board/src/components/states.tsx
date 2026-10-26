@@ -18,11 +18,11 @@ const ERRORS: Record<string, { title: string; body: string }> = {
   },
   'board-migration-required': {
     title: 'This project’s board has not been moved yet',
-    body: 'State: migration-required. The project still keeps its board inside the code checkout and has no .codeadd/board.json. Ask the framework maintainer to migrate it to the board branch.',
+    body: 'State: migration-required. The project still keeps its board inside the code checkout and has no .codeadd/board.json. See https://github.com/brabos-ai/code-addiction#board.',
   },
   'board-branch-missing': {
     title: 'The board branch does not exist',
-    body: 'State: branch-missing. .codeadd/board.json names a branch the remote does not have. Ask the framework maintainer to migrate the project.',
+    body: 'State: branch-missing. .codeadd/board.json names a branch the remote does not have. Run /add-setup in the project, or see https://github.com/brabos-ai/code-addiction#board, to create it.',
   },
   'board-checkout-missing': {
     title: 'The board is not on this machine yet',

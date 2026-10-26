@@ -458,6 +458,7 @@ describe('board-init -- shipped texts name the route, never a maintainer', () =>
     expect(src).toContain('This project’s board has not been moved yet');
     expect(src).toContain('The board branch does not exist');
     expect(src).toContain('https://github.com/brabos-ai/code-addiction#board');
-    expect(src).toContain('node .codeadd/scripts/board-init.cjs');
+    expect(src).toContain('/add-setup');
+    expect(src).not.toContain('.codeadd/scripts');
   });
 });

@@ -100,6 +100,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: backlog-id.cjs
 - mention: backlog-git.cjs
 - mention: backlog-board.cjs
+- mention: board-init.cjs
 - mention: backlog-commit.cjs
 - mention: migrate-context-files.cjs
 - mention: init.cjs
@@ -300,6 +301,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | backlog-commit.cjs | add--backlog — the ONE write route: resolve the board clone, take its lock, fast-forward, write, commit and push the `board` branch, from any branch or worktree, with durable recovery refs on every failed publication. It reports `ROUTE=board` and `BOARD_DIR` |
 | backlog-board.cjs | add--backlog — the one module that knows where the board lives: the resolver (`CODEADD_BOARD_DIR`, then `.codeadd/board.json`), the project key, the clone on first use, the lock and the throttled read sync. Every backlog reader and writer goes through it |
 | backlog-git.cjs | add--backlog — the git primitives the board module and the publication entry compose: clone, fetch, ahead/behind, fast-forward, rebase-once and push of the `board` branch, `git show` at a sha, and the recovery refs |
+| board-init.cjs | add--backlog — creates the board for a project that has none: writes `.codeadd/board.json`, pushes an orphan `board` branch to `origin`, makes the clone and stages the config. Run by enabling the `board` feature or by `/add-setup`; `BOARD=ready` and no write when a board exists |
 | migrate-context-files.cjs | add-brainstorm, add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 

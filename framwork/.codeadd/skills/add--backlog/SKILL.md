@@ -8,6 +8,8 @@ description: "Use when something should be done later but not now — record it 
 <!-- uses:
 - script: backlog-cli.cjs
 - script: backlog-commit.cjs
+- script: board-init.cjs
+- command: /add-setup
 - skill: add--final-report
 - skill: add--doc-schemas
 - skill: add--doc-schemas/references/backlog.md
@@ -228,9 +230,9 @@ this project has no board, or no ticket has ever been written — say that; it i
 
 | State | A read | A write | Say |
 |---|---|---|---|
-| no board (no config, no board file) | `BACKLOG_PRESENT=no`, exit 0 | `REFUSED=board-not-configured`, exit 2 | this project has no board |
-| `ERROR=board-migration-required` | exit 1 | exit 1 | the old file is still in the checkout and no config says where the board moved — the framework maintainer must migrate the project |
-| `ERROR=board-branch-missing` | exit 1 | exit 1 | the config names a branch the remote does not have |
+| no board (no config, no board file) | `BACKLOG_PRESENT=no`, exit 0 | `REFUSED=board-not-configured`, exit 2 | this project has no board — run `node .codeadd/scripts/board-init.cjs` (or /add-setup) to create it |
+| `ERROR=board-migration-required` | exit 1 | exit 1 | the old file is still in the checkout and no config says where the board moved — see https://github.com/brabos-ai/code-addiction#board |
+| `ERROR=board-branch-missing` | exit 1 | exit 1 | the config names a branch the remote does not have — run `node .codeadd/scripts/board-init.cjs` (or /add-setup) to create it |
 | `ERROR=board-checkout-missing` | exit 1 | exit 1 | the board clone is not on this machine and the remote could not be reached |
 | `ERROR=board-locked` | — | exit 1, nothing written | another process held the clone for 30 s; retry |
 | `ERROR=board-lock-failed`, `ERROR=commit-failed` | — | exit 1 | the lock file could not be made, or the commit failed (the bytes are in the clone, and `RECOVERY_PATH` says where) — report it by name |
