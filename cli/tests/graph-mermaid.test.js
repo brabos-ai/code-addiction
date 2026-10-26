@@ -143,7 +143,22 @@ describe('the checked-in diagram', () => {
     // public site. Pin the shape so the prose and the picture cannot drift.
     const mmd = fs.readFileSync(DOCS_DIAGRAM, 'utf8');
     const prose = fs.readFileSync(path.join(ROOT, 'web', 'src', 'pages', 'docs.astro'), 'utf8');
-    const section = prose.slice(prose.indexOf('id="graph"'), prose.indexOf('id="graph"') + 1200);
+    const pageSlice = prose.slice(prose.indexOf('id="graph"'), prose.indexOf('id="graph"') + 1200);
+    // The copy lives in en.ts once moved: its slice runs from the `graph:` key of `docs`
+    // to the next sibling key.
+    const enPath = path.join(ROOT, 'web', 'src', 'i18n', 'en.ts');
+    const en = fs.existsSync(enPath) ? fs.readFileSync(enPath, 'utf8') : '';
+    const enStart = en.search(/\n {4}graph: /);
+    let enSlice = '';
+    if (enStart >= 0) {
+      const rest = en.slice(enStart + 1);
+      const next = rest.slice(1).search(/\n {4}[\w"-]+: /);
+      enSlice = next >= 0 ? rest.slice(0, next + 1) : rest;
+    }
+    const section = pageSlice + enSlice;
+    // A mis-cut window would pass the .not.toMatch checks on nothing.
+    expect(section.length, 'graph window is empty').toBeGreaterThan(0);
+    expect(section, 'graph window misses the section intro').toMatch(/Artefact graph|\n {4}graph: /);
 
     const hasSkills = /n_\w*_skill_/.test(mmd);
     const hasAgents = /n_\w*_agent_/.test(mmd);

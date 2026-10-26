@@ -108,7 +108,8 @@ describe('add--ux-design keeps only its design core', () => {
     expect(row, 'ecosystem row').toBeDefined();
     const ecosystemDesc = row.split('|')[2].trim();
 
-    const docs = read('web', 'src', 'pages', 'docs.astro');
+    const enPath = path.join(ROOT, 'web', 'src', 'i18n', 'en.ts');
+    const docs = read('web', 'src', 'pages', 'docs.astro') + (fs.existsSync(enPath) ? read('web', 'src', 'i18n', 'en.ts') : '');
     const entry = docs.match(/\{ name: "ux-design", desc: "([^"]*)"/);
     expect(entry, 'docs.astro entry').not.toBeNull();
 

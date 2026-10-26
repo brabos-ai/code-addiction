@@ -2,32 +2,87 @@
 import Layout from "../layouts/Layout.astro";
 import CommandLine from "../components/CommandLine.astro";
 import { providers, installDirs } from "../data/providers";
+import LanguageToggle from "../components/LanguageToggle.astro";
+import { useT, localeHref, type NamedEntry } from "../i18n";
 import "../styles/global.css";
+
+const locale = Astro.currentLocale ?? "en";
+const t = useT(locale);
+
+type ScenarioEntry = { badge: string; title: string; desc: string; steps: { cmd: string; text: string }[] };
+// Badge colour per scenario, and colour of each step's command (visual only, not copy).
+const scenarioTone = ["accent", "accent", "accent", "amber", "red", "accent"];
+const scenarioStepTone = [
+  ["accent", "accent", "accent", "accent", "accent", "accent"],
+  ["accent", "accent", "accent", "accent"],
+  ["accent", "accent", "accent"],
+  ["amber", "amber", "accent"],
+  ["red", "accent"],
+  ["accent", "accent"],
+];
+// Commands each optional feature is injected into: artefact names, never translated.
+const featureTargets: Record<string, string[]> = {
+  "tdd-pipeline": ["add-plan", "add-build", "add-review", "add-hotfix"],
+  "qa-pipeline": ["add-plan", "add-build", "add-review"],
+  "docs-pruning": ["add-done"],
+  board: ["add-brainstorm", "add-new", "add-plan", "add-build", "add-done", "add-hotfix"],
+  "agent-mode": ["add-brainstorm", "add-new", "add-plan", "add-build", "add-review", "add-done", "add-diagnose", "add-hotfix", "add-qa-setup", "add-pull-request", "add-audit", "add-wiki"],
+};
+
+// Plugin cards name the commands and agents they touch: artefact names, never translated.
+const codeList = (names: string[]) => names.map((n) => `<code class="font-mono">${n}</code>`).join(", ");
+const gitnexusCommands = ["add-new", "add-plan", "add-build", "add-diagnose", "add-hotfix", "add-done", "add-wiki"];
+
+// Everything the inline scripts print or set. Rendered once into #docs-i18n; the scripts re-read it
+// on every astro:page-load, so a client-side switch between /docs/ and /pt-br/docs/ changes language.
+const clientStrings = {
+  searchTitle: t("docs.search.title"),
+  pagefind: {
+    placeholder: t("docs.search.placeholder"),
+    clear_search: t("docs.search.clearSearch"),
+    load_more: t("docs.search.loadMore"),
+    search_label: t("docs.search.searchLabel"),
+    zero_results: t("docs.search.zeroResults"),
+    many_results: t("docs.search.manyResults"),
+    one_result: t("docs.search.oneResult"),
+    alt_search: t("docs.search.altSearch"),
+    search_suggestion: t("docs.search.searchSuggestion"),
+    searching: t("docs.search.searching"),
+  },
+  graphError: t("docs.graph.error"),
+  ecoError: t("docs.ecosystem.loadError"),
+  ecoLoadsDispatches: t("docs.ecosystem.loadsDispatches"),
+  ecoUsedBy: t("docs.ecosystem.usedByPanel"),
+  ecoTypes: { command: t("docs.ecosystem.typeCommand"), skill: t("docs.ecosystem.typeSkill"), agent: t("docs.ecosystem.typeAgent") },
+  ecoGroups: { command: t("docs.ecosystem.commands"), skill: t("docs.ecosystem.skills"), agent: t("docs.ecosystem.agents") },
+};
+const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c");
 ---
 
-<Layout title="Docs — Code Addiction">
+<Layout title={t("docs.title")}>
   <!-- Nav -->
   <nav transition:name="site-nav" class="fixed top-0 w-full z-50 backdrop-blur-md bg-surface/80 border-b border-white/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label="Toggle sidebar" aria-controls="docs-sidebar" aria-expanded="false">
+        <button id="docs-sidebar-toggle" class="lg:hidden p-1 -ml-1 text-muted-light hover:text-foreground" aria-label={t("docs.nav.toggleSidebar")} aria-controls="docs-sidebar" aria-expanded="false">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
         </button>
-        <a href="/" class="font-display font-bold text-foreground tracking-tight text-lg">
+        <a href={localeHref(locale, "")} class="font-display font-bold text-foreground tracking-tight text-lg">
           <span class="text-accent">+</span> code addiction
         </a>
       </div>
       <div class="hidden md:flex items-center gap-6">
-        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>Search</span><kbd aria-hidden="true" class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
-        <a href="/" class="text-sm text-muted-light hover:text-accent transition-colors">Home</a>
+        <button type="button" id="docs-search-open" class="flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg><span>{t("docs.nav.search")}</span><kbd aria-hidden="true" class="font-mono text-xs text-muted border border-white/10 rounded px-1.5">Ctrl K</kbd></button>
+        <a href={localeHref(locale, "")} class="text-sm text-muted-light hover:text-accent transition-colors">{t("docs.nav.home")}</a>
+        <LanguageToggle />
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-4 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("docs.nav.github")}
         </a>
       </div>
       <div class="flex md:hidden items-center gap-2">
-        <button type="button" id="docs-search-open-mobile" class="md:hidden flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label="Search the docs" aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg></button>
+        <button type="button" id="docs-search-open-mobile" class="md:hidden flex items-center gap-2 text-sm text-muted-light hover:text-accent border border-white/10 hover:border-accent/30 rounded-md px-3 py-1.5 transition-colors" aria-label={t("docs.nav.searchAria")} aria-keyshortcuts="Control+K Meta+K"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z"/></svg></button>
         <a href="https://github.com/brabos-ai/code-addiction" target="_blank" rel="noopener" class="text-sm text-surface bg-accent hover:bg-accent-dim font-mono font-medium px-3 py-1.5 rounded-md transition-colors">
-          GitHub
+          {t("docs.nav.github")}
         </a>
       </div>
     </div>
@@ -40,40 +95,41 @@ import "../styles/global.css";
     <!-- Sidebar -->
     <aside id="docs-sidebar" class="fixed top-14 left-0 w-64 h-[calc(100vh-3.5rem)] overflow-y-auto border-r border-white/5 bg-surface z-50 px-6 py-8 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
       <nav class="space-y-6 text-sm">
+        <LanguageToggle class="pb-2" />
         <div class="lg:hidden pb-2 mb-2">
-          <a href="/" class="flex items-center gap-2 text-accent hover:text-accent-dim transition-colors font-medium">
+          <a href={localeHref(locale, "")} class="flex items-center gap-2 text-accent hover:text-accent-dim transition-colors font-medium">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            Back to Home
+            {t("docs.sidebar.backToHome")}
           </a>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Getting Started</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.gettingStarted")}</p>
           <ul class="space-y-2">
-            <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">About</a></li>
-            <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">Installation</a></li>
-            <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">Quickstart</a></li>
-            <li><a href="#setup" class="text-muted-light hover:text-foreground transition-colors">Guided Setup</a></li>
+            <li><a href="#about" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.about")}</a></li>
+            <li><a href="#install" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.install")}</a></li>
+            <li><a href="#quickstart" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.quickstart")}</a></li>
+            <li><a href="#setup" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.setup")}</a></li>
           </ul>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Reference</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.reference")}</p>
           <ul class="space-y-2">
-            <li><a href="#commands" class="text-muted-light hover:text-foreground transition-colors">Commands</a></li>
-            <li><a href="#graph" class="text-muted-light hover:text-foreground transition-colors">Graph</a></li>
-            <li><a href="#flows" class="text-muted-light hover:text-foreground transition-colors">Flows</a></li>
-            <li><a href="#scenarios" class="text-muted-light hover:text-foreground transition-colors">Scenarios</a></li>
+            <li><a href="#commands" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.commands")}</a></li>
+            <li><a href="#graph" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.graph")}</a></li>
+            <li><a href="#flows" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.flows")}</a></li>
+            <li><a href="#scenarios" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.scenarios")}</a></li>
           </ul>
         </div>
         <div>
-          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">Deep Dive</p>
+          <p class="font-mono text-accent text-xs tracking-widest uppercase mb-3">{t("docs.sidebar.groups.deepDive")}</p>
           <ul class="space-y-2">
-            <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">Skills</a></li>
-            <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">Optional Features</a></li>
-            <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">Agent Mode</a></li>
-            <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">Plugins</a></li>
-            <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">Providers</a></li>
-            <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">Project Structure</a></li>
-            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">Ecosystem Map</a></li>
+            <li><a href="#skills" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.skills")}</a></li>
+            <li><a href="#features" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.features")}</a></li>
+            <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.agentMode")}</a></li>
+            <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.plugins")}</a></li>
+            <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.providers")}</a></li>
+            <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.structure")}</a></li>
+            <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.ecosystem")}</a></li>
           </ul>
         </div>
       </nav>
@@ -84,22 +140,16 @@ import "../styles/global.css";
 
       <!-- ABOUT -->
       <section id="about" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Getting Started</p>
-        <h1 id="about-heading" class="font-display font-extrabold text-4xl sm:text-5xl mb-6">
-          What is Code<br/><span class="text-accent glow">Addiction</span>?
-        </h1>
-        <p class="text-muted-light text-lg leading-relaxed mb-6">
-          Code Addiction is a spec-driven framework for AI coding assistants.
-          It standardizes how features go from idea to production through structured,
-          repeatable workflows — installed in any project with a single command.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.gettingStarted")}</p>
+        <h1 id="about-heading" class="font-display font-extrabold text-4xl sm:text-5xl mb-6" set:html={t("docs.about.heading")} />
+        <p class="text-muted-light text-lg leading-relaxed mb-6">{t("docs.about.intro")}</p>
         <div class="grid sm:grid-cols-3 gap-4">
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
             <div class="text-accent font-mono text-sm mb-2">.codeadd/</div>
-            <p class="text-muted-light text-sm">Shared core: commands, scripts, skills, templates</p>
+            <p class="text-muted-light text-sm">{t("docs.about.coreDesc")}</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">Provider adapters</div>
+            <div class="text-accent font-mono text-sm mb-2">{t("docs.about.adaptersTitle")}</div>
             <p class="text-muted-light text-sm">Claude, Codex, Antigravity, Cursor, OpenCode, ZCode</p>
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
@@ -111,24 +161,24 @@ import "../styles/global.css";
 
       <!-- INSTALL -->
       <section id="install" class="mb-20">
-        <h2 id="install-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Installation</h2>
-        <p class="text-muted-light mb-6">Requires Node.js 22.19.0 or newer (Node 24 LTS recommended). Works on Windows, macOS and Linux &mdash; no Bash, WSL or Git-Bash needed.</p>
+        <h2 id="install-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.install.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.install.requirements")} />
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
-          <div><span class="text-muted select-none"># install in your project</span></div>
+          <div><span class="text-muted select-none">{t("docs.install.commentInstall")}</span></div>
           <CommandLine command="npx codeadd install" bare />
-          <div class="pt-2"><span class="text-muted select-none"># install specific version</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentVersion")}</span></div>
           <CommandLine command="npx codeadd install --version v2.0.1" bare />
-          <div class="pt-2"><span class="text-muted select-none"># install from a specific branch</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentBranch")}</span></div>
           <CommandLine command="npx codeadd install --branch feature-xyz" bare />
-          <div class="pt-2"><span class="text-muted select-none"># already installed? shows Modify / Update / Reinstall / Cancel</span></div>
+          <div class="pt-2"><span class="text-muted select-none">{t("docs.install.commentExisting")}</span></div>
           <CommandLine command="npx codeadd install" bare />
         </div>
 
-        <h3 class="font-display font-semibold text-lg mt-8 mb-4">What gets installed</h3>
+        <h3 class="font-display font-semibold text-lg mt-8 mb-4">{t("docs.install.whatInstalled")}</h3>
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-relaxed">
           <span class="text-muted">your-project/</span><br/>
-          <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← core (always)</span><br/>
+          <span class="text-accent">├── .codeadd/</span><span class="text-muted ml-6">← {t("docs.install.coreAlways")}</span><br/>
           {installDirs().map((row, i, all) => (
             <>
               <span class="text-foreground inline-block min-w-[11ch]">{i === all.length - 1 ? "└── " : "├── "}{row.dir}</span><span class="text-muted">← {row.labels.join(" + ")}</span>{i < all.length - 1 && <br/>}
@@ -136,61 +186,21 @@ import "../styles/global.css";
           ))}
         </div>
 
-        <p class="text-muted text-sm mt-4">
-          Framework scripts are Node entries — <code class="font-mono text-xs">node .codeadd/scripts/&lt;entry&gt;.cjs</code> — so no Bash, WSL or Git-Bash is required on any platform.
-        </p>
+        <p class="text-muted text-sm mt-4" set:html={t("docs.install.scriptsNote")} />
       </section>
 
       <!-- QUICKSTART -->
       <section id="quickstart" class="mb-20">
-        <h2 id="quickstart-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Quickstart</h2>
-        <p class="text-muted-light mb-6">After installing, use these CLI commands to manage your setup:</p>
+        <h2 id="quickstart-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.quickstart.heading")}</h2>
+        <p class="text-muted-light mb-6">{t("docs.quickstart.intro")}</p>
 
         <div class="space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd doctor" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Check environment health — Node, Git, installation status</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd validate" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Validate file integrity via SHA-256 hashes</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd validate --repair" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Restore missing or modified files from the release</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd update" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Update to latest release, or re-pull current branch</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd uninstall" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Clean removal of all Code Addiction files (user files are kept)</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd uninstall --force" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Skip confirmation prompt during uninstall</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd features" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List, enable, or disable optional features (tdd-pipeline, qa-pipeline, docs-pruning, board)</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd plugins" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List, enable, or disable plugins (e.g. GitNexus, Playwright, Design). An enabled plugin whose tool is not detected is named in install/update output</span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd providers" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">List providers, or add / remove one: <code class="text-foreground">providers list|add &lt;name&gt;|remove &lt;name&gt; [--force]</code>. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd modify" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Interactive screen to edit providers, features and plugins of an existing installation in one place. Accepts <code class="text-foreground">--global</code> / <code class="text-foreground">--user</code></span>
-          </div>
-          <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <CommandLine command="npx codeadd config show" bare class="sm:shrink-0" />
-            <span class="text-muted-light text-sm">Display installation configuration. Add <code class="text-foreground">--verbose</code> to check for updates</span>
-          </div>
+          {t<NamedEntry[]>("docs.quickstart.items").map((item) => (
+            <div class="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <CommandLine command={item.name} bare class="sm:shrink-0" />
+              <span class="text-muted-light text-sm" set:html={item.desc} />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -199,156 +209,55 @@ import "../styles/global.css";
 
       <!-- SETUP -->
       <section id="setup" class="mb-20">
-        <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Guided Setup</h2>
-        <p class="text-muted-light mb-6">
-          <code class="text-accent font-mono text-sm">/add-setup</code> is the guided onboarding for a fresh or updated install.
-          It checks your project, then offers every feature and <a href="#plugins" class="text-accent underline underline-offset-2 hover:text-accent-dim">plugin</a> with its benefit
-          in <strong>one numbered list</strong>, with a recommended answer for each. Reply once, for example <code class="font-mono text-xs">1 yes, 2 no</code> or <code class="font-mono text-xs">all recommended</code>.
-        </p>
+        <h2 id="setup-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.setup.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.setup.intro")} />
 
         <div class="grid sm:grid-cols-3 gap-4 mb-6">
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">1 &mdash; Check</div>
-            <p class="text-muted-light text-sm">Reads the project (code, frontend, wiki, QA setup) and what is already on. Changes nothing.</p>
-          </div>
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">2 &mdash; Offer</div>
-            <p class="text-muted-light text-sm">One numbered list. Items already on, or declined before, are not asked again.</p>
-          </div>
-          <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <div class="text-accent font-mono text-sm mb-2">3 &mdash; Run</div>
-            <p class="text-muted-light text-sm">Only the items you accept: tool installs, one <code class="font-mono text-xs">codeadd modify</code>, <code class="font-mono text-xs">/add-qa-setup</code> and <code class="font-mono text-xs">/add-wiki</code>.</p>
-          </div>
+          {t<{ title: string; desc: string }[]>("docs.setup.steps").map((step) => (
+            <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <div class="text-accent font-mono text-sm mb-2" set:html={step.title} />
+              <p class="text-muted-light text-sm" set:html={step.desc} />
+            </div>
+          ))}
         </div>
 
         <div class="space-y-3">
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">When to run</span>
-            <span class="text-muted-light text-sm">Once after <code class="font-mono text-xs text-foreground">codeadd install</code> or <code class="font-mono text-xs text-foreground">codeadd update</code>. After an update it asks only about items that are new in that version.</span>
-          </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">Where choices live</span>
-            <span class="text-muted-light text-sm">Every decision and its reason is recorded in <code class="font-mono text-xs text-foreground">.codeadd/settings.json</code>. Commit this file so teammates and future updates see what was enabled and why.</span>
-          </div>
-          <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
-            <span class="text-accent font-mono text-sm whitespace-nowrap">Empty project</span>
-            <span class="text-muted-light text-sm">With no code yet, it offers nothing and points you to <code class="font-mono text-xs text-foreground">/add-brainstorm</code>. Run it again once the foundations exist.</span>
-          </div>
+          {t<{ label: string; desc: string }[]>("docs.setup.rows").map((row) => (
+            <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <span class="text-accent font-mono text-sm whitespace-nowrap">{row.label}</span>
+              <span class="text-muted-light text-sm" set:html={row.desc} />
+            </div>
+          ))}
         </div>
       </section>
 
       <!-- COMMANDS -->
       <section id="commands" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 id="commands-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Commands</h2>
-        <p class="text-muted-light mb-8">
-          Every command is a slash command you type in your AI coding assistant.
-          They orchestrate discovery, planning, implementation, and delivery.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.reference")}</p>
+        <h2 id="commands-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.commands.heading")}</h2>
+        <p class="text-muted-light mb-8">{t("docs.commands.intro")}</p>
 
         <!-- Commands Map -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-12">
-          <!-- Discovery -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Discovery</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-brainstorm</code>
-                <p class="text-muted text-xs mt-0.5">Explore ideas (read-only); decides stack foundations on an empty repo</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-new</code>
-                <p class="text-muted text-xs mt-0.5">AI-guided feature discovery → <code class="text-foreground">about.md</code></p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-wiki</code>
-                <p class="text-muted text-xs mt-0.5">Generate a portable project wiki (.codeadd/wiki/)</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Planning -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Planning</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-plan</code>
-                <p class="text-muted text-xs mt-0.5">Technical Planning Orchestrator — dispatches UX Design, Database, Backend and Frontend agents. Sole writer of <code class="text-foreground">design.md</code> (STEP 8.1) for UI-touching features</p>
+          {t<{ title: string; items: NamedEntry[] }[]>("docs.commands.groups").map((group) => (
+            <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
+              <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">{group.title}</h3>
+              <div class="space-y-2.5">
+                {group.items.map((cmd) => (
+                  <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
+                    {cmd.name === "/add-setup" ? (
+                      <a href="#setup" class="text-accent font-mono text-sm underline underline-offset-2 hover:text-accent-dim">{cmd.name}</a>
+                    ) : cmd.name === "/add-hotfix" ? (
+                      <code class="text-accent font-mono text-sm" style="color:#ff4444">{cmd.name}</code>
+                    ) : (
+                      <code class="text-accent font-mono text-sm">{cmd.name}</code>
+                    )}
+                    <p class="text-muted text-xs mt-0.5" set:html={cmd.desc} />
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-
-          <!-- Implementation -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Implementation</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-build</code>
-                <p class="text-muted text-xs mt-0.5">Development Execution Specialist — closes each delivery unit with its own Final Review</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quality -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Quality</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-review</code>
-                <p class="text-muted text-xs mt-0.5">Feature review specialist — read-only code review and spec-compliance audit; with the <code class="text-foreground">qa-pipeline</code> feature enabled, also agent-judged QA (dual-judge panel over persisted run evidence). Dispatches an OWASP Top 10 pass alongside the area review when the diff touches a sensitive area (auth, payment, upload, input handling, session/token). Consolidates every finding into one <code class="text-foreground">## Fix Routing</code> table and writes a versioned <code class="text-foreground">review-NNN.md</code>. Routes findings, never applies them. Optional — <code class="text-foreground">/add-build</code> runs its own Final Review, and <code class="text-foreground">/add-done</code> accepts whichever verdict is most recent</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-audit</code>
-                <p class="text-muted text-xs mt-0.5">Full project health analysis</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-diagnose</code>
-                <p class="text-muted text-xs mt-0.5">Pre-decision triage for ambiguous symptoms (read-only); persists the diagnosis for <code class="text-foreground">/add-hotfix</code> to reuse</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-qa-setup</code>
-                <p class="text-muted text-xs mt-0.5">End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and smoke-tests the QA judgement via <code class="text-foreground">/add-review</code></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Delivery -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Delivery</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-done</code>
-                <p class="text-muted text-xs mt-0.5">Branch completion and merge - promotes reviewed QA evidence, finalizes changelog and documentation, then merges. Hotfix close-out requires a passed Review receipt in <code class="text-foreground">about.md</code>. Deploy is not part of a delivery - it runs after <code class="text-foreground">/add-done</code>, through your own deploy process</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-pull-request</code>
-                <p class="text-muted text-xs mt-0.5">Idempotent PR - creates new PR or appends update section if one is already open. Generates feature changelog on feature branches</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm" style="color:#ff4444">/add-hotfix</code>
-                <p class="text-muted text-xs mt-0.5">Emergency fix with global ID (H[NNNN]) — reuses an accepted <code class="text-foreground">/add-diagnose</code> when available</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Utility -->
-          <div class="rounded-xl border border-white/5 bg-white/[0.015] p-5">
-            <h3 class="font-display font-bold text-xs tracking-widest uppercase text-foreground mb-4">Utilities</h3>
-            <div class="space-y-2.5">
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-help</code>
-                <p class="text-muted text-xs mt-0.5">Help guide — which command, features and plugins, bot mode, CLI</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <a href="#setup" class="text-accent font-mono text-sm underline underline-offset-2 hover:text-accent-dim">/add-setup</a>
-                <p class="text-muted text-xs mt-0.5">Guided onboarding — offers each feature and plugin with its benefit, sets up the ones you accept</p>
-              </div>
-              <div class="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2.5 hover:border-accent/20 transition-colors">
-                <code class="text-accent font-mono text-sm">/add-ux</code>
-                <p class="text-muted text-xs mt-0.5">Quick UX — loads ux-design for free context</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -357,26 +266,16 @@ import "../styles/global.css";
 
       <!-- ARTEFACT GRAPH -->
       <section id="graph" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 id="graph-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Artefact graph</h2>
-        <p class="text-muted-light mb-8">
-          How the commands hand off to each other. Generated by the build from each command's own
-          declaration, so it cannot drift from what ships &mdash; a test fails if this picture and
-          the graph disagree.
-        </p>
-        <p class="text-muted-light mb-8">
-          Commands only, one hop. The full graph carries 247 artefacts and 972 relationships;
-          drawn at once it is a hairball that tells you nothing. Skills, agents and scripts are
-          reachable from the query surface below.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.reference")}</p>
+        <h2 id="graph-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.graph.heading")}</h2>
+        <p class="text-muted-light mb-8" set:html={t("docs.graph.intro1")} />
+        <p class="text-muted-light mb-8" set:html={t("docs.graph.intro2")} />
 
         <div class="overflow-x-auto rounded-lg border border-white/5 bg-surface p-4">
-          <pre class="mermaid" id="artefact-graph">Loading diagram&hellip;</pre>
+          <pre class="mermaid" id="artefact-graph" set:html={t("docs.graph.loading")} />
         </div>
 
-        <p class="text-muted-light text-sm mt-4">
-          Query it directly: <code class="font-mono text-accent">node scripts/graph.js impact add--doc-schemas</code>
-        </p>
+        <p class="text-muted-light text-sm mt-4" set:html={t("docs.graph.query")} />
       </section>
 
       <!-- Divider -->
@@ -384,100 +283,98 @@ import "../styles/global.css";
 
       <!-- FLOWS -->
       <section id="flows" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 id="flows-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Flows</h2>
-        <p class="text-muted-light mb-8">
-          Pick the shortest path that fits. Less ceremony, same quality.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.reference")}</p>
+        <h2 id="flows-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.flows.heading")}</h2>
+        <p class="text-muted-light mb-8">{t("docs.flows.intro")}</p>
 
         <!-- Flows HTML -->
         <div class="space-y-10">
 
           <!-- Complete -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Complete Flow</h3>
-            <p class="text-muted text-xs mb-4">Complex features with UI — full discovery, planning (design is produced inside /add-plan STEP 8.1), implementation, review.</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">{t("docs.flows.complete.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.complete.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add-brainstorm</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.brainstorm")}<br/><span class="flow-cmd">/add-brainstorm</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">New<br/><span class="flow-cmd">/add-new</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.new")}<br/><span class="flow-cmd">/add-new</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Plan<br/><span class="flow-cmd">/add-plan</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.plan")}<br/><span class="flow-cmd">/add-plan</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Code<br/><span class="flow-cmd">/add-build</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.code")}<br/><span class="flow-cmd">/add-build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Check<br/><span class="flow-cmd">/add-review</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.check")}<br/><span class="flow-cmd">/add-review</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Done<br/><span class="flow-cmd">/add-done</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.done")}<br/><span class="flow-cmd">/add-done</span></span>
             </div>
           </div>
 
           <!-- Standard -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Standard Flow</h3>
-            <p class="text-muted text-xs mb-4">Features without complex UI — skip brainstorm and design</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">{t("docs.flows.standard.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.standard.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node">New<br/><span class="flow-cmd">/add-new</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.new")}<br/><span class="flow-cmd">/add-new</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Plan<br/><span class="flow-cmd">/add-plan</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.plan")}<br/><span class="flow-cmd">/add-plan</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Code<br/><span class="flow-cmd">/add-build</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.code")}<br/><span class="flow-cmd">/add-build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Done<br/><span class="flow-cmd">/add-done</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.done")}<br/><span class="flow-cmd">/add-done</span></span>
             </div>
           </div>
 
           <!-- Lean -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Lean Flow</h3>
-            <p class="text-muted text-xs mb-4">Small changes, quick tasks — minimal ceremony</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">{t("docs.flows.lean.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.lean.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node">New<br/><span class="flow-cmd">/add-new</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.new")}<br/><span class="flow-cmd">/add-new</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Code<br/><span class="flow-cmd">/add-build</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.code")}<br/><span class="flow-cmd">/add-build</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">Done<br/><span class="flow-cmd">/add-done</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.done")}<br/><span class="flow-cmd">/add-done</span></span>
             </div>
           </div>
 
           <!-- Convergence -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">Automatic Flow</h3>
-            <p class="text-muted text-xs mb-4">One approval at the brainstorm — each stage hands off to the next, the build closes each delivery unit with its own Final Review, and it asks before opening the PR. The merge stays human</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ffaa00">{t("docs.flows.automatic.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.automatic.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add-brainstorm</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.brainstorm")}<br/><span class="flow-cmd">/add-brainstorm</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node">New<br/><span class="flow-cmd">/add-new</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.new")}<br/><span class="flow-cmd">/add-new</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node">Plan<br/><span class="flow-cmd">/add-plan</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.plan")}<br/><span class="flow-cmd">/add-plan</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">Build (final review)<br/><span class="flow-cmd" style="color:#ffaa00">/add-build</span></span>
+              <span class="flow-node" style="border-color:#ffaa00;background:rgba(255,170,0,0.05)">{t("docs.flows.nodes.buildFinal")}<br/><span class="flow-cmd" style="color:#ffaa00">/add-build</span></span>
               <span class="flow-arrow" style="color:#ffaa00">→</span>
-              <span class="flow-node">PR question</span>
+              <span class="flow-node">{t("docs.flows.nodes.prQuestion")}</span>
             </div>
           </div>
 
           <!-- Emergency -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ff4444">Emergency Flow</h3>
-            <p class="text-muted text-xs mb-4">Critical bug in production — fast track to fix</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1" style="color:#ff4444">{t("docs.flows.emergency.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.emergency.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node" style="border-color:#ff4444;background:rgba(255,68,68,0.05)">Hotfix<br/><span class="flow-cmd" style="color:#ff4444">/add-hotfix</span></span>
+              <span class="flow-node" style="border-color:#ff4444;background:rgba(255,68,68,0.05)">{t("docs.flows.nodes.hotfix")}<br/><span class="flow-cmd" style="color:#ff4444">/add-hotfix</span></span>
               <span class="flow-arrow" style="color:#ff4444">→</span>
-              <span class="flow-node">Done<br/><span class="flow-cmd">/add-done</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.done")}<br/><span class="flow-cmd">/add-done</span></span>
             </div>
           </div>
 
           <!-- Exploration -->
           <div>
-            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">Exploration Flow</h3>
-            <p class="text-muted text-xs mb-4">Don't know where to start? Brainstorm first, then pick any flow above</p>
+            <h3 class="font-display font-bold text-sm tracking-widest uppercase mb-1">{t("docs.flows.exploration.title")}</h3>
+            <p class="text-muted text-xs mb-4">{t("docs.flows.exploration.desc")}</p>
             <div class="flex flex-wrap items-center gap-2">
-              <span class="flow-node">Brainstorm<br/><span class="flow-cmd">/add-brainstorm</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.brainstorm")}<br/><span class="flow-cmd">/add-brainstorm</span></span>
               <span class="flow-arrow">→</span>
-              <span class="flow-node">New<br/><span class="flow-cmd">/add-new</span></span>
+              <span class="flow-node">{t("docs.flows.nodes.new")}<br/><span class="flow-cmd">/add-new</span></span>
               <span class="flow-arrow">→</span>
-              <span class="text-muted text-sm italic">...pick your flow</span>
+              <span class="text-muted text-sm italic">{t("docs.flows.nodes.pickFlow")}</span>
             </div>
           </div>
 
@@ -489,97 +386,45 @@ import "../styles/global.css";
 
       <!-- SCENARIOS -->
       <section id="scenarios" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Reference</p>
-        <h2 id="scenarios-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Scenarios</h2>
-        <p class="text-muted-light mb-8">Real-world examples of when to use each flow.</p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.reference")}</p>
+        <h2 id="scenarios-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.scenarios.heading")}</h2>
+        <p class="text-muted-light mb-8">{t("docs.scenarios.intro")}</p>
 
         <div class="space-y-6">
-          <!-- Scenario 1 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">COMPLETE</span>
-              <h3 class="font-display font-semibold">"Build a user dashboard with charts and filters"</h3>
+          {t<ScenarioEntry[]>("docs.scenarios.items").map((sc, i) => (
+            <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
+              <div class="flex items-center gap-3 mb-3">
+                {scenarioTone[i] === "accent" ? (
+                  <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">{sc.badge}</span>
+                ) : scenarioTone[i] === "amber" ? (
+                  <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">{sc.badge}</span>
+                ) : (
+                  <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ff4444;background:rgba(255,68,68,0.1);border-color:rgba(255,68,68,0.2)">{sc.badge}</span>
+                )}
+                <h3 class="font-display font-semibold">"{sc.title}"</h3>
+              </div>
+              <p class="text-muted-light text-sm mb-4">{sc.desc}</p>
+              <div class="font-mono text-sm text-muted-light">
+                {sc.steps.map((step, j) => (
+                  <>
+                    {scenarioStepTone[i][j] === "accent" ? (
+                      <span class="text-accent">{step.cmd}</span>
+                    ) : scenarioStepTone[i][j] === "amber" ? (
+                      <span style="color:#ffaa00">{step.cmd}</span>
+                    ) : (
+                      <span style="color:#ff4444">{step.cmd}</span>
+                    )} → {step.text}{j < sc.steps.length - 1 && <br/>}
+                  </>
+                ))}
+                {i === 5 && (
+                  <>
+                    <br/>
+                    <span class="text-muted">{t("docs.scenarios.explorationNote")}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <p class="text-muted-light text-sm mb-4">Complex feature with UI, multiple user flows, needs discovery and design.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span class="text-accent">/add-brainstorm</span> → explore scope and requirements<br/>
-              <span class="text-accent">/add-new</span> → define requirements, acceptance criteria<br/>
-              <span class="text-accent">/add-plan</span> → technical architecture, UX contract, task breakdown<br/>
-              <span class="text-accent">/add-build</span> → subagent-driven implementation<br/>
-              <span class="text-accent">/add-review</span> → automated code review<br/>
-              <span class="text-accent">/add-done</span> → changelog, docs, merge
-            </div>
-          </div>
-
-          <!-- Scenario 2 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">STANDARD</span>
-              <h3 class="font-display font-semibold">"Add email notifications for order status"</h3>
-            </div>
-            <p class="text-muted-light text-sm mb-4">Backend feature, no complex UI. Needs planning but no design phase.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span class="text-accent">/add-new</span> → define notification triggers, templates<br/>
-              <span class="text-accent">/add-plan</span> → service architecture, queue strategy<br/>
-              <span class="text-accent">/add-build</span> → implement<br/>
-              <span class="text-accent">/add-done</span> → finalize
-            </div>
-          </div>
-
-          <!-- Scenario 3 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">LEAN</span>
-              <h3 class="font-display font-semibold">"Add a loading spinner to the submit button"</h3>
-            </div>
-            <p class="text-muted-light text-sm mb-4">Small, well-defined change. Minimal ceremony.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span class="text-accent">/add-new</span> → quick spec<br/>
-              <span class="text-accent">/add-build</span> → implement<br/>
-              <span class="text-accent">/add-done</span> → finalize & merge
-            </div>
-          </div>
-
-          <!-- Scenario 4 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ffaa00;background:rgba(255,170,0,0.1);border-color:rgba(255,170,0,0.2)">CONVERGENCE</span>
-              <h3 class="font-display font-semibold">"Implement the 5 API endpoints from the spec"</h3>
-            </div>
-            <p class="text-muted-light text-sm mb-4">Well-specified work. Approve once, let the stages hand off, then take the merge decision yourself.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span style="color:#ffaa00">/add-brainstorm</span> → approve with "deliver automatically"<br/>
-              <span style="color:#ffaa00">new → plan → build (final review)</span> → runs unattended until the PR question<br/>
-              <span class="text-accent">/add-done</span> → finalize
-            </div>
-          </div>
-
-          <!-- Scenario 5 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="font-mono text-xs px-2 py-0.5 rounded border" style="color:#ff4444;background:rgba(255,68,68,0.1);border-color:rgba(255,68,68,0.2)">EMERGENCY</span>
-              <h3 class="font-display font-semibold">"Users can't login — auth token validation is broken"</h3>
-            </div>
-            <p class="text-muted-light text-sm mb-4">Critical production bug. Fast-track fix with tracking.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span style="color:#ff4444">/add-hotfix</span> → diagnose, fix, document with global ID<br/>
-              <span class="text-accent">/add-done</span> → finalize &amp; merge
-            </div>
-          </div>
-
-          <!-- Scenario 6 -->
-          <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-accent font-mono text-xs px-2 py-0.5 rounded bg-accent/10 border border-accent/20">EXPLORATION</span>
-              <h3 class="font-display font-semibold">"I want to add AI to the product but don't know where to start"</h3>
-            </div>
-            <p class="text-muted-light text-sm mb-4">Unclear scope. Start with brainstorming, then pick a flow.</p>
-            <div class="font-mono text-sm text-muted-light">
-              <span class="text-accent">/add-brainstorm</span> → explore possibilities, no commitment<br/>
-              <span class="text-accent">/add-new</span> → lock in what you'll build<br/>
-              <span class="text-muted">→ ...pick Complete, Standard, or Lean from here</span>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -588,58 +433,12 @@ import "../styles/global.css";
 
       <!-- SKILLS -->
       <section id="skills" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
-        <h2 id="skills-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Skills</h2>
-        <p class="text-muted-light mb-8">
-          Skills are specialized knowledge modules loaded by commands.
-          They provide domain expertise for backend, frontend, database, UX, security, and more.
-        </p>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.deepDive")}</p>
+        <h2 id="skills-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.skills.heading")}</h2>
+        <p class="text-muted-light mb-8">{t("docs.skills.intro")}</p>
 
         <div class="grid sm:grid-cols-2 gap-3">
-          {[
-            { name: "backend-development", desc: "SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic" },
-            { name: "frontend-development", desc: "State, data fetching, components, forms, routing — stack-agnostic" },
-            { name: "database-development", desc: "Entities, repositories, migrations, naming — stack-agnostic" },
-            { name: "ux-design", desc: "Design direction, UX laws, layout contract, critique rubric, SaaS patterns, mobile-first" },
-            { name: "security-audit", desc: "OWASP checklist, RLS, secrets, multi-tenancy" },
-            { name: "code-review", desc: "Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID" },
-            { name: "feature-discovery", desc: "Discovery process, codebase analysis" },
-            { name: "feature-specification", desc: "Single writer of about.md - reads the brainstorm intent file, extracts the objective and the closed decisions without asking, and asks only what is still open. Loaded by /add-new." },
-            { name: "architecture-discovery", desc: "Use when documenting project architecture - generates Technical Spec section in AGENTS.md" },
-            { name: "delivery-validation", desc: "Product validation: Requirements 100% implemented, prerequisites exist, acceptance criteria pass" },
-            { name: "subagent-driven-development", desc: "Coordinate subagents with quality gates" },
-            { name: "add--tasks-checklist", desc: "Use when generating, reading, or ticking tasks.md — defines the canonical 5-section schema, tick rules per section, failure marker semantics, 'non-trivial change' rule, and the architect subagent prompt template" },
-            { name: "token-efficiency", desc: "Use when creating commands, skills, or docs - defines generic compression patterns (minified JSON, abbreviations, glob patterns, single breaks). Load before any write where token density matters." },
-            { name: "commit", desc: "Smart commit with auto-generated Conventional Commits messages" },
-            { name: "health-check", desc: "Tech health check suite: docs, security, architecture, data analysis" },
-            { name: "dev-environment-setup", desc: "Use when Node, git or gh CLI are missing, or Node is older than 22.19.0 - detects OS, diagnoses gaps, installs missing tools." },
-            { name: "backend-architecture", desc: "Guides backend architecture decisions - over-engineering, folder structure, slices, layers, feature organization, where code goes." },
-            { name: "frontend-architecture", desc: "Frontend architecture consultant for project structure, folder organization, feature boundaries, and scaling decisions. Framework-aware (React, Vue, Angular). Use when user asks about frontend folder structure, \"components folder is a mess\", \"where should this go\", over-engineering, slices, feature folders, or starting/refactoring a frontend project. Guides decisions only - does not implement (use add--frontend-development) or design UI (use ux-design)." },
-            { name: "ecosystem", desc: "ADD ecosystem map and framework overview" },
-            { name: "investigation", desc: "Deep diagnostic investigation for ambiguous findings" },
-            { name: "resource-path-convention", desc: "Use when writing commands or skills that reference other commands, skills, or scripts - ensures paths resolve correctly across all providers after installation" },
-            { name: "id-convention", desc: "Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs or creating branches - canonical [NNNN][L] format that the scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) expect" },
-            { name: "agents-md-style", desc: "Use when generating or updating the project's AGENTS.md - migrates any legacy context file into it first, then defines what belongs vs. what stays in skills/docs, format rules (JSON for data, markdown for rules/instructions), and line budget. Load before any AGENTS.md write." },
-            { name: "add--tdd", desc: "RED-GREEN-REFACTOR execution discipline for AI agents. Use when implementing any feature or bugfix that has (or should have) tests - forces a failing test confirmed for the right reason before any production code. Loaded by add-build." },
-            { name: "add--test-specification", desc: "Generate contract test cases from feature requirements (RFs/RNs) and technical contracts. Use when add-plan needs to produce plan-test-spec.md mapping each requirement to testable cases before implementation." },
-            { name: "add--qa-spec", desc: "Generate a code-free QA/E2E specification (reachability intent, UX acceptance criteria, functional E2E scenarios, capture states, target viewports, a11y expectations) from about.md + design.md + plan-*.md, and author the _tests/screens.json catalog (design: path only - no expect). Loaded by add-plan's qa-pipeline QA-Spec step." },
-            { name: "add--qa", desc: "Use when running agent-judged QA validation (read-PNG by default; the playwright plugin adds live driving) - the Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) method, report schema/template, and the config.json/screens.json formats. Consumed by /add-review and both judges." },
-            { name: "add--qa-migration", desc: "Use when a project already runs a QA/test flow (Cypress, Jest, Vitest, custom) and wants to adopt the code-addiction QA pipeline instead of starting over - defines the autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints. Consumed by /add-qa-setup when migration is detected and confirmed." },
-            { name: "add--knowledge-discovery", desc: "Use at the context/discovery step of add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm - consult the delivery index, then the project wiki (and code knowledge graph), for minimal token cost before dispatching agents." },
-            { name: "add--wiki-maintenance", desc: "Use for incremental project-wiki updates - loaded by /add-wiki update (manual drift) and add-done STEP 4.9 (pre-merge, automatic). Diff-driven surgical edits only, never full rewrites." },
-            { name: "add--setup-contract", desc: "Use when a state-materializing command starts - compare the receipt setup-shape to the shipped sidecar shape and route FIRST-RUN / CURRENT / STALE. Consumed by /add-qa-setup STEP 1.5 and STEP 12." },
-            { name: "add--settings", desc: "Use when a command reads or writes the project settings file .codeadd/settings.json - ownership, read/merge/write, the content rule, the qa and setup section schemas and the receipt fields. Consumed by /add-qa-setup and /add-setup." },
-            { name: "add--feature-readback", desc: "Use when a feature's docs are closed and you need a cold reader to say back what they understood before anyone builds - catches docs that pass every review and still make the reader build the wrong thing." },
-            { name: "add--final-report", desc: "Use at a command's closing step - the seven blocks every finishing command reports in, the optional fresh-context continuation handoff and its two-response contract, the banned phrasings, and the self-check. Load at the last step, not at the first." },
-            { name: "add--review-discipline", desc: "Use when a command dispatches a reviewer or a cold reader over a document - how many times each runs, what makes a second dispatch legal, how a divergence is handled at each site, and where a verdict may reach disk." },
-            { name: "add--delivery-mode", desc: "Use when a pipeline command reaches a stop or its closing handoff - the two delivery modes and where each is carried, which stops wait in each mode, who is offered the optional fresh-context continuation and why, how one command hands off to the next, and where the automatic path ends." },
-            { name: "add--backlog", desc: "Use when something should be done later but not now - record it as a ticket on the project backlog, or read, reprioritise, comment on and close what is already there. Works mid-flow, inside another command's run, without derailing it." },
-            { name: "add--cross-sf-consistency", desc: "Use when judging contract consistency across an epic's subfeature plans - the five-dimension rubric, dedupe rules, and finding routes." },
-            { name: "add--doc-schemas", desc: "Documentation schemas and conventions for ADD projects" },
-            { name: "add--plan-review", desc: "Pre-delivery executability review for freshly generated about.md and plan.md - verdict (ok / fix-then-ok / blocked) plus required fixes, not questions. Load before dispatching plan-reviewer-agent, or when applying its rubric inline as a fallback." },
-            { name: "add--human-interaction", desc: "How a command talks to a person (default interaction slot)" },
-            { name: "add--agent-interaction", desc: "How a command talks to a bot via claude -p, injected by the agent-mode feature" },
-          ].map(s => (
+          {t<NamedEntry[]>("docs.skills.items").map((s) => (
             <div class="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-white/[0.02]">
               <code class="text-accent font-mono text-xs whitespace-nowrap mt-0.5">{s.name}</code>
               <span class="text-muted-light text-xs">{s.desc}</span>
@@ -650,127 +449,76 @@ import "../styles/global.css";
 
       <!-- OPTIONAL FEATURES -->
       <section id="features" class="mb-20">
-        <h2 id="features-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Optional Features</h2>
-        <p class="text-muted-light mb-6">
-          Features are toggleable behaviors injected into commands via fragment files.
-          Enable or disable them with <code class="text-accent font-mono text-xs">npx codeadd features enable|disable &lt;name&gt;</code>.
-        </p>
+        <h2 id="features-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.features.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.features.intro")} />
 
         <div class="space-y-3">
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">tdd-pipeline</code>
-              <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">enabled by default</span>
+          {t<NamedEntry[]>("docs.features.items").map((feat) => (
+            <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
+              <div class="flex items-center gap-3 mb-2">
+                <code class="text-accent font-mono text-sm">{feat.name}</code>
+                {feat.name === "tdd-pipeline" ? (
+                  <span class="text-xs text-surface bg-accent/80 px-2 py-0.5 rounded font-mono">{t("docs.features.enabledByDefault")}</span>
+                ) : (
+                  <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">{t("docs.features.disabledByDefault")}</span>
+                )}
+              </div>
+              <p class="text-muted-light text-sm mb-1" set:html={feat.desc} />
+              <p class="text-muted text-xs">{t("docs.features.injectedInto")} {featureTargets[feat.name].map((cmd, k) => (<>{k > 0 && ", "}<code class="font-mono">{cmd}</code></>))}</p>
             </div>
-            <p class="text-muted-light text-sm mb-1">TDD pipeline (test-first ordering + unit/integration generation)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code>, <code class="font-mono">add-hotfix</code></p>
-          </div>
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">qa-pipeline</code>
-              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
-            </div>
-            <p class="text-muted-light text-sm mb-1">QA pipeline (E2E spec authoring + routed QA correction + the agent QA judgement in add-review)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code></p>
-          </div>
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">docs-pruning</code>
-              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
-            </div>
-            <p class="text-muted-light text-sm mb-1">Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-done</code></p>
-          </div>
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">board</code>
-              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
-            </div>
-            <p class="text-muted-light text-sm mb-1">Backlog board (pipeline commands read a ticket and move it through the phase statuses)</p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-hotfix</code></p>
-          </div>
-          <div class="border border-white/5 rounded-lg p-4 bg-white/[0.02]">
-            <div class="flex items-center gap-3 mb-2">
-              <code class="text-accent font-mono text-sm">agent-mode</code>
-              <span class="text-xs text-muted-light bg-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
-            </div>
-            <p class="text-muted-light text-sm mb-1">Bot wording for headless runs (one numbered question batch, no continue offer). <a href="#agent-mode" class="text-accent underline underline-offset-2 hover:text-accent-dim">Read more</a></p>
-            <p class="text-muted text-xs">Injected into: <code class="font-mono">add-brainstorm</code>, <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-review</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-qa-setup</code>, <code class="font-mono">add-pull-request</code>, <code class="font-mono">add-audit</code>, <code class="font-mono">add-wiki</code></p>
-          </div>
+          ))}
         </div>
       </section>
 
       <!-- AGENT MODE -->
       <section id="agent-mode" class="mb-20">
-        <h2 id="agent-mode-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Agent Mode</h2>
-        <p class="text-muted-light mb-6">
-          Hand your bot a card or a slug and let it ship. With Agent Mode, an assistant like Grok Bot runs plan, build,
-          review and release on its own. It asks only what matters, all at once, and you approve the PR.
-        </p>
+        <h2 id="agent-mode-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.agentMode.heading")}</h2>
+        <p class="text-muted-light mb-6">{t("docs.agentMode.intro")}</p>
 
         <div class="space-y-6">
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">Turn it on</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.agentMode.turnOn")}</p>
             <div class="space-y-2">
               <CommandLine command="npx codeadd install --providers claude --enable-feature agent-mode" />
-              <p class="text-muted text-xs">Already using codeadd? Run <code class="font-mono">npx codeadd modify --providers claude --force --enable-feature agent-mode</code>.</p>
+              <p class="text-muted text-xs" set:html={t("docs.agentMode.alreadyUsing")} />
             </div>
           </div>
 
           <div>
-            <p class="text-foreground text-sm font-semibold mb-3">How it works</p>
+            <p class="text-foreground text-sm font-semibold mb-3">{t("docs.agentMode.howTitle")}</p>
             <ol class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
-                <p class="text-accent font-mono text-xs mb-1">1</p>
-                <p class="text-foreground text-sm font-semibold mb-1">You talk to your bot</p>
-                <p class="text-muted-light text-sm">Point it at a card, a slug or a one-line idea.</p>
-              </li>
-              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
-                <p class="text-accent font-mono text-xs mb-1">2</p>
-                <p class="text-foreground text-sm font-semibold mb-1">The bot runs codeadd</p>
-                <p class="text-muted-light text-sm">Plan, build, review and done, one command after the other.</p>
-              </li>
-              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
-                <p class="text-accent font-mono text-xs mb-1">3</p>
-                <p class="text-foreground text-sm font-semibold mb-1">You answer once</p>
-                <p class="text-muted-light text-sm">Open questions come together, each with a recommendation.</p>
-              </li>
-              <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
-                <p class="text-accent font-mono text-xs mb-1">4</p>
-                <p class="text-foreground text-sm font-semibold mb-1">You approve the PR</p>
-                <p class="text-muted-light text-sm">The bot merges on green CI and can cut the release.</p>
-              </li>
+              {t<{ title: string; desc: string }[]>("docs.agentMode.steps").map((step, i) => (
+                <li class="bg-white/[0.03] border border-white/10 rounded-lg p-4">
+                  <p class="text-accent font-mono text-xs mb-1">{i + 1}</p>
+                  <p class="text-foreground text-sm font-semibold mb-1">{step.title}</p>
+                  <p class="text-muted-light text-sm">{step.desc}</p>
+                </li>
+              ))}
             </ol>
           </div>
 
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">Why it is easy</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.agentMode.whyTitle")}</p>
             <ul class="list-disc pl-5 space-y-1 text-muted-light text-sm">
-              <li><strong class="text-foreground">No interactive stops.</strong> Commands never wait on a menu or a yes/no to continue.</li>
-              <li><strong class="text-foreground">Questions batched.</strong> Everything a step needs arrives in one numbered message. Reply <code class="font-mono text-xs">recommended</code> to accept them all.</li>
-              <li><strong class="text-foreground">Clear status at the end.</strong> Every run ends as done, stopped, needs-approval or failed, with the reason and the next command.</li>
-              <li><strong class="text-foreground">Parallel agents, isolated.</strong> Each agent works in its own git worktree and its own session, so three or four can run side by side.</li>
+              {t<string[]>("docs.agentMode.why").map((item) => (
+                <li set:html={item} />
+              ))}
             </ul>
           </div>
 
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">What you tell the bot</p>
-            <blockquote class="border-l-2 border-accent pl-4 text-foreground text-sm italic">Take the dark-mode-toggle card, build it and open the PR for me.</blockquote>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.agentMode.tellTitle")}</p>
+            <blockquote class="border-l-2 border-accent pl-4 text-foreground text-sm italic">{t("docs.agentMode.quote")}</blockquote>
           </div>
 
-          <p class="text-muted text-xs">Works on Claude Code, Cursor and OpenCode. Building your own bot? The technical guide (headless calls, sessions and the result schema) is installed at <a href="https://github.com/brabos-ai/code-addiction/blob/main/framwork/.codeadd/agent-mode/README.md" class="font-mono text-accent hover:underline">.codeadd/agent-mode/README.md</a>.</p>
+          <p class="text-muted text-xs" set:html={t("docs.agentMode.footer")} />
         </div>
       </section>
 
       <!-- PLUGINS -->
       <section id="plugins" class="mb-20">
-        <h2 id="plugins-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Plugins</h2>
-        <p class="text-muted-light mb-6">
-          Plugins integrate external tools (MCP servers or skills you install) into ADD commands. Code Addiction handles utilization —
-          it validates the tool is present, injects guidance into commands and agents, and activates
-          plugin-bound skills. Plugins are <strong>disabled by default</strong> and require the
-          external tool to be installed first.
-        </p>
+        <h2 id="plugins-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.plugins.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.plugins.intro")} />
 
         <div class="grid sm:grid-cols-3 gap-4 mb-8">
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
@@ -778,27 +526,27 @@ import "../styles/global.css";
               <code class="text-accent font-mono text-sm font-bold">gitnexus</code>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-2">The agents see who calls what before they change code, so they miss fewer side effects.</p>
-            <p class="text-muted text-xs">Used by: <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-wiki</code></p>
+            <p class="text-muted-light text-sm mb-2">{t("docs.plugins.gitnexus.card")}</p>
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.usedBy")} ${codeList(gitnexusCommands)}`} />
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
             <div class="flex items-center gap-2 mb-2">
               <code class="text-accent font-mono text-sm font-bold">playwright</code>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-2">The QA review drives the browser live (screenshots, console, network) instead of reading saved images.</p>
-            <p class="text-muted text-xs">Used by: <code class="font-mono">add-review</code></p>
+            <p class="text-muted-light text-sm mb-2">{t("docs.plugins.playwright.card")}</p>
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.usedBy")} ${codeList(["add-review"])}`} />
           </div>
           <div class="p-4 rounded-lg border border-white/5 bg-white/[0.02] hover:border-accent/20 transition-colors">
             <div class="flex items-center gap-2 mb-2">
               <code class="text-accent font-mono text-sm font-bold">design</code>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">skill</span>
             </div>
-            <p class="text-muted-light text-sm mb-2">UI plans get a style, palette and type choice from a design library instead of defaults.</p>
-            <p class="text-muted text-xs">Used by: <code class="font-mono">add-plan</code></p>
+            <p class="text-muted-light text-sm mb-2">{t("docs.plugins.design.card")}</p>
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.usedBy")} ${codeList(["add-plan"])}`} />
           </div>
         </div>
-        <p class="text-muted text-xs mb-8">Not sure which to enable? <a href="#setup" class="text-accent underline underline-offset-2 hover:text-accent-dim">/add-setup</a> offers each one with a recommendation for your project.</p>
+        <p class="text-muted text-xs mb-8" set:html={t("docs.plugins.notSure")} />
 
         <!-- gitnexus -->
         <div class="border border-white/5 rounded-xl p-6 bg-white/[0.02] space-y-6">
@@ -807,30 +555,30 @@ import "../styles/global.css";
           <div>
             <div class="flex flex-wrap items-center gap-3 mb-2">
               <code class="text-accent font-mono text-lg font-bold">gitnexus</code>
-              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">{t("docs.plugins.disabledByDefault")}</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Code knowledge-graph navigation (call graph, refs, blast-radius) via MCP. Enables structural code navigation across discovery, planning, diagnosis, and hotfix commands — going beyond grep to understand actual call chains and impact.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-new</code>, <code class="font-mono">add-plan</code>, <code class="font-mono">add-build</code>, <code class="font-mono">add-diagnose</code>, <code class="font-mono">add-hotfix</code>, <code class="font-mono">add-done</code>, <code class="font-mono">add-wiki</code></p>
-            <p class="text-muted text-xs mb-1">Injects into agent: <code class="font-mono">ux-flow-agent</code></p>
-            <p class="text-muted text-xs">Activates skill: <code class="font-mono">add--gitnexus</code> — structural/relational code navigation (call graph, references, blast-radius, trace flows, safe refactors)</p>
+            <p class="text-muted-light text-sm mb-1">{t("docs.plugins.gitnexus.summary")}</p>
+            <p class="text-muted text-xs mb-1" set:html={`${t("docs.plugins.injectsInto")} ${codeList(gitnexusCommands)}`} />
+            <p class="text-muted text-xs mb-1" set:html={`${t("docs.plugins.injectsAgent")} ${codeList(["ux-flow-agent"])}`} />
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.activatesSkill")} ${codeList(["add--gitnexus"])} ${t("docs.plugins.gitnexus.skillDesc")}`} />
             <p class="text-muted text-xs mt-1"><a href="https://github.com/abhigyanpatwari/GitNexus" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/abhigyanpatwari/GitNexus</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">1 — Install GitNexus</p>
-            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">gitnexus --version</code>.</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.gitnexus.installTitle")}</p>
+            <p class="text-muted-light text-xs mb-2" set:html={t("docs.plugins.gitnexus.installText")} />
             <CommandLine command="npm install -g gitnexus" />
           </div>
 
           <!-- Step 2: Enable -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.enableTitle")}</p>
             <div class="space-y-2">
               <CommandLine command="npx codeadd plugins enable gitnexus" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-muted select-none"># to disable later</span>
+                <span class="text-muted select-none">{t("docs.plugins.disableLater")}</span>
               </div>
               <CommandLine command="npx codeadd plugins disable gitnexus" />
             </div>
@@ -838,13 +586,13 @@ import "../styles/global.css";
 
           <!-- Step 3: Post-enable setup -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">3 — Wire and index (once per repo)</p>
-            <p class="text-muted-light text-xs mb-2">Run these after enabling. Re-run <code class="font-mono">analyze</code> after large changes.</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.gitnexus.wireTitle")}</p>
+            <p class="text-muted-light text-xs mb-2" set:html={t("docs.plugins.gitnexus.wireText")} />
             <div class="space-y-2">
               <CommandLine command="gitnexus setup" />
               <CommandLine command="gitnexus analyze" />
             </div>
-            <p class="text-muted text-xs mt-2">Verify: ask Claude to run <code class="font-mono">gitnexus list_repos</code> (or <code class="font-mono">/mcp</code>) — this repo must appear indexed. If it does not, commands silently fall back to grep.</p>
+            <p class="text-muted text-xs mt-2" set:html={t("docs.plugins.gitnexus.verify")} />
           </div>
 
         </div>
@@ -856,29 +604,29 @@ import "../styles/global.css";
           <div>
             <div class="flex flex-wrap items-center gap-3 mb-2">
               <code class="text-accent font-mono text-lg font-bold">playwright</code>
-              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">{t("docs.plugins.disabledByDefault")}</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">mcp</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Adds live browser driving (screenshots + console/network) to the already-present agent-judged QA validation via Playwright MCP. QA works out of the box from persisted run evidence (screenshots + assertion/axe results) — this plugin lets the /add-review judge pair additionally drive the app live for richer evidence.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-review</code></p>
-            <p class="text-muted text-xs">Injects into agent: <code class="font-mono">qa-agent</code></p>
+            <p class="text-muted-light text-sm mb-1">{t("docs.plugins.playwright.summary")}</p>
+            <p class="text-muted text-xs mb-1" set:html={`${t("docs.plugins.injectsInto")} ${codeList(["add-review"])}`} />
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.injectsAgent")} ${codeList(["qa-agent"])}`} />
             <p class="text-muted text-xs mt-1"><a href="https://github.com/microsoft/playwright-mcp" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/microsoft/playwright-mcp</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">1 — Install Playwright MCP</p>
-            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction validates this with <code class="font-mono">npx --yes @playwright/mcp@latest --version</code>. Run <code class="font-mono">/add-qa-setup</code> for a guided, per-OS install of chromium + the Playwright MCP server.</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.playwright.installTitle")}</p>
+            <p class="text-muted-light text-xs mb-2" set:html={t("docs.plugins.playwright.installText")} />
             <CommandLine command="npx --yes @playwright/mcp@latest --version" />
           </div>
 
           <!-- Step 2: Enable -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.enableTitle")}</p>
             <div class="space-y-2">
               <CommandLine command="npx codeadd plugins enable playwright" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-muted select-none"># to disable later</span>
+                <span class="text-muted select-none">{t("docs.plugins.disableLater")}</span>
               </div>
               <CommandLine command="npx codeadd plugins disable playwright" />
             </div>
@@ -886,13 +634,13 @@ import "../styles/global.css";
 
           <!-- Step 3: Set up and run -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">3 — Set up and run QA (once per project)</p>
-            <p class="text-muted-light text-xs mb-2">Scaffold QA config after enabling, then run the audit per feature.</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.playwright.runTitle")}</p>
+            <p class="text-muted-light text-xs mb-2">{t("docs.plugins.playwright.runText")}</p>
             <div class="space-y-2">
               <CommandLine command="/add-qa-setup" />
               <CommandLine command={"/add-review <feature-id>"} />
             </div>
-            <p class="text-muted text-xs mt-2">Verify: the Playwright MCP server must be connected (e.g. <code class="font-mono">/mcp</code>) — if it does not appear, <code class="font-mono">/add-review</code> cannot drive the browser.</p>
+            <p class="text-muted text-xs mt-2" set:html={t("docs.plugins.playwright.verify")} />
           </div>
 
         </div>
@@ -904,24 +652,24 @@ import "../styles/global.css";
           <div>
             <div class="flex flex-wrap items-center gap-3 mb-2">
               <code class="text-accent font-mono text-lg font-bold">design</code>
-              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">disabled by default</span>
+              <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">{t("docs.plugins.disabledByDefault")}</span>
               <span class="text-xs text-muted border border-white/10 px-2 py-0.5 rounded font-mono">skill</span>
             </div>
-            <p class="text-muted-light text-sm mb-1">Makes the design step of <code class="font-mono">/add-plan</code> use ui-ux-pro-max, which you install yourself, as the data source for style, palette, typography and chart choice. Your inspected project tokens and <code class="font-mono">docs/design-system.md</code> still come first, and the design core keeps its notation, rubric and schema gate. Code Addiction ships no copy of the skill and installs nothing.</p>
-            <p class="text-muted text-xs mb-1">Injects into: <code class="font-mono">add-plan</code></p>
-            <p class="text-muted text-xs">Injects into agents: <code class="font-mono">ux-flow-agent</code>, <code class="font-mono">ux-layout-agent</code>, <code class="font-mono">ux-agent</code> (critique mode)</p>
+            <p class="text-muted-light text-sm mb-1" set:html={t("docs.plugins.design.summary")} />
+            <p class="text-muted text-xs mb-1" set:html={`${t("docs.plugins.injectsInto")} ${codeList(["add-plan"])}`} />
+            <p class="text-muted text-xs" set:html={`${t("docs.plugins.injectsAgents")} ${codeList(["ux-flow-agent", "ux-layout-agent"])}, ${codeList(["ux-agent"])} ${t("docs.plugins.critiqueMode")}`} />
             <p class="text-muted text-xs mt-1"><a href="https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" target="_blank" rel="noopener" class="text-accent underline underline-offset-2 hover:text-accent-dim">github.com/nextlevelbuilder/ui-ux-pro-max-skill</a></p>
           </div>
 
           <!-- Step 1: Install prerequisite -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">1 — Install ui-ux-pro-max (one of two official routes)</p>
-            <p class="text-muted-light text-xs mb-2">Required before enabling the plugin. Code Addiction looks for <code class="font-mono">ui-ux-pro-max/SKILL.md</code> in the project and home skill folders of every supported provider, and in Claude's installed plugins list. In Claude Code:</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.design.installTitle")}</p>
+            <p class="text-muted-light text-xs mb-2" set:html={t("docs.plugins.design.installText")} />
             <div class="space-y-2">
               <CommandLine command="/plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill" />
               <CommandLine command="/plugin install ui-ux-pro-max@ui-ux-pro-max-skill" />
             </div>
-            <p class="text-muted-light text-xs mt-3 mb-2">Any provider, with the official CLI (not the stale <code class="font-mono">uipro-cli</code> package):</p>
+            <p class="text-muted-light text-xs mt-3 mb-2" set:html={t("docs.plugins.design.anyProvider")} />
             <div class="space-y-2">
               <CommandLine command="npm install -g ui-ux-pro-max-cli" />
               <CommandLine command={"uipro init --ai <claude|codex|cursor|antigravity|opencode|zcode>"} />
@@ -930,15 +678,15 @@ import "../styles/global.css";
 
           <!-- Step 2: Enable -->
           <div>
-            <p class="text-foreground text-sm font-semibold mb-2">2 — Enable the plugin</p>
+            <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.enableTitle")}</p>
             <div class="space-y-2">
               <CommandLine command="npx codeadd plugins enable design" />
               <div class="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 font-mono text-sm">
-                <span class="text-muted select-none"># to disable later</span>
+                <span class="text-muted select-none">{t("docs.plugins.disableLater")}</span>
               </div>
               <CommandLine command="npx codeadd plugins disable design" />
             </div>
-            <p class="text-muted text-xs mt-2">Python note: the skill's search script needs Python 3. Check <code class="font-mono">python3 --version</code> (Windows: <code class="font-mono">py --version</code>). Without Python the agents skip the search and use the design core. Code Addiction never installs Python. After a Claude plugin install, restart the session or run <code class="font-mono">/reload-plugins</code>.</p>
+            <p class="text-muted text-xs mt-2" set:html={t("docs.plugins.design.pythonNote")} />
           </div>
 
         </div>
@@ -947,18 +695,18 @@ import "../styles/global.css";
 
       <!-- PROVIDERS -->
       <section id="providers" class="mb-20">
-        <h2 id="providers-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Providers</h2>
+        <h2 id="providers-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.providers.heading")}</h2>
         <p class="text-muted-light mb-8">
-          Code Addiction generates provider-specific files so the same commands work across AI assistants.
+          {t("docs.providers.intro")}
         </p>
 
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-white/10">
-                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">Provider</th>
-                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">Directory</th>
-                <th class="text-left py-3 font-display font-semibold text-foreground">Format</th>
+                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">{t("docs.providers.provider")}</th>
+                <th class="text-left py-3 pr-4 font-display font-semibold text-foreground">{t("docs.providers.directory")}</th>
+                <th class="text-left py-3 font-display font-semibold text-foreground">{t("docs.providers.format")}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -972,51 +720,49 @@ import "../styles/global.css";
             </tbody>
           </table>
         </div>
-        <p class="text-muted text-xs mt-4">
-          Commands and skills build to all six providers. Agent definitions ship to Claude Code, Cursor, OpenCode, Codex and ZCode — Antigravity is deferred because its native <code class="font-mono">.agents/agents/</code> path collides with the Codex skills root. ZCode reads commands and skills from the same <code class="font-mono">.agents/</code> tree as Codex and keeps its agents in <code class="font-mono">.zcode/</code>, so the two never duplicate a file on disk.
-        </p>
+        <p class="text-muted text-xs mt-4" set:html={t("docs.providers.caveat")} />
       </section>
 
       <!-- STRUCTURE -->
       <section id="structure" class="mb-20">
-        <h2 id="structure-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">Project Structure</h2>
+        <h2 id="structure-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.structure.heading")}</h2>
         <p class="text-muted-light mb-6">
-          The Code Addiction repository is organized as follows:
+          {t("docs.structure.intro")}
         </p>
 
         <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm leading-loose">
           <span class="text-accent">code-addiction/</span><br/>
-          <span class="text-foreground">├── cli/</span><span class="text-muted ml-12">← installer CLI (npm: codeadd)</span><br/>
-          <span class="text-foreground">├── framwork/</span><span class="text-muted ml-6">← framework payload</span><br/>
-          <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">← core: commands, skills, scripts</span><br/>
-          <span class="text-foreground">├── board/</span><span class="text-muted ml-12">← read-only backlog board app (not distributed yet)</span><br/>
-          <span class="text-foreground">├── web/</span><span class="text-muted ml-14">← this website</span><br/>
-          <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">← build and release scripts</span><br/>
-          <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">← project documentation</span>
+          <span class="text-foreground">├── cli/</span><span class="text-muted ml-12">{t("docs.structure.cli")}</span><br/>
+          <span class="text-foreground">├── framwork/</span><span class="text-muted ml-6">{t("docs.structure.framwork")}</span><br/>
+          <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">{t("docs.structure.codeadd")}</span><br/>
+          <span class="text-foreground">├── board/</span><span class="text-muted ml-12">{t("docs.structure.board")}</span><br/>
+          <span class="text-foreground">├── web/</span><span class="text-muted ml-14">{t("docs.structure.web")}</span><br/>
+          <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">{t("docs.structure.scripts")}</span><br/>
+          <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">{t("docs.structure.docs")}</span>
         </div>
       </section>
 
       <!-- ECOSYSTEM MAP -->
       <section id="ecosystem" class="mb-20">
-        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">Deep Dive</p>
-        <h2 id="ecosystem-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">Ecosystem Map</h2>
+        <p class="font-mono text-accent text-xs tracking-widest uppercase mb-4">{t("docs.sidebar.groups.deepDive")}</p>
+        <h2 id="ecosystem-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.ecosystem.heading")}</h2>
         <p class="text-muted-light mb-6">
-          Interactive map of commands, skills, and agents. Hover a node to highlight its connections. Click to inspect.
+          {t("docs.ecosystem.intro")}
         </p>
 
         <!-- Legend + filters -->
         <div class="flex flex-wrap items-center gap-4 mb-4">
           <div class="flex items-center gap-4 text-xs text-muted-light">
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#a78bfa"></span>Commands</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22d3ee"></span>Skills</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#34d399"></span>Agents</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#a78bfa"></span>{t("docs.ecosystem.commands")}</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#22d3ee"></span>{t("docs.ecosystem.skills")}</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#34d399"></span>{t("docs.ecosystem.agents")}</span>
           </div>
           <div class="flex items-center gap-2 ml-auto flex-wrap">
-            <input id="eco-search" type="text" placeholder="Filter nodes..." aria-label="Filter the ecosystem map nodes" class="bg-white/[0.04] border border-white/10 rounded-md px-2.5 py-1 text-xs text-foreground placeholder-muted focus:border-accent/40 font-mono w-32"/>
-            <button data-filter="all" class="eco-btn text-xs px-3 py-1 rounded-md border border-accent bg-accent text-surface font-mono">All</button>
-            <button data-filter="command" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Commands</button>
-            <button data-filter="skill" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Skills</button>
-            <button data-filter="agent" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">Agents</button>
+            <input id="eco-search" type="text" placeholder={t("docs.ecosystem.filterPlaceholder")} aria-label={t("docs.ecosystem.filterAria")} class="bg-white/[0.04] border border-white/10 rounded-md px-2.5 py-1 text-xs text-foreground placeholder-muted focus:border-accent/40 font-mono w-32"/>
+            <button data-filter="all" class="eco-btn text-xs px-3 py-1 rounded-md border border-accent bg-accent text-surface font-mono">{t("docs.ecosystem.all")}</button>
+            <button data-filter="command" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">{t("docs.ecosystem.commands")}</button>
+            <button data-filter="skill" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">{t("docs.ecosystem.skills")}</button>
+            <button data-filter="agent" class="eco-btn text-xs px-3 py-1 rounded-md border border-white/10 text-muted-light hover:text-foreground font-mono">{t("docs.ecosystem.agents")}</button>
           </div>
         </div>
 
@@ -1025,14 +771,14 @@ import "../styles/global.css";
           <div id="eco-graph-wrap" class="flex-1 relative min-w-0">
             <div id="eco-cy" class="h-[60vh] lg:h-[720px] rounded-xl border border-white/10 bg-[#0a0a0f] text-sm text-muted-light p-4"></div>
             <div class="absolute top-3 right-3 flex flex-col gap-1 bg-[#0a0a0f]/80 border border-white/10 rounded-lg p-1 backdrop-blur-sm">
-              <button id="eco-zoom-in" title="Zoom in" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-6H6"/></svg></button>
-              <button id="eco-zoom-out" title="Zoom out" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg></button>
-              <button id="eco-fit" title="Fit to canvas" class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg></button>
+              <button id="eco-zoom-in" title={t("docs.ecosystem.zoomIn")} class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-6H6"/></svg></button>
+              <button id="eco-zoom-out" title={t("docs.ecosystem.zoomOut")} class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 12H6"/></svg></button>
+              <button id="eco-fit" title={t("docs.ecosystem.fit")} class="eco-ctrl"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg></button>
               <div class="h-px bg-white/10 my-0.5"></div>
-              <button id="eco-fullscreen" title="Fullscreen" class="eco-ctrl"><svg id="eco-fs-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/></svg></button>
+              <button id="eco-fullscreen" title={t("docs.ecosystem.fullscreen")} class="eco-ctrl"><svg id="eco-fs-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4h4M16 4h4v4M4 16v4h4M16 20h4v-4"/></svg></button>
             </div>
             <div class="absolute bottom-3 left-3 text-xs text-muted-light font-mono pointer-events-none select-none bg-[#0a0a0f]/70 px-2 py-1 rounded">
-              scroll to zoom · drag to pan · click to inspect
+              {t("docs.ecosystem.hint")}
             </div>
           </div>
           <aside id="eco-sidebar" class="flex w-full lg:w-60 h-[360px] lg:h-[720px] shrink-0 rounded-xl border border-white/10 bg-white/[0.02] flex-col">
@@ -1047,7 +793,7 @@ import "../styles/global.css";
               <div id="eco-panel-body" class="text-xs text-muted-light space-y-2 mt-3 max-h-48 overflow-y-auto"></div>
             </div>
             <div id="eco-browse" class="flex-1 overflow-y-auto p-3 space-y-3 min-h-0"></div>
-            <p id="eco-empty" class="hidden p-4 text-xs text-muted-light">No node matches. Try a name such as <code class="font-mono">add-plan</code>, <code class="font-mono">doc-schemas</code> or <code class="font-mono">qa</code>.</p>
+            <p id="eco-empty" class="hidden p-4 text-xs text-muted-light" set:html={t("docs.ecosystem.empty")} />
           </aside>
         </div>
       </section>
@@ -1068,14 +814,15 @@ import "../styles/global.css";
   </div>
 
   <!-- Docs search: Pagefind UI, loaded on first open -->
-  <dialog id="docs-search" aria-label="Search the docs" class="m-auto mt-20 w-[min(42rem,calc(100vw-2rem))] max-h-[80vh] overflow-y-auto rounded-xl border border-white/10 bg-[#0a0a0f] p-4 text-foreground backdrop:bg-black/70">
+  <dialog id="docs-search" aria-label={t("docs.search.title")} class="m-auto mt-20 w-[min(42rem,calc(100vw-2rem))] max-h-[80vh] overflow-y-auto rounded-xl border border-white/10 bg-[#0a0a0f] p-4 text-foreground backdrop:bg-black/70">
     <div class="flex items-center justify-between mb-3">
-      <p class="font-mono text-accent text-xs tracking-widest uppercase">Search the docs</p>
-      <button type="button" id="docs-search-close" class="text-muted-light hover:text-foreground text-sm" aria-label="Close search">Esc</button>
+      <p class="font-mono text-accent text-xs tracking-widest uppercase">{t("docs.search.title")}</p>
+      <button type="button" id="docs-search-close" class="text-muted-light hover:text-foreground text-sm" aria-label={t("docs.search.close")}>Esc</button>
     </div>
     <div id="docs-search-ui"></div>
-    <p id="docs-search-fallback" class="hidden text-sm text-muted-light">Search runs on the built site. Run <code class="font-mono">npm run build</code> in <code class="font-mono">web/</code> and open the preview.</p>
+    <p id="docs-search-fallback" class="hidden text-sm text-muted-light" set:html={t("docs.search.fallback")} />
   </dialog>
+  <script type="application/json" id="docs-i18n" set:html={clientStringsJson} />
 
   <script is:inline>
     function initDocsChrome() {
@@ -1083,6 +830,9 @@ import "../styles/global.css";
     if (!document.getElementById('docs-sidebar')) return;
     const pageAbort = new AbortController();
     document.addEventListener('astro:before-swap', () => pageAbort.abort(), { once: true });
+    // Read on every page load: the next page may be the other language.
+    const i18nEl = document.getElementById('docs-i18n');
+    const S = i18nEl ? JSON.parse(i18nEl.textContent) : {};
     const sidebarToggle = document.getElementById('docs-sidebar-toggle');
     const sidebar = document.getElementById('docs-sidebar');
     const backdrop = document.getElementById('docs-backdrop');
@@ -1130,8 +880,15 @@ import "../styles/global.css";
       var closeBtn = document.getElementById('docs-search-close');
       if (!dialog || typeof dialog.showModal !== 'function') return;
       var loaded = false;
+      var ui = null;
+      // The Pagefind UI belongs to this page's dialog. Destroy it before the swap so the next page
+      // builds a fresh one, which loads the index for the new <html lang>.
+      pageAbort.signal.addEventListener('abort', function () {
+        if (ui && typeof ui.destroy === 'function') ui.destroy();
+        ui = null;
+      });
       function mountUi() {
-        new window.PagefindUI({ element: '#docs-search-ui', showSubResults: true, showImages: false, resetStyles: false, translations: { placeholder: 'Search the docs' } });
+        ui = new window.PagefindUI({ element: '#docs-search-ui', showSubResults: true, showImages: false, resetStyles: false, translations: S.pagefind || {} });
         var input = dialog.querySelector('.pagefind-ui__search-input');
         if (input) input.focus();
       }
@@ -1227,6 +984,9 @@ import "../styles/global.css";
 
   <script is:inline>
   function initEcoMap() {
+    // Read on every page load: the next page may be the other language.
+    var i18nEl = document.getElementById('docs-i18n');
+    var S = i18nEl ? JSON.parse(i18nEl.textContent) : {};
     var ecoAbort = new AbortController();
     document.addEventListener('astro:before-swap', function () { ecoAbort.abort(); }, { once: true });
     var CYTOSCAPE_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js';
@@ -1448,18 +1208,18 @@ import "../styles/global.css";
         var inspect = document.getElementById('eco-inspect');
         document.getElementById('eco-panel-name').textContent = n.data('id');
         var typeEl = document.getElementById('eco-panel-type');
-        typeEl.textContent = n.data('type');
+        typeEl.textContent = (S.ecoTypes && S.ecoTypes[n.data('type')]) || n.data('type');
         typeEl.style.color = TYPE_COLOR[n.data('type')] || '#cbd5e1';
         var out = n.outgoers('node');
         var inc = n.incomers('node');
         var html = '';
         if (out.length) {
-          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">Loads / Dispatches</span><ul class="mt-1 space-y-0.5">';
+          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">' + S.ecoLoadsDispatches + '</span><ul class="mt-1 space-y-0.5">';
           out.each(function(x) { html += '<li class="font-mono text-xs truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
           html += '</ul></div>';
         }
         if (inc.length) {
-          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">Used by</span><ul class="mt-1 space-y-0.5">';
+          html += '<div><span class="text-foreground font-mono text-xs uppercase tracking-wide">' + S.ecoUsedBy + '</span><ul class="mt-1 space-y-0.5">';
           inc.each(function(x) { html += '<li class="font-mono text-xs truncate hover:text-foreground cursor-pointer eco-link" data-id="' + x.id() + '">' + x.id() + '</li>'; });
           html += '</ul></div>';
         }
@@ -1479,9 +1239,9 @@ import "../styles/global.css";
       // ----- Browse sidebar: render lists -----
       var browseEl = document.getElementById('eco-browse');
       var GROUPS = [
-        { type: 'command', label: 'Commands', color: TYPE_COLOR.command, collapsed: false },
-        { type: 'skill', label: 'Skills', color: TYPE_COLOR.skill, collapsed: true },
-        { type: 'agent', label: 'Agents', color: TYPE_COLOR.agent, collapsed: true },
+        { type: 'command', label: S.ecoGroups.command, color: TYPE_COLOR.command, collapsed: false },
+        { type: 'skill', label: S.ecoGroups.skill, color: TYPE_COLOR.skill, collapsed: true },
+        { type: 'agent', label: S.ecoGroups.agent, color: TYPE_COLOR.agent, collapsed: true },
       ];
       browseEl.innerHTML = GROUPS.map(function(g) {
         var items = nodes.filter(function(n) { return n.data.type === g.type; })
@@ -1637,7 +1397,7 @@ import "../styles/global.css";
             console.error('Ecosystem load failed:', err);
             // Say what happened. A silent blank panel reads as a broken site.
             var box = document.getElementById('eco-cy');
-            if (box) box.textContent = 'Ecosystem map unavailable (' + err.message + ').';
+            if (box) box.textContent = S.ecoError.replace('{error}', err.message);
           });
       }
     }, { rootMargin: '300px' });
@@ -1656,6 +1416,9 @@ import "../styles/global.css";
   -->
   <script is:inline>
   function initMermaidGraph() {
+    // Read on every page load: the next page may be the other language.
+    var i18nEl = document.getElementById('docs-i18n');
+    var S = i18nEl ? JSON.parse(i18nEl.textContent) : {};
     var section = document.getElementById('graph');
     var target = document.getElementById('artefact-graph');
     if (!section || !target) return;
@@ -1691,7 +1454,7 @@ import "../styles/global.css";
         })
         .catch(function (e) {
           // Say what happened. A silent blank panel reads as a broken site.
-          target.textContent = 'Diagram unavailable (' + e.message + ').';
+          target.textContent = S.graphError.replace('{error}', e.message);
         });
     }
 
