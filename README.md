@@ -91,6 +91,8 @@ The `board` feature keeps a project's backlog on its own `board` branch, so a ti
 npx codeadd features enable board
 ```
 
+**New project.** Enabling `board` (with `codeadd features enable board`, `codeadd modify --enable-feature board`, `codeadd install --enable-feature board`, or by accepting it in `/add-setup`) creates the board: it writes `.codeadd/board.json`, pushes an orphan `board` branch to `origin` and makes the clone under `~/.codeadd/`. The project needs an `origin` with its main branch pushed. Nothing on your code branches is committed or pushed. Afterwards, commit `.codeadd/board.json`, which is already staged. If the board could not be created, the enable still succeeds with one warning; fix what it names and run `node .codeadd/scripts/board-init.cjs`.
+
 **Migrate a project that still keeps `docs/backlog.jsonl` in the code.** Needs codeadd 1.5.0 or later installed in the project (`npx codeadd update`). Download [`scripts/migrations/migrate-board.cjs`](scripts/migrations/migrate-board.cjs) from this repository and run it at the project root, on any branch:
 
 ```bash
