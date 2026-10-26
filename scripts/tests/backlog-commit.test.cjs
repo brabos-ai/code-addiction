@@ -469,3 +469,39 @@ test('backlog-commit#023 — 0059B: release skips a waiting ticket marked for an
     ['0004B', 'awaiting-release', '0.7.0'], ['0005B', 'done', 'v0.6.0'],
   ]);
 });
+
+test('backlog-commit#024 — 0070B: the three board states that stop a write name the way out, never a person', (t) => {
+  const HINT = 'Run `node .codeadd/scripts/board-init.cjs` (or /add-setup) to create it.';
+  const README = 'https://github.com/brabos-ai/code-addiction#board';
+
+  // none: no board at all.
+  const plain = h.mkTmp('codeadd-plain-');
+  t.after(() => h.rmrf(plain));
+  const record = h.write(path.join(plain, 't.json'), validTicket());
+  let res = commit(plain, ['add', '--record-file', record], { env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(res.status, 2, res.output);
+  assert.equal(key(res.stdout, 'REFUSED'), 'board-not-configured');
+  assert.match(res.stdout, /This project has no board/);
+  assert.ok(res.stdout.includes(HINT), res.stdout);
+  assert.doesNotMatch(res.output, /framework maintainer/);
+
+  // branch-missing: the config names a branch the remote does not have.
+  const c = board(t);
+  h.write(path.join(c.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: c.bare, branch: 'nope' }));
+  res = commit(c.repo, ['add'], { input: validTicket(), env: c.env });
+  assert.equal(res.status, 1, res.output);
+  assert.match(res.output, /ERROR=board-branch-missing/);
+  assert.ok(res.stdout.includes(HINT), res.stdout);
+  assert.doesNotMatch(res.output, /framework maintainer/);
+
+  // migration-required: the legacy file is in the checkout and no config says where it moved.
+  const b = board(t);
+  h.git(b.repo, ['rm', '-q', '-f', '.codeadd/board.json']);
+  h.git(b.repo, ['commit', '-q', '-m', 'drop config']);
+  h.write(path.join(b.repo, BACKLOG), '{"id":"0001B"}\n');
+  res = commit(b.repo, ['add'], { input: validTicket(), env: { ...b.env, CODEADD_BOARD_DIR: '' } });
+  assert.equal(res.status, 1, res.output);
+  assert.match(res.output, /ERROR=board-migration-required/);
+  assert.ok(res.stdout.includes(README), res.stdout);
+  assert.doesNotMatch(res.output, /framework maintainer/);
+});

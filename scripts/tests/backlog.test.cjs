@@ -1195,3 +1195,31 @@ test('backlog#081 — L1.5: the read entry refuses release and release-flow with
     assert.match(res.stdout, /backlog-commit\.cjs/);
   }
 });
+
+test('backlog#082 — 0070B: a read that stops on branch-missing or migration-required names the way out, never a person; none stays silent', (t) => {
+  const HINT = 'Run `node .codeadd/scripts/board-init.cjs` (or /add-setup) to create it.';
+  const README = 'https://github.com/brabos-ai/code-addiction#board';
+
+  const b = boardWith(t, '0001B', 'first');
+  h.write(path.join(b.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: b.bare, branch: 'nope' }));
+  const missing = backlog(b.repo, ['list'], { env: b.env });
+  assert.equal(missing.status, 1, missing.output);
+  assert.match(missing.stdout, /ERROR=board-branch-missing/);
+  assert.ok(missing.stdout.includes(HINT), missing.stdout);
+  assert.doesNotMatch(missing.output, /framework maintainer/);
+
+  const d = boardWith(t, '0001B', 'first');
+  h.git(d.repo, ['rm', '-q', '-f', '.codeadd/board.json']);
+  h.write(path.join(d.repo, BACKLOG), '{"id":"0001B"}\n');
+  const old = backlog(d.repo, ['list'], { env: { ...d.env, CODEADD_BOARD_DIR: '' } });
+  assert.equal(old.status, 1, old.output);
+  assert.match(old.stdout, /ERROR=board-migration-required/);
+  assert.ok(old.stdout.includes(README), old.stdout);
+  assert.doesNotMatch(old.output, /framework maintainer/);
+
+  const plain = project(t);
+  const none = backlog(plain, ['list'], { env: { CODEADD_BOARD_DIR: '' } });
+  assert.equal(none.status, 0, none.output);
+  assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
+  assert.doesNotMatch(none.output, /board-init|maintainer/);
+});
