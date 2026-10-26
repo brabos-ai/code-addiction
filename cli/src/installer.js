@@ -18,6 +18,7 @@ import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from '.
 import { writeMcpRegistration } from './mcp-registration.js';
 import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './github.js';
 import { readManifest, captureBaselines } from './injection-core.js';
+import { initBoardOnEnable } from './board-init.js';
 import { allMigrationIds } from './migrations.js';
 
 // The single definition of "never delete this" lives in release-copy.js, next to
@@ -400,6 +401,8 @@ export async function install(cwd, options = {}) {
   if (featuresApplied > 0) {
     log.success(`Applied ${featuresApplied} feature injection(s).`);
   }
+  // Enabling the board is what creates it; a plain install never reaches this.
+  if (defaultFeatures.board) initBoardOnEnable(targetDir, 'board', { scope });
 
   log.info('The tdd-pipeline feature is enabled by default. Run `codeadd features` to adjust.');
 

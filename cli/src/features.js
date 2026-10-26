@@ -9,6 +9,7 @@ import {
   reconcileSlots,
 } from './injection-core.js';
 import { isPluginDetected } from './plugins.js';
+import { initBoardOnEnable } from './board-init.js';
 import { resolveSelected } from './providers.js';
 
 /**
@@ -80,8 +81,9 @@ export const FEATURES = {
     commands: ['add-done'],
   },
   // OFF by default because there is nothing to preserve: no project uses the
-  // board yet, and the board app is not distributed yet (subtopic 004), so a fresh
-  // install has no board and no .codeadd/board.json. EVERY ticket instruction the
+  // board yet, and the board app is not distributed yet (subtopic 004). Enabling it
+  // CREATES the board (initBoardOnEnable runs board-init.cjs: config, the orphan
+  // branch on origin, the clone). EVERY ticket instruction the
   // pipeline commands carry lives in fragments/board/ -- with this off, none of
   // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
   board: {
@@ -304,6 +306,7 @@ export async function features(cwd, args, scope = 'project') {
       const nowEnabled = selected.includes(name);
       if (nowEnabled && !wasEnabled) {
         const { modified } = enableFeature(cwd, name);
+        initBoardOnEnable(cwd, name);
         totalModified += modified;
         log.success(`Feature "${name}" enabled. ${modified} file(s) modified.`);
         warnUninjectedProviders(cwd, name);
@@ -344,6 +347,7 @@ export async function features(cwd, args, scope = 'project') {
     const canonical = resolved.key;
     if (action === 'enable') {
       const { modified } = enableFeature(cwd, canonical);
+      initBoardOnEnable(cwd, canonical);
       log.success(`Feature "${canonical}" enabled. ${modified} file(s) modified.`);
       warnUninjectedProviders(cwd, canonical);
     } else {

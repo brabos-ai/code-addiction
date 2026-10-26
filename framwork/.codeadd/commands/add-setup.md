@@ -9,6 +9,7 @@ description: Guided onboarding — diagnoses the project, offers each feature an
 - command: /add-new
 - command: /add-qa-setup
 - command: /add-wiki
+- script: board-init.cjs
 - script: status.cjs
 - skill: add--delivery-mode
 - skill: add--dev-environment-setup
@@ -94,7 +95,7 @@ The items are every row of `Features`, every row of `Plugins`, and `qa-setup`, `
 | **drift** | `offered` says `enabled` or `already-on` but the item is now off in the manifest (a fresh clone, or a manual disable) | Asked again, showing both states |
 | **removed** | An `offered` key is no longer in the tables or the item list | One note line: "no longer offered by this version". Not asked. The key stays |
 
-Three exceptions to the table: `tdd-pipeline` is on by default, but on a first run (name absent from `offered`) it is still asked, as keep on or turn off. `qa-setup` with `SETUP_QA_STALE:yes` counts as **drift**, so a stale QA setup is offered again as a re-run of `/add-qa-setup` only. `board` recorded `unavailable` counts as **drift** once `.codeadd/board.json` exists. For a `board` that is unavailable now, the batch still prints one note line saying a board cannot be created from the product today and the feature stays off.
+Three exceptions to the table: `tdd-pipeline` is on by default, but on a first run (name absent from `offered`) it is still asked, as keep on or turn off. `qa-setup` with `SETUP_QA_STALE:yes` counts as **drift**, so a stale QA setup is offered again as a re-run of `/add-qa-setup` only. A legacy value that `{{skill:add--settings/SKILL.md}}` no longer writes is treated as new, so the item is asked again.
 
 Newness is the item NAME absent from `offered`. Never compare `framework-version` to decide it. A release that adds no item asks nothing. A `declined` item is never re-asked unless the user names it to revisit in the reply.
 
@@ -134,7 +135,7 @@ If nothing is new, drifted or named to revisit, say the project is fully set up 
 | `playwright` and `qa-setup` | yes with `qa-pipeline`. Offered only when `qa-pipeline` is accepted or already on | `playwright` adds live driving to the judge the feature supplies. `SETUP_QA_STALE:yes` re-runs `qa-setup` only |
 | `gitnexus` | yes when `gitnexus --version` fails and the repo has code. Not offered on a repo with no code: nothing to index | Install: `npm install -g gitnexus`, then `gitnexus setup` and `gitnexus analyze` from the repo root, then the plugin flag |
 | `design` | yes when a frontend is present | When ui-ux-pro-max is not installed, show `npm install -g ui-ux-pro-max-cli` then `uipro init --ai <provider>`. Python 3 is a soft requirement. The CLI's own check stays the authority |
-| `board` | yes only when `.codeadd/board.json` exists. Without it the item is `unavailable`, not asked, and the feature stays off | A board cannot be created from the product today. Tell the user to ask the framework maintainer |
+| `board` | yes when `agent-mode` is accepted or on, otherwise no | "creates the board branch on origin; needs origin with the main branch pushed" |
 | `agent-mode` | no | Asked as "will a bot drive the commands headless?" |
 | `tdd-pipeline` | yes (keep on) | Asked as keep on or turn off |
 | `docs-pruning` | no | It deletes feature scaffolding, so it is the user's call |
@@ -155,7 +156,7 @@ The reply may be per item (`1 yes, 2 no`), `all recommended` (accepts exactly th
 
 Map every answer to its item. An item the reply does not answer stays undecided: nothing runs, its `offered` value does not move and no `log` entry is written. Report it.
 
-Print the `## Setup answers` block before executing: one line per item (accepted, declined, unavailable, already on) and the sub-command values. `{{cmd:add-qa-setup}}` and `{{cmd:add-wiki}}` read this block from the session and ask nothing it covers.
+Print the `## Setup answers` block before executing: one line per item (accepted, declined, already on) and the sub-command values. `{{cmd:add-qa-setup}}` and `{{cmd:add-wiki}}` read this block from the session and ask nothing it covers.
 
 Only accepted items run. When none is accepted, go to STEP add-setup.record.
 
@@ -166,7 +167,7 @@ Only accepted items run. When none is accepted, go to STEP add-setup.record.
 Enabling a feature or plugin rewrites the installed command files, so the order is fixed and restricted to the accepted items. Each sub-step runs only when it has an accepted item.
 
 1. **Install the external tools** of the accepted items (gitnexus, ui-ux-pro-max). The per-item yes is the install confirmation, because the batch showed the exact commands. Follow `{{skill:add--dev-environment-setup/SKILL.md}}`: detect, run only non-interactive commands without elevated rights, verify each tool with its trivial check (`gitnexus --version`). A command that needs `sudo` or an interactive installer is shown for the user to run; WAIT, then verify.
-2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure.
+2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure. When `board` was accepted, read `BOARD=` or `ERROR=` from the `codeadd modify` output and record `enabled` for `BOARD=`, or `failed` with the `ERROR=` value as the reason. When `modify` printed neither (the helper skipped), record `enabled` if `.codeadd/board.json` exists, otherwise `failed` with the reason `no result`. A `failed` board never stops the run: report the reason and the command to run later, `node .codeadd/scripts/board-init.cjs`.
 3. **`gitnexus setup`** when gitnexus is accepted and not yet wired, then **`gitnexus analyze`** from the repo root. If `gitnexus setup` prompts, show it for the user to run, then verify.
 4. **Re-read the installed command file from disk** (never a copy read before step 2) and run `{{cmd:add-qa-setup}}` inline, when `qa-setup` is accepted. Inline follows the same-session rule of `{{skill:add--delivery-mode/SKILL.md}}`: the same agent, the same session, read the command and run it from its first step, with the `## Setup answers` block in the session.
 5. **MCP checkpoint.** When gitnexus is enabled, check that its MCP server answers in this session (ask it to list the indexed repos). A newly wired server usually loads only in a new session. If it does not answer, STOP after step 4: tell the user to restart the session or reload MCP and run `/add-setup` again, then go to STEP add-setup.record. The second run proposes only the wiki.

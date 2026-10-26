@@ -11,6 +11,8 @@ The internal board is the source of truth. An external tracker (Notion, Jira, an
 - Each machine keeps one clone of it under `~/.codeadd/<project-key>/board/` (`CODEADD_BOARD_DIR` overrides the path).
 - `.codeadd/board.json` (`{remote, branch}`) is the only board file the code repository tracks. Any checkout or
   worktree that has it committed can read and write the board. No separate worktree, no cloud service.
+- Enabling the `board` feature creates the board: `node .codeadd/scripts/board-init.cjs` writes the config, pushes the
+  orphan branch to `origin` and makes the clone. It needs an `origin` with the main branch pushed.
 - Read with `node .codeadd/scripts/backlog-cli.cjs`. Write only with `node .codeadd/scripts/backlog-commit.cjs <mode>`.
   A write lands on `board`, never on your branch or `main`, so it triggers no code CI. Never edit the board files.
 - The ticket's `comments` list is append-only. There is no assignee field: the assignment is a comment.

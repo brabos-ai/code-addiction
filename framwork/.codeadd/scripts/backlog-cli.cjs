@@ -391,9 +391,9 @@ function boardForRead() {
   if (res.state !== 'ready') {
     process.stdout.write('ERROR=board-' + res.state + '\n');
     if (res.state === 'migration-required') {
-      process.stdout.write('docs/backlog.jsonl is still in the checkout and no .codeadd/board.json says where the board moved. Ask the framework maintainer to migrate this project to the board branch.\n');
+      process.stdout.write('docs/backlog.jsonl is still in the checkout and no .codeadd/board.json says where the board moved. See https://github.com/brabos-ai/code-addiction#board\n');
     } else if (res.state === 'branch-missing') {
-      process.stdout.write('.codeadd/board.json names the branch ' + res.branch + ' but the remote has no such branch. Ask the framework maintainer to migrate this project to the board branch.\n');
+      process.stdout.write('.codeadd/board.json names the branch ' + res.branch + ' but the remote has no such branch. Run `node .codeadd/scripts/board-init.cjs` (or /add-setup) to create it.\n');
     } else {
       process.stdout.write('The board clone for ' + (res.key || 'this project') + ' is not on this machine and the remote could not be reached. Connect to the network and retry.\n');
     }

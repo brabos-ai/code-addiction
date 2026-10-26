@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Enabling the `board` feature now creates the board. The new shipped script `board-init.cjs` writes `.codeadd/board.json`, pushes an orphan `board` branch to `origin` (never code), makes the clone and stages the config. `codeadd features enable board`, `codeadd modify --enable-feature board`, `codeadd install --enable-feature board` and `/add-setup` all run it; it needs an `origin` with the main branch pushed. A project that already has a board is left as it is, and any failure is one warning while the enable still succeeds. `/add-setup` no longer records `board` as `unavailable`, and no shipped text sends you to the framework maintainer for the board.
+
 ## [1.7.0] - 2026-10-25
 
 ### Added
