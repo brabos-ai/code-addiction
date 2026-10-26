@@ -73,7 +73,9 @@ function stop(code, key, value, detail) {
   finish(code);
 }
 
-const g = (args, cwd) => git.run(args, cwd, { allowFailure: true });
+const g = (args, cwd, opts) => git.run(args, cwd, { allowFailure: true, ...opts });
+// A command that talks to the remote gets git's network timeout and no credential prompt.
+const gNet = (args, cwd) => g(args, cwd, { net: true });
 
 /** The base branch: origin/HEAD, then origin/main, then origin/master. Its ref must resolve. */
 function discoverBase(root) {
@@ -104,7 +106,7 @@ function createBoardBranch(remote, branch, baseSha) {
     ].join('\n');
     const commit = g([...git.identityArgs(tmp), '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', message], tmp);
     if (commit.status !== 0) return { ok: false };
-    const push = g(['push', '-q', remote, `HEAD:refs/heads/${branch}`], tmp);
+    const push = gNet(['push', '-q', remote, `HEAD:refs/heads/${branch}`], tmp);
     // A rejected push means another machine created the branch first: carry on.
     return { ok: true, pushed: push.status === 0 };
   } finally {
@@ -153,7 +155,8 @@ function main(argv) {
     branch = res.branch;
   }
 
-  g(['fetch', '-q', 'origin'], root);
+  // --prune drops a remote-tracking base branch that no longer exists on the remote.
+  gNet(['fetch', '-q', '--prune', 'origin'], root);
   const has = git.remoteHasBranch(remote, branch, root);
   if (!has.ok) stop(1, 'ERROR', 'board-unavailable', 'The remote could not be reached.');
 
