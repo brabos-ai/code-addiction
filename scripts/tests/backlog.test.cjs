@@ -1218,7 +1218,7 @@ test('backlog#082 — 0070B: a read that stops on branch-missing or migration-re
   assert.doesNotMatch(old.output, /framework maintainer/);
 
   const plain = project(t);
-  const none = backlog(plain, ['list'], { env: { CODEADD_BOARD_DIR: '' } });
+  const none = backlog(plain, ['list'], { env: { CODEADD_BOARD_DIR: '', HOME: plain, USERPROFILE: plain } });
   assert.equal(none.status, 0, none.output);
   assert.equal(key(none.stdout, 'BACKLOG_PRESENT'), 'no');
   assert.doesNotMatch(none.output, /board-init|maintainer/);

@@ -167,7 +167,7 @@ test('board-init#006 — docs/backlog.jsonl in the checkout: ERROR=board-migrati
 test('board-init#007 — not a git repository: ERROR=not-a-git-repository, exit 2', (t) => {
   const plain = h.mkTmp('codeadd-plain-');
   t.after(() => h.rmrf(plain));
-  const res = h.runScript('board-init', [], { cwd: plain, env: { CODEADD_BOARD_DIR: '' } });
+  const res = h.runScript('board-init', [], { cwd: plain, env: { CODEADD_BOARD_DIR: '', HOME: plain, USERPROFILE: plain } });
   assert.equal(res.status, 2, res.output);
   assert.equal(kv(res).ERROR, 'not-a-git-repository');
 });
@@ -209,4 +209,28 @@ test('board-init#010 — a refused push leaves no clone to make: the config this
   assert.equal(res.status, 1, res.output);
   assert.equal(kv(res).ERROR, 'board-unavailable');
   assert.equal(fs.existsSync(path.join(p.repo, CONFIG)), false, 'the config this run wrote is removed');
+});
+
+test('board-init#011 — a base branch deleted on the remote after the last fetch is not a base: ERROR=no-base-branch, nothing pushed', (t) => {
+  const p = project(t);
+  // The local origin/main and origin/HEAD are now stale; the fetch must prune them.
+  assert.equal(h.git(p.bare, ['update-ref', '-d', 'refs/heads/main']).status, 0);
+  const res = init(p);
+  assert.equal(res.status, 1, res.output);
+  assert.equal(kv(res).ERROR, 'no-base-branch');
+  assert.equal(refs(p), '');
+  assert.equal(fs.existsSync(path.join(p.repo, CONFIG)), false);
+});
+
+test('board-init#012 — a rule that still ignores board.json prints IGNORE_WARNING and IGNORE_RULE, and the file is staged anyway', (t) => {
+  const p = project(t);
+  h.write(path.join(p.repo, '.gitignore'), '.codeadd/*\n');
+  const res = init(p);
+  assert.equal(res.status, 0, res.output);
+  const out = kv(res);
+  assert.equal(out.BOARD, 'created');
+  assert.equal(out.IGNORE_WARNING, 'board-json-ignored');
+  assert.ok(out.IGNORE_RULE.includes('.codeadd/*'), out.IGNORE_RULE);
+  assert.deepEqual(staged(p), ['A\t' + CONFIG]);
+  assert.equal(h.read(path.join(p.repo, '.gitignore')), '.codeadd/*\n', '.gitignore is not edited');
 });

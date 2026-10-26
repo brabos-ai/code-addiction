@@ -478,7 +478,7 @@ test('backlog-commit#024 — 0070B: the three board states that stop a write nam
   const plain = h.mkTmp('codeadd-plain-');
   t.after(() => h.rmrf(plain));
   const record = h.write(path.join(plain, 't.json'), validTicket());
-  let res = commit(plain, ['add', '--record-file', record], { env: { CODEADD_BOARD_DIR: '' } });
+  let res = commit(plain, ['add', '--record-file', record], { env: { CODEADD_BOARD_DIR: '', HOME: plain, USERPROFILE: plain } });
   assert.equal(res.status, 2, res.output);
   assert.equal(key(res.stdout, 'REFUSED'), 'board-not-configured');
   assert.match(res.stdout, /This project has no board/);
