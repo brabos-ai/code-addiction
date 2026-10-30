@@ -16,6 +16,7 @@
     {"data":{"id":"add-ux","label":"add-ux","type":"command"}},
     {"data":{"id":"add-wiki","label":"add-wiki","type":"command"}},
     {"data":{"id":"add--agent-interaction","label":"agent-interaction","type":"skill"}},
+    {"data":{"id":"add--agent-notion","label":"agent-notion","type":"skill"}},
     {"data":{"id":"add--agents-md-style","label":"agents-md-style","type":"skill"}},
     {"data":{"id":"add--architecture-discovery","label":"architecture-discovery","type":"skill"}},
     {"data":{"id":"add--backend-architecture","label":"backend-architecture","type":"skill"}},
