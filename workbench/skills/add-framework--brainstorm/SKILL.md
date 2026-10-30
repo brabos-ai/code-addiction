@@ -751,7 +751,7 @@ handoff. Its shape, its naming, the `delivery:` field and the `## Open` conventi
 `add-plan-authoring` — read **The Intent File** there rather than restating it here.
 
 It carries the path classified at `2.2.2`, the approval option as `delivery:`, every decision this
-conversation closed, whatever it could not. **On `architectural` it reuses the design document’s
+conversation closed, and whatever it could not. **On `architectural` it reuses the design document’s
 timestamp** so the pair sorts adjacent; on `bounded` it is the only artefact and takes its own.
 
 ```

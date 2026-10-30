@@ -914,7 +914,7 @@ describe('node inventory snapshot', () => {
       // (plan 2026-09-16T205633-PLAN--product-pipeline-parity, F11.)
       // command 17 -> 18: add-setup, the guided onboarding command.
       // (plan 2026-10-25T063045-PLAN--add-setup, F4.)
-      command: 18,
+      command: 17,
       // skill 44 -> 48: add-build-ledger, add-plan-authoring,
       // add-framework-product-layer and add-framework-internal-layer, extracted
       // from the four commands above so a build loads only the layer it is in.
@@ -1149,12 +1149,14 @@ describe('node inventory snapshot', () => {
     // 203 -> 204: add-setup, the guided onboarding command (0067B, F4); it declares, so 143 -> 144.
     // 204 -> 197: the six fragments/board/ files and their feature node are removed (0075B, F2).
     // 197 -> 193: the add--backlog skill and three references removed (0075B, F5); the script count is derived from disk.
-    expect(nodes).toHaveLength(193 + agentModeFragments() + shippedScriptsCount);
+    // 193 -> 192: the internal command add-framework--backlog is removed (0075B, F13).
+    expect(nodes).toHaveLength(192 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
     // declares 138 -> 137: add--backlog declared (0075B, F5).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(137 + agentModeFragments());
+    // declares 137 -> 136: add-framework--backlog declared (0075B, F13).
+    expect(nodes.filter((n) => n.declares)).toHaveLength(136 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {

@@ -59,7 +59,7 @@ function main(argv) {
     return 1;
   }
 
-  // No board option: the allocator counts under the code root (F6 drops the ticket count).
+  // No board option: the allocator counts under the code root.
   const result = idc.calculate(process.cwd(), typeLetter, { allowOverflow: true });
   if (!result.ok) {
     process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);

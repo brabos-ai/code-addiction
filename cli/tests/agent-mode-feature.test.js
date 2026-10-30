@@ -537,7 +537,6 @@ describe('F30-F32 -- the shared internal skills point their stops at add-interac
 describe('F33-F37 -- release, backlog, commit, building-commands and the schema text', () => {
   it.each([
     ['commands', 'add-framework--release.md', /ONE numbered batch \(`add-interaction`\)/],
-    ['commands', 'add-framework--backlog.md', /one numbered item \(`add-interaction`\)/],
     ['skills', 'add-commit/SKILL.md', /one numbered item with a RECOMMENDED line \(`add-interaction`\)/],
     ['skills', 'building-commands/SKILL.md', /### A Stop That Asks/],
   ])('%s/%s asks through add-interaction and declares it', (dir, file, phrase) => {
@@ -710,7 +709,7 @@ describe('L4.2 -- no internal stage still says one-at-a-time', () => {
       ['skills', 'add-framework--build', 'SKILL.md'], ['skills', 'add-framework--done', 'SKILL.md'],
       ['skills', 'add-plan-authoring', 'SKILL.md'], ['skills', 'add-build-ledger', 'SKILL.md'],
       ['skills', 'add-review-discipline', 'SKILL.md'], ['skills', 'add-commit', 'SKILL.md'],
-      ['commands', 'add-framework--release.md'], ['commands', 'add-framework--backlog.md'],
+      ['commands', 'add-framework--release.md'],
     ];
     const banned = /one[- ](?:question[- ])?(?:at[- ]a[- ]time|per[- ](?:turn|message))|ONE clarifying|AskUserQuestion|structured-question tool/i;
     // A prohibition of the tool ("No structured-question tool") is the rule, not a leftover of the old one.

@@ -49,7 +49,7 @@ const SAMPLES = {
 };
 
 const sample = (overrides) => JSON.stringify({
-  v: 1, stage: 'add-build', branch: null, commits: [], tests: null, pr: null, ci: null, ticket: null, ...overrides,
+  v: 1, stage: 'add-build', branch: null, commits: [], tests: null, pr: null, ci: null, ...overrides,
 });
 
 describe('product agent mode', () => {
