@@ -3,7 +3,7 @@
   "description": "The structured result of one codeadd command run. Every key is always present; use null for unknown, never omit a key and never invent a value. needs_approval is true exactly when status is needs-approval. reason is non-null and non-empty when status is not done; on done it is null unless the run has a caveat worth one line.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["v", "status", "stage", "branch", "commits", "tests", "pr", "ci", "ticket", "next_step", "needs_approval", "reason"],
+  "required": ["v", "status", "stage", "branch", "commits", "tests", "pr", "ci", "next_step", "needs_approval", "reason"],
   "properties": {
     "v": {
       "description": "Schema version. Starts at 1. A breaking change bumps it.",
@@ -72,18 +72,6 @@
       "description": "The required-checks state on the head SHA, when the command read it; null when it did not.",
       "type": ["string", "null"],
       "enum": ["success", "failure", "pending", "none", null]
-    },
-    "ticket": {
-      "description": "The last board write this run made, or null when it made none.",
-      "type": ["object", "null"],
-      "additionalProperties": false,
-      "required": ["id", "status", "sha", "pushed"],
-      "properties": {
-        "id": { "description": "The ticket id, for example 0028B.", "type": "string" },
-        "status": { "description": "The status the ticket was written to.", "type": "string" },
-        "sha": { "description": "The commit SHA of the write, or null when the write degraded.", "type": ["string", "null"] },
-        "pushed": { "description": "True when the write reached main; false when it degraded.", "type": "boolean" }
-      }
     },
     "next_step": {
       "description": "The Continuation Line verbatim, or null when the command prints none. On needs-approval it carries the numbered question batch the user must answer.",

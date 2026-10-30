@@ -109,7 +109,7 @@ function stageArtefacts() {
 test('no add-framework--* artefact carries the 0028B output-mode wording', () => {
   const files = stageArtefacts();
   assert.ok(files.length > 0);
-  for (const name of ['brainstorm', 'plan', 'build', 'done', 'backlog', 'release', 'sync']) {
+  for (const name of ['brainstorm', 'plan', 'build', 'done', 'release', 'sync']) {
     assert.ok(files.some(f => f.includes(`add-framework--${name}`)), `missing ${name}`);
   }
   for (const f of files) {
