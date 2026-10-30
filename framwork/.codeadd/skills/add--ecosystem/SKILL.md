@@ -8,6 +8,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 <!-- uses:
 - mention: add--agents-md-style
 - mention: add--agent-interaction
+- mention: add--agent-notion
 - mention: add--architecture-discovery
 - mention: add--backend-architecture
 - mention: add--backend-development
@@ -31,8 +32,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--id-convention
 - mention: add--investigation
 - mention: add--knowledge-discovery
-- mention: add--notion
-- mention: add--notion-setup
 - mention: add--plan-review
 - mention: add--review-discipline
 - mention: add--qa
@@ -130,7 +129,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add-plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP add-plan.ux-design UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP qa-pipeline.qa-spec) when qa-pipeline feature enabled. STEP add-plan.review dispatches `@plan-reviewer-agent` before completion. **STEP add-plan.cross-sf-review (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add--backend-development, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--feature-discovery, add--final-report, add--frontend-development, add--id-convention, add--knowledge-discovery, add--plan-review, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--ux-design |
 | add-pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--id-convention |
 | add-qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add--delivery-mode, add--dev-environment-setup, add--doc-schemas, add--final-report, add--qa, add--qa-migration, add--settings, add--setup-contract, add--subagent-driven-development |
-| add-setup | Guided onboarding — diagnoses the project, offers each feature and plugin with its benefit in one batch, and runs the setup pieces for the accepted items | add--delivery-mode, add--dev-environment-setup, add--ecosystem, add--final-report, add--notion-setup, add--settings |
+| add-setup | Guided onboarding — diagnoses the project, offers each feature and plugin with its benefit in one batch, and runs the setup pieces for the accepted items | add--delivery-mode, add--dev-environment-setup, add--ecosystem, add--final-report, add--settings |
 | add-review | Feature Review Specialist — read-only on code. Code review + spec-compliance audit + the absorbed QA validation (preflight / evidence / judgement), which arrives with the `qa-pipeline` feature and then self-gates on the `/add-qa-setup` receipt — two gates: the feature decides whether the steps exist, the receipt decides whether they can run. Dispatches `@reviewer-agent` in `MODE: owasp` alongside the frontend/backend reviewer(s), conditional on the diff touching a sensitive area (auth, payment, upload, input handling, session/token). Skips the spec audit and that OWASP pass when the build's Final review (`passed` or `ruled N`, with its `Final review head:` line) still covers the tree — no source change since that commit. Consolidates every finding class into one `## Fix Routing` table and writes a versioned `review-NNN.md`; `/add-build` applies the routes and appends the resolution annex. Optional — `/add-done` accepts the build's own final review; the most recent verdict wins | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development, add--tasks-checklist |
 | add-ux | Quick UX - loads add--ux-design and applies to user's free-form instruction | add--ux-design |
 | add-wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add-wiki update` runs incremental maintenance | add--agents-md-style, add--architecture-discovery, add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--subagent-driven-development, add--wiki-maintenance |
@@ -140,6 +139,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | Skill | Purpose | Used By |
 |-------|---------|---------|
 | add--agent-interaction | How a command talks when a bot drives it — every question in one numbered batch with a recommendation, deciding stops that end the turn, confirming stops that print and continue, a closing that ends on the next command, no continuation offer. Loaded through the `agent-mode.interaction` slot when the `agent-mode` feature is on | the 12 commands of the `agent-mode` feature |
+| add--agent-notion | The Notion board of an agent-mode team — build it once with the user (columns, labels, card fill rules, a "How it works" page the user owns), keep each card current at every pipeline milestone under its `<id>-<slug>` title, and move the old local board into Notion in a fixed order. Instructions only: no script, no MCP check | the agent-mode guide (section 10), `roles/product-pm.md`, `roles/chief-engineer.md` |
 | add--agents-md-style | AGENTS.md generation guide: migrates legacy context files, content rules, format (JSON/markdown), line budget — load before any AGENTS.md write | add-brainstorm, add-wiki |
 | add--architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki | add-brainstorm, add-wiki |
 | add--backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | add-brainstorm |
@@ -165,8 +165,6 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) | add-build, add-done, add-hotfix, add-new, add-plan, add-pull-request |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add-audit, add-diagnose, add-hotfix, add-review |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm | add-brainstorm, add-diagnose, add-hotfix, add-new, add-plan, add-review |
-| add--notion | What an agent does with the project's Notion cards — read the `Como funciona` page first (it wins), find the card by its `tracker:` URL or Slug, move it along the pipeline milestones with a default table where the page has no rule. Instructions only | the agent-mode role files (`product-pm.md`, `chief-engineer.md`) |
-| add--notion-setup | One-time Notion setup with the user — checks the Notion MCP answers, creates the cards database and the `Como funciona` page, links each provider's MCP documentation, prints the two URLs. Instructions only: no script, no sync | add-setup |
 | add--plan-review | Pre-delivery executability rubric for about.md and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` | add-new, add-plan |
 | add--qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, `.codeadd/settings.json` qa section and screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded at the QA merge step `qa-pipeline` adds to /add-review, never by a judge | add-qa-setup, add-review |
 | add--qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints; consumed by /add-qa-setup | add-qa-setup |
@@ -257,12 +255,11 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-setup, add-wiki — the commands that load it |
 | add--wiki-maintenance | add-wiki (update mode), add-done (STEP 4.9) |
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
-| add--notion | the agent-mode role files `roles/product-pm.md` and `roles/chief-engineer.md` |
-| add--notion-setup | add-setup (STEP add-setup.execute) |
 | add--investigation | add-diagnose (primary, agent-dispatched mode), add-hotfix (STEP 6.1 escalation, agent-dispatched mode), add-review (STEP 5.1 ambiguous findings), add-audit (STEP 7.1 ambiguous findings) |
 | add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
 | add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
 | add--agent-interaction | the same 12 commands, when `agent-mode` is enabled |
+| add--agent-notion | `agent-mode/README.md` section 10, `roles/product-pm.md`, `roles/chief-engineer.md` |
 | add--commit | add-build, add-pull-request, add-review — every command that commits mid-workflow |
 | add--cross-sf-consistency | add-plan (STEP add-plan.cross-sf-review consumes its findings), add-plan (STEP add-plan.consistency, FULL pass) and add-build (Loop End, DELTA pass) via consistency-agent |
 | add--dev-environment-setup | add-help (environment triage), add-qa-setup (runner install), add-setup (tool installs) |

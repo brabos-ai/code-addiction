@@ -220,15 +220,13 @@ Rules for the team, every time:
 
 A team can keep its cards in Notion. Notion is optional: the commands work the same without it.
 
-- To set it up, run `/add-setup` and accept `notion`, or ask an agent to load the skill `add--notion-setup`.
-  The setup checks that the Notion MCP answers, creates the cards database and a page named `Como funciona`,
-  and prints the links to configure the Notion MCP for your provider. No token is ever typed into a file.
-- The setup prints two URLs: the database and the page. Paste both into the instructions of each agent that
-  will use Notion (its role prompt or its memory). The framework stores neither URL.
-- From then on, agents load the skill `add--notion`. It reads `Como funciona` first and follows the rules on
-  that page: the columns, the labels and how to fill a card. The page wins over any default. Where the page
-  has no rule, the skill moves the card with the pipeline: created at brainstorm, planned at `/add-plan`, in
-  progress and then in review at `/add-build`, done at `/add-done`.
-- To see the whole team's work as columns, add a Kanban view to the database in Notion (the setup does not create one).
+- To start, tell the PM agent (or the engineer, when the team has no PM) to load the skill `add--agent-notion`
+  and build the board with you. It asks you once for the database, the columns, the labels and how a card is
+  filled, then writes a page named `How it works` beside the database. You own that page and may rename it.
+- From then on agents keep the cards current by the rules on `How it works`. The page wins over any default.
+  A card is always named `<id>-<slug>`.
+- A project that had the old local board moves it in this order. Move only the in-progress and pending cards to
+  Notion and check each one arrived. The agent shows you what it sent and the three deletions and waits. Then, after you say yes, delete `.codeadd/board.json`, the local folder
+  `~/.codeadd/<key>/board/` and the remote `board` branch, the branch last. Done and dropped cards are not moved.
 
 Without Notion, the handoff is the intent file and the feature folder, as in section 9.

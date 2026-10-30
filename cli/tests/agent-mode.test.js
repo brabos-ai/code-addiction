@@ -126,7 +126,8 @@ describe('product agent mode', () => {
     // 0076B, F6: Notion returns only as the optional section 10, so its ban stops at that heading.
     const section10 = guide.indexOf('## 10.');
     expect(guide.slice(0, section10 === -1 ? undefined : section10)).not.toMatch(/Notion/);
-    expect(guide).not.toMatch(/board/i);
+    // 0077F, F5: section 10 names the old board file, folder and branch to migrate them, so the ban stops there too.
+    expect(guide.slice(0, section10 === -1 ? undefined : section10)).not.toMatch(/board/i);
   });
 
   it('L1.7 the codeadd-shell block of add-wiki.md points at the guide', () => {
