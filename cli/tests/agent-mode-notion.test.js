@@ -231,4 +231,12 @@ describe('F6 — no retired Notion skill is left in the source (0077F)', () => {
       expect(fs.existsSync(path.join(SOURCE, 'skills', name)), `skills/${name} is gone`).toBe(false);
     }
   });
+
+  it('L1.10b the generated inventory and ecosystem map list the new skill and neither retired id', () => {
+    for (const file of ['AGENTS.md', 'web/public/ecosystem.json']) {
+      const text = read(path.join(ROOT, file));
+      expect(text, `${file} names the new skill`).toContain('add--agent-notion');
+      expect(text, `${file} names no retired skill`).not.toContain(RETIRED);
+    }
+  });
 });
