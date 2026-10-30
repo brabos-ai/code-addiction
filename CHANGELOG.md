@@ -6,6 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- Optional Notion tracking for agent mode, as two instruction-only skills (no script, no API client, no sync). `add--notion-setup` builds the cards database and a `Como funciona` page that holds the workflow rules, and links each provider's MCP configuration; `add--notion` has agents read that page first and move cards along the pipeline. `/add-setup` offers a new `notion` item, recorded in `setup.offered`; the agent-mode guide has a new section 10 and the two role files one paragraph each. Without Notion nothing changes.
+
 ### Removed
 - The `board` feature, the backlog board and everything around it: the `board` option of `codeadd features`, the fragments injected into six commands, the backlog scripts (`backlog-cli.cjs`, `backlog-commit.cjs` and the rest), the `add--backlog` skill, the agent-mode board guide and the ticket field of the agent-mode result block. Feature folders are now named `<id>-<slug>` and the allocator (`feature-id.cjs`, renamed from `backlog-id.cjs`) counts feature folders only; old `NNNNB` ids are still read, never given out. A legacy `ticket:` field in a document stays valid. Migration `0006-retire-board` drops the `board` flag on `codeadd update` and notes it once. **It leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched — your tickets stay where they are, readable as plain files.**
 

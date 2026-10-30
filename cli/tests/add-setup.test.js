@@ -139,7 +139,7 @@ describe('F4 — the add-setup command', () => {
     expect(src).toMatch(/only (the )?accepted items/i);
     expect(src).toMatch(/MCP checkpoint/);
     const exec = stepSection(src, 'add-setup.execute');
-    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((s) => exec.indexOf(s));
+    const order = ['Install the external tools', 'codeadd modify', 'skill:add--notion-setup', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((s) => exec.indexOf(s));
     for (const i of order) expect(i).toBeGreaterThan(-1);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(exec).toContain('MCP checkpoint');

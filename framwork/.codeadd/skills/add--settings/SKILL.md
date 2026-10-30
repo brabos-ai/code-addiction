@@ -113,7 +113,7 @@ Written by `/add-setup`, which has no `## Materializes` block, so `setup-shape` 
     "offered": {
       "qa-pipeline": "enabled", "playwright": "enabled", "gitnexus": "declined", "design": "enabled",
       "agent-mode": "declined", "tdd-pipeline": "already-on", "docs-pruning": "declined",
-      "qa-setup": "enabled", "wiki": "enabled", "version-record": "enabled"
+      "qa-setup": "enabled", "wiki": "enabled", "version-record": "enabled", "notion": "enabled"
     },
     "log": [
       { "date": "2026-10-25", "item": "gitnexus", "decision": "declined", "reason": "team already uses another code index" }
@@ -124,7 +124,7 @@ Written by `/add-setup`, which has no `## Materializes` block, so `setup-shape` 
 
 | Field | Rule |
 |---|---|
-| `setup.offered.<item>` | One key per item ever offered: each feature and plugin by its name in the ecosystem Features and Plugins tables, plus `qa-setup`, `wiki` and `version-record`. One of: `enabled` (this run turned it on), `already-on` (it was on before the run), `declined` (offered, user said no), `unavailable` (legacy, no longer written; an item recorded `unavailable` is offered again as new), `failed` (attempted, the check still fails). An item that did not run keeps its previous value |
+| `setup.offered.<item>` | One key per item ever offered: each feature and plugin by its name in the ecosystem Features and Plugins tables, plus `qa-setup`, `wiki`, `version-record` and `notion`. One of: `enabled` (this run turned it on), `already-on` (it was on before the run), `declined` (offered, user said no), `unavailable` (legacy, no longer written; an item recorded `unavailable` is offered again as new), `failed` (attempted, the check still fails). An item that did not run keeps its previous value |
 | `setup.log[]` | Append-only. Entry: `{ date, item, decision, reason }`. One entry per item decided in a run, `declined` included. A reversed decision is a NEW entry. `reason` is the user's reason, or the detected one when the user gave none |
 
 An item is new when its name is absent from `offered`. `framework-version` is never compared to decide that.
