@@ -92,8 +92,36 @@ const ECOSYSTEM = path.join(SOURCE, 'skills', 'add--ecosystem', 'SKILL.md');
 /** Rows of an ecosystem table whose FIRST cell equals `name` exactly — never a prefix. */
 const ecosystemRows = (heading, name) => tableRows(sectionOf(read(ECOSYSTEM), heading)).filter((cells) => cells[0] === name);
 
+describe('F2 — add--notion', () => {
+  it('L1.1 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
+    const file = skillPath('add--notion');
+    expect(fs.existsSync(file), 'add--notion/SKILL.md exists').toBe(true);
+    expect(read(file)).toMatch(/^---
+name: add--notion
+/);
+    expect(readMap().skills['add--notion']).toEqual({});
+  });
+
+  it('L1.4 names the page, the tracker line, the naming rule, the setup skill and the fallback milestones', () => {
+    const skill = read(skillPath('add--notion'));
+    const anchors = [
+      'Como funciona', 'tracker:', '<id>-<slug>', 'add--notion-setup',
+      'brainstorm', 'new', 'plan', 'build', 'done', 'hotfix',
+      'Refinando', 'Planejado', 'Em andamento', 'Em revisão', 'Feito', 'Hotfix',
+    ];
+    for (const anchor of anchors) expect(skill, `the skill names ${anchor}`).toContain(anchor);
+  });
+
+  it('L1.6 the skill carries no token-like literal, no backlog- and no board.json', () => {
+    const skill = read(skillPath('add--notion'));
+    for (const re of TOKEN_LIKE) expect(skill).not.toMatch(re);
+    expect(skill).not.toContain('backlog-');
+    expect(skill).not.toContain('board.json');
+  });
+});
+
 describe('add--ecosystem registers the Notion skills', () => {
-  it.each(['add--notion-setup'])('L1.5 %s has one Skills row and one Dependency Index row', (name) => {
+  it.each(['add--notion-setup', 'add--notion'])('L1.5 %s has one Skills row and one Dependency Index row', (name) => {
     expect(ecosystemRows('## Skills', name), `${name} in ## Skills`).toHaveLength(1);
     expect(ecosystemRows('## Dependency Index', name), `${name} in ## Dependency Index`).toHaveLength(1);
   });
