@@ -33,6 +33,8 @@ The handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) 
 `docs/features/<id>-<slug>/`, both on the main branch. Say in your summary to the user which engineer takes
 which intent file.
 
+If the project tracks work in Notion, load `add--notion` and follow the 'Como funciona' page; otherwise the handoff is the intent + `docs/features/<id>-<slug>/` only.
+
 ### Release
 
 You decide which features go in which release. Deploy is not part of a delivery.
