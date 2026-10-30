@@ -25,7 +25,8 @@ const skillPath = (name) => path.join(SOURCE, 'skills', name, 'SKILL.md');
 const roleText = (name) => read(path.join(AGENT_MODE, 'roles', `${name}.md`));
 const ROLES = ['product-pm', 'chief-engineer'];
 
-const NOTION_MCP_DOC = 'https://developers.notion.com/docs/mcp';
+// The plan named /docs/mcp; it now redirects here, so the build corrected the URL (ruling in the ledger).
+const NOTION_MCP_DOC = 'https://developers.notion.com/guides/mcp/overview';
 
 /** The first `## ` heading section named `heading`, up to the next `## ` heading. */
 function sectionOf(src, heading) {
