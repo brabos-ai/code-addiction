@@ -42,7 +42,7 @@ function commandFiles() {
 }
 
 describe('board removed', () => {
-  it.skip('F8: no shipped file names backlog-commit, backlog-cli or board.json', () => {
+  it('F8: no shipped file names backlog-commit, backlog-cli or board.json', () => {
     const needle = /backlog-commit|backlog-cli|board\.json/;
     const hits = [];
     for (const root of shippedRoots()) {
