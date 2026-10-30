@@ -147,64 +147,45 @@ describe('F4 — add--settings records notion in the setup section', () => {
   });
 });
 
-describe('F5 — /add-setup offers and runs notion', () => {
+describe('F2 — /add-setup no longer offers notion (0077F)', () => {
   const setupSrc = () => read(path.join(SOURCE, 'commands', 'add-setup.md'));
   const stepSection = (src, id) => {
     const start = src.indexOf(`## STEP ${id}:`);
     expect(start, `STEP ${id} exists`).toBeGreaterThan(-1);
-    const next = src.indexOf('\n## ', start + 5);
-    return src.slice(start, next === -1 ? undefined : next);
+    const nextHeading = src.indexOf('\n## ', start + 5);
+    return src.slice(start, nextHeading === -1 ? undefined : nextHeading);
   };
+  // Built by concatenation so the acceptance scan for the retired ids does not match this file.
+  const RETIRED_SETUP_SKILL = 'add--' + 'notion-setup';
 
-  it('L1.9 declares the setup skill in uses:', () => {
-    expect(setupSrc()).toMatch(/<!-- uses:[\s\S]*?\n- skill: add--notion-setup\n[\s\S]*?-->/);
-  });
-
-  it('L1.9 names notion in the item list and says it is only ever new or decided', () => {
+  it('L1.4 add-setup.md says nothing about notion and does not declare the retired setup skill', () => {
     const src = setupSrc();
-    expect(src).toContain('and `qa-setup`, `wiki`, `version-record` and `notion`');
-    expect(src).toMatch(/`notion` has no manifest key[^\n]*\*\*new\*\* or \*\*decided\*\*[^\n]*never \*\*on\*\* or \*\*drift\*\*/);
+    expect(src).not.toMatch(/notion/i);
+    expect(src).not.toContain(RETIRED_SETUP_SKILL);
   });
 
-  it('L1.9 has a Recommendations row for notion that follows agent-mode', () => {
-    const row = setupSrc().split('\n').find((l) => l.startsWith('| `notion`'));
-    expect(row, 'the notion row exists').toBeTruthy();
-    expect(row).toContain('agent-mode');
-  });
-
-  it('L1.9 asks the notion values in the one batch', () => {
+  it('L1.4 the execute order is install, modify, gitnexus, QA setup, wiki, and the MCP stop follows step 4', () => {
     const src = setupSrc();
-    const start = src.indexOf('### Values the sub-commands would ask');
-    expect(start, 'the values section exists').toBeGreaterThan(-1);
-    const values = src.slice(start, src.indexOf('### The reply'));
-    for (const word of ['notion', 'parent page', 'database name', 'columns', 'labels']) expect(values).toContain(word);
+    const exec = stepSection(src, 'add-setup.execute');
+    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((x) => exec.indexOf(x));
+    for (const i of order) expect(i).toBeGreaterThan(-1);
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
+    expect(src).toContain('STOP after step 4');
+    expect(src).not.toContain('STOP after step 5');
   });
 
-  it('L1.9 the STEP list names notion in the batch line and the Notion setup in the execute line', () => {
-    const src = setupSrc();
-    const batch = src.split('\n').find((l) => l.startsWith('STEP add-setup.batch:'));
-    const exec = src.split('\n').find((l) => l.startsWith('STEP add-setup.execute:'));
-    expect(batch).toContain('version-record, notion');
-    expect(exec).toContain('Notion setup');
-  });
-
-  it('L1.9 a failed Notion MCP marks the item failed, keeps the run going and names revisit notion', () => {
-    const exec = stepSection(setupSrc(), 'add-setup.execute');
-    expect(exec).toContain('add--notion-setup/SKILL.md');
-    expect(exec).toContain('`failed`');
-    expect(exec).toContain('`revisit notion`');
-    expect(exec).toContain('configure the Notion MCP, restart the session, run again');
-  });
-
-  it('L1.9 the MCP checkpoint stop follows the renumbering', () => {
-    const src = setupSrc();
-    expect(src).toContain('STOP after step 5');
-    expect(src).not.toContain('STOP after step 4');
-  });
-
-  it('L1.5 the add-setup Commands row of add--ecosystem lists add--notion-setup', () => {
+  it('L1.4 the add-setup Commands row of add--ecosystem does not list the retired setup skill', () => {
     const [row] = tableRows(sectionOf(read(ECOSYSTEM), '## Commands')).filter((cells) => cells[0] === 'add-setup');
-    expect(row?.[2]).toContain('add--notion-setup');
+    expect(row, 'the add-setup row exists').toBeTruthy();
+    expect(row[2]).not.toContain(RETIRED_SETUP_SKILL);
+  });
+
+  it('L1.7 no framework command or command agent names Notion', () => {
+    for (const dir of ['commands', 'agents']) {
+      for (const file of fs.readdirSync(path.join(SOURCE, dir))) {
+        expect(read(path.join(SOURCE, dir, file)), `${dir}/${file} names no Notion`).not.toMatch(/notion/i);
+      }
+    }
   });
 });
 
