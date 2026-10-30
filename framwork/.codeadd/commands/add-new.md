@@ -81,10 +81,6 @@ IF TWO OR MORE INTENT FILES MATCH:
 |---|---|---|
 | `delivery:` | `confirm` or `automatic` — how every stop below behaves, per `{{skill:add--delivery-mode/SKILL.md}}` | `confirm` |
 | `## Objective` | The outcome this feature is for. `add--feature-specification` copies it into `about.md`, and STEP add-new.decompose checks every subfeature against it | The skill drafts one with the user |
-<!-- slot:board.ticket-intent-field fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-intent-field -->
-<!-- /feature:board:ticket-intent-field -->
-<!-- /slot:board.ticket-intent-field -->
 
 **Stop kind — the two-match STOP above is deciding, in every state.** Nothing approved which exploration
 an ambiguous argument meant.
@@ -106,10 +102,6 @@ file is never read a second time.
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
 - ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO git writes — branch is created later by /add-build)
-<!-- slot:board.ticket-board-write fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-board-write -->
-<!-- /feature:board:ticket-board-write -->
-<!-- /slot:board.ticket-board-write -->
 
 **Operation Modes:**
 - `/add-new [description]` — Create new feature
@@ -154,10 +146,6 @@ Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it 
 1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add-build creates the branch)
 2. `mkdir docs/features/[NNNN]F-[name]/`
 3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP add-new.confirm)
-<!-- slot:board.ticket-skeleton fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-skeleton -->
-<!-- /feature:board:ticket-skeleton -->
-<!-- /slot:board.ticket-skeleton -->
 
 **Output:** Feature ID, branch (recorded — created by /add-build), directory.
 
@@ -428,10 +416,6 @@ the self-check. Emit the report FIRST — the artefact paths and the next comman
 This command documents a feature rather than building it, so block 2 is titled `What will be done`
 and written in the future tense. Fill `How it works` with what the documented feature will do for the
 user, not with what the document contains.
-<!-- slot:board.ticket-shaped fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-shaped -->
-<!-- /feature:board:ticket-shaped -->
-<!-- /slot:board.ticket-shaped -->
 
 Then, after the seven blocks, summarize the created artifacts. Name the next activity in ordinary prose based on discovery: `/add-plan` for technical planning (design is produced inside `/add-plan`'s own UX step when the feature touches UI), `/add-build` for implementation. ⛔ Do not print its full invocation here — `STEP add-new.handoff` puts that behind the offer.
 

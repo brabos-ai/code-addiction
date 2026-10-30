@@ -80,17 +80,6 @@ export const FEATURES = {
     default: false,
     commands: ['add-done'],
   },
-  // OFF by default because there is nothing to preserve: no project uses the
-  // board yet, and the board app is not distributed yet (subtopic 004). Enabling it
-  // CREATES the board (initBoardOnEnable runs board-init.cjs: config, the orphan
-  // branch on origin, the clone). EVERY ticket instruction the
-  // pipeline commands carry lives in fragments/board/ -- with this off, none of
-  // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
-  board: {
-    description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
-    default: false,
-    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
-  },
   // OFF by default because it changes how a command TALKS, and a person at a
   // terminal is who the commands were written for. On, the human-only passages
   // (one question per turn, the structured-question tool, the yes/no

@@ -1015,7 +1015,8 @@ describe('node inventory snapshot', () => {
       // fragment 31 -> 32: fragments/board/add-hotfix.md (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
       // fragment 32 -> 32 + the agent-mode files: one per command whose slots have landed (2026-10-09T184411-PLAN--agent-mode-feature, F10-F21).
       // fragment 32 -> 36 + the agent-mode files: the four design plugin fragments (0065B, F2).
-      fragment: 36 + agentModeFragments(),
+      // fragment 36 -> 30: the six fragments/board/ files are removed (0075B, F2).
+      fragment: 30 + agentModeFragments(),
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1025,7 +1026,8 @@ describe('node inventory snapshot', () => {
       // never reported as orphans; they own their members through CONTAINS.
       // feature 3 -> 4: fragments/board/ (2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F6+F7).
       // feature 4 -> 5: agent-mode (same plan, F10).
-      feature: 5,
+      // feature 5 -> 4: fragments/board/ is removed (0075B, F2).
+      feature: 4,
       // plugin 2 -> 3: plugins/design (0065B, F2).
       plugin: 3,
     });
@@ -1143,10 +1145,12 @@ describe('node inventory snapshot', () => {
     // 197 -> 202: the design plugin node and its four fragments (0065B, F2).
     // 202 -> 203: add--settings, the project settings skill (0066B, F4); it declares, so 142 -> 143.
     // 203 -> 204: add-setup, the guided onboarding command (0067B, F4); it declares, so 143 -> 144.
-    expect(nodes).toHaveLength(204 + agentModeFragments() + shippedScriptsCount);
+    // 204 -> 197: the six fragments/board/ files and their feature node are removed (0075B, F2).
+    expect(nodes).toHaveLength(197 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(144 + agentModeFragments());
+    // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {

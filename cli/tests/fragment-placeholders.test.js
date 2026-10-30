@@ -85,14 +85,5 @@ describe('P2/P3 -- injected commands, on disk', () => {
     expect(raw).toEqual([]);
   });
 
-  it('P2b: the board pointer resolves to each provider\'s own path', () => {
-    enableFeature(tmp, 'board');
-    for (const key of CMD_PROVIDERS) {
-      const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add-plan.md');
-      if (!fs.existsSync(file)) continue;
-      const want = resolvePlaceholders('{{skill:add--backlog/references/lifecycle.md}}', PROVIDERS[key]);
-      expect(fs.readFileSync(file, 'utf8'), key).toContain(want);
-    }
-  });
 
 });

@@ -9,7 +9,6 @@ description: Guided onboarding — diagnoses the project, offers each feature an
 - command: /add-new
 - command: /add-qa-setup
 - command: /add-wiki
-- script: board-init.cjs
 - script: status.cjs
 - skill: add--delivery-mode
 - skill: add--dev-environment-setup
@@ -135,7 +134,6 @@ If nothing is new, drifted or named to revisit, say the project is fully set up 
 | `playwright` and `qa-setup` | yes with `qa-pipeline`. Offered only when `qa-pipeline` is accepted or already on | `playwright` adds live driving to the judge the feature supplies. `SETUP_QA_STALE:yes` re-runs `qa-setup` only |
 | `gitnexus` | yes when `gitnexus --version` fails and the repo has code. Not offered on a repo with no code: nothing to index | Install: `npm install -g gitnexus`, then `gitnexus setup` and `gitnexus analyze` from the repo root, then the plugin flag |
 | `design` | yes when a frontend is present | When ui-ux-pro-max is not installed, show `npm install -g ui-ux-pro-max-cli` then `uipro init --ai <provider>`. Python 3 is a soft requirement. The CLI's own check stays the authority |
-| `board` | yes when `agent-mode` is accepted or on, otherwise no | "creates the board branch on origin; needs origin with the main branch pushed" |
 | `agent-mode` | no | Asked as "will a bot drive the commands headless?" |
 | `tdd-pipeline` | yes (keep on) | Asked as keep on or turn off |
 | `docs-pruning` | no | It deletes feature scaffolding, so it is the user's call |
@@ -167,7 +165,7 @@ Only accepted items run. When none is accepted, go to STEP add-setup.record.
 Enabling a feature or plugin rewrites the installed command files, so the order is fixed and restricted to the accepted items. Each sub-step runs only when it has an accepted item.
 
 1. **Install the external tools** of the accepted items (gitnexus, ui-ux-pro-max). The per-item yes is the install confirmation, because the batch showed the exact commands. Follow `{{skill:add--dev-environment-setup/SKILL.md}}`: detect, run only non-interactive commands without elevated rights, verify each tool with its trivial check (`gitnexus --version`). A command that needs `sudo` or an interactive installer is shown for the user to run; WAIT, then verify.
-2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure. When `board` was accepted, read `BOARD=` or `ERROR=` from the `codeadd modify` output and record `enabled` for `BOARD=`, or `failed` with the `ERROR=` value as the reason. When `modify` printed neither (the helper skipped), record `enabled` if `.codeadd/board.json` exists, otherwise `failed` with the reason `no result`. A `failed` board never stops the run: report the reason and the command to run later, `node .codeadd/scripts/board-init.cjs`.
+2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure.
 3. **`gitnexus setup`** when gitnexus is accepted and not yet wired, then **`gitnexus analyze`** from the repo root. If `gitnexus setup` prompts, show it for the user to run, then verify.
 4. **Re-read the installed command file from disk** (never a copy read before step 2) and run `{{cmd:add-qa-setup}}` inline, when `qa-setup` is accepted. Inline follows the same-session rule of `{{skill:add--delivery-mode/SKILL.md}}`: the same agent, the same session, read the command and run it from its first step, with the `## Setup answers` block in the session.
 5. **MCP checkpoint.** When gitnexus is enabled, check that its MCP server answers in this session (ask it to list the indexed repos). A newly wired server usually loads only in a new session. If it does not answer, STOP after step 4: tell the user to restart the session or reload MCP and run `/add-setup` again, then go to STEP add-setup.record. The second run proposes only the wiki.

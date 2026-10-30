@@ -81,7 +81,7 @@ function seed(keys, { features = {} } = {}) {
     ref: null,
     channel: 'stable',
     scope: 'project',
-    features: { 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false, ...features },
+    features: { 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, ...features },
     plugins: {},
     gitignore: false,
     migrations: [],
@@ -117,12 +117,12 @@ const promptsCalled = () => Object.entries(mocks.prompts).filter(([, fn]) => fn.
 
 describe('install with no TTY (L2.1-L2.5, L2.9)', () => {
   it('L2.1 installs the asked providers with a feature delta and no prompt', async () => {
-    await install(dir, { args: ['--providers', 'claude,codex', '--enable-feature', 'board'] });
+    await install(dir, { args: ['--providers', 'claude,codex', '--enable-feature', 'docs-pruning'] });
 
     expect(promptsCalled()).toEqual([]);
     const m = manifest();
     expect(m.providers).toEqual(['claude', 'codex']);
-    expect(m.features.board).toBe(true);
+    expect(m.features['docs-pruning']).toBe(true);
     expect(m.features['tdd-pipeline']).toBe(true);
     expect(m.scope).toBe('project');
     expect(m.gitignore).toBe(true);
@@ -203,12 +203,12 @@ describe('install with no TTY (L2.1-L2.5, L2.9)', () => {
     useFailingPlugin();
 
     await expect(
-      install(dir, { args: ['--providers', 'claude', '--enable-plugin', 'gx', '--enable-feature', 'board'] }),
+      install(dir, { args: ['--providers', 'claude', '--enable-plugin', 'gx', '--enable-feature', 'docs-pruning'] }),
     ).rejects.toThrow(/gx/);
 
     const m = manifest();
     expect(m.providers).toEqual(['claude']);
-    expect(m.features.board).toBe(true);
+    expect(m.features['docs-pruning']).toBe(true);
     expect(m.plugins?.gx?.enabled).not.toBe(true);
     expect(promptsCalled()).toEqual([]);
   });
@@ -256,10 +256,10 @@ describe('modify with flags and no TTY (L2.6, L2.8)', () => {
   it('L2.6 feature and plugin flags are deltas: what is not named stays as it was', async () => {
     seed(['claude'], { features: { 'qa-pipeline': true } });
 
-    await modify(dir, ['--enable-feature', 'board'], 'project');
+    await modify(dir, ['--enable-feature', 'docs-pruning'], 'project');
 
     const m = manifest();
-    expect(m.features.board).toBe(true);
+    expect(m.features['docs-pruning']).toBe(true);
     expect(m.features['tdd-pipeline']).toBe(true);
     expect(m.features['qa-pipeline']).toBe(true);
     expect(m.providers).toEqual(['claude']);
@@ -295,10 +295,10 @@ describe('modify with flags and no TTY (L2.6, L2.8)', () => {
     seed(['claude']);
     useFailingPlugin();
 
-    await expect(modify(dir, ['--enable-plugin', 'gx', '--enable-feature', 'board'], 'project')).rejects.toThrow(/gx/);
+    await expect(modify(dir, ['--enable-plugin', 'gx', '--enable-feature', 'docs-pruning'], 'project')).rejects.toThrow(/gx/);
 
     const m = manifest();
-    expect(m.features.board).toBe(true);
+    expect(m.features['docs-pruning']).toBe(true);
     expect(m.plugins?.gx?.enabled).not.toBe(true);
   });
 

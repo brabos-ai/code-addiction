@@ -158,8 +158,6 @@ describe('install command e2e', () => {
       'tdd-pipeline': true,
       'qa-pipeline': false,
       'docs-pruning': false,
-      // board is opt-in: no project uses the board yet (2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
-      board: false,
       // agent-mode is opt-in: it changes how a command talks (2026-10-09T184411-PLAN--agent-mode-feature).
       'agent-mode': false,
     });

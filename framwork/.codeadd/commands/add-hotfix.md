@@ -132,10 +132,6 @@ node .codeadd/scripts/status.cjs
 ### STEP add-hotfix.parse-diagnose Parse optional diagnose report
 
 If the invocation carries `@docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
-<!-- slot:board.ticket-resolve fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-resolve -->
-<!-- /feature:board:ticket-resolve -->
-<!-- /slot:board.ticket-resolve -->
 
 ---
 
@@ -222,10 +218,6 @@ docs/features/[NNNN]H-<slug>/
 DO NOT write doc contents yet — the schema is loaded and applied in STEP add-hotfix.receipt.
 
 **⛔ CONFIRM:** Execute `git branch --show-current` and verify you're on `hotfix/*`
-<!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-doing -->
-<!-- /feature:board:ticket-doing -->
-<!-- /slot:board.ticket-doing -->
 
 ```
 IF A VALID DIAGNOSE REPORT PASSED STEPS 1-2:
@@ -531,10 +523,6 @@ EXECUTE schema `hotfix` from `{{skill:add--doc-schemas/SKILL.md}}` and `{{skill:
 **Path:** `docs/features/[NNNN]H-<slug>/about.md`
 
 **ID:** `[NNNN]H` from STEP add-hotfix.allocate. Write per `hotfix` schema. Extractive only.
-<!-- slot:board.ticket-frontmatter fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-frontmatter -->
-<!-- /feature:board:ticket-frontmatter -->
-<!-- /slot:board.ticket-frontmatter -->
 
 Write the complete `## Review` receipt with `reviewed-tree: sha256:<PENDING>`. Fill `reviewer:` from STEP add-hotfix.review. Fill Findings from STEPS 9-10. An empty review still writes the table header.
 
@@ -593,10 +581,6 @@ outside the reported symptom, because a hotfix is where that hurts most.
 
 Then, after the seven blocks, state: hotfix ID, branch, problem, root cause, solution, modified
 files, build status.
-<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-report -->
-<!-- /feature:board:ticket-report -->
-<!-- /slot:board.ticket-report -->
 
 ### STEP add-hotfix.handoff Offer the continuation
 

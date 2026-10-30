@@ -168,8 +168,9 @@ describe('brainstorm greenfield — L1 source guard', () => {
       'approval', 'write-intent-file', 'route',
     ];
     for (const id of ids) expect(BRAINSTORM).toContain(`STEP add-brainstorm.${id}`);
-    // The slot count recorded before this plan: no slot is added, moved or removed.
-    expect(LINES.filter((l) => l.includes('<!-- slot:')).length).toBe(15);
+    // The slot count recorded before this plan: no slot is added or moved. 15 -> 9: the six board
+    // slots left with the board feature (0075B, F2).
+    expect(LINES.filter((l) => l.includes('<!-- slot:')).length).toBe(9);
     // The option names live in the command and in the approval-ask slot fallback it renders by default.
     const surface = BRAINSTORM + APPROVAL_FALLBACK;
     for (const t of ['Approve, I confirm each stage', 'Approve, deliver automatically',
