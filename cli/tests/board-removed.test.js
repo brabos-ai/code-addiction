@@ -41,6 +41,8 @@ function commandFiles() {
   return fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => path.join(dir, f));
 }
 
+const MIGRATION_TEXT = /\/(skills\/add--agent-notion\/SKILL\.md|agent-mode\/README\.md)$/;
+
 describe('board removed', () => {
   it('F8: no shipped file names backlog-commit, backlog-cli or board.json', () => {
     const needle = /backlog-commit|backlog-cli|board\.json/;
@@ -49,6 +51,8 @@ describe('board removed', () => {
       for (const file of walk(root)) {
         // The build sidecars are regenerated from the source on every build; they follow it.
         if (/\.(png|jpg|gif|zip)$/i.test(file)) continue;
+        // The migration text of the Notion board (0077F) names the old board file on purpose.
+        if (MIGRATION_TEXT.test(file.replace(/\\/g, '/'))) continue;
         if (needle.test(fs.readFileSync(file, 'utf8'))) hits.push(path.relative(ROOT, file));
       }
     }

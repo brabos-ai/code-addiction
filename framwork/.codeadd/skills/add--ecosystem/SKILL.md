@@ -8,6 +8,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 <!-- uses:
 - mention: add--agents-md-style
 - mention: add--agent-interaction
+- mention: add--agent-notion
 - mention: add--architecture-discovery
 - mention: add--backend-architecture
 - mention: add--backend-development
@@ -140,6 +141,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | Skill | Purpose | Used By |
 |-------|---------|---------|
 | add--agent-interaction | How a command talks when a bot drives it — every question in one numbered batch with a recommendation, deciding stops that end the turn, confirming stops that print and continue, a closing that ends on the next command, no continuation offer. Loaded through the `agent-mode.interaction` slot when the `agent-mode` feature is on | the 12 commands of the `agent-mode` feature |
+| add--agent-notion | The Notion board of an agent-mode team — build it once with the user (columns, labels, card fill rules, a "How it works" page the user owns), keep each card current at every pipeline milestone under its `<id>-<slug>` title, and move the old local board into Notion in a fixed order. Instructions only: no script, no MCP check | the agent-mode guide (section 10), `roles/product-pm.md`, `roles/chief-engineer.md` |
 | add--agents-md-style | AGENTS.md generation guide: migrates legacy context files, content rules, format (JSON/markdown), line budget — load before any AGENTS.md write | add-brainstorm, add-wiki |
 | add--architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki | add-brainstorm, add-wiki |
 | add--backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | add-brainstorm |
@@ -263,6 +265,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
 | add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
 | add--agent-interaction | the same 12 commands, when `agent-mode` is enabled |
+| add--agent-notion | `agent-mode/README.md` section 10, `roles/product-pm.md`, `roles/chief-engineer.md` |
 | add--commit | add-build, add-pull-request, add-review — every command that commits mid-workflow |
 | add--cross-sf-consistency | add-plan (STEP add-plan.cross-sf-review consumes its findings), add-plan (STEP add-plan.consistency, FULL pass) and add-build (Loop End, DELTA pass) via consistency-agent |
 | add--dev-environment-setup | add-help (environment triage), add-qa-setup (runner install), add-setup (tool installs) |

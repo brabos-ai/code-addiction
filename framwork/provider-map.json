@@ -136,6 +136,7 @@
     "add--delivery-mode":               {},
     "add--human-interaction":           {},
     "add--agent-interaction":           {},
+    "add--agent-notion":                {},
     "add--resource-path-convention":    {},
     "add--investigation":               {},
     "add--id-convention":               {},
