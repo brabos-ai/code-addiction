@@ -25,9 +25,6 @@ const skillPath = (name) => path.join(SOURCE, 'skills', name, 'SKILL.md');
 const roleText = (name) => read(path.join(AGENT_MODE, 'roles', `${name}.md`));
 const ROLES = ['product-pm', 'chief-engineer'];
 
-// The plan named /docs/mcp; it now redirects here, so the build corrected the URL (ruling in the ledger).
-const NOTION_MCP_DOC = 'https://developers.notion.com/guides/mcp/overview';
-
 /** The first `## ` heading section named `heading`, up to the next `## ` heading. */
 function sectionOf(src, heading) {
   const start = src.indexOf(`\n${heading}\n`) + 1 || -1;
@@ -49,166 +46,72 @@ const TOKEN_LIKE = [
   /NOTION_(?:TOKEN|API_KEY)=(?![<${]|YOUR_|\s|$)\S+/,
 ];
 
-describe('F1 — add--notion-setup', () => {
-  it('L1.1 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
-    const file = skillPath('add--notion-setup');
-    expect(fs.existsSync(file), 'add--notion-setup/SKILL.md exists').toBe(true);
-    expect(read(file)).toMatch(/^---\nname: add--notion-setup\n/);
-    expect(readMap().skills['add--notion-setup']).toEqual({});
-  });
-
-  it('L1.2 links every provider MCP doc from provider-map.json and Notion\'s MCP doc', () => {
-    const skill = read(skillPath('add--notion-setup'));
-    const providers = Object.entries(readMap().providers);
-    expect(providers.length).toBeGreaterThan(0);
-    for (const [name, provider] of providers) {
-      const doc = provider.docs.find((url) => /mcp|model-context-protocol/.test(url));
-      expect(doc, `${name} declares an MCP doc in provider-map.json`).toBeTruthy();
-      expect(skill, `the skill links the ${name} MCP doc`).toContain(doc);
-    }
-    expect(skill).toContain(NOTION_MCP_DOC);
-  });
-
-  it('L1.3 names the nine properties, the eight default columns, the page, the answers block and the MCP stop', () => {
-    const skill = read(skillPath('add--notion-setup'));
-    const anchors = [
-      'Title', 'Slug', 'Feature ID', 'Status', 'Labels', 'Type', 'Priority', 'Link', 'Attachments',
-      'Ideia', 'Refinando', 'A fazer', 'Planejado', 'Em andamento', 'Em revisão', 'Feito', 'Descartado',
-      'Como funciona', '## Setup answers', 'configure the Notion MCP',
-    ];
-    for (const anchor of anchors) expect(skill, `the skill names ${anchor}`).toContain(anchor);
-  });
-
-  it('L1.6 the skill carries no token-like literal, no backlog- and no board.json', () => {
-    const skill = read(skillPath('add--notion-setup'));
-    for (const re of TOKEN_LIKE) expect(skill).not.toMatch(re);
-    expect(skill).not.toContain('backlog-');
-    expect(skill).not.toContain('board.json');
-  });
-});
-
 const ECOSYSTEM = path.join(SOURCE, 'skills', 'add--ecosystem', 'SKILL.md');
 
 /** Rows of an ecosystem table whose FIRST cell equals `name` exactly — never a prefix. */
 const ecosystemRows = (heading, name) => tableRows(sectionOf(read(ECOSYSTEM), heading)).filter((cells) => cells[0] === name);
 
-describe('F2 — add--notion', () => {
-  it('L1.1 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
-    const file = skillPath('add--notion');
-    expect(fs.existsSync(file), 'add--notion/SKILL.md exists').toBe(true);
-    expect(read(file)).toMatch(/^---\nname: add--notion\n/);
-    expect(readMap().skills['add--notion']).toEqual({});
-  });
-
-  it('L1.4 names the page, the tracker line, the naming rule, the setup skill and the fallback milestones', () => {
-    const skill = read(skillPath('add--notion'));
-    const anchors = [
-      'Como funciona', 'tracker:', '<id>-<slug>', 'add--notion-setup',
-      'brainstorm', 'new', 'plan', 'build', 'done', 'hotfix',
-      'Refinando', 'Planejado', 'Em andamento', 'Em revisão', 'Feito', 'Hotfix',
-    ];
-    for (const anchor of anchors) expect(skill, `the skill names ${anchor}`).toContain(anchor);
-  });
-
-  it('L1.6 the skill carries no token-like literal, no backlog- and no board.json', () => {
-    const skill = read(skillPath('add--notion'));
-    for (const re of TOKEN_LIKE) expect(skill).not.toMatch(re);
-    expect(skill).not.toContain('backlog-');
-    expect(skill).not.toContain('board.json');
-  });
-});
-
-describe('add--ecosystem registers the Notion skills', () => {
-  it.each(['add--notion-setup', 'add--notion'])('L1.5 %s has one Skills row and one Dependency Index row', (name) => {
-    expect(ecosystemRows('## Skills', name), `${name} in ## Skills`).toHaveLength(1);
-    expect(ecosystemRows('## Dependency Index', name), `${name} in ## Dependency Index`).toHaveLength(1);
-  });
-
-  it('L1.5 add--notion-setup is used by add-setup', () => {
-    const [row] = ecosystemRows('## Skills', 'add--notion-setup');
-    expect(row?.[2]).toContain('add-setup');
-    const [dep] = ecosystemRows('## Dependency Index', 'add--notion-setup');
-    expect(dep?.[1]).toContain('add-setup (STEP add-setup.execute)');
-  });
-});
-
-describe('F4 — add--settings records notion in the setup section', () => {
+describe('F3 — add--settings no longer names notion (0077F)', () => {
   const setupSection = () => sectionOf(read(skillPath('add--settings')), '## Section `setup`');
 
-  it('L1.8 the setup.offered.<item> row names notion beside qa-setup, wiki and version-record', () => {
+  it('L1.5 the setup.offered.<item> row lists qa-setup, wiki and version-record only', () => {
     const row = setupSection().split('\n').find((l) => l.startsWith('| `setup.offered.<item>`'));
     expect(row, 'the offered row exists').toBeTruthy();
-    expect(row).toContain('plus `qa-setup`, `wiki`, `version-record` and `notion`');
+    expect(row).toContain('plus `qa-setup`, `wiki` and `version-record`. One of');
+    expect(row).not.toMatch(/notion/i);
   });
 
-  it('L1.8 the example offered object carries a "notion" key', () => {
+  it('L1.5 the example offered object has no "notion" key', () => {
     const example = setupSection().match(/```json\n([\s\S]*?)```/)[1];
-    expect(JSON.parse(example).setup.offered).toHaveProperty('notion');
+    expect(JSON.parse(example).setup.offered).not.toHaveProperty('notion');
   });
 });
 
-describe('F5 — /add-setup offers and runs notion', () => {
+describe('F2 — /add-setup no longer offers notion (0077F)', () => {
   const setupSrc = () => read(path.join(SOURCE, 'commands', 'add-setup.md'));
   const stepSection = (src, id) => {
     const start = src.indexOf(`## STEP ${id}:`);
     expect(start, `STEP ${id} exists`).toBeGreaterThan(-1);
-    const next = src.indexOf('\n## ', start + 5);
-    return src.slice(start, next === -1 ? undefined : next);
+    const nextHeading = src.indexOf('\n## ', start + 5);
+    return src.slice(start, nextHeading === -1 ? undefined : nextHeading);
   };
+  // Built by concatenation so the acceptance scan for the retired ids does not match this file.
+  const RETIRED_SETUP_SKILL = 'add--' + 'notion-setup';
 
-  it('L1.9 declares the setup skill in uses:', () => {
-    expect(setupSrc()).toMatch(/<!-- uses:[\s\S]*?\n- skill: add--notion-setup\n[\s\S]*?-->/);
-  });
-
-  it('L1.9 names notion in the item list and says it is only ever new or decided', () => {
+  it('L1.4 add-setup.md says nothing about notion and does not declare the retired setup skill', () => {
     const src = setupSrc();
-    expect(src).toContain('and `qa-setup`, `wiki`, `version-record` and `notion`');
-    expect(src).toMatch(/`notion` has no manifest key[^\n]*\*\*new\*\* or \*\*decided\*\*[^\n]*never \*\*on\*\* or \*\*drift\*\*/);
+    expect(src).not.toMatch(/notion/i);
+    expect(src).not.toContain(RETIRED_SETUP_SKILL);
   });
 
-  it('L1.9 has a Recommendations row for notion that follows agent-mode', () => {
-    const row = setupSrc().split('\n').find((l) => l.startsWith('| `notion`'));
-    expect(row, 'the notion row exists').toBeTruthy();
-    expect(row).toContain('agent-mode');
-  });
-
-  it('L1.9 asks the notion values in the one batch', () => {
+  it('L1.4 the execute order is install, modify, gitnexus, QA setup, wiki, and the MCP stop follows step 4', () => {
     const src = setupSrc();
-    const start = src.indexOf('### Values the sub-commands would ask');
-    expect(start, 'the values section exists').toBeGreaterThan(-1);
-    const values = src.slice(start, src.indexOf('### The reply'));
-    for (const word of ['notion', 'parent page', 'database name', 'columns', 'labels']) expect(values).toContain(word);
+    const exec = stepSection(src, 'add-setup.execute');
+    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((x) => exec.indexOf(x));
+    for (const i of order) expect(i).toBeGreaterThan(-1);
+    expect([...order].sort((x, y) => x - y)).toEqual(order);
+    expect(src).toContain('STOP after step 4');
+    expect(src).not.toContain('STOP after step 5');
   });
 
-  it('L1.9 the STEP list names notion in the batch line and the Notion setup in the execute line', () => {
-    const src = setupSrc();
-    const batch = src.split('\n').find((l) => l.startsWith('STEP add-setup.batch:'));
-    const exec = src.split('\n').find((l) => l.startsWith('STEP add-setup.execute:'));
-    expect(batch).toContain('version-record, notion');
-    expect(exec).toContain('Notion setup');
-  });
-
-  it('L1.9 a failed Notion MCP marks the item failed, keeps the run going and names revisit notion', () => {
-    const exec = stepSection(setupSrc(), 'add-setup.execute');
-    expect(exec).toContain('add--notion-setup/SKILL.md');
-    expect(exec).toContain('`failed`');
-    expect(exec).toContain('`revisit notion`');
-    expect(exec).toContain('configure the Notion MCP, restart the session, run again');
-  });
-
-  it('L1.9 the MCP checkpoint stop follows the renumbering', () => {
-    const src = setupSrc();
-    expect(src).toContain('STOP after step 5');
-    expect(src).not.toContain('STOP after step 4');
-  });
-
-  it('L1.5 the add-setup Commands row of add--ecosystem lists add--notion-setup', () => {
+  it('L1.4 the add-setup Commands row of add--ecosystem does not list the retired setup skill', () => {
     const [row] = tableRows(sectionOf(read(ECOSYSTEM), '## Commands')).filter((cells) => cells[0] === 'add-setup');
-    expect(row?.[2]).toContain('add--notion-setup');
+    expect(row, 'the add-setup row exists').toBeTruthy();
+    expect(row[2]).not.toContain(RETIRED_SETUP_SKILL);
+  });
+
+  it('L1.7 no framework command or command agent names Notion', () => {
+    for (const dir of ['commands', 'agents']) {
+      for (const file of fs.readdirSync(path.join(SOURCE, dir))) {
+        expect(read(path.join(SOURCE, dir, file)), `${dir}/${file} names no Notion`).not.toMatch(/notion/i);
+      }
+    }
   });
 });
 
-describe('F6 — the agent-mode guide has the optional Notion section', () => {
+describe('F5 — the guide and the role files point at add--agent-notion (0077F)', () => {
+  // Built by concatenation so the acceptance scan for the retired ids does not match this file.
+  const RETIRED_SKILL = 'add--' + 'notion';
   const guide = () => read(path.join(AGENT_MODE, 'README.md'));
   const section10 = () => {
     const src = guide();
@@ -217,27 +120,28 @@ describe('F6 — the agent-mode guide has the optional Notion section', () => {
     return src.slice(start);
   };
 
-  it('L1.10 section 10 names both skills, the page and /add-setup', () => {
+  it('L1.9 section 10 names the skill, the page, the three old-board places and says the branch goes last', () => {
     const section = section10();
-    for (const anchor of ['add--notion-setup', 'add--notion', 'Como funciona', '/add-setup']) {
-      expect(section, `section 10 names ${anchor}`).toContain(anchor);
-    }
+    const anchors = ['add--agent-notion', 'How it works', 'board.json', '~/.codeadd/<key>/board/', '`board` branch', 'the branch last', 'section 9'];
+    for (const anchor of anchors) expect(section, `section 10 names ${anchor}`).toContain(anchor);
   });
 
-  it('L1.10 section 10 says what happens without Notion and carries no board word or token', () => {
+  it('L1.9 section 10 names no /add-setup, no retired page title, no retired skill id and no token', () => {
     const section = section10();
-    expect(section).toContain('section 9');
-    expect(section).not.toMatch(/board/i);
+    expect(section).not.toContain('/add-setup');
+    expect(section).not.toContain('Como funciona');
+    expect(section).not.toContain(RETIRED_SKILL + '`');
+    expect(section).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\\b'));
     for (const re of TOKEN_LIKE) expect(section).not.toMatch(re);
   });
-});
 
-describe('F7 — the role files point at add--notion', () => {
-  it.each(ROLES)('L1.11 roles/%s.md names add--notion, the page and the no-Notion handoff', (name) => {
+  it.each(ROLES)('L1.11 roles/%s.md names add--agent-notion, the page and the no-Notion handoff', (name) => {
     const text = roleText(name);
-    expect(text).toContain('add--notion');
-    expect(text).toContain('Como funciona');
+    expect(text).toContain('add--agent-notion');
+    expect(text).toContain('How it works');
     expect(text).toContain('otherwise the handoff is the intent');
+    expect(text).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\\b'));
+    expect(text).not.toContain('Como funciona');
   });
 
   it.each(ROLES)('L1.6 roles/%s.md carries no token-like literal, no backlog- and no board.json', (name) => {
@@ -245,5 +149,94 @@ describe('F7 — the role files point at add--notion', () => {
     for (const re of TOKEN_LIKE) expect(text).not.toMatch(re);
     expect(text).not.toContain('backlog-');
     expect(text).not.toContain('board.json');
+  });
+});
+
+describe('F4 — add--agent-notion, the one instruction-only skill (0077F)', () => {
+  const NAME = 'add--agent-notion';
+  const skill = () => read(skillPath(NAME));
+  const migration = () => sectionOf(skill(), '## Migrate the old local board');
+
+  it('L1.6 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
+    expect(fs.existsSync(skillPath(NAME)), `${NAME}/SKILL.md exists`).toBe(true);
+    expect(skill()).toMatch(/^---\nname: add--agent-notion\n/);
+    expect(readMap().skills[NAME]).toEqual({});
+  });
+
+  it('L1.6 names the page, the card identity, the milestones and the three places the old board lives', () => {
+    const text = skill();
+    const anchors = [
+      'How it works', '<id>-<slug>', 'brainstorm', 'new', 'plan', 'build', 'done', 'hotfix',
+      'board.json', '~/.codeadd/<key>/board/', '`board` branch',
+    ];
+    for (const anchor of anchors) expect(text, `the skill names ${anchor}`).toContain(anchor);
+  });
+
+  it('L1.6 the migration sends the open cards, waits for the yes, and deletes the remote branch last', () => {
+    const section = migration();
+    const send = section.indexOf('Send only the in-progress and pending cards');
+    const yes = section.indexOf("wait for the user's yes");
+    const local = section.indexOf('delete `.codeadd/board.json`');
+    const branch = section.indexOf('delete the remote `board` branch last');
+    for (const i of [send, yes, local, branch]) expect(i).toBeGreaterThan(-1);
+    expect([send, yes, local, branch]).toEqual([send, yes, local, branch].sort((a, b) => a - b));
+  });
+
+  it('L1.6 carries no MCP check step, no provider doc link, no setup-answers reader, no backlog script, no tracker line and no token', () => {
+    const text = skill();
+    expect(text).not.toMatch(/MCP check/i);
+    expect(text).not.toContain('https://');
+    expect(text).not.toContain('## Setup answers');
+    expect(text).not.toContain('backlog-');
+    expect(text).not.toContain('tracker:');
+    for (const re of TOKEN_LIKE) expect(text).not.toMatch(re);
+  });
+
+  it('L1.6 add--ecosystem lists it once in Skills, once in the Dependency Index and once as a mention', () => {
+    expect(ecosystemRows('## Skills', NAME), 'in ## Skills').toHaveLength(1);
+    expect(ecosystemRows('## Dependency Index', NAME), 'in ## Dependency Index').toHaveLength(1);
+    expect(read(ECOSYSTEM).split('\n').filter((l) => l === `- mention: ${NAME}`)).toHaveLength(1);
+  });
+});
+
+describe('F6 — no retired Notion skill is left in the source (0077F)', () => {
+  // Built by concatenation so this scan does not match this file.
+  const RETIRED = 'add--' + 'notion';
+  const REPO_FILES = ['framwork/provider-map.json'];
+  const REPO_DIRS = ['framwork/.codeadd', 'cli/src', 'cli/tests', 'mcp', 'scripts', 'workbench'];
+  // Build sidecars are regenerated from the source on every build; they follow it.
+  const SIDECARS = new Set(['artefact-graph.json', 'injection-points.json', 'contracts.json']);
+
+  function* walk(dir) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || SIDECARS.has(entry.name)) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) yield* walk(full);
+      else yield full;
+    }
+  }
+
+  it('L1.10 no source file names a retired Notion skill, and no such skill folder exists', () => {
+    const hits = [];
+    const check = (file) => {
+      if (/.(png|jpg|gif|zip)$/i.test(file)) return;
+      if (read(file).includes(RETIRED)) hits.push(path.relative(ROOT, file));
+    };
+    for (const file of REPO_FILES) check(path.join(ROOT, file));
+    for (const dir of REPO_DIRS) {
+      if (fs.existsSync(path.join(ROOT, dir))) for (const file of walk(path.join(ROOT, dir))) check(file);
+    }
+    expect(hits).toEqual([]);
+    for (const name of [RETIRED, RETIRED + '-setup']) {
+      expect(fs.existsSync(path.join(SOURCE, 'skills', name)), `skills/${name} is gone`).toBe(false);
+    }
+  });
+
+  it('L1.10b the generated inventory and ecosystem map list the new skill and neither retired id', () => {
+    for (const file of ['AGENTS.md', 'web/public/ecosystem.json']) {
+      const text = read(path.join(ROOT, file));
+      expect(text, `${file} names the new skill`).toContain('add--agent-notion');
+      expect(text, `${file} names no retired skill`).not.toContain(RETIRED);
+    }
   });
 });

@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-10-30
+
+### Fixed
+- The Notion integration of 1.8.0 was more than asked for. It is now one instruction-only agent-mode skill, `add--agent-notion`: the PM agent (or the engineer when there is no PM) builds the board with you once, keeps each card current at every pipeline milestone and always names work `<id>-<slug>`. `/add-setup` no longer offers a `notion` item and `add--settings` no longer has the key (a project that already recorded it keeps a harmless key). `codeadd update` now removes the folders it empties, so the two old Notion skill folders go from every provider directory. A project that had the old local board finds the migration order in section 10 of the agent-mode guide: move the in-progress and pending cards to Notion first, then delete `.codeadd/board.json`, `~/.codeadd/<key>/board/` and the remote `board` branch, the branch last.
+
+## [1.8.0] - 2026-10-30
+
 ### Added
 - Optional Notion tracking for agent mode, as two instruction-only skills (no script, no API client, no sync). `add--notion-setup` builds the cards database and a `Como funciona` page that holds the workflow rules, and links each provider's MCP configuration; `add--notion` has agents read that page first and move cards along the pipeline. `/add-setup` offers a new `notion` item, recorded in `setup.offered`; the agent-mode guide has a new section 10 and the two role files one paragraph each. Without Notion nothing changes.
 

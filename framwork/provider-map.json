@@ -136,13 +136,12 @@
     "add--delivery-mode":               {},
     "add--human-interaction":           {},
     "add--agent-interaction":           {},
+    "add--agent-notion":                {},
     "add--resource-path-convention":    {},
     "add--investigation":               {},
     "add--id-convention":               {},
     "add--wiki-maintenance":            {},
-    "add--knowledge-discovery":         {},
-    "add--notion":                      {},
-    "add--notion-setup":                {}
+    "add--knowledge-discovery":         {}
   },
   "agents": {
     "ux-agent":            { "description": "UX design owner — critiques design-flow.md + design-layout.md before design.md is written, judges shipped screens against the Design Contract in QA, and amends design.md on design-spec fix routes; free-form UX assistance for direct use" },

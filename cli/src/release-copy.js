@@ -91,12 +91,37 @@ export function copyRelease(zip, targetDir, providers, { skipPreserved = false }
 }
 
 /**
- * Delete every file the prior install wrote that this one did not.
+ * Remove the directories a deleted file left empty, walking up from its parent.
+ * Stops at the first directory that is not empty. Depth is counted on the manifest
+ * path (relative, `/`-separated): a directory is removable only with two or more
+ * segments, so `.claude/skills/add--x` and `.claude/skills` may go and `.claude` never.
+ *
+ * @param {string} targetDir
+ * @param {string} relFile  manifest path of the file just removed
+ */
+function removeEmptiedDirs(targetDir, relFile) {
+  const segments = relFile.split('/').slice(0, -1);
+  while (segments.length >= 2) {
+    try {
+      const dir = path.join(targetDir, ...segments);
+      if (fs.readdirSync(dir).length > 0) return;
+      fs.rmdirSync(dir);
+    } catch {
+      // A directory we cannot read or remove is skipped, like an unremovable file.
+      return;
+    }
+    segments.pop();
+  }
+}
+
+/**
+ * Delete every file the prior install wrote that this one did not, and the
+ * directories that leaves empty.
  *
  * @param {string} targetDir
  * @param {string[]} priorFiles    the previous manifest's `files`
  * @param {string[]|Set<string>} writtenFiles  what the copy just wrote
- * @returns {number} files removed
+ * @returns {number} files removed (directories are not counted)
  */
 export function pruneObsolete(targetDir, priorFiles, writtenFiles) {
   const written = writtenFiles instanceof Set ? writtenFiles : new Set(writtenFiles);
@@ -108,6 +133,7 @@ export function pruneObsolete(targetDir, priorFiles, writtenFiles) {
       if (fs.existsSync(full)) {
         fs.unlinkSync(full);
         removed++;
+        removeEmptiedDirs(targetDir, old);
       }
     } catch {
       // A file we cannot remove is not worth failing an install over.

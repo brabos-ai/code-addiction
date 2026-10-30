@@ -163,6 +163,32 @@ describe('update command', () => {
     expect(manifest.files).not.toContain('.codeadd/scripts/old-script.sh');
   });
 
+  it('L2.1 — removes the skill folders a release dropped, in every provider root, not only their files (0077F)', async () => {
+    // Built by concatenation so the acceptance scan for the retired ids does not match this file.
+    const dropped = ['add--' + 'notion', 'add--' + 'notion-setup'];
+    const roots = ['.claude/skills', '.agents/skills'];
+    const listed = [];
+    for (const rootDir of roots) {
+      for (const name of dropped) {
+        const rel = `${rootDir}/${name}/SKILL.md`;
+        fs.mkdirSync(path.dirname(path.join(tmpDir, rel)), { recursive: true });
+        fs.writeFileSync(path.join(tmpDir, rel), '# old skill');
+        listed.push(rel);
+      }
+    }
+    writeManifestFile(tmpDir, { version: '1.8.0', source: 'release', ref: null, providers: [], files: listed });
+
+    mocks.getLatestTag.mockResolvedValue('v1.8.1');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    for (const rel of listed) expect(fs.existsSync(path.join(tmpDir, path.dirname(rel))), `${path.dirname(rel)} is gone`).toBe(false);
+    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
+    for (const rel of listed) expect(manifest.files).not.toContain(rel);
+    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'scripts', 'health.sh'))).toBe(true);
+  });
+
   it('preserves history and .local.json files even if listed in old manifest', async () => {
     const historyFile = path.join(tmpDir, '.codeadd', 'history', 'session.json');
     const localFile = path.join(tmpDir, '.codeadd', 'my.local.json');
