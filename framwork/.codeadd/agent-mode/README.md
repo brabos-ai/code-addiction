@@ -80,8 +80,6 @@ Rules for a bot, every time:
 - Always run each agent in its own git worktree. `build-setup.cjs --worktree` carries the installed framework into the new worktree; a worktree made by hand needs `.codeadd/` and the provider folders copied, or `npx codeadd install` run in it.
 - Never switch branches in a checkout that other agents share.
 
-The board is not affected: it lives in its own clone, outside every checkout.
-
 ## 3. The stop rule
 
 Every stop that waits on a decision returns `needs-approval`. That covers a question, an approval and
@@ -122,7 +120,7 @@ that is missing. `codeadd --help` lists every flag.
 
 ```bash
 # install. --providers is required; "none" installs the core only
-npx codeadd install --providers claude,codex --enable-feature board
+npx codeadd install --providers claude,codex --enable-feature qa-pipeline
 
 # the project already has .codeadd/ or .claude/: overwriting needs --force
 npx codeadd install --providers claude --force
@@ -194,52 +192,15 @@ With `--output-format stream-json`, a run that dispatches a subagent can print m
 event. The last one is the run's result; an earlier one can be written while the subagent is still
 working.
 
-## 9. Mirror the board to an external tracker
+## 9. Work as a team of agents
 
-The project's board lives on its own `board` branch, in one clone per project on the machine. The internal
-board is the source of truth. Today each stage owner mirrors its own stage to the outside tracker by hand
-(see `.codeadd/agent-mode/board-management.md`). The loop below is the basis for a future automatic sync:
-it does not read the files, it asks the board what changed since the last time it looked, with the same entry
-every command uses.
-
-1. Keep the last `HEAD` you stored. The first time there is none.
-2. Run `node .codeadd/scripts/backlog-cli.cjs changes --since <sha>` (no `--since` the first time: every
-   ticket comes back under `ADDED`). It syncs the clone first, then prints `HEAD=<sha>`, and
-   `ADDED=`, `UPDATED=` and `REMOVED=` as comma-separated ticket ids, empty when none.
-3. For each id under `ADDED` and `UPDATED`, run `backlog-cli.cjs get <id>` for the full ticket and push it
-   to the tracker. For each id under `REMOVED`, remove or close the tracker item.
-4. Store the `HEAD` from step 2 as the next cursor.
-
-`UNPUSHED=<n>` appears when the clone holds writes the remote does not have yet. Those are not in the
-lists, and `HEAD` is the remote tip, so they arrive in a later call once they are pushed.
-
-If the call exits 1 with `ERROR=cursor-unknown`, the stored sha is not on the board branch any more. Start
-again without `--since` and treat every ticket as new.
-
-### Example: Notion
-
-One Notion database, one row per ticket. Map the fields like this:
-
-- `id` to the title, `title` to a text property, `labels` to a multi-select.
-- `status` to a select whose options are the board's statuses, `awaiting-release` included.
-- `release` to a text property, filled once a release closes the ticket (the version, `v1.2.3`) — a release does it for every waiting ticket with `backlog-commit.cjs release <version>`.
-
-Step 3 becomes "find the row whose title is the id, then create or update it".
-The same loop works for any project-management app: only the push in step 3 changes.
-
-Nothing here is tracker code: the framework ships no tracker code. Automatic sync is future work and out of scope; there is no single mirror bot.
-
-Who mirrors what, field by field, is in `.codeadd/agent-mode/board-management.md` (section 3): each stage owner mirrors its own stage.
-
-## 10. Work as a team of agents
-
-Several agents can work on one codebase and one board: product PMs shape the work, engineers build it. To
+Several agents can work on one codebase: product PMs shape the work, engineers build it. To
 start a new agent, tell it to read its role file and use this framework:
 
 - `.codeadd/agent-mode/roles/product-pm.md` owns scope, release and priority, and shapes the work up to
-  `shaped`. It never implements.
-- `.codeadd/agent-mode/roles/chief-engineer.md` takes one ticket and runs it through `/add-plan`,
-  `/add-build` and then `/add-done`. A bug ticket runs `/add-hotfix`, then `/add-done`.
+  the intent file and the feature folder. It never implements.
+- `.codeadd/agent-mode/roles/chief-engineer.md` takes one feature and runs it through `/add-plan`,
+  `/add-build` and then `/add-done`. A bug runs `/add-hotfix`, then `/add-done`.
 
 Each role file lists the commands the agent runs, its boundaries, when it stops and asks the user, and the
 summary it ends with.
@@ -248,14 +209,9 @@ Rules for the team, every time:
 
 - Every agent has its own git worktree and its own session. The rules for that are in section 2. They are
   not repeated here.
-- One engineer takes one ticket at a time. This is a process rule the product PM keeps: the PM records who
-  took the ticket as a comment, and nothing on the board stops a second engineer.
-- The board rules (where it lives, who writes, the lock, `ERROR=board-locked`, `DEGRADED=` with `RECOVERY_REF`,
-  `rebase-conflict`, `push-refused`, `fetch-failed`) are in `.codeadd/agent-mode/board-management.md`. Write only through
-  `node .codeadd/scripts/backlog-commit.cjs <mode>`. On a degraded write, stop and report to the user.
-- The product PM hands work to an engineer with the `assigned: <engineer>` comment, written after the intent
-  file and `docs/features/<id>/` are on main. Without the
-  board, the handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and
-  `docs/features/<id>/about.md`.
-- Commit and push the intent file and `docs/features/<id>/` to the main branch before the handoff: `/add-new` makes no git write, and another worktree does not see an uncommitted file.
+- One engineer takes one feature at a time. This is a process rule the product PM keeps: the PM says in its
+  summary which engineer takes which intent file, and nothing stops a second engineer.
+- The product PM hands work to an engineer with the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`)
+  and the feature folder `docs/features/<id>-<slug>/`, both on main.
+- Commit and push the intent file and `docs/features/<id>-<slug>/` to the main branch before the handoff: `/add-new` makes no git write, and another worktree does not see an uncommitted file.
 - `/add-review` is optional (section 4). Another engineer may run it in its own worktree.

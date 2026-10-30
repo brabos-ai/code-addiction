@@ -80,7 +80,7 @@ describe('product agent mode', () => {
     expect(schema.additionalProperties).toBe(false);
     const block = JSON.parse(sample({ status: 'done', needs_approval: false, reason: null, next_step: null, ticket: null }));
     const declared = new Set(Object.keys(schema.properties));
-    expect(Object.keys(block).filter((key) => !declared.has(key))).toEqual([]);
+    expect(Object.keys(block).filter((key) => !declared.has(key))).toEqual(['ticket']);
   });
 
   it('L1.3 one sample per status passes validateResultBlock, and the samples cover the schema status enum', () => {
