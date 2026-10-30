@@ -47,8 +47,6 @@ npx codeadd uninstall --force
 - `modify --providers <a,b|none>`: set the final provider set with no prompt (removing one needs `--force`)
 - `modify --enable-feature|--disable-feature|--enable-plugin|--disable-plugin <name>`: turn features and plugins on or off with no prompt
 - `features list`: print the feature states (prints and exits when stdin is not a terminal)
-
-The `board` feature is gone. Migration `0006-retire-board` drops the `board` flag from an installed project on `update` and leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched.
 - `install --version main`: install from GitHub `main` branch
 - `install --version <tag>`: install from a specific GitHub tag
 - `update`: update installed files to latest GitHub release
@@ -58,6 +56,8 @@ The `board` feature is gone. Migration `0006-retire-board` drops the `board` fla
 - `validate --repair`: restore missing or modified files
 - `config show`: print current ADD installation config
 - `config show --verbose`: config + release update check
+
+The `board` feature is gone. Migration `0006-retire-board` drops the `board` flag from an installed project on `update` and leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched.
 
 ## Without a terminal
 
