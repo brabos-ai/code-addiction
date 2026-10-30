@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-30
+
 ### Added
 - Optional Notion tracking for agent mode, as two instruction-only skills (no script, no API client, no sync). `add--notion-setup` builds the cards database and a `Como funciona` page that holds the workflow rules, and links each provider's MCP configuration; `add--notion` has agents read that page first and move cards along the pipeline. `/add-setup` offers a new `notion` item, recorded in `setup.offered`; the agent-mode guide has a new section 10 and the two role files one paragraph each. Without Notion nothing changes.
 
