@@ -5,8 +5,8 @@ const path = require('node:path');
 const { createHash, randomUUID } = require('node:crypto');
 const { spawn, spawnSync } = require('node:child_process');
 const context = require('./test-context.cjs');
-const INPUTS = ['package.json', 'package-lock.json', 'cli/package.json', 'cli/package-lock.json', 'board/package.json', 'board/package-lock.json'];
-const EXCLUDES = ['.git', '.worktrees', '.test-artifacts', 'docs/plans', 'docs/brainstorming', 'docs/evidence', 'board/runtime', 'board/src/routeTree.gen.ts', 'cli/src/mcp', 'framwork/.codeadd/artefact-graph.json', 'framwork/.codeadd/contracts.json', 'framwork/.codeadd/injection-points.json'];
+const INPUTS = ['package.json', 'package-lock.json', 'cli/package.json', 'cli/package-lock.json'];
+const EXCLUDES = ['.git', '.worktrees', '.test-artifacts', 'docs/plans', 'docs/brainstorming', 'docs/evidence', 'cli/src/mcp', 'framwork/.codeadd/artefact-graph.json', 'framwork/.codeadd/contracts.json', 'framwork/.codeadd/injection-points.json'];
 function excluded(rel) {
   const parts = rel.split('/');
   return parts.some(p => ['node_modules', 'dist', 'coverage', 'test-results', 'playwright-report', '.vitest', '.vite', '.cache'].includes(p)) || rel.endsWith('.tsbuildinfo') || EXCLUDES.some(e => rel === e || rel.startsWith(e + '/')) || /^(?:framwork\/)?\.(?:claude|opencode|agents|codex|cursor|gemini|github)\/(?:commands|skills|agents|worktrees)(?:\/|$)/.test(rel);
@@ -16,7 +16,7 @@ function snapshot(root, { initial = false } = {}) {
   function walk(dir, rel = '') {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const name = rel ? `${rel}/${entry.name}` : entry.name;
-      if (excluded(name) && !(initial && name === 'board/src/routeTree.gen.ts')) continue;
+      if (excluded(name)) continue;
       const file = path.join(dir, entry.name);
       if (entry.isDirectory()) { if (fs.existsSync(path.join(file, '.git'))) continue; walk(file, name); }
       else if (entry.isFile()) result.set(name, createHash('sha256').update(fs.readFileSync(file)).digest('hex'));
@@ -76,7 +76,7 @@ function pack(root, names, file, scratch) {
 }
 function exportStatus(code, failed) { return code !== 0 ? code : failed ? 2 : 0; }
 function exportReports(container, selection, root, id, mode) {
-  const paths = context.leavesFor(selection).flatMap(leaf => leaf === 'cli' && mode === 'coverage' ? [['cli', '/code/cli/coverage', 'coverage']] : leaf === 'board-e2e' ? [['board-e2e', '/code/board/test-results/runs', 'test-results'], ['board-e2e', '/code/board/playwright-report', 'playwright-report']] : []);
+  const paths = context.leavesFor(selection).flatMap(leaf => leaf === 'cli' && mode === 'coverage' ? [['cli', '/code/cli/coverage', 'coverage']] : []);
   let failed = false;
   for (const [suite, source, name] of paths) {
     // Stopped containers cannot exec: docker cp itself reports a missing path explicitly.

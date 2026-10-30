@@ -60,13 +60,6 @@ jobs:
       - name: Build workbench provider files
         run: node scripts/build-workbench.js
 
-      # The board lives on its own branch. This fails when .codeadd/board.json
-      # and a board file (docs/backlog.jsonl, docs/backlog.definitions.json) are
-      # tracked together, i.e. when a write went through the old route or a merge
-      # brought the files back. A Node script: the CI job rejects Bash.
-      - name: Board files guard
-        run: node scripts/board-files-guard.cjs
-
       # The framework/test boundary rejects Bash on every host, hosted or local.
       # Bash is shadowed and Node subprocess calls are instrumented — Git and npm use `sh`/`cmd`, and the native
       # harness spawns process.execPath with `shell: false` — so transport is
@@ -90,49 +83,3 @@ jobs:
           CODEADD_TESTS_CONTEXT: github-actions
           CODEADD_TESTS_SELECTION: framework
         run: node scripts/no-bash-guard.js --run "npm test"
-
-  # The board app (board/). Its server imports the generated Node core at
-  # board/runtime/, which the authorized worker prepares from product scripts,
-  # so this job
-  # checks out the whole tree rather than a standalone closure. The e2e suite
-  # serves the BUILT app through server.mjs at three viewports, so it runs
-  # after the build. Web/board stay on the floor, one browser platform: the
-  # native six-job matrix above is what needs the cross-platform expansion.
-  board:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    defaults:
-      run:
-        working-directory: board
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '22.19.0'
-          cache: npm
-          cache-dependency-path: board/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck and unit tests
-        env:
-          CODEADD_TESTS_CONTEXT: github-actions
-          CODEADD_TESTS_SELECTION: board
-        run: npm test
-
-      - name: Build
-        run: npm run build
-
-      - name: Install Playwright Chromium
-        timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
-
-      - name: End-to-end tests (360, 768, 1080)
-        env:
-          CODEADD_TESTS_CONTEXT: github-actions
-          CODEADD_TESTS_SELECTION: board-e2e
-        run: npm run test:e2e

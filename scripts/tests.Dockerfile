@@ -9,9 +9,4 @@ COPY package.json package-lock.json ./
 WORKDIR /code/cli
 COPY cli/package.json cli/package-lock.json ./
 RUN npm ci --no-audit --no-fund
-WORKDIR /code/board
-COPY board/package.json board/package-lock.json ./
-RUN npm ci --no-audit --no-fund
-ENV PLAYWRIGHT_BROWSERS_PATH=/opt/codeadd-browsers
-RUN node node_modules/@playwright/test/cli.js install --with-deps chromium
 WORKDIR /code
