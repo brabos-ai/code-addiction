@@ -131,3 +131,18 @@ describe('add--ecosystem registers the Notion skills', () => {
     expect(dep?.[1]).toContain('add-setup (STEP add-setup.execute)');
   });
 });
+
+describe('F4 — add--settings records notion in the setup section', () => {
+  const setupSection = () => sectionOf(read(skillPath('add--settings')), '## Section `setup`');
+
+  it('L1.8 the setup.offered.<item> row names notion beside qa-setup, wiki and version-record', () => {
+    const row = setupSection().split('\n').find((l) => l.startsWith('| `setup.offered.<item>`'));
+    expect(row, 'the offered row exists').toBeTruthy();
+    expect(row).toContain('plus `qa-setup`, `wiki`, `version-record` and `notion`');
+  });
+
+  it('L1.8 the example offered object carries a "notion" key', () => {
+    const example = setupSection().match(/```json\n([\s\S]*?)```/)[1];
+    expect(JSON.parse(example).setup.offered).toHaveProperty('notion');
+  });
+});
