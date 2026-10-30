@@ -55,11 +55,11 @@ describe('board removed', () => {
     expect(hits).toEqual([]);
   });
 
-  it.skip('F2: the board fragments directory does not exist', () => {
+  it('F2: the board fragments directory does not exist', () => {
     expect(fs.existsSync(path.join(SOURCE, 'fragments', 'board'))).toBe(false);
   });
 
-  it.skip('F2: no command carries a board slot or a board feature marker', () => {
+  it('F2: no command carries a board slot or a board feature marker', () => {
     const hits = commandFiles().filter((file) => {
       const text = fs.readFileSync(file, 'utf8');
       return text.includes('<!-- slot:board.') || text.includes('<!-- feature:board:');
