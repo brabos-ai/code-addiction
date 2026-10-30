@@ -131,7 +131,7 @@ describe('F5 — the guide and the role files point at add--agent-notion (0077F)
     expect(section).not.toContain('/add-setup');
     expect(section).not.toContain('Como funciona');
     expect(section).not.toContain(RETIRED_SKILL + '`');
-    expect(section).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\b'));
+    expect(section).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\\b'));
     for (const re of TOKEN_LIKE) expect(section).not.toMatch(re);
   });
 
@@ -140,7 +140,7 @@ describe('F5 — the guide and the role files point at add--agent-notion (0077F)
     expect(text).toContain('add--agent-notion');
     expect(text).toContain('How it works');
     expect(text).toContain('otherwise the handoff is the intent');
-    expect(text).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\b'));
+    expect(text).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\\b'));
     expect(text).not.toContain('Como funciona');
   });
 
