@@ -144,7 +144,7 @@ it and use the same plain-path form.
 
 **Automatic delivery:** the same line is printed before the next stage is loaded.
 
-**Who never prints one:** a closing that wrote no file the next stage reads — backlog, release, sync,
+**Who never prints one:** a closing that wrote no file the next stage reads — release, sync,
 done, a direct build and a brainstorm spike. `/add-framework--done` is the terminal stage, and the
 build prints its line but never loads it.
 

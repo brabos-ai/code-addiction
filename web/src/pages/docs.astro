@@ -25,7 +25,6 @@ const featureTargets: Record<string, string[]> = {
   "tdd-pipeline": ["add-plan", "add-build", "add-review", "add-hotfix"],
   "qa-pipeline": ["add-plan", "add-build", "add-review"],
   "docs-pruning": ["add-done"],
-  board: ["add-brainstorm", "add-new", "add-plan", "add-build", "add-done", "add-hotfix"],
   "agent-mode": ["add-brainstorm", "add-new", "add-plan", "add-build", "add-review", "add-done", "add-diagnose", "add-hotfix", "add-qa-setup", "add-pull-request", "add-audit", "add-wiki"],
 };
 
@@ -735,7 +734,6 @@ const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c")
           <span class="text-foreground">├── cli/</span><span class="text-muted ml-12">{t("docs.structure.cli")}</span><br/>
           <span class="text-foreground">├── framwork/</span><span class="text-muted ml-6">{t("docs.structure.framwork")}</span><br/>
           <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">{t("docs.structure.codeadd")}</span><br/>
-          <span class="text-foreground">├── board/</span><span class="text-muted ml-12">{t("docs.structure.board")}</span><br/>
           <span class="text-foreground">├── web/</span><span class="text-muted ml-14">{t("docs.structure.web")}</span><br/>
           <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">{t("docs.structure.scripts")}</span><br/>
           <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">{t("docs.structure.docs")}</span>

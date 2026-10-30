@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Canonical repository test dispatcher. All local hosts use Linux Docker, never native fallback.
- * Usage: node scripts/run-tests.js <framework|cli|vitest|scripts|bats|package|board|board-e2e|all> [--watch|--coverage] [tool arguments...]
- * Framework selects CLI + scripts + package smoke; all adds board typecheck/unit + built Chromium E2E.
+ * Usage: node scripts/run-tests.js <framework|cli|vitest|scripts|bats|package|all> [--watch|--coverage] [tool arguments...]
+ * Framework and all select CLI + scripts + package smoke.
  * Only individual suites accept filters. Watch/coverage are CLI-only and preserve CLI-local scope.
  * Authorized workers require strict Linux context predicates in test-context.cjs; CI=true/copy/native flags alone never authorize them.
  * Docker source is copied into an isolated filesystem, dependencies/browser come from the hashed image,

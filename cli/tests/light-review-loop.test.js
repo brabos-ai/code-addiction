@@ -20,7 +20,6 @@ const P = {
   build: path.join(CODEADD, 'commands', 'add-build.md'),
   reviewSchema: path.join(CODEADD, 'skills', 'add--doc-schemas', 'references', 'review.md'),
   reviewerAgent: path.join(CODEADD, 'agents', 'reviewer-agent.md'),
-  boardBuild: path.join(CODEADD, 'fragments', 'board', 'add-build.md'),
   qaBuild: path.join(CODEADD, 'fragments', 'qa-pipeline', 'add-build.md'),
 };
 
@@ -124,17 +123,7 @@ describe('L2 #6 — the build defers small findings, runs the formatter, checks 
   });
 });
 
-describe('L2 #7 — the board ticket for deferred minors and the QA next command', () => {
-  it('the board fragment has a deferred-minors section', () => {
-    expect(frag(read(P.boardBuild), 'deferred-minors')).not.toBeNull();
-  });
-
-  it('add-build.md carries the widened slot and the member pair', () => {
-    const t = read(P.build);
-    expect(t).toContain('slot:board.ticket-in-review+board.deferred-minors');
-    expect(t).toMatch(/<!-- feature:board:deferred-minors -->\s*<!-- \/feature:board:deferred-minors -->/);
-  });
-
+describe('L2 #7 — the QA next command', () => {
   it('next-command names the routed-CORRECTION exception and working-baseline', () => {
     const s = frag(read(P.qaBuild), 'next-command');
     expect(s).not.toBeNull();

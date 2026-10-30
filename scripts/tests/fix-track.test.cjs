@@ -37,10 +37,6 @@ const PLANNED_PATH = [
     "text": "IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:\n  ⛔ DO NOT USE: Bash to run git commit\n  ⛔ DO NOT: Assemble a directory holding only the half that was readable\n  ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made\n```\n\n"
   },
   {
-    "name": "STEP 8 ticket paragraph",
-    "text": "**When the plan header carries `> **Ticket:**`, make the close-out write now — `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, `done` otherwise.** `add-plan-authoring` owns when\nit is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting\nfrom memory.\n\nThe read is the exact `get <id>` one, and the write is skipped when the ticket already reads `done` or `awaiting-release`. The `--fix` track follows the same rule.\n\nIt runs here because this is the first point every route shares with the delivery already on `main`: the\nnormal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not\nbefore the merge — a ticket reading `done` or `awaiting-release` for work that never landed is a lie a refused merge would\nleave behind. It reads the plan before the third removal below deletes the local copy.\n\n"
-  },
-  {
     "name": "STEP 8 removal list",
     "text": "**Order is forced**, because a branch checked out in a worktree cannot be deleted:\n\n1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.\n2. **The branch**, local and remote.\n3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**\n\n"
   }
@@ -51,7 +47,7 @@ test('the planned path of done is still present, byte for byte', () => {
   for (const { name, text } of PLANNED_PATH) assert.ok(done.includes(text), `changed or lost: ${name}`);
 });
 
-test('add-plan-authoring names the fix record, its changelog key, its archive member and its ticket carrier', () => {
+test('add-plan-authoring names the fix record, its changelog key, and its archive member', () => {
   const a = read(AUTHORING);
   assert.match(a, /^\| The fix record \| `docs\/plans\/YYYY-MM-DDTHHMMSS-FIX--<slug>\.md` /m);
   assert.match(a, /written only by `\/add-framework--done --fix`, never by hand/);
@@ -59,9 +55,7 @@ test('add-plan-authoring names the fix record, its changelog key, its archive me
   const home = a.split('## The Delivered Home')[1].split(/^## /m)[0];
   assert.match(home, /^\| `fix\.md` \|/m);
   assert.match(home, /in place of `plan\.md` and `ledger\.md`/);
-  const ticket = a.split('## The Ticket')[1].split(/^## /m)[0];
-  assert.match(ticket, /fix record/);
-  assert.match(ticket, /only from `--ticket`/);
+  assert.doesNotMatch(a, /## The Ticket/);
 });
 
 test('add-plan-authoring resolves --fix through the three sources and keeps plans on PLAN-- only', () => {
@@ -82,8 +76,9 @@ const section = (text, from, to) => { const i = text.indexOf(from); assert.ok(i 
 test('Operation Mode carries the --fix line, an example and the one reading rule', () => {
   const done = read(DONE);
   const op = section(done, '## Operation Mode', '## STEP 1');
-  assert.match(op, /^\/add-framework--done --fix <slug> \[--ticket <id>\]/m);
-  assert.match(op, /^\/add-framework--done --fix \S+ --ticket \d{4}B$/m);
+  assert.match(op, /^\/add-framework--done --fix <slug>/m);
+  assert.match(op, /^\/add-framework--done --fix \S+$/m);
+  assert.doesNotMatch(op, /--ticket/);
   assert.match(op, /"the plan" in this skill reads "the fix record"/);
 });
 
@@ -93,7 +88,7 @@ test('1.2 refuses --fix together with a [plan], resolves the record, and still r
   assert.match(s, /`--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution/);
   assert.match(s, /derive-from-branch rule does not run/);
   assert.match(s, /refusal to run on `main` still applies/);
-  for (const needle of ['> **Kind:** fix', '> **Branch:**', '> **PR:**', '> **Ticket:** <id>', '## What changed', 'git log --oneline main..HEAD', 'git diff --name-status main...HEAD']) assert.ok(s.includes(needle), needle);
+  for (const needle of ['> **Kind:** fix', '> **Branch:**', '> **PR:**', '## What changed', 'git log --oneline main..HEAD', 'git diff --name-status main...HEAD']) assert.ok(s.includes(needle), needle);
 });
 
 test('both refusals sit before any resolution, and the redirect paragraph follows the two it sets aside', () => {
@@ -101,8 +96,7 @@ test('both refusals sit before any resolution, and the redirect paragraph follow
   const at = needle => { const i = s.indexOf(needle); assert.ok(i >= 0, needle); return i; };
   const resolve = at("**Resolve `[plan]` by");
   assert.ok(at('IF `--fix` AND A `[plan]` ARE BOTH GIVEN:') < resolve, 'plan refusal after plan resolution');
-  assert.ok(at('IF `--ticket` WAS GIVEN WITHOUT `--fix`:') < resolve, 'ticket refusal after plan resolution');
-  assert.match(s, /IF `--ticket` WAS GIVEN WITHOUT `--fix`:\n  ⛔ DO NOT USE: Write on anything\n[\s\S]*?✅ DO: Report that `--ticket` belongs to `--fix` and STOP/);
+  assert.doesNotMatch(s, /--ticket/);
   const between = s.slice(at('When no `[plan]` was given'), at('**With `--fix`, 1.2 resolves'));
   assert.ok(!between.includes('```'), 'something sits between the two paragraphs and the reference to them');
   assert.match(s, /The two paragraphs above do not run/);
@@ -169,9 +163,9 @@ test('6.1 archives fix.md with its own stop and sets the plan + ledger stop asid
   assert.match(s, /With `--fix`, the plan \+ ledger stop above does not apply/);
 });
 
-test('STEP 8 reads the ticket from the fix record and removes the local fix record as the one original', () => {
+test('STEP 8 removes the local fix record as the one original', () => {
   const s = section(read(DONE), '## STEP 8', '## STEP 9');
-  assert.match(s, /fix record's `> \*\*Ticket:\*\*` line/);
+  assert.doesNotMatch(s, /Ticket/);
   assert.match(s, /third removal's member list is the local fix record/);
 });
 

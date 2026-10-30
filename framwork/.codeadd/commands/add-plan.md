@@ -214,10 +214,6 @@ into `plan.md` verbatim. An `about.md` with no `## Objective` is a legacy docume
 `${OBJECTIVE}` as absent; STEP add-plan.consolidate then writes the section from `about.md`'s Problem, marked
 `[derived from Problem, no objective in about.md]`.
 
-<!-- slot:board.ticket-read fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-read -->
-<!-- /feature:board:ticket-read -->
-<!-- /slot:board.ticket-read -->
 
 **Provenance source:** the `about.md` read in this step is the provenance source for STEP add-plan.ux-design. Record its exact path (`${SF_DIR}/about.md` when HAS_EPIC=true, else `${FEATURE_DIR}/about.md`) as `${ABOUT_PATH}` — STEP add-plan.gate-evaluate-any and STEP add-plan.ux-consolidate hash those same bytes.
 
@@ -637,10 +633,6 @@ Create plan.md header: `# Plan: ${FEATURE_ID}`, then the line `> **Delivery:** $
 and `/add-review` read that line and nothing else to learn the mode. Then `## TL;DR`, then
 **`## Objective`: `${OBJECTIVE}` copied verbatim**, followed by one line saying what is true once this plan
 is built.
-<!-- slot:board.ticket-done-when fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-done-when -->
-<!-- /feature:board:ticket-done-when -->
-<!-- /slot:board.ticket-done-when -->
 
 ```
 IF WRITING `## Objective`:
@@ -870,10 +862,6 @@ the self-check. Emit the report FIRST — the feature ID, the paths and the next
 A plan proposes rather than executes, so block 2 is titled `What will be done` and written in the
 future tense. Fill `How it works` with the mechanism the plan settles on — what the feature will do
 once built, for a reader who never opens `plan.md`.
-<!-- slot:board.ticket-planned fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-planned -->
-<!-- /feature:board:ticket-planned -->
-<!-- /slot:board.ticket-planned -->
 
 Then, after the seven blocks, state:
 - Feature ID and plan path

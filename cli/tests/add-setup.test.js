@@ -139,7 +139,7 @@ describe('F4 — the add-setup command', () => {
     expect(src).toMatch(/only (the )?accepted items/i);
     expect(src).toMatch(/MCP checkpoint/);
     const exec = stepSection(src, 'add-setup.execute');
-    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((s) => exec.indexOf(s));
+    const order = ['Install the external tools', 'codeadd modify', 'skill:add--notion-setup', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((s) => exec.indexOf(s));
     for (const i of order) expect(i).toBeGreaterThan(-1);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(exec).toContain('MCP checkpoint');
@@ -258,11 +258,23 @@ describe('F7 — AGENTS.md, README and the web docs', () => {
 });
 
 describe('review fixes — re-run edges of the command', () => {
-  it('asks tdd-pipeline on a first run, re-offers a stale QA setup and a board that became available', () => {
+  it('asks tdd-pipeline on a first run and re-offers a stale QA setup', () => {
     const src = setupSrc();
     expect(src).toMatch(/`tdd-pipeline` is on by default, but on a first run[^\n]*still asked/);
     expect(src).toMatch(/`qa-setup` with `SETUP_QA_STALE:yes` counts as \*\*drift\*\*/);
-    expect(src).toMatch(/`board` recorded `unavailable` counts as \*\*drift\*\* once `\.codeadd\/board\.json` exists/);
+  });
+
+  it('0070B: the unavailable value is gone from the command', () => {
+    const src = setupSrc();
+    expect(src).not.toContain('unavailable');
+    expect(src).not.toContain('framework maintainer');
+    expect(src).toMatch(/legacy value[^\n]*no longer writes is treated as new/);
+  });
+
+  it('0070B: add--settings keeps unavailable as a legacy value that is read and never written', () => {
+    const s = read(settingsPath);
+    expect(s).toMatch(/`unavailable` \(legacy, no longer written; an item recorded `unavailable` is offered again as new\)/);
+    expect(s).not.toContain('"board": "unavailable"');
   });
 
   it('the record step names the STOPs that skip it, and add--settings keeps the ban for a section with a contract', () => {

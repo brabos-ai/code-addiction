@@ -22,7 +22,7 @@ Stdout is the result envelope (one JSON object). The validated block is its `.st
 bash:
 
 ```bash
-claude -p "/add-framework--backlog update 9999B" --output-format json \
+claude -p "/add-framework--build docs/plans/x.md" --output-format json \
   --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
 ```
 
@@ -30,7 +30,7 @@ PowerShell:
 
 ```powershell
 $schema = (Get-Content workbench/skills/add-final-report/references/result-block.schema.json -Raw) -replace '"','\"'
-claude -p "/add-framework--backlog update 9999B" --output-format json --json-schema $schema
+claude -p "/add-framework--build docs/plans/x.md" --output-format json --json-schema $schema
 ```
 
 To fail a step on anything but `done`, save the envelope to a file and check it. The schema says a run that ends at a STOP, a gate or a refusal is `stopped` and one that ends on a question is `needs-approval`, never `done`. `claude -p` itself exits 0 whenever the model finishes, so the exit code is the caller's to set.
@@ -66,8 +66,6 @@ Rules for a bot, every time:
 - Never pick a session by the newest `.jsonl` file. It has the same flaw.
 - Always run each agent in its own git worktree.
 - Never switch branches in a checkout that other agents share.
-
-The board is not affected: it lives in its own clone, outside every checkout.
 
 PowerShell:
 

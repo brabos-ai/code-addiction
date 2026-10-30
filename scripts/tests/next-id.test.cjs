@@ -7,9 +7,8 @@
 //
 // Contract:
 //   * exactly one argument, a single uppercase A–Z letter; anything else exits 1
-//   * one global counter over docs/features/[NNNN][L]-*/ AND docs/backlog.jsonl
-//   * the backlog is read by anchored raw-text grep ('"id":"NNNNL"'), never
-//     parsed, so a damaged JSON line still yields its id
+//   * one global counter over docs/features/[NNNN][L]-*/ only; a backlog file
+//     is never read
 //   * the match is on a directory's basename, never a parent path
 //   * output is %04d + letter (e.g. 0001F)
 //
@@ -20,19 +19,13 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const h = require('./helpers.cjs');
 
-/**
- * The board is read from a clone, never from the checkout. These fixtures make
- * the temp directory both the code repository and the clone: CODEADD_BOARD_DIR
- * points at it.
- */
-const run = (name, args, opts = {}) =>
-  h.runScript(name, args, { ...opts, env: { CODEADD_BOARD_DIR: opts.cwd, ...(opts.env || {}) } });
+const run = (name, args, opts = {}) => h.runScript(name, args, opts);
 
 test('next-id preserves the public five-digit output at the four-digit boundary', (t) => {
   const dir = h.mkTmp('codeadd-overflow-');
   t.after(() => h.rmrf(dir));
   h.git(dir, ['init', '-q']);
-  h.write(path.join(dir, 'docs', 'backlog.jsonl'), '{"id":"9999B"}\n');
+  featureDir(dir, '9999F-last');
   for (const [name, args] of [['next-id', ['F']], ['status', ['next-id', 'F']]]) {
     const result = run(name, args, { cwd: dir });
     assert.equal(result.status, 0, result.output);
@@ -113,40 +106,23 @@ test('next-id: a non-ID directory does not advance the counter', (t) => {
   assert.equal(res.stdout.trim(), '0003F');
 });
 
-// ─── Counter over docs/backlog.jsonl (raw-text grep) ─────────────────
+// ─── The backlog file is never read ──────────────────────────────────
 
-test('next-id: ids on the backlog board advance the counter', (t) => {
-  const dir = tmpDir(t);
-  backlog(dir, ['{"id":"0007R","title":"ticket"}']);
-  const res = run('next-id', ['R'], { cwd: dir });
-  assert.equal(res.status, 0);
-  assert.equal(res.stdout.trim(), '0008R');
-});
-
-test('next-id: the counter is the max over features AND the backlog together', (t) => {
+test('next-id: ids on a docs/backlog.jsonl do not advance the counter', (t) => {
   const dir = tmpDir(t);
   featureDir(dir, '0002F-docs');
-  backlog(dir, ['{"id":"0005B","title":"board"}']);
+  backlog(dir, ['{"id":"0050F","title":"ticket"}']);
   const res = run('next-id', ['F'], { cwd: dir });
   assert.equal(res.status, 0);
-  assert.equal(res.stdout.trim(), '0006F');
+  assert.equal(res.stdout.trim(), '0003F');
 });
 
-test('next-id: a line with damaged JSON still yields its id', (t) => {
+test('next-id: B is still accepted as a plain letter', (t) => {
   const dir = tmpDir(t);
-  backlog(dir, ['{"id":"0005B" this is not valid JSON']);
+  featureDir(dir, '0004F-x');
   const res = run('next-id', ['B'], { cwd: dir });
   assert.equal(res.status, 0);
-  assert.equal(res.stdout.trim(), '0006B');
-});
-
-test('next-id: an id quoted in prose is not counted (anchored on "id")', (t) => {
-  const dir = tmpDir(t);
-  backlog(dir, ['{"id":"0001F","title":"see 0099Z someday"}']);
-  const res = run('next-id', ['Z'], { cwd: dir });
-  assert.equal(res.status, 0);
-  // 0099Z lives only in a title; counting it would burn a hundred ids.
-  assert.equal(res.stdout.trim(), '0002Z');
+  assert.equal(res.stdout.trim(), '0005B');
 });
 
 test('next-id: four digits in a parent path do not pose as an id', (t) => {

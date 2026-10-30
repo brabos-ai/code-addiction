@@ -344,7 +344,8 @@ describe('substitution completeness (catalog × fragments × sidecar × built an
   // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
   // 71 -> 72: feature:board adds add-build's deferred-minors section (plan 2026-10-11T124512-PLAN--light-review-loop, F7).
-  it('sidecar, fragments, and catalog declare the same substitutions: 72 plus the agent-mode sections', () => {
+  // 72 -> 47: the board feature is removed with its 25 sections (plan 2026-10-29T223023-PLAN--remove-board, F2).
+  it('sidecar, fragments, and catalog declare the same substitutions: 47 plus the agent-mode sections', () => {
     const points = sidecarPoints();
     const features = loadFeatureMatrix();
     const plugins = loadPluginMatrix();

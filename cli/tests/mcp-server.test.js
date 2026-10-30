@@ -293,7 +293,8 @@ describe('F8 — every action answers over the wire', () => {
     // 21 -> 22 (2026-09-20T222814 project-backlog-skill-lifecycle-and-rename, F3):
     // add--backlog declares `skill: add--doc-schemas`, because it composes records
     // against the backlog.md reference that skill owns.
-    expect(payload(frames[0]).dependents.length).toBe(22);
+    // 22 -> 21: add--backlog, one of the dependents, was removed (0075B, F5).
+    expect(payload(frames[0]).dependents.length).toBe(21);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {

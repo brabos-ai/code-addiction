@@ -21,17 +21,16 @@ array has a length.
 
 [//]: # (codeadd-inventory:start)
 {"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-setup","add-ux","add-wiki"]}
-{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--backlog","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--settings","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
+{"skills":["add--agent-interaction","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--notion","add--notion-setup","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--settings","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
-{"scripts":["backlog-board.cjs","backlog-cli.cjs","backlog-commit.cjs","backlog-core.cjs","backlog-git.cjs","backlog-id.cjs","backlog-storage.cjs","build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
-{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","board","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+{"scripts":["build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","feature-id.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
+{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
 ### Product Layer — `mcp/`
 
 **A product-layer directory at the repository ROOT.** It holds the knowledge-graph MCP server: the
-corpus registry, the two parsers, the query engine and the stdio transport. `board/` is the second —
-see below.
+corpus registry, the two parsers, the query engine and the stdio transport.
 
 ```
 ⛔ THE ROOT-MEANS-INTERNAL RULE DOES NOT REACH IT:
@@ -45,37 +44,6 @@ artefact the build distributes to providers. It takes **no dependency at all**, 
 because `--corpus=artefacts` runs from the repository root where the CLI's `node_modules` is off the
 resolution path. Its files are `.mjs` for the same reason — the root is CommonJS and `cli/` is ESM,
 and one source has to read the same way in both.
-
-### Product Layer — `board/`
-
-**The second root product directory: a read-only board over the project's `board` branch** — kanban,
-priority list and ticket detail, shaped to grow into activity management. The board is NOT in the code
-checkout: it lives on an orphan `board` branch, read through one clone per project at
-`~/.codeadd/<project-key>/board/` (`CODEADD_BOARD_DIR` overrides the path). `.codeadd/board.json` is the one
-file tracked under `.codeadd/`: it says where that branch is. `docs/backlog.jsonl` is never read in the
-checkout. It is `[product]` for the reason
-`mcp/` is: it is meant for users. It is NOT distributed yet — no release asset carries it, and the
-distribution half lands with subtopic 004 of the backlog-board set.
-
-```
-⛔ ONLY `board/server.mjs` IS ZERO-DEPENDENCY — THE REST OF `board/` IS NOT:
-  ⛔ DO NOT: Add an import to `server.mjs` beyond Node built-ins and the generated runtime modules
-             (`runtime/backlog-core.cjs`, `backlog-storage.cjs`, `backlog-board.cjs`,
-             `backlog-git.cjs`), or read `docs/backlog.jsonl` in it — the board module resolves and
-             syncs the clone, and the core is the one reader of the format
-  ⛔ DO NOT: Treat `board/src/` like `mcp/` — it is a TypeScript/React/Vite app with its own
-             `package.json`, and building it needs `npm ci`
-  ✅ DO: Keep `server.mjs` on Node built-ins, bound to 127.0.0.1; ship `server.mjs` + `dist/` +
-         `runtime/` (generated by `scripts/build-board-runtime.js`)
-```
-
-Unlike `mcp/`, nothing copies it into `cli/src/`: the npm package and the main release ZIP do not
-carry it.
-
-`npm run board` in this repository passes `--layers` to enable the Layer filter and
-`product` / `internal` / `both` chips in board cards and mobile list rows. The distributed server
-starts without that flag, so these controls and chips are absent. Labels remain in the API and
-ticket detail in both modes.
 
 ### Internal Layer — `workbench/`
 
@@ -117,7 +85,6 @@ as `/<name>` and declares the next with `handoff:`.
 |---------|---------|-------------|
 | `add-framework--sync` | Regenerates ecosystem map, README, web docs | `README.md`, `web/`, SVGs |
 | `add-framework--release` | Tags, GitHub releases, CLI publish | Git tags, `cli/` |
-| `add-framework--backlog` | Records what to do next — add, update, comment, reprioritise or close a ticket, committed and pushed to the `board` branch through the native publication entry (`backlog-commit.cjs`) | the `board` branch |
 
 ## Pipeline
 
@@ -149,11 +116,8 @@ nothing. It ships to no user, and `release.yml` does not run it.
 **`npm run setup` is the install.** A fresh clone carries `workbench/`, `.claude/settings.json` and
 `.codex/config.toml` (the two authored provider configs) and nothing else under the provider
 directories — every command, skill and agent the pipeline runs
-on is build output, so until it is run there is no pipeline to run. It runs `build:workbench`, then
-`build:board`. The workbench half takes no dependency and needs no `npm install` first; the board half
-runs `npm ci` and a Vite build inside `board/`, so the board is there by default — `npm run board`
-opens it on this repository's backlog. The workbench builds FIRST, so a board failure (offline, an npm
-error) still leaves the pipeline installed; `npm run build:board` retries the second half alone.
+on is build output, so until it is run there is no pipeline to run. It runs `build:workbench`, which takes no
+dependency and needs no `npm install` first.
 `setup` does NOT run the product build, which compiles 728 files this repository's own pipeline
 never reads.
 
@@ -184,11 +148,9 @@ Key files:
 | `scripts/graph.js` | Queries the artefact graph. `add-artefact-graph` owns the verbs and which interface implements each — this row deliberately names none, because a partial list here is what drifted before |
 | `mcp/` | The knowledge-graph MCP server — one binary over two corpora, selected by `--corpus`. `scripts/graph.js` stays the shell-out surface; the two read one emitted sidecar and `cli/tests/mcp-engine.test.js` asserts they answer identically |
 | `scripts/run-tests.js` | Owns supported test dispatch: framework default, individual suites, all, watch and report export; its header defines execution policy |
-| `scripts/board-files-guard.cjs` | CI step. Fails when `.codeadd/board.json` and a board file (`docs/backlog.jsonl`, `docs/backlog.definitions.json`) are both tracked, i.e. the board came back next to its config. Its header owns usage and exit codes |
 | `scripts/migrations/` | Internal one-time migrations, run by hand in a target project. Never shipped: not under `framwork/`, not in the npm package or the release ZIP, not in `provider-map.json`, the ecosystem map or the inventory |
 | `scripts/test-loss-guard.cjs` | Fails when a test name on the branch is gone without a `Test-Removed:` commit trailer. Build STEP 9 and done 2.2 run it; its header owns usage and exit codes |
 | `cli/` | npm package (`npx code-addiction`) that installs the framework |
-| `board/` | The read-only board app. `server.mjs` (zero-dependency, 127.0.0.1) serves `dist/`, `/api/board` and `/api/changes`, importing the generated runtime modules under `runtime/` (the core and the board module among them); it reads the board clone, never the checkout. `src/` is TypeScript/React. `npm run board` opens it here |
 | `framwork/.codeadd/scripts/*` | Shipped verbatim as native `.cjs` entries and cores. Each documents its own usage and exit codes in its header |
 
 ### Build-emitted sidecars
@@ -221,7 +183,6 @@ Optional features inject content into commands **post-install**, so they can be 
 | `tdd-pipeline` | enabled | add-plan, add-build, add-review, add-hotfix |
 | `qa-pipeline` | disabled | add-plan, add-build, add-review |
 | `docs-pruning` | disabled | add-done |
-| `board` | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix |
 | `agent-mode` | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki |
 
 ## Plugin System

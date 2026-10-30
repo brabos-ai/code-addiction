@@ -5,8 +5,11 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 test('root command contract includes every individual and group route', () => {
   const scripts = JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).scripts;
-  const selections = { test: 'framework', 'test:framework': 'framework', 'test:cli': 'cli', 'test:scripts': 'scripts', 'test:package': 'package', 'test:board': 'board', 'test:board:e2e': 'board-e2e', 'test:all': 'all' };
+  const selections = { test: 'framework', 'test:framework': 'framework', 'test:cli': 'cli', 'test:scripts': 'scripts', 'test:package': 'package', 'test:all': 'all' };
   for (const [name, suite] of Object.entries(selections)) assert.equal(scripts[name], `node scripts/run-tests.js ${suite}`);
+  // 0075B F11: the board app has no script, and setup is the workbench build alone.
+  for (const name of ['test:board', 'test:board:e2e', 'build:board', 'preboard', 'board']) assert.equal(scripts[name], undefined, name);
+  assert.equal(scripts.setup, 'node scripts/build-workbench.js');
 });
 test('active guidance is environment-agnostic and individual CLI filters use their scoped command', () => {
   const product = fs.readFileSync(path.join(root, 'workbench/skills/add-framework-product-layer/SKILL.md'), 'utf8');

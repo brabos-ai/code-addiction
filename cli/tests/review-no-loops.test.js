@@ -383,7 +383,6 @@ describe('L3 the review command is gone', () => {
     for (const cmd of [
       'add-framework--plan', 'add-framework--build', 'add-framework--brainstorm',
       'add-framework--sync', 'add-framework--release', 'add-framework--done',
-      'add-framework--backlog',
     ]) {
       expect(text, cmd).toMatch(new RegExp(`^\\|\\s*\`${cmd}\``, 'm'));
     }

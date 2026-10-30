@@ -188,7 +188,7 @@ IF type=cli AND THE SUITE HAS NOT BEEN RUN THROUGH `npm test`:
 ```
 
 **Root `npm test` goes through `scripts/run-tests.js`.** It selects the framework gate: CLI,
-scripts and package smoke. `npm run test:all` adds board typecheck/unit and built-app E2E.
+scripts and package smoke. `npm run test:all` runs the same three stages.
 The runner owns execution, dependencies and isolation; use ordinary npm commands and read its
 result. Its header owns transport mechanics. Generated output and sidecars must leave the
 developer's checkout unchanged.

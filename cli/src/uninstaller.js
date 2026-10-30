@@ -37,8 +37,8 @@ function walkDir(dir, cwd) {
     for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
       const full = path.join(d, entry.name);
       if (entry.isDirectory()) {
-        // A git clone under an ADD directory (the board clones in ~/.codeadd) is the
-        // user's data, with commits that may not be pushed: never listed, never removed.
+        // A git clone under an ADD directory (the clones a retired board feature left in ~/.codeadd)
+        // is the user's data, with commits that may not be pushed: never listed, never removed.
         if (fs.existsSync(path.join(full, '.git'))) continue;
         walk(full);
       } else {
@@ -52,7 +52,8 @@ function walkDir(dir, cwd) {
 
 /**
  * Is this path project data that lives under .codeadd/ but is not an ADD file?
- * board.json, settings.json and the wiki are committed by the project; a directory-based
+ * settings.json and the wiki are committed by the project, and so is the board.json a retired
+ * board feature left behind; a directory-based
  * removal has no manifest to tell it so, and must never list them.
  * @param {string} rel path relative to cwd, forward slashes
  * @returns {boolean}

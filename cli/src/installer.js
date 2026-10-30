@@ -173,8 +173,8 @@ const COMMITTED_CODEADD_ENTRIES = new Set(['board.json', 'settings.json', 'wiki'
 
 /**
  * Does .codeadd/ hold an installation? A fresh clone of a project carries up to three
- * committed entries there — board.json, settings.json and wiki/ — and none of them is
- * something an install would overwrite. Anything else (the manifest, the commands, the
+ * committed entries there — settings.json, wiki/ and, in a project that once had the retired
+ * board feature, board.json — and none of them is something an install would overwrite. Anything else (the manifest, the commands, the
  * skills) means an installation is already in place.
  * @param {string} dir
  * @returns {boolean}
@@ -205,7 +205,7 @@ function describeInstall(targetDir, manifest) {
 
 const NO_TTY_PROVIDERS =
   'install needs --providers when there is no terminal to ask: --providers <a,b|none>, where "none" installs the core only. ' +
-  'Example: codeadd install --providers claude,codex --enable-feature board';
+  'Example: codeadd install --providers claude,codex --enable-feature qa-pipeline';
 
 /**
  * Everything install can refuse WITHOUT a person to ask, before anything is

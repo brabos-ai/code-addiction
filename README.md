@@ -83,42 +83,6 @@ Plugins integrate external MCP tools into ADD commands — extending discovery, 
 
 See [code.brabos.ai/docs#plugins](https://code.brabos.ai/docs#plugins) for the full plugin catalog with install prerequisites and step-by-step setup.
 
-## Board
-
-The `board` feature keeps a project's backlog on its own `board` branch, so a ticket write never touches your code branches. It is disabled by default.
-
-```bash
-npx codeadd features enable board
-```
-
-**Migrate a project that still keeps `docs/backlog.jsonl` in the code.** Needs codeadd 1.5.0 or later installed in the project (`npx codeadd update`). Download [`scripts/migrations/migrate-board.cjs`](scripts/migrations/migrate-board.cjs) from this repository and run it at the project root, on any branch:
-
-```bash
-node migrate-board.cjs
-```
-
-It uses the scripts the project already has in `.codeadd/scripts/` (`MODULES=` says which folder), creates the `board` branch, and **stages** the code side without committing: commit those staged changes yourself. Until that commit is merged, write nothing to the old `docs/backlog.jsonl`; run the script again right before the merge (`--reimport` applies what was written meanwhile).
-
-- `ERROR=board-modules-missing`: the project has no `.codeadd/scripts/` or its copy is older than 1.5.0. Run `npx codeadd update` and try again.
-- `IGNORE_WARNING=board-json-ignored`: a rule the script does not recognise (a nested `.gitignore`, `.git/info/exclude`) still ignores `.codeadd/board.json`. `IGNORE_RULE=` names it. Un-ignore the file.
-
-**Release step (optional).** With it on, a merged ticket waits in `awaiting-release` instead of going straight to `done`.
-
-```bash
-node .codeadd/scripts/backlog-commit.cjs release-flow on     # turn it on (off turns it back off)
-node .codeadd/scripts/backlog-commit.cjs release v1.2.0      # at release time: close every waiting ticket with the version
-```
-
-**Open the board.** The board screen is not distributed yet (it is the next piece of work on the backlog). Today you run it from a clone of this repository:
-
-```bash
-git clone https://github.com/brabos-ai/code-addiction && cd code-addiction
-npm run setup
-node board/server.mjs --root /path/to/your/project
-```
-
-It prints `BOARD_URL=` and opens the browser (`--no-open` skips that). It only reads.
-
 ## How it works
 
 Code Addiction turns complex development into a guided, repeatable flow. Instead of figuring out *how* to build, you just follow the next command. The AI does the heavy lifting — you stay in control.
@@ -205,13 +169,11 @@ Commands and skills install to every provider you select. Subagents install to C
 - `AGENTS.md`: project instructions read by AI coding assistants (replaces `CLAUDE.md` at the repo root)
 - `cli/`: installer CLI published as `codeadd`
 - `mcp/`: the knowledge-graph MCP server (two corpora, selected by `--corpus`), shipped in the npm package
-- `board/`: the read-only backlog board over the project's `board` branch (read through one clone per project) — a React/TypeScript app plus a zero-dependency Node server; built by `npm run build:board`, run by `npm run board`. Not carried by the npm package or the main release ZIP
 - `framwork/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
 - `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repo root, gitignored)
 - `docs/deliveries/`: durable delivery history — closed-out plan archives
 - `docs/delivered.jsonl`: the delivery index every close-out appends to
-- `.codeadd/board.json`: the one tracked file under `.codeadd/`; it says where the `board` branch (the backlog ticket ledger the board reads) lives
 
 ## Compatibility
 

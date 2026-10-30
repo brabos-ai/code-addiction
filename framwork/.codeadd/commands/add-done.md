@@ -1034,18 +1034,10 @@ LOCAL git write on both routes** — the PR route calls its `--commit-push` and
 local git write: it asks the forge to merge, and touches no ref here. That is
 why it is the one call this command makes directly.
 
-<!-- slot:board.ticket-close fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-close -->
-<!-- /feature:board:ticket-close -->
-<!-- /slot:board.ticket-close -->
 
 **After merge, carry this into STEP add-done.complete — do NOT print it here:**
 - Wiki result from STEP add-done.wiki — pages touched, explicit no-op, or the "wiki not found" suggestion.
 - **Which evidence the gate accepted, and why** — the PR's checks on a named SHA, or the local route with the reason no PR was available.
-<!-- slot:board.ticket-carry fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-carry -->
-<!-- /feature:board:ticket-carry -->
-<!-- /slot:board.ticket-carry -->
 
 **Resolve the next activity here, state it at STEP add-done.complete:**
 READ skill `add--ecosystem` Main Flows section. Resolve whether the user stated a next goal for this work FIRST — a merged branch carries none of its own, and branch type alone says only what shipped. Then use the branch type and epic status. ⛔ DO NOT print it at this step — the report comes first and STEP add-done.complete owns it.
@@ -1082,10 +1074,6 @@ Then, after the seven blocks, state:
 - **The deferred cleanup**, when `--cleanup` printed `WORKTREE_CLEANUP=DEFERRED`: the worktree and the local branch were kept, and the commands from its `HINT=` line are what is left to run.
 - **Which route STEP add-done.pr-route and STEP add-done.local-route chose**, and on a Resume run, the STEPs it skipped
   and the refusal reason `gh pr view --json mergeStateStatus,mergeable` reports.
-<!-- slot:board.ticket-report fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-report -->
-<!-- /feature:board:ticket-report -->
-<!-- /slot:board.ticket-report -->
 - The next activity, from the `add--ecosystem` Main Flows section, chosen for the current branch type
   and epic status.
 
@@ -1101,7 +1089,7 @@ Then, after the seven blocks, state:
 | Document | Role in the next activity |
 |---|---|
 | `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
-| `docs/features/<id>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| `docs/features/<id>-<slug>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---

@@ -14,6 +14,7 @@ description: Guided onboarding — diagnoses the project, offers each feature an
 - skill: add--dev-environment-setup
 - skill: add--ecosystem
 - skill: add--final-report
+- skill: add--notion-setup
 - skill: add--settings
 -->
 
@@ -29,9 +30,9 @@ Thin orchestrator for a fresh or updated install. It diagnoses the project, offe
 ```
 STEP add-setup.diagnose: Diagnose (read-only)   → status.cjs + manifest + greenfield + frontend + gitnexus --version + the setup record
 STEP add-setup.greenfield: Greenfield stop      → GREENFIELD=yes: no batch, next command is /add-brainstorm
-STEP add-setup.batch: One batch, one wait       → diagnosis + one numbered item per feature, plugin, qa-setup, wiki, version-record → WAIT
+STEP add-setup.batch: One batch, one wait       → diagnosis + one numbered item per feature, plugin, qa-setup, wiki, version-record, notion → WAIT
 STEP add-setup.answers: Read the reply          → per-item answers → print the `## Setup answers` block
-STEP add-setup.execute: Run accepted items      → installs → one codeadd modify → gitnexus setup/analyze → QA setup → MCP checkpoint → wiki
+STEP add-setup.execute: Run accepted items      → installs → one codeadd modify → Notion setup → gitnexus setup/analyze → QA setup → MCP checkpoint → wiki
 STEP add-setup.record: Write the record         → `setup` section of .codeadd/settings.json, at the end of EVERY run
 STEP add-setup.close: Close                     → final report + one next command
 ```
@@ -84,7 +85,7 @@ Collect these signals. None of them changes anything.
 
 ### Classify every item
 
-The items are every row of `Features`, every row of `Plugins`, and `qa-setup`, `wiki` and `version-record`. Put each in exactly one group:
+The items are every row of `Features`, every row of `Plugins`, and `qa-setup`, `wiki`, `version-record` and `notion`. `notion` has no manifest key, so it is only ever **new** or **decided**, never **on** or **drift**. Put each in exactly one group:
 
 | Group | When | Does |
 |---|---|---|
@@ -94,7 +95,7 @@ The items are every row of `Features`, every row of `Plugins`, and `qa-setup`, `
 | **drift** | `offered` says `enabled` or `already-on` but the item is now off in the manifest (a fresh clone, or a manual disable) | Asked again, showing both states |
 | **removed** | An `offered` key is no longer in the tables or the item list | One note line: "no longer offered by this version". Not asked. The key stays |
 
-Three exceptions to the table: `tdd-pipeline` is on by default, but on a first run (name absent from `offered`) it is still asked, as keep on or turn off. `qa-setup` with `SETUP_QA_STALE:yes` counts as **drift**, so a stale QA setup is offered again as a re-run of `/add-qa-setup` only. `board` recorded `unavailable` counts as **drift** once `.codeadd/board.json` exists. For a `board` that is unavailable now, the batch still prints one note line saying a board cannot be created from the product today and the feature stays off.
+Three exceptions to the table: `tdd-pipeline` is on by default, but on a first run (name absent from `offered`) it is still asked, as keep on or turn off. `qa-setup` with `SETUP_QA_STALE:yes` counts as **drift**, so a stale QA setup is offered again as a re-run of `/add-qa-setup` only. A legacy value that `{{skill:add--settings/SKILL.md}}` no longer writes is treated as new, so the item is asked again.
 
 Newness is the item NAME absent from `offered`. Never compare `framework-version` to decide it. A release that adds no item asks nothing. A `declined` item is never re-asked unless the user names it to revisit in the reply.
 
@@ -134,8 +135,8 @@ If nothing is new, drifted or named to revisit, say the project is fully set up 
 | `playwright` and `qa-setup` | yes with `qa-pipeline`. Offered only when `qa-pipeline` is accepted or already on | `playwright` adds live driving to the judge the feature supplies. `SETUP_QA_STALE:yes` re-runs `qa-setup` only |
 | `gitnexus` | yes when `gitnexus --version` fails and the repo has code. Not offered on a repo with no code: nothing to index | Install: `npm install -g gitnexus`, then `gitnexus setup` and `gitnexus analyze` from the repo root, then the plugin flag |
 | `design` | yes when a frontend is present | When ui-ux-pro-max is not installed, show `npm install -g ui-ux-pro-max-cli` then `uipro init --ai <provider>`. Python 3 is a soft requirement. The CLI's own check stays the authority |
-| `board` | yes only when `.codeadd/board.json` exists. Without it the item is `unavailable`, not asked, and the feature stays off | A board cannot be created from the product today. Tell the user to ask the framework maintainer |
 | `agent-mode` | no | Asked as "will a bot drive the commands headless?" |
+| `notion` | yes when `agent-mode` is accepted or already on; else no. Always offered: every provider has MCP today, and this command reads no provider capability | "agents track cards in Notion and follow the workflow rules kept on one page". Needs the Notion MCP configured in the provider; the setup checks it and prints the links when it does not answer |
 | `tdd-pipeline` | yes (keep on) | Asked as keep on or turn off |
 | `docs-pruning` | no | It deletes feature scaffolding, so it is the user's call |
 | `wiki` | yes when `WIKI:absent`, and it runs last | When `WIKI_STALE_COUNT` is above zero, add a report line recommending `/add-wiki update`; it is not run |
@@ -143,7 +144,7 @@ If nothing is new, drifted or named to revisit, say the project is fully set up 
 
 ### Values the sub-commands would ask
 
-For accepted `qa-setup` only, the batch also asks the values `{{cmd:add-qa-setup}}` would otherwise ask: `baseUrl` (recommend it from the project's dev script, never a production URL), `bootHint`, `authSeed`, and the migration decision only when that command's migration scan list finds existing tooling (apply its list by reference, do not copy it). `{{cmd:add-wiki}}` needs nothing from the batch.
+For accepted `qa-setup` only, the batch also asks the values `{{cmd:add-qa-setup}}` would otherwise ask: `baseUrl` (recommend it from the project's dev script, never a production URL), `bootHint`, `authSeed`, and the migration decision only when that command's migration scan list finds existing tooling (apply its list by reference, do not copy it). For accepted `notion`, the batch also asks the values `{{skill:add--notion-setup/SKILL.md}}` would otherwise ask: the parent page (no default), the database name (default: the repository folder name), the columns (recommend the skill's eight defaults) and the labels (no default). `{{cmd:add-wiki}}` needs nothing from the batch.
 
 ### The reply
 
@@ -155,7 +156,7 @@ The reply may be per item (`1 yes, 2 no`), `all recommended` (accepts exactly th
 
 Map every answer to its item. An item the reply does not answer stays undecided: nothing runs, its `offered` value does not move and no `log` entry is written. Report it.
 
-Print the `## Setup answers` block before executing: one line per item (accepted, declined, unavailable, already on) and the sub-command values. `{{cmd:add-qa-setup}}` and `{{cmd:add-wiki}}` read this block from the session and ask nothing it covers.
+Print the `## Setup answers` block before executing: one line per item (accepted, declined, already on) and the sub-command values. `{{skill:add--notion-setup/SKILL.md}}`, `{{cmd:add-qa-setup}}` and `{{cmd:add-wiki}}` read this block from the session and ask nothing it covers.
 
 Only accepted items run. When none is accepted, go to STEP add-setup.record.
 
@@ -167,10 +168,11 @@ Enabling a feature or plugin rewrites the installed command files, so the order 
 
 1. **Install the external tools** of the accepted items (gitnexus, ui-ux-pro-max). The per-item yes is the install confirmation, because the batch showed the exact commands. Follow `{{skill:add--dev-environment-setup/SKILL.md}}`: detect, run only non-interactive commands without elevated rights, verify each tool with its trivial check (`gitnexus --version`). A command that needs `sudo` or an interactive installer is shown for the user to run; WAIT, then verify.
 2. **One `codeadd modify` call** carrying only the accepted items: `codeadd modify --enable-feature <a,b> --enable-plugin <c,d>`. Add `--disable-feature tdd-pipeline` only when the user turned it off, and `--global` when only the home manifest exists. When `codeadd` is not on the PATH, run `npx --yes codeadd` with the same arguments. Then run `codeadd features list` and `codeadd plugins list` and check they show every accepted item enabled, next to the items that were already on. Any mismatch is a failure.
-3. **`gitnexus setup`** when gitnexus is accepted and not yet wired, then **`gitnexus analyze`** from the repo root. If `gitnexus setup` prompts, show it for the user to run, then verify.
-4. **Re-read the installed command file from disk** (never a copy read before step 2) and run `{{cmd:add-qa-setup}}` inline, when `qa-setup` is accepted. Inline follows the same-session rule of `{{skill:add--delivery-mode/SKILL.md}}`: the same agent, the same session, read the command and run it from its first step, with the `## Setup answers` block in the session.
-5. **MCP checkpoint.** When gitnexus is enabled, check that its MCP server answers in this session (ask it to list the indexed repos). A newly wired server usually loads only in a new session. If it does not answer, STOP after step 4: tell the user to restart the session or reload MCP and run `/add-setup` again, then go to STEP add-setup.record. The second run proposes only the wiki.
-6. **Wiki last.** Re-read the installed command file again and run `{{cmd:add-wiki}}` inline, when `wiki` is accepted, so the wiki is generated with the graph slots filled.
+3. **Notion setup** when `notion` is accepted: load `{{skill:add--notion-setup/SKILL.md}}` and run it with the `## Setup answers` block in the session. Its MCP stop does not stop this run: record `notion` as `failed`, go on with the other items, and carry the skill's stop output (the per-provider MCP links and "configure the Notion MCP, restart the session, run again") into the report with the next action `/add-setup` with `revisit notion`.
+4. **`gitnexus setup`** when gitnexus is accepted and not yet wired, then **`gitnexus analyze`** from the repo root. If `gitnexus setup` prompts, show it for the user to run, then verify.
+5. **Re-read the installed command file from disk** (never a copy read before step 2) and run `{{cmd:add-qa-setup}}` inline, when `qa-setup` is accepted. Inline follows the same-session rule of `{{skill:add--delivery-mode/SKILL.md}}`: the same agent, the same session, read the command and run it from its first step, with the `## Setup answers` block in the session.
+6. **MCP checkpoint.** When gitnexus is enabled, check that its MCP server answers in this session (ask it to list the indexed repos). A newly wired server usually loads only in a new session. If it does not answer, STOP after step 5: tell the user to restart the session or reload MCP and run `/add-setup` again, then go to STEP add-setup.record. The second run proposes only the wiki.
+7. **Wiki last.** Re-read the installed command file again and run `{{cmd:add-wiki}}` inline, when `wiki` is accepted, so the wiki is generated with the graph slots filled.
 
 ---
 

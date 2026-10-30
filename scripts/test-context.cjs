@@ -1,7 +1,7 @@
 /** Repository test execution policy. This module is not shipped in CLI runtime. */
 const fs = require('node:fs');
 const RECEIPT = '/run/codeadd-tests/context.json';
-const GROUPS = { framework: ['cli', 'scripts', 'package'], all: ['cli', 'scripts', 'package', 'board', 'board-e2e'] };
+const GROUPS = { framework: ['cli', 'scripts', 'package'], all: ['cli', 'scripts', 'package'] };
 const LEAVES = GROUPS.all;
 function canonicalSuite(value) { return ({ vitest: 'cli', bats: 'scripts' })[value] || value; }
 function leavesFor(selection) {

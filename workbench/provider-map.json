@@ -67,9 +67,6 @@
     },
     "add-framework--release": {
       "description": "Release manager — tags, GitHub releases and the CLI publish, merging main into production."
-    },
-    "add-framework--backlog": {
-      "description": "Records what to do next — adds, updates, reprioritises or closes a backlog ticket, then commits and pushes it to the board branch through the native publication entry (backlog-commit.cjs)."
     }
   },
   "skills": {

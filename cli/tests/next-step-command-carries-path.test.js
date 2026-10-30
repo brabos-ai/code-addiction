@@ -118,7 +118,7 @@ describe('L1.6 -- build closes on the done line and still never hands off', () =
 });
 
 describe('L1.7 -- commands that close without a next stage print no continuation line', () => {
-  it.each(['add-framework--backlog.md', 'add-framework--release.md', 'add-framework--sync.md'])(
+  it.each(['add-framework--release.md', 'add-framework--sync.md'])(
     '%s',
     (file) => {
       const text = read(`commands/${file}`);

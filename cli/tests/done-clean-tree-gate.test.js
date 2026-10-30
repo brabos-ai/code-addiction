@@ -23,11 +23,3 @@ describe('add-framework--done STEP 2.3 clean-tree gate', () => {
     expect(skill).not.toContain('The working tree must be clean.');
   });
 });
-
-describe('phases.md in-review', () => {
-  it('does not claim the board checks for an open PR', () => {
-    const row = read('framwork', '.codeadd', 'skills', 'add--backlog', 'references', 'phases.md').match(/^\| `in-review` \|[^\n]*/m)[0];
-    expect(row).not.toContain('a pull request is open');
-    expect(row).toContain('does not check');
-  });
-});

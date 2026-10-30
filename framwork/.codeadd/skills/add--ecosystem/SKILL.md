@@ -11,7 +11,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--architecture-discovery
 - mention: add--backend-architecture
 - mention: add--backend-development
-- mention: add--backlog
 - mention: add--code-review
 - mention: add--commit
 - mention: add--cross-sf-consistency
@@ -32,6 +31,8 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--id-convention
 - mention: add--investigation
 - mention: add--knowledge-discovery
+- mention: add--notion
+- mention: add--notion-setup
 - mention: add--plan-review
 - mention: add--review-discipline
 - mention: add--qa
@@ -96,11 +97,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: qa-evidence.cjs
 - mention: status.cjs
 - mention: hotfix-gates.cjs
-- mention: backlog-cli.cjs
-- mention: backlog-id.cjs
-- mention: backlog-git.cjs
-- mention: backlog-board.cjs
-- mention: backlog-commit.cjs
+- mention: feature-id.cjs
 - mention: migrate-context-files.cjs
 - mention: init.cjs
 - mention: qa-preflight.cjs
@@ -133,7 +130,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add-plan | Technical Planning Orchestrator. OWNS the design contract: gated STEP add-plan.ux-design UX pipeline (@ux-flow-agent → @ux-layout-agent → @ux-agent critique → consolidated `design.md`, provenance-hash idempotency). QA-Spec subagent (STEP qa-pipeline.qa-spec) when qa-pipeline feature enabled. STEP add-plan.review dispatches `@plan-reviewer-agent` before completion. **STEP add-plan.cross-sf-review (epic only)** owns cross-SF **completeness of one plan** — shared-resource centralization, fallback/degradation, worker/DI registration — fixed **in place**; it does NOT own divergence between subfeature plans (that is `@consistency-agent`) and **consumes** that agent's API-contract / data-schema findings instead of re-deriving them | add--backend-development, add--cross-sf-consistency, add--database-development, add--delivery-mode, add--doc-schemas, add--feature-discovery, add--final-report, add--frontend-development, add--id-convention, add--knowledge-discovery, add--plan-review, add--review-discipline, add--subagent-driven-development, add--tasks-checklist, add--ux-design |
 | add-pull-request | Create or update PR for current branch (idempotent). On feature branches, generates the permanent feature changelog before opening the PR | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--id-convention |
 | add-qa-setup | End-to-end-verified QA bootstrap — installs the runner, generates `qa-project`, scaffolds config/screens, and materializes the dedicated `.gitignore` block that keeps working runs ephemeral. Identity is the shipped `shape` hash | add--delivery-mode, add--dev-environment-setup, add--doc-schemas, add--final-report, add--qa, add--qa-migration, add--settings, add--setup-contract, add--subagent-driven-development |
-| add-setup | Guided onboarding — diagnoses the project, offers each feature and plugin with its benefit in one batch, and runs the setup pieces for the accepted items | add--delivery-mode, add--dev-environment-setup, add--ecosystem, add--final-report, add--settings |
+| add-setup | Guided onboarding — diagnoses the project, offers each feature and plugin with its benefit in one batch, and runs the setup pieces for the accepted items | add--delivery-mode, add--dev-environment-setup, add--ecosystem, add--final-report, add--notion-setup, add--settings |
 | add-review | Feature Review Specialist — read-only on code. Code review + spec-compliance audit + the absorbed QA validation (preflight / evidence / judgement), which arrives with the `qa-pipeline` feature and then self-gates on the `/add-qa-setup` receipt — two gates: the feature decides whether the steps exist, the receipt decides whether they can run. Dispatches `@reviewer-agent` in `MODE: owasp` alongside the frontend/backend reviewer(s), conditional on the diff touching a sensitive area (auth, payment, upload, input handling, session/token). Skips the spec audit and that OWASP pass when the build's Final review (`passed` or `ruled N`, with its `Final review head:` line) still covers the tree — no source change since that commit. Consolidates every finding class into one `## Fix Routing` table and writes a versioned `review-NNN.md`; `/add-build` applies the routes and appends the resolution annex. Optional — `/add-done` accepts the build's own final review; the most recent verdict wins | add--commit, add--delivery-mode, add--doc-schemas, add--final-report, add--investigation, add--knowledge-discovery, add--subagent-driven-development, add--tasks-checklist |
 | add-ux | Quick UX - loads add--ux-design and applies to user's free-form instruction | add--ux-design |
 | add-wiki | Map project architecture, classify apps, generate portable project wiki (`.codeadd/wiki/`) with hub, spine, and per-domain pages. `/add-wiki update` runs incremental maintenance | add--agents-md-style, add--architecture-discovery, add--delivery-mode, add--doc-schemas, add--ecosystem, add--final-report, add--subagent-driven-development, add--wiki-maintenance |
@@ -147,7 +144,6 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--architecture-discovery | Map architecture, detect patterns, dispatch domain analyzers for the project wiki | add-brainstorm, add-wiki |
 | add--backend-architecture | Backend architecture consultant: Simple Modular, Vertical Slice, Clean Architecture, Combined Strategy | add-brainstorm |
 | add--backend-development | Backend architecture: SOLID, Clean Arch, DTOs, Services, Repository — stack-agnostic | add-build, add-plan |
-| add--backlog | Record a ticket on the project backlog, or read, reprioritise, comment on and close what is already there — works mid-flow, inside another command's run | (none) |
 | add--code-review | Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Architecture, SOLID | add-build |
 | add--commit | Knowledge reference for mid-workflow commits: adaptive message logic, type detection, staging rules | add-build, add-pull-request, add-review |
 | add--cross-sf-consistency | Five-dimension rubric, dedupe/precedence rules and finding routes for judging contract consistency across an epic's subfeature plans; loaded by `consistency-agent` | add-build, add-plan |
@@ -169,6 +165,8 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) | add-build, add-done, add-hotfix, add-new, add-plan, add-pull-request |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add-audit, add-diagnose, add-hotfix, add-review |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm | add-brainstorm, add-diagnose, add-hotfix, add-new, add-plan, add-review |
+| add--notion | What an agent does with the project's Notion cards — read the `Como funciona` page first (it wins), find the card by its `tracker:` URL or Slug, move it along the pipeline milestones with a default table where the page has no rule. Instructions only | the agent-mode role files (`product-pm.md`, `chief-engineer.md`) |
+| add--notion-setup | One-time Notion setup with the user — checks the Notion MCP answers, creates the cards database and the `Como funciona` page, links each provider's MCP documentation, prints the two URLs. Instructions only: no script, no sync | add-setup |
 | add--plan-review | Pre-delivery executability rubric for about.md and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` | add-new, add-plan |
 | add--qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, `.codeadd/settings.json` qa section and screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded at the QA merge step `qa-pipeline` adds to /add-review, never by a judge | add-qa-setup, add-review |
 | add--qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints; consumed by /add-qa-setup | add-qa-setup |
@@ -220,7 +218,6 @@ for accepted manual instructions; the route itself remains unchanged.
 | tdd-pipeline | enabled | add-plan, add-build, add-review, add-hotfix | RED-GREEN-REFACTOR discipline + contract-test specs + unit/integration generation | Every change starts from a failing test, so a regression is caught before it ships. |
 | qa-pipeline | disabled | add-plan, add-build, add-review | E2E spec authoring + routed QA correction + the agent QA judgement in add-review | UI changes are checked in a real browser before you merge, so a broken screen is caught in review. |
 | docs-pruning | disabled | add-done | Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written | Keeps the docs folder small by deleting a feature's planning files after it merges. It deletes feature scaffolding, so turn it on only if you do not want those files kept. |
-| board | disabled | add-brainstorm, add-new, add-plan, add-build, add-done, add-hotfix | Backlog board — the pipeline commands read a ticket and move it through the phase statuses. Off by default: the board app is not distributed yet, so a fresh install has neither the board nor a `.codeadd/board.json` | Tickets move through the pipeline phases on their own, so the board shows where the work is. Needs an existing `.codeadd/board.json`. |
 | agent-mode | disabled | add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki | Commands for a bot that drives them headless — every question in one numbered batch with a recommendation, no interactive tool, no continuation offer, a closing that ends on the next command. Off by default: the commands keep their human wording | A bot can run the commands without a person, with every question in one batch. Leave it off if a person types the commands. |
 
 Enable/disable via `codeadd features enable|disable|list <name>` — fragments are injected into the installed commands post-install. The split is canonical in add--qa's *Feature vs plugin* statement and is not restated here: `qa-pipeline` decides whether the QA flow exists at all, and the `playwright` plugin below only adds live driving to a judge the feature already supplied — enabling the plugin does not enable the pipeline.
@@ -260,6 +257,8 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-setup, add-wiki — the commands that load it |
 | add--wiki-maintenance | add-wiki (update mode), add-done (STEP 4.9) |
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
+| add--notion | the agent-mode role files `roles/product-pm.md` and `roles/chief-engineer.md` |
+| add--notion-setup | add-setup (STEP add-setup.execute) |
 | add--investigation | add-diagnose (primary, agent-dispatched mode), add-hotfix (STEP 6.1 escalation, agent-dispatched mode), add-review (STEP 5.1 ambiguous findings), add-audit (STEP 7.1 ambiguous findings) |
 | add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
 | add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
@@ -295,11 +294,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | converge-gates.cjs | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.cjs | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.cjs | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
-| backlog-cli.cjs | add--backlog — the READ entry of the board: it resolves and syncs the board clone through `backlog-board.cjs`, then reads it with the canonical core — the single reader of `docs/backlog.jsonl`, shared with the board app. Reads print `BOARD_DIR` and `SYNC` first, then a seven-field summary (`--full`/`--ids` opt-in); `get <id>` answers the exact detail read. A write mode exits 2 with `ERROR=write-mode` and names `backlog-commit.cjs` |
-| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs under the code root plus the raw backlog text of the board clone (`boardRoot`), anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
-| backlog-commit.cjs | add--backlog — the ONE write route: resolve the board clone, take its lock, fast-forward, write, commit and push the `board` branch, from any branch or worktree, with durable recovery refs on every failed publication. It reports `ROUTE=board` and `BOARD_DIR` |
-| backlog-board.cjs | add--backlog — the one module that knows where the board lives: the resolver (`CODEADD_BOARD_DIR`, then `.codeadd/board.json`), the project key, the clone on first use, the lock and the throttled read sync. Every backlog reader and writer goes through it |
-| backlog-git.cjs | add--backlog — the git primitives the board module and the publication entry compose: clone, fetch, ahead/behind, fast-forward, rebase-once and push of the `board` branch, `git show` at a sha, and the recovery refs |
+| feature-id.cjs | the native global id allocator: counts the immediate `docs/features/[NNNN][L]-*` folders only; calculate refuses at 9999, the public adapters keep minimum-width output |
 | migrate-context-files.cjs | add-brainstorm, add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 
