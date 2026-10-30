@@ -67,7 +67,7 @@ describe('board removed', () => {
     expect(hits.map((f) => path.basename(f))).toEqual([]);
   });
 
-  it.skip('F3: FEATURES has no board key', async () => {
+  it('F2: FEATURES has no board key', async () => {
     const { FEATURES } = await import('../src/features.js');
     expect(Object.keys(FEATURES)).not.toContain('board');
   });
