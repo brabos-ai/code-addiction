@@ -96,9 +96,7 @@ describe('F2 — add--notion', () => {
   it('L1.1 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
     const file = skillPath('add--notion');
     expect(fs.existsSync(file), 'add--notion/SKILL.md exists').toBe(true);
-    expect(read(file)).toMatch(/^---
-name: add--notion
-/);
+    expect(read(file)).toMatch(/^---\nname: add--notion\n/);
     expect(readMap().skills['add--notion']).toEqual({});
   });
 
