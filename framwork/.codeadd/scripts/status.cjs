@@ -16,18 +16,10 @@
  * ID allocation is delegated to the one canonical core.
  *
  * ALLOCATION IS NOT HERE. `next-id <PREFIX>` validates its own named prefixes
- * (F|H|PRD|CHG|B, exit 2 on anything else) then delegates to `backlog-id.cjs`,
- * the same core `next-id.cjs` uses. `cli/tests/backlog-id.test.js` holds the
+ * (F|H|PRD|CHG, exit 2 on anything else) then delegates to `feature-id.cjs`,
+ * the same core `next-id.cjs` uses. `cli/tests/feature-id.test.js` holds the
  * two entries to the same answer; the native suite holds the Node-to-Node
  * agreement. There is one allocator.
- *
- * THE BOARD LINE. The main run prints one `BOARD=<state>` line right after the
- * BRANCH line: ready | none | migration-required | branch-missing |
- * checkout-missing, from backlog-board.cjs. It resolves WITHOUT a sync and it
- * never changes the exit code, whatever the board state — twenty commands and
- * agents run this script and none of them may fail on the board. The
- * `next-id` subcommand resolves with the throttled sync and counts ticket ids
- * in the board clone; in any state but `ready` only feature directories count.
  *
  * GUARDS ARE PRESERVED: git must be on PATH and the cwd must be a git
  * repository, each exiting 1 with the shell's ERROR line. The next-id
@@ -57,14 +49,8 @@ const { spawnSync } = require('node:child_process');
 let idc = null;
 let mainBranchMod = null;
 let branchMetaMod = null;
-let boardMod = null;
 try {
-  boardMod = require('./backlog-board.cjs');
-} catch (e) {
-  boardMod = null;
-}
-try {
-  idc = require('./backlog-id.cjs');
+  idc = require('./feature-id.cjs');
 } catch (e) {
   idc = null;
 }
@@ -79,14 +65,13 @@ try {
   branchMetaMod = null;
 }
 
-const PREFIXES = ['F', 'H', 'PRD', 'CHG', 'B'];
+const PREFIXES = ['F', 'H', 'PRD', 'CHG'];
 const DOCS_FEATURES = path.join('docs', 'features');
 
 /** One human-readable stderr line per canonical-core refusal. */
 const REFUSAL_MESSAGE = {
   'id-exhausted': 'ERROR: ID sequence exhausted (no number above 9999)',
   'features-unreadable': 'ERROR: docs/features is unreadable',
-  'backlog-unreadable': 'ERROR: the board file docs/backlog.jsonl in the board clone is unreadable',
 };
 
 // ─── Small filesystem/git helpers ────────────────────────────────────────────
@@ -484,18 +469,6 @@ function globOutput(files) {
   return result;
 }
 
-/**
- * The board's state for the one BOARD= line. Resolved WITHOUT a sync, and it
- * never fails: any surprise reads as `none`, and the exit code is not touched.
- */
-function boardState(cwd) {
-  try {
-    return boardMod ? boardMod.resolve(cwd).state : 'none';
-  } catch (e) {
-    return 'none';
-  }
-}
-
 // ─── The entry ───────────────────────────────────────────────────────────────
 
 /**
@@ -515,18 +488,16 @@ function main(argv) {
     const prefix = args[3] === undefined ? '' : args[3];
     if (!PREFIXES.includes(prefix)) {
       process.stderr.write(
-        `ERROR:unknown prefix '${prefix}' (valid: F, H, PRD, CHG, B)\n`,
+        `ERROR:unknown prefix '${prefix}' (valid: F, H, PRD, CHG)\n`,
       );
       return 2;
     }
     if (!idc) {
-      process.stderr.write('ERROR:backlog-id.cjs not found or unreadable beside status.cjs\n');
+      process.stderr.write('ERROR:feature-id.cjs not found or unreadable beside status.cjs\n');
       return 1;
     }
-    // Ticket ids are counted in the board clone (synced, throttled); with no
-    // board, only the feature directories count.
-    const boardRoot = boardMod ? boardMod.allocationRoot(cwd, { sync: true }).boardRoot : null;
-    const result = idc.calculate(cwd, prefix, { allowOverflow: true, boardRoot });
+    // No board option: the allocator counts under the code root.
+    const result = idc.calculate(cwd, prefix, { allowOverflow: true });
     if (!result.ok) {
       process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);
       return 1;
@@ -575,7 +546,6 @@ function main(argv) {
   const say = (line) => out.push(line);
 
   say(`BRANCH:${currentBranchName} TYPE:${branchType} MAIN:${mainBranch}`);
-  say(`BOARD=${boardState(cwd)}`);
 
   let phase = 'none';
   let pendingFirstId = '';

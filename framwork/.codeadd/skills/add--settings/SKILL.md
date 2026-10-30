@@ -112,7 +112,7 @@ Written by `/add-setup`, which has no `## Materializes` block, so `setup-shape` 
     "last-run": "2026-10-25",
     "offered": {
       "qa-pipeline": "enabled", "playwright": "enabled", "gitnexus": "declined", "design": "enabled",
-      "board": "declined", "agent-mode": "declined", "tdd-pipeline": "already-on", "docs-pruning": "declined",
+      "agent-mode": "declined", "tdd-pipeline": "already-on", "docs-pruning": "declined",
       "qa-setup": "enabled", "wiki": "enabled", "version-record": "enabled"
     },
     "log": [
@@ -173,7 +173,7 @@ A receipt is the record a command leaves so a later framework release can comput
 
 ## Git
 
-`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/board.json`, `!.codeadd/settings.json` and `!.codeadd/wiki/`. The exception for `wiki/` works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`.
+`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json` and `!.codeadd/wiki/`. The exception for `wiki/` works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`.
 
 ## Related
 

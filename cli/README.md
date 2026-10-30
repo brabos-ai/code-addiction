@@ -9,7 +9,7 @@ CLI installer for [Code Addiction (ADD)](https://github.com/brabos-ai/code-addic
 npx codeadd install
 
 # install with no prompts (bots, CI): --providers is required, "none" installs the core only
-npx codeadd install --providers claude,codex --enable-feature board
+npx codeadd install --providers claude,codex --enable-feature qa-pipeline
 
 # change an installed project with no prompts
 npx codeadd modify --providers claude --force --disable-feature tdd-pipeline
@@ -56,6 +56,8 @@ npx codeadd uninstall --force
 - `validate --repair`: restore missing or modified files
 - `config show`: print current ADD installation config
 - `config show --verbose`: config + release update check
+
+The `board` feature is gone. Migration `0006-retire-board` drops the `board` flag from an installed project on `update` and leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched.
 
 ## Without a terminal
 

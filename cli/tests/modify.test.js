@@ -110,7 +110,7 @@ function seed(keys, { features = {}, plugins = false, scope = 'project', gitigno
     ref: null,
     channel: 'stable',
     scope,
-    features: { 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false, ...features },
+    features: { 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, ...features },
     plugins: {},
     gitignore,
     migrations: ['m1'],

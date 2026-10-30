@@ -9,7 +9,6 @@ import {
   reconcileSlots,
 } from './injection-core.js';
 import { isPluginDetected } from './plugins.js';
-import { initBoardOnEnable } from './board-init.js';
 import { resolveSelected } from './providers.js';
 
 /**
@@ -51,6 +50,9 @@ function setFeatureFlag(cwd, featureName, enabled) {
  * manifest written before the rename still resolves to the user's choice
  * instead of silently falling back to `default`.
  */
+/** Feature keys that no longer exist. A manifest that still carries one loses it on load. */
+const RETIRED_FEATURES = ['board'];
+
 export const FEATURES = {
   'tdd-pipeline': {
     description: 'TDD pipeline (test-first ordering + unit/integration generation)',
@@ -79,17 +81,6 @@ export const FEATURES = {
     description: 'Prune post-merge feature scaffolding (discovery, tasks, epic, reviews) after the delivery index entry is written',
     default: false,
     commands: ['add-done'],
-  },
-  // OFF by default because there is nothing to preserve: no project uses the
-  // board yet, and the board app is not distributed yet (subtopic 004). Enabling it
-  // CREATES the board (initBoardOnEnable runs board-init.cjs: config, the orphan
-  // branch on origin, the clone). EVERY ticket instruction the
-  // pipeline commands carry lives in fragments/board/ -- with this off, none of
-  // them mentions a ticket at all (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses).
-  board: {
-    description: 'Backlog board (pipeline commands read a ticket and move it through the phase statuses)',
-    default: false,
-    commands: ['add-brainstorm', 'add-new', 'add-plan', 'add-build', 'add-done', 'add-hotfix'],
   },
   // OFF by default because it changes how a command TALKS, and a person at a
   // terminal is who the commands were written for. On, the human-only passages
@@ -156,6 +147,14 @@ function resolveFeatureState(featureStates, key, meta) {
 export function normalizeFeatureStates(featureStates) {
   const states = { ...featureStates };
   let changed = false;
+
+  // A retired feature is dropped, not rejected: a manifest written while the feature
+  // existed must still load. Migration 0006-retire-board does the same to the manifest on update.
+  for (const retired of RETIRED_FEATURES) {
+    if (!Object.prototype.hasOwnProperty.call(states, retired)) continue;
+    delete states[retired];
+    changed = true;
+  }
 
   for (const [key, meta] of Object.entries(FEATURES)) {
     for (const alias of meta.aliases ?? []) {
@@ -306,7 +305,6 @@ export async function features(cwd, args, scope = 'project') {
       const nowEnabled = selected.includes(name);
       if (nowEnabled && !wasEnabled) {
         const { modified } = enableFeature(cwd, name);
-        initBoardOnEnable(cwd, name);
         totalModified += modified;
         log.success(`Feature "${name}" enabled. ${modified} file(s) modified.`);
         warnUninjectedProviders(cwd, name);
@@ -347,7 +345,6 @@ export async function features(cwd, args, scope = 'project') {
     const canonical = resolved.key;
     if (action === 'enable') {
       const { modified } = enableFeature(cwd, canonical);
-      initBoardOnEnable(cwd, canonical);
       log.success(`Feature "${canonical}" enabled. ${modified} file(s) modified.`);
       warnUninjectedProviders(cwd, canonical);
     } else {

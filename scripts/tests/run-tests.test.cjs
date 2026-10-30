@@ -165,3 +165,7 @@ test('native Git transport still works through the harness', () => {
   assert.equal(res.status, 0, res.output);
   assert.match(res.stdout, /git version/);
 });
+
+test('0075B F11: run-tests.js rejects board and board-e2e as unknown selections', () => {
+  for (const selection of ['board', 'board-e2e']) assert.throws(() => runner.parseArgs([selection]), undefined, selection);
+});

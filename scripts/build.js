@@ -1806,8 +1806,8 @@ const LINTABLE_EXTENSIONS = new Set([
 const SHIPPED_SUBDIRS = ['scripts', 'fragments', 'templates', 'plugins'];
 
 // Exact allowlist for shipped exceptions the built-ins-only RULE below cannot
-// admit. The native runtime is admitted by the rule, not by path — the backlog
-// modules qualify on their own merits — so this set names only files that must
+// admit. The native runtime is admitted by the rule, not by path — the shared
+// cores qualify on their own merits — so this set names only files that must
 // ship yet cannot pass that rule. Each entry is an unanalysed hole, so adding
 // one is the last resort, never the first; the rationale is recorded inline.
 const SHIPPED_SOURCE_ALLOWLIST = new Set([

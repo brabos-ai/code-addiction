@@ -18,12 +18,11 @@ const base = {
   v: 1, status: 'done', stage: 'add-framework--build', branch: 'feat/x', commits: ['a1b2c3d'],
   tests: { before: { passed: 10, failed: 0, skipped: 0 }, after: { passed: 12, failed: 0, skipped: 0 } },
   pr: { number: 7, url: 'https://github.com/o/r/pull/7' }, ci: 'success',
-  ticket: { id: '0028B', status: 'in-review', sha: 'abc1234', pushed: true },
   next_step: '/add-framework--done docs/plans/x.md', needs_approval: false, reason: null,
 };
 const valid = {
   done: base,
-  stopped: { ...base, status: 'stopped', pr: null, ci: null, ticket: null, tests: null, reason: 'gate 2.2: F3 has no complete line' },
+  stopped: { ...base, status: 'stopped', pr: null, ci: null, tests: null, reason: 'gate 2.2: F3 has no complete line' },
   'needs-approval': { ...base, status: 'needs-approval', needs_approval: true, reason: 'waiting on the push approval' },
   failed: { ...base, status: 'failed', commits: [], branch: null, next_step: null, reason: 'build.js exited 1' },
 };
@@ -33,7 +32,7 @@ test('the schema file parses, is closed, and describes every property', () => {
   // the CLI rejects the 2020-12 meta-schema passed through --json-schema
   assert.ok(!('$schema' in parsed), 'schema must not carry a $schema key');
   assert.equal(parsed.title, 'codeadd result v1');
-  assert.deepEqual(parsed.required, ['v', 'status', 'stage', 'branch', 'commits', 'tests', 'pr', 'ci', 'ticket', 'next_step', 'needs_approval', 'reason']);
+  assert.deepEqual(parsed.required, ['v', 'status', 'stage', 'branch', 'commits', 'tests', 'pr', 'ci', 'next_step', 'needs_approval', 'reason']);
   assert.deepEqual(Object.keys(parsed.properties), parsed.required);
   const walk = (node, where) => {
     if (!node || typeof node !== 'object' || !node.properties) return;
@@ -62,7 +61,7 @@ test('every valid fixture passes, one per status', () => {
 });
 
 test('null stands in for unknown, including the nullable members', () => {
-  const allNull = { ...base, branch: null, tests: { before: null, after: null }, pr: null, ci: null, ticket: { id: '0028B', status: 'doing', sha: null, pushed: false }, next_step: null };
+  const allNull = { ...base, branch: null, tests: { before: null, after: null }, pr: null, ci: null, next_step: null };
   assert.equal(validateResultBlock(text(allNull)).ok, true);
 });
 
@@ -77,8 +76,7 @@ test('invalid fixtures fail with a named reason', () => {
     ['bad tests shape', text({ ...base, tests: { before: { passed: 1 }, after: null } }), /tests\.before: missing key failed/],
     ['non-integer count', text({ ...base, tests: { before: { passed: 1.5, failed: 0, skipped: 0 }, after: null } }), /tests\.before\.passed must be integer/],
     ['bad pr shape', text({ ...base, pr: { number: 7 } }), /pr: missing key url/],
-    ['bad ticket shape', text({ ...base, ticket: { id: '0028B' } }), /ticket: missing key status/],
-    ['ticket extra key', text({ ...base, ticket: { ...base.ticket, extra: 1 } }), /ticket: extra key extra/],
+    ['a block carrying the retired ticket field', text({ ...base, ticket: null }), /extra key ticket/],
     ['commits not strings', text({ ...base, commits: [1] }), /commits\[0\] must be string/],
     ['commits not an array', text({ ...base, commits: 'a1b2c3d' }), /commits must be array/],
     ['needs_approval not boolean', text({ ...base, needs_approval: 'no' }), /needs_approval must be boolean/],
@@ -111,7 +109,7 @@ function stageArtefacts() {
 test('no add-framework--* artefact carries the 0028B output-mode wording', () => {
   const files = stageArtefacts();
   assert.ok(files.length > 0);
-  for (const name of ['brainstorm', 'plan', 'build', 'done', 'backlog', 'release', 'sync']) {
+  for (const name of ['brainstorm', 'plan', 'build', 'done', 'release', 'sync']) {
     assert.ok(files.some(f => f.includes(`add-framework--${name}`)), `missing ${name}`);
   }
   for (const f of files) {

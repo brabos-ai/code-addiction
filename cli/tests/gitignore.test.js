@@ -20,10 +20,10 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('getInstalledDirs', () => {
-  it('always includes the .codeadd/* pair that keeps board.json committable', () => {
+  it('always includes the .codeadd/* pair that keeps settings.json and wiki/ committable', () => {
     const dirs = getInstalledDirs([]);
     expect(dirs).toContain('.codeadd/*');
-    expect(dirs).toContain('!.codeadd/board.json');
+    expect(dirs).not.toContain('!.codeadd/board.json');
     expect(dirs).toContain('!.codeadd/settings.json');
     expect(dirs).toContain('!.codeadd/wiki/');
     expect(dirs).not.toContain('.codeadd/');
@@ -37,7 +37,7 @@ describe('getInstalledDirs', () => {
 
   it('returns only the .codeadd pair when no providers selected', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json', '!.codeadd/settings.json', '!.codeadd/wiki/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/']);
   });
 
   it('includes all known providers when all are selected', () => {
@@ -51,7 +51,7 @@ describe('getInstalledDirs', () => {
 
   it('silently ignores unknown provider keys', () => {
     const dirs = getInstalledDirs(['unknown-provider']);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/board.json', '!.codeadd/settings.json', '!.codeadd/wiki/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/']);
   });
 
   it('every provider entry has a trailing slash (the .codeadd pair is a pattern)', () => {
@@ -219,20 +219,20 @@ describe('writeGitignoreBlock', () => {
 });
 
 // ---------------------------------------------------------------------------
-// F7 — board.json is the one tracked file under .codeadd/
+// F7 — settings.json and wiki/ are the tracked entries under .codeadd/
 // ---------------------------------------------------------------------------
 
-describe('the .codeadd pair (board.json stays committable)', () => {
+describe('the .codeadd pair (settings.json and wiki/ stay committable)', () => {
   const gitIgnored = (cwd, rel) => spawnSync('git', ['check-ignore', '-q', rel], { cwd }).status === 0;
 
   it('writes the pair in place of .codeadd/, and git agrees', () => {
     spawnSync('git', ['init', '-q'], { cwd: tmpDir });
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n!.codeadd/settings.json\n!.codeadd/wiki/');
+    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/');
     expect(content.split('\n')).not.toContain('.codeadd/');
     fs.mkdirSync(path.join(tmpDir, '.codeadd'));
-    expect(gitIgnored(tmpDir, '.codeadd/board.json')).toBe(false);
+    expect(content).not.toContain('board.json');
     expect(gitIgnored(tmpDir, '.codeadd/manifest.json')).toBe(true);
   });
 
@@ -253,7 +253,8 @@ describe('the .codeadd pair (board.json stays committable)', () => {
     const lines = fs.readFileSync(gitignorePath, 'utf8').split('\n');
     expect(lines).not.toContain('.codeadd/');
     expect(lines.filter((l) => l === '.codeadd/*')).toHaveLength(1);
-    expect(lines.filter((l) => l === '!.codeadd/board.json')).toHaveLength(1);
+    expect(lines.filter((l) => l === '!.codeadd/settings.json')).toHaveLength(1);
+    expect(lines).not.toContain('!.codeadd/board.json');
     expect(lines).toContain('node_modules/');
     expect(lines).toContain('dist/');
   });
@@ -263,7 +264,7 @@ describe('the .codeadd pair (board.json stays committable)', () => {
     fs.writeFileSync(gitignorePath, '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n# END ADD\n', 'utf8');
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(gitignorePath, 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/board.json\n!.codeadd/settings.json\n!.codeadd/wiki/\n.claude/');
+    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/\n.claude/');
     expect(content.split('\n')).not.toContain('.codeadd/');
   });
 });

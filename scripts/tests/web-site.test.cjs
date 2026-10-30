@@ -493,3 +493,20 @@ test('i18n F9: en.ts holds the skills list as { name, desc } entries', () => {
 test('i18n F10: the untranslated-text guard is fully on (no UNMIGRATED list left)', () => {
   assert.doesNotMatch(I18N('index.ts'), /UNMIGRATED/);
 });
+
+test('0075B F15: neither locale, docs.astro nor the README keeps a board section, row or feature', () => {
+  for (const file of ['src/i18n/en.ts', 'src/i18n/pt-br.ts']) {
+    const text = read(file);
+    assert.doesNotMatch(text, /name: "add--backlog"/, `${file}: add--backlog skill row`);
+    assert.doesNotMatch(text, /name: "board"/, `${file}: board feature row`);
+    assert.doesNotMatch(text, /^\s*board: "/m, `${file}: structure board line`);
+    assert.doesNotMatch(text, /docs-pruning, board\)/, `${file}: board in the features command`);
+    assert.doesNotMatch(text, /docs\/backlog/, `${file}: id-convention names backlog ids`);
+  }
+  const docs = DOCS();
+  assert.doesNotMatch(docs, /^\s*board: \[/m, 'docs.astro: board feature targets');
+  assert.doesNotMatch(docs, /docs\.structure\.board/, 'docs.astro: board/ tree line');
+  const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  assert.doesNotMatch(readme, /^## Board$/m, 'README.md: Board section');
+  assert.doesNotMatch(readme, /board-init|migrate-board|backlog-commit/, 'README.md: board scripts');
+});

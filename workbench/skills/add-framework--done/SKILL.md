@@ -106,13 +106,13 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 
 /add-framework--done [plan]     → Close out the branch implementing that plan (full basename, unique slug substring, or a plain path)
 /add-framework--done            → Resolve the plan from the branch, or ask (as one numbered batch)
-/add-framework--done --fix <slug> [--ticket <id>]   → Close out a plan-less fix: no plan, no ledger. The fix record is generated from git and CI facts
+/add-framework--done --fix <slug>   → Close out a plan-less fix: no plan, no ledger. The fix record is generated from git and CI facts
 
 **Examples:**
 /add-framework--done 2026-09-07T162415-SELF-PLAN--delivery-index-internal
 /add-framework--done delivery-index-internal
 /add-framework--done docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
-/add-framework--done --fix test-transport-tar --ticket 0031B
+/add-framework--done --fix test-transport-tar
 
 **The fix track.** Without `--fix`, this skill behaves exactly as written below, including its stop when no plan resolves. With `--fix`, "the plan" in this skill reads "the fix record", there is no ledger, and only the steps marked `--fix` or "on the fix track" differ. Every step this skill does not mark runs on both tracks unchanged.
 
@@ -141,13 +141,6 @@ IF `--fix` AND A `[plan]` ARE BOTH GIVEN:
   ✅ DO: Report the conflict and STOP
 ```
 
-```
-IF `--ticket` WAS GIVEN WITHOUT `--fix`:
-  ⛔ DO NOT USE: Write on anything
-  ⛔ DO NOT: Ignore the flag — a plan carries its own `> **Ticket:**` line, and a silent ignore hides a typo
-  ✅ DO: Report that `--ticket` belongs to `--fix` and STOP
-```
-
 **Resolve `[plan]` by `add-plan-authoring`'s Argument Resolution.** Load it and apply it as written: it owns the substring match, the companions it excludes, the naming forms that resolve, and the stop on more than one match or none.
 
 When no `[plan]` was given, derive the candidate from the branch name and confirm it with the user before proceeding.
@@ -156,9 +149,9 @@ That confirmation is one numbered item with a RECOMMENDED line, in the same batc
 
 **With `--fix`, 1.2 resolves the fix record instead.** The two paragraphs above do not run: there is no plan to resolve, and the derive-from-branch rule does not run — the slug comes from the invocation. The refusal to run on `main` still applies.
 
-Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution — load it and apply it as written. It owns the three sources, their order and the stop on more than one match. The record is then written, or refreshed, in two moves. This is the first, and it is generated from facts, never hand-written. **It runs on every normal-path run, including when source 3 returned a local record** — a record left by an earlier run describes the branch as it was then, and archiving it would file a stale account of the delivery. A reused record keeps its `id` and its `> **Ticket:**` line; everything else below is rebuilt, and a `## Validation` it carries is dropped, because it belongs to an older head.
+Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument Resolution — load it and apply it as written. It owns the three sources, their order and the stop on more than one match. The record is then written, or refreshed, in two moves. This is the first, and it is generated from facts, never hand-written. **It runs on every normal-path run, including when source 3 returned a local record** — a record left by an earlier run describes the branch as it was then, and archiving it would file a stale account of the delivery. A reused record keeps its `id`; everything else below is rebuilt, and a `## Validation` it carries is dropped, because it belongs to an older head.
 
-- **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **Head:**` the output of `git rev-parse HEAD`, `> **PR:**` the PR when one exists and `none yet` otherwise, and `> **Ticket:** <id>` only when `--ticket` was passed. Never infer an id.
+- **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **Head:**` the output of `git rev-parse HEAD`, `> **PR:**` the PR when one exists and `none yet` otherwise.
 - **`## What changed`** — the branch's commits from `git log --oneline main..HEAD` and its diff from `git diff --name-status main...HEAD`, with one sentence per commit drawn from its message.
 
 **On the resume path (2.5) the record is the committed one and is not rebuilt** — it was archived at STEP 6.1 and is never edited after.
@@ -259,14 +252,13 @@ It does not run on the recovery path (2.4): the work is already merged and there
 
 ### 2.3 CI's required checks — read the run, do not re-run them locally
 
-CI runs the framework and board gates, on Ubuntu with Node 22.19.0.
+CI runs the framework gate, on Ubuntu with Node 22.19.0.
 macOS, Windows and Node 24 are not in that gate.
 
 ```
 test-scripts (ubuntu-latest, Node 22.19.0)
   npm ci (root and cli/)  →  node scripts/build.js  →  node scripts/build-workbench.js
   →  npm test (CLI + scripts + package smoke)
-board (ubuntu-latest, Node 22.19.0)   npm ci  →  npm test (typecheck + unit)  →  npm run test:e2e (built app)
 ```
 
 **Read that run. Do not execute them here.** Re-running them locally is not a stronger gate, it is a
@@ -297,7 +289,7 @@ one machine is still one machine.
 
 ⛔ **A skipped, queued, neutral or cancelled check is not a pass.** Only `success` is. A required check that never ran is the absence of evidence, which this gate treats exactly as it treats failure.
 
-**The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run `node scripts/build.js`, `node scripts/build-workbench.js` and `npm run test:all` instead — and **say in the STEP 9 report that the gate ran locally and why**. The test group includes framework, board typecheck/unit and built-app E2E. A gate that quietly changes which evidence it accepted is worse than a slow one.
+**The fallback is local, explicit and reported.** When `gh` is unavailable, the network is down, or the repository has no CI configured, run `node scripts/build.js`, `node scripts/build-workbench.js` and `npm run test:all` instead — and **say in the STEP 9 report that the gate ran locally and why**. The test group is the framework gate: CLI, scripts and package smoke. A gate that quietly changes which evidence it accepted is worse than a slow one.
 
 ⛔ **A REFUSAL to run or unavailable preparation is not an assertion failure or a pass.** Read the runner's diagnostics: exit 2 can identify refusal/preparation/export unavailability, while tool assertion exits are preserved. Report unavailable evidence and its reason in STEP 9; resolve it through CI or a completed supported run. Do not install host dependencies or bypass the dispatcher to manufacture a verdict. An evidence-export failure after green assertions still needs resolution; preserved failed-suite status still reports the assertions that actually ran.
 
@@ -377,7 +369,7 @@ an `id`; this one reads as two separate deliveries.
 here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
 9, alongside which STEPs this run skipped.
 
-**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `docs/deliveries/<id>/fix.md` on the branch, for the fix gate at 2.2 and for STEP 8's ticket read. The `id` is the committed entry's.
+**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `docs/deliveries/<id>/fix.md` on the branch, for the fix gate at 2.2. The `id` is the committed entry's.
 
 ---
 
@@ -594,21 +586,6 @@ same carve-out the entry's existence already has at the top of this file.
 
 By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
-### The ticket — first, before any deletion
-
-**When the plan header carries `> **Ticket:**`, make the close-out write now — `awaiting-release` when the ticket read prints `RELEASE_FLOW=yes`, `done` otherwise.** `add-plan-authoring` owns when
-it is skipped, how it is made and every degradation, under **The Ticket** — load it rather than acting
-from memory.
-
-The read is the exact `get <id>` one, and the write is skipped when the ticket already reads `done` or `awaiting-release`. The `--fix` track follows the same rule.
-
-It runs here because this is the first point every route shares with the delivery already on `main`: the
-normal and resume paths after STEP 7's merge, the recovery path at 2.4 where STEP 7 was skipped. Not
-before the merge — a ticket reading `done` or `awaiting-release` for work that never landed is a lie a refused merge would
-leave behind. It reads the plan before the third removal below deletes the local copy.
-
-**On the fix track the ticket is read from the fix record's `> **Ticket:**` line**, which exists only when `--ticket` was passed — no line, no write. When no local copy exists, read it from `docs/deliveries/<id>/fix.md`.
-
 ```
 IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
   ⛔ DO NOT USE: Bash to run rm on it
@@ -725,8 +702,6 @@ Then, after the seven blocks and before the metadata, report always:
 - **Which path 2.1 routed to.** On the resume path, which STEPs were skipped and the refusal reason
   `gh pr view --json mergeStateStatus,mergeable` reported for the merge that did not go through
 - Whether the run took the recovery path, and why the entry landed after the merge
-- **The ticket, when the plan carried one** — the id, which status was written (`awaiting-release` or `done`) with the write's `SHA`, that it was already
-  there, or what did not happen
 - **The track, when `--fix` was given** — name it: `fix`. Say the fix record and the fix gate stood in for the plan and the ledger gate. If STEP 3 refused with `REFUSED=no-items`, say that a fix with no nameable behaviour has no index entry to write, and that this is the cause.
 
 ---

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execFileSync, spawnSync } from 'node:child_process';
 import AdmZip from 'adm-zip';
 
 const mocks = vi.hoisted(() => ({
@@ -162,43 +161,6 @@ describe('update command', () => {
     expect(fs.existsSync(orphanPath)).toBe(false);
     const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
     expect(manifest.files).not.toContain('.codeadd/scripts/old-script.sh');
-  });
-
-  it.each([true, false])('native backlog update retires only tracked wrappers (tracked=%s)', async (tracked) => {
-    const wrappers = ['backlog.sh', 'backlog-commit.sh'];
-    const canonical = ['backlog-storage.cjs', 'backlog-core.cjs', 'backlog-cli.cjs',
-      'backlog-id.cjs', 'backlog-git.cjs', 'backlog-commit.cjs', 'backlog-board.cjs'];
-    const scripts = path.resolve(__dirname, '../../framwork/.codeadd/scripts');
-    const installed = path.join(tmpDir, '.codeadd', 'scripts');
-    fs.mkdirSync(installed, { recursive: true });
-    for (const name of wrappers) fs.writeFileSync(path.join(installed, name), '# old or manual entry\n');
-    writeManifestFile(tmpDir, {
-      version: '1.0.0', source: 'release', providers: [],
-      files: tracked ? wrappers.map((n) => `.codeadd/scripts/${n}`) : [],
-    });
-    const zip = new AdmZip(buildZip());
-    for (const name of canonical) zip.addFile(`framwork/.codeadd/scripts/${name}`, fs.readFileSync(path.join(scripts, name)));
-    mocks.getLatestTag.mockResolvedValue('v2.0.0');
-    mocks.downloadReleaseAsset.mockResolvedValue(zip.toBuffer());
-
-    await update(tmpDir);
-
-    const manifest = JSON.parse(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8'));
-    for (const name of wrappers) {
-      expect(fs.existsSync(path.join(installed, name)), name).toBe(!tracked);
-      expect(manifest.files).not.toContain(`.codeadd/scripts/${name}`);
-      if (!tracked) expect(fs.readFileSync(path.join(installed, name), 'utf8')).toBe('# old or manual entry\n');
-    }
-    for (const name of canonical) expect(fs.readFileSync(path.join(installed, name))).toEqual(fs.readFileSync(path.join(scripts, name)));
-    const result = execFileSync(process.execPath, ['.codeadd/scripts/backlog-cli.cjs', 'list', '--all'],
-      { cwd: tmpDir, encoding: 'utf8' });
-    expect(result).toContain('BACKLOG_PRESENT=no');
-    fs.writeFileSync(path.join(tmpDir, 'ticket.json'), JSON.stringify({ title: 'after update', tldr: 't', done_when: 't' }));
-    // No board config: the publication entry refuses, it never writes the checkout.
-    const publication = spawnSync(process.execPath, ['.codeadd/scripts/backlog-commit.cjs', 'add', '--record-file', 'ticket.json'],
-      { cwd: tmpDir, encoding: 'utf8', input: '' });
-    expect(publication.status).toBe(2);
-    expect(publication.stdout).toContain('REFUSED=board-not-configured');
   });
 
   it('preserves history and .local.json files even if listed in old manifest', async () => {
@@ -467,8 +429,38 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
 
     const m = readManifest(tmpDir);
     expect(m.migrations).toEqual(allMigrationIds());
-    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, board: false, 'agent-mode': false });
+    expect(m.features).toEqual({ 'tdd-pipeline': true, 'qa-pipeline': false, 'docs-pruning': false, 'agent-mode': false });
     expect(m.plugins).toEqual({ gitnexus: true });
+  });
+
+  it('0075B — an install with the board feature on loses the flag, keeps its board data, and logs the note once', async () => {
+    const boardJson = JSON.stringify({ remote: 'x', branch: 'board' });
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: [],
+      features: { 'tdd-pipeline': true, board: true },
+      migrations: ['0001-prune-legacy-orphans', '0002-harvest-relations', '0003-retire-about-suffix', '0004-sync-board-definitions', '0005-qa-settings'],
+    });
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), boardJson, 'utf8');
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    const m = readManifest(tmpDir);
+    expect(m.migrations).toContain('0006-retire-board');
+    expect(m.migrations).toContain('0004-sync-board-definitions');
+    expect(m.features).not.toHaveProperty('board');
+    expect(m.features['tdd-pipeline']).toBe(true);
+    expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'board.json'), 'utf8')).toBe(boardJson);
+    const notes = vi.mocked(log.info).mock.calls.map((c) => String(c[0])).filter((s) => /board was removed from the framework/.test(s));
+    expect(notes).toHaveLength(1);
+    const warnings = vi.mocked(log.warn).mock.calls.map((c) => String(c[0]));
+    expect(warnings.filter((s) => /board/i.test(s))).toEqual([]);
   });
 
   it('L2.6b — a ledger that already lists every id executes nothing and survives', async () => {

@@ -22,7 +22,7 @@
  *
  * DELEGATION. Branch detection is `get-branch-metadata.cjs`, main-branch
  * detection is `get-main-branch.cjs` and the next id comes from the one
- * canonical allocator `backlog-id.cjs` (through the same `calculate` core
+ * canonical allocator `feature-id.cjs` (through the same `calculate` core
  * that `next-id.cjs` renders). The old shell also re-checked that its helper
  * files existed and were executable; a sibling `require` fails loudly on a
  * missing helper, which is the native route to the same guarantee.
@@ -44,8 +44,7 @@ const path = require('node:path');
 
 const { discoverMainBranch } = require('./get-main-branch.cjs');
 const { currentBranch, branchMetadata } = require('./get-branch-metadata.cjs');
-const idc = require('./backlog-id.cjs');
-const board = require('./backlog-board.cjs');
+const idc = require('./feature-id.cjs');
 
 const DOCS_DIR = 'docs/features';
 
@@ -208,8 +207,7 @@ function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
   fs.mkdirSync(docsAbs, { recursive: true });
   const dirs = featureDirs(docsAbs);
 
-  const { boardRoot } = board.allocationRoot(cwd, { sync: true });
-  const allocated = idc.calculate(cwd, 'F', { allowOverflow: true, boardRoot });
+  const allocated = idc.calculate(cwd, 'F', { allowOverflow: true });
   const next = allocated.ok ? allocated.id : '0001F';
   lines.push(`FEATURES:count=${dirs.length} next=${next}`);
 

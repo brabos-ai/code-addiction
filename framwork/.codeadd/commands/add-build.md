@@ -154,10 +154,6 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 2. Run `node .codeadd/scripts/build-setup.cjs <FEATURE_ID> [--worktree]`.
 3. On non-zero exit: STOP, show stderr verbatim, let the user decide (dirty tree, missing docs, invalid `branch:`) — NEVER auto-resolve. **Deciding**, in every state.
 4. If `WORKTREE:` in output: inform the path and instruct that implementation happens inside it (subsequent commands run in that directory). Read `COPIED=` only when the line is present: report what was copied; on `COPIED=none`, say the worktree has no installed framework, ask the user to run `npx codeadd install` inside it (or copy `.codeadd/` and the installed provider folders listed in the `.gitignore` ADD block), and WAIT — **Deciding**, in every state; do not run `status.cjs` there before. No line (in-place mode, or a worktree that already existed) means nothing to report.
-<!-- slot:board.ticket-doing fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-doing -->
-<!-- /feature:board:ticket-doing -->
-<!-- /slot:board.ticket-doing -->
 5. Then re-run `status.cjs` (now on the feature branch/worktree) and continue to STEP add-build.detect.
 
 ---
@@ -1572,12 +1568,6 @@ already answered.
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
 come after it, never in front of it.
-<!-- slot:board.ticket-in-review+board.deferred-minors fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-in-review -->
-<!-- /feature:board:ticket-in-review -->
-<!-- feature:board:deferred-minors -->
-<!-- /feature:board:deferred-minors -->
-<!-- /slot:board.ticket-in-review+board.deferred-minors -->
 
 Fill the blocks from this build:
 
@@ -1587,20 +1577,12 @@ Fill the blocks from this build:
 - **`Files touched`** — split by verb. The Deleted row is written even when it reads "none".
 - **`⚠️ Needs your attention`** — anything deleted, anything touching auth, billing or a migration,
   and the one or two places the work is most likely to have gone wrong.
-<!-- slot:board.ticket-attention fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-attention -->
-<!-- /feature:board:ticket-attention -->
-<!-- /slot:board.ticket-attention -->
 
 Then, after the seven blocks and before any metadata, print STEP add-build.rulings-i-made and STEP add-build.next-command below — whole, in their
 own shape. Then apply STEP add-build.handoff, which runs last because the offer comes after the metadata.
 
 **Metadata last:** feature ID, files summary (per area count), build status (BLOCKED, not complete,
 when `## Loop End` exited BLOCKED), and the ledger path with its commit brackets.
-<!-- slot:board.ticket-metadata fallback="fallbacks/empty.md" -->
-<!-- feature:board:ticket-metadata -->
-<!-- /feature:board:ticket-metadata -->
-<!-- /slot:board.ticket-metadata -->
 
 ### STEP add-build.rulings-i-made "Rulings I made" [MANDATORY — EXHAUSTIVE, NOT REPRESENTATIVE]
 

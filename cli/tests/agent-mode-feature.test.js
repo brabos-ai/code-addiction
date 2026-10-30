@@ -537,7 +537,6 @@ describe('F30-F32 -- the shared internal skills point their stops at add-interac
 describe('F33-F37 -- release, backlog, commit, building-commands and the schema text', () => {
   it.each([
     ['commands', 'add-framework--release.md', /ONE numbered batch \(`add-interaction`\)/],
-    ['commands', 'add-framework--backlog.md', /one numbered item \(`add-interaction`\)/],
     ['skills', 'add-commit/SKILL.md', /one numbered item with a RECOMMENDED line \(`add-interaction`\)/],
     ['skills', 'building-commands/SKILL.md', /### A Stop That Asks/],
   ])('%s/%s asks through add-interaction and declares it', (dir, file, phrase) => {
@@ -571,13 +570,12 @@ describe('F38-F39 -- the injection skill and AGENTS.md carry the new rules', () 
     expect(t).toMatch(/the anchor has no `next` line and the slot only inserts/);
   });
 
-  it('AGENTS.md lists board and agent-mode in the feature table, with the 12 commands', () => {
+  it('AGENTS.md lists agent-mode in the feature table, with the 12 commands', () => {
     const t = agents();
     const row = t.split('\n').find((l) => l.startsWith('| `agent-mode` |'));
     expect(row).toBeTruthy();
     expect(row).toContain('disabled');
     for (const c of Object.keys(AGENT_SLOTS)) expect(row, c).toContain(c);
-    expect(t).toMatch(/^\| `board` \| disabled \|/m);
   });
 
   it('AGENTS.md points to the three interaction skills', () => {
@@ -617,7 +615,7 @@ describe('L3 -- agent-mode combined with the other features', () => {
 
   const commandDirs = () => CMD_PROVIDERS.map((k) => path.join(tmp, PROVIDERS[k].dest, PROVIDERS[k].commandsSubdir)).filter((d) => fs.existsSync(d));
   const snapshot = () => Object.fromEntries(commandDirs().flatMap((d) => fs.readdirSync(d).filter((f) => f.endsWith('.md')).map((f) => [path.join(d, f), fs.readFileSync(path.join(d, f), 'utf8')])));
-  const OTHERS = ['tdd-pipeline', 'qa-pipeline', 'docs-pruning', 'board'];
+  const OTHERS = ['tdd-pipeline', 'qa-pipeline', 'docs-pruning'];
 
   it('L3.1 with every feature on, each agent-mode member lands exactly once per command and no fallback survives', () => {
     for (const f of Object.keys(FEATURES)) enableFeature(tmp, f);
@@ -638,9 +636,9 @@ describe('L3 -- agent-mode combined with the other features', () => {
   it('L3.3 disabling another feature leaves agent-mode byte-identical', () => {
     enableFeature(tmp, 'agent-mode');
     const before = snapshot();
-    enableFeature(tmp, 'board');
+    enableFeature(tmp, 'docs-pruning');
     expect(snapshot()).not.toEqual(before);
-    disableFeature(tmp, 'board');
+    disableFeature(tmp, 'docs-pruning');
     expect(snapshot()).toEqual(before);
   });
 
@@ -711,7 +709,7 @@ describe('L4.2 -- no internal stage still says one-at-a-time', () => {
       ['skills', 'add-framework--build', 'SKILL.md'], ['skills', 'add-framework--done', 'SKILL.md'],
       ['skills', 'add-plan-authoring', 'SKILL.md'], ['skills', 'add-build-ledger', 'SKILL.md'],
       ['skills', 'add-review-discipline', 'SKILL.md'], ['skills', 'add-commit', 'SKILL.md'],
-      ['commands', 'add-framework--release.md'], ['commands', 'add-framework--backlog.md'],
+      ['commands', 'add-framework--release.md'],
     ];
     const banned = /one[- ](?:question[- ])?(?:at[- ]a[- ]time|per[- ](?:turn|message))|ONE clarifying|AskUserQuestion|structured-question tool/i;
     // A prohibition of the tool ("No structured-question tool") is the rule, not a leftover of the old one.

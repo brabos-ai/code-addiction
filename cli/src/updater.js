@@ -7,7 +7,7 @@ import { getLatestTag, getLatestPrerelease, downloadReleaseAsset } from './githu
 import { fixLineEndings, writeManifest, resolveInstallSource, reportMcpRegistration, reportNotDetectedPlugins } from './installer.js';
 import { copyRelease, pruneObsolete } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
-import { applyEnabledFeatures } from './features.js';
+import { applyEnabledFeatures, normalizeFeatureStates } from './features.js';
 import { captureBaselines } from './injection-core.js';
 import { applyEnabledPluginsDetailed, LEGACY_PLUGIN_SKILLS } from './plugins.js';
 import { runMigrations } from './migrations.js';
@@ -108,7 +108,9 @@ export async function update(cwd, options = {}, scope = 'project') {
   fixLineEndings(path.join(addDir, 'scripts'));
 
   // Preserve feature + plugin states from previous manifest
-  const previousFeatures = manifest.features ?? {};
+  // A retired key (board) is dropped here as well as by migration 0006: the manifest written below
+  // is built from this object, not from the file the migration just edited.
+  const previousFeatures = normalizeFeatureStates(manifest.features ?? {}).states;
   const previousPlugins = manifest.plugins ?? {};
 
   // Repairs the release payload cannot carry. Runs AFTER the new files land, so

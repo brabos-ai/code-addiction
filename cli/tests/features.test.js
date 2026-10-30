@@ -223,8 +223,17 @@ describe('legacy tdd alias resolution', () => {
     expect(row.legacyKey).toBe('tdd');
   });
 
+  it('getFeatureStates ignores a retired board key left in the manifest', () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { board: true, 'tdd-pipeline': true }, providers: ['claude'] });
+
+    const names = getFeatureStates(tmpDir).map((f) => f.name);
+    expect(names).not.toContain('board');
+    expect(names).toContain('tdd-pipeline');
+  });
+
   it('an unknown feature name is still rejected', () => {
     expect(resolveFeatureName('not-a-feature')).toBeNull();
+    expect(resolveFeatureName('board')).toBeNull();
     expect(resolveFeatureName('tdd')).toEqual({ key: 'tdd-pipeline', alias: 'tdd' });
     expect(resolveFeatureName('tdd-pipeline')).toEqual({ key: 'tdd-pipeline', alias: null });
   });
@@ -233,6 +242,12 @@ describe('legacy tdd alias resolution', () => {
     const { states, changed } = normalizeFeatureStates({ tdd: true, 'tdd-pipeline': false });
     expect(changed).toBe(true);
     expect(states).toEqual({ 'tdd-pipeline': false });
+  });
+
+  it('normalizeFeatureStates drops the retired board key without throwing and reports the change', () => {
+    const { states, changed } = normalizeFeatureStates({ board: true, 'tdd-pipeline': true });
+    expect(states).toEqual({ 'tdd-pipeline': true });
+    expect(changed).toBe(true);
   });
 
   it('normalizeFeatureStates is a no-op when no alias is present', () => {

@@ -23,7 +23,7 @@ describe('canonical dispatch and authorization', () => {
     expect(runner.parseArgs(['vitest', 'mcp'])).toEqual({ suite: 'cli', mode: 'run', extra: ['mcp'] });
     expect(runner.parseArgs(['bats', 'scripts/tests/delivered.test.cjs']).suite).toBe('scripts');
     expect(context.leavesFor('framework')).toEqual(['cli', 'scripts', 'package']);
-    expect(context.leavesFor('all')).toEqual(['cli', 'scripts', 'package', 'board', 'board-e2e']);
+    expect(context.leavesFor('all')).toEqual(['cli', 'scripts', 'package']);
     for (const selection of ['all', 'framework', 'package']) expect(() => runner.parseArgs([selection, 'filter'])).toThrow(/filter/);
   });
   it('container setup admits CLI in framework and package in framework, not unrelated leaves', () => {
@@ -80,9 +80,9 @@ describe('isolation and preserved regressions', () => {
   });
   it('image owns dependencies/browser and hashes manifests; no Bats or global Git identity', () => {
     const text = fs.readFileSync(path.join(ROOT, 'scripts/tests.Dockerfile'), 'utf8');
-    expect(text).toMatch(/COPY cli\/package.json/); expect(text).toMatch(/COPY board\/package.json/);
-    expect(text).toMatch(/install --with-deps chromium/); expect(text).not.toMatch(/git config --global/);
-    expect(transport.INPUTS).toHaveLength(6);
+    expect(text).toMatch(/COPY cli\/package.json/); expect(text).not.toMatch(/board/);
+    expect(text).not.toMatch(/git config --global/);
+    expect(transport.INPUTS).toHaveLength(4);
     expect(transport.imageTag({ a: 'ab', b: 'c' })).not.toBe(transport.imageTag({ a: 'a', b: 'bc' }));
   });
   it('guidance preserves the sidecar guard and reports unavailable evidence without native recipes', () => {

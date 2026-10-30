@@ -250,7 +250,7 @@ describe('bin entrypoint (process level)', () => {
       const result = run(args);
       expect(result.error).toBeUndefined();
       expect(result.status).toBe(0);
-      for (const name of ['tdd-pipeline', 'qa-pipeline', 'docs-pruning', 'board']) {
+      for (const name of ['tdd-pipeline', 'qa-pipeline', 'docs-pruning']) {
         expect(result.stdout).toContain(name);
       }
     });

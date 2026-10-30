@@ -49,7 +49,7 @@ const SAMPLES = {
 };
 
 const sample = (overrides) => JSON.stringify({
-  v: 1, stage: 'add-build', branch: null, commits: [], tests: null, pr: null, ci: null, ticket: null, ...overrides,
+  v: 1, stage: 'add-build', branch: null, commits: [], tests: null, pr: null, ci: null, ...overrides,
 });
 
 describe('product agent mode', () => {
@@ -59,7 +59,28 @@ describe('product agent mode', () => {
   });
 
   it('L1.2 equals the workbench schema once every description is removed, at every depth', () => {
-    expect(withoutDescriptions(readJson(PRODUCT_SCHEMA))).toEqual(withoutDescriptions(readJson(WORKBENCH_SCHEMA)));
+    // 0075B, F8: the product schema drops the board-write field `ticket`; the workbench copy drops it in
+    // F13. Until then both sides are compared without it. F13 removes this helper and compares them whole.
+    const withoutTicket = (schema) => {
+      const copy = structuredClone(schema);
+      delete copy.properties.ticket;
+      copy.required = copy.required.filter((key) => key !== 'ticket');
+      return copy;
+    };
+    expect(withoutTicket(withoutDescriptions(readJson(PRODUCT_SCHEMA)))).toEqual(
+      withoutTicket(withoutDescriptions(readJson(WORKBENCH_SCHEMA))),
+    );
+  });
+
+  it('L1.2b 0075B the product schema declares no board-write field and rejects a block that carries one', () => {
+    const schema = readJson(PRODUCT_SCHEMA);
+    expect(schema.properties).not.toHaveProperty('ticket');
+    expect(schema.required).not.toContain('ticket');
+    // additionalProperties:false is what turns an unknown `ticket` key into a rejection.
+    expect(schema.additionalProperties).toBe(false);
+    const block = JSON.parse(sample({ status: 'done', needs_approval: false, reason: null, next_step: null, ticket: null }));
+    const declared = new Set(Object.keys(schema.properties));
+    expect(Object.keys(block).filter((key) => !declared.has(key))).toEqual(['ticket']);
   });
 
   it('L1.3 one sample per status passes validateResultBlock, and the samples cover the schema status enum', () => {
@@ -93,20 +114,16 @@ describe('product agent mode', () => {
     }
   });
 
-  it('L2.4 the guide presents claude -p as an example other providers can reproduce, and shows a Notion mirror', () => {
+  it('L2.4 the guide presents claude -p as an example other providers can reproduce, and names no board or tracker mirror', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
     expect(guide).not.toMatch(/Claude Code only/i);
     expect(guide).not.toMatch(/No other provider supports this/i);
     expect(guide).toMatch(/Codex/);
     expect(guide).toMatch(/OpenCode/);
     expect(guide).toMatch(/own documentation/i);
-    const s9 = guide.slice(guide.indexOf('## 9. Mirror the board'));
-    expect(s9).toContain('Notion');
-    expect(s9).toContain('awaiting-release');
-    expect(s9).toMatch(/`release`/);
-    expect(s9).toMatch(/any project-management app/i);
-    expect(s9).toContain('the framework ships no tracker code');
-    expect(s9).not.toMatch(/notion.so|@notionhq|api.notion/i);
+    // 0075B, F8: section 9 "Mirror the board" and its Notion example are gone; the guide names no board.
+    expect(guide).not.toMatch(/Mirror the board|Notion|backlog-cli|backlog-commit|board-management|awaiting-release/);
+    expect(guide).not.toMatch(/board/i);
   });
 
   it('L1.7 the codeadd-shell block of add-wiki.md points at the guide', () => {
@@ -145,7 +162,6 @@ const AGENT_MODE = path.join(SOURCE, 'agent-mode');
 const ROLES = ['product-pm', 'chief-engineer'];
 const roleText = (name) => fs.readFileSync(path.join(AGENT_MODE, 'roles', `${name}.md`), 'utf8');
 const ROLE_HEADINGS = ['## Commands', '## Boundaries', '## When to stop and ask', '## Summary format'];
-const LOCK_CLAIM = /per-ticket (lock|claim)|locks? (the|each|one|a) ticket|ticket is locked|claims? (the|a) ticket/i;
 
 describe('agent team roles', () => {
   it.each(ROLES)('T1.1 roles/%s.md exists and carries the four role headings exactly once', (name) => {
@@ -173,45 +189,33 @@ describe('agent team roles', () => {
     expect(text).not.toContain("/add-pull-request");
   });
 
-  it('T1.4 product-pm.md names its commands, the release close, that it never implements, and the assignee comment', () => {
+  it('T1.4 product-pm.md names its commands, the intent file handoff, and that it never implements', () => {
     const text = roleText('product-pm');
-    for (const anchor of ['/add-brainstorm', '/add-new', 'shaped', 'backlog-commit.cjs release', 'backlog-commit.cjs comment']) {
+    for (const anchor of ['/add-brainstorm', '/add-new', '-intent.md', 'about.md']) {
       expect(text, `product-pm.md names ${anchor}`).toContain(anchor);
     }
     expect(text).toMatch(/never implements?/i);
   });
 
-  it.each(ROLES)('T1.5 roles/%s.md carries the with-board and without-board handoff', (name) => {
+  it.each(ROLES)('T1.5 roles/%s.md carries the intent file and feature folder handoff, with no board branch', (name) => {
     const text = roleText(name);
-    for (const anchor of ['shaped', '-intent.md', 'about.md']) expect(text, `${name}.md names ${anchor}`).toContain(anchor);
+    for (const anchor of ['-intent.md', 'about.md', 'docs/features/<id>-<slug>/']) expect(text, `${name}.md names ${anchor}`).toContain(anchor);
+    expect(text).not.toMatch(/board|backlog-(cli|commit)|shaped|ticket/i);
   });
 
-  it('T1.6 the guide has section 10, with the team rules, and sections 1 to 9 are still there', () => {
+  it('T1.6 the guide has section 9, with the team rules, and sections 1 to 8 are still there', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
-    const start = guide.indexOf('## 10. Work as a team of agents');
-    expect(start, 'the guide has no section 10').toBeGreaterThan(-1);
+    const start = guide.indexOf('## 9. Work as a team of agents');
+    expect(start, 'the guide has no section 9').toBeGreaterThan(-1);
     const section = guide.slice(start);
-    for (const anchor of [
-      'section 2', 'backlog-commit.cjs', 'ERROR=board-locked', 'rebase-conflict', 'push-refused', 'fetch-failed',
-      'RECOVERY_REF', 'shaped', '-intent.md', '/add-review', 'roles/product-pm.md', 'roles/chief-engineer.md',
-    ]) {
-      expect(section, `section 10 names ${anchor}`).toContain(anchor);
+    for (const anchor of ['section 2', '-intent.md', '/add-review', 'roles/product-pm.md', 'roles/chief-engineer.md']) {
+      expect(section, `section 9 names ${anchor}`).toContain(anchor);
     }
+    expect(section).not.toMatch(/backlog-commit|ERROR=board-locked|RECOVERY_REF|rebase-conflict|push-refused|fetch-failed/);
     // These two are the detail of section 2's list. Naming them again is the copy the drift risk warns about.
     expect(section).not.toContain('--continue');
     expect(section).not.toContain('.jsonl');
-    for (let n = 1; n <= 9; n++) expect(guide, `section ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
-  });
-
-  it('T1.7 no file under agent-mode/ says the board locks a ticket, and the check catches such a line', () => {
-    const files = filesUnder(AGENT_MODE);
-    expect(files.length).toBeGreaterThan(0);
-    for (const file of files) {
-      expect(fs.readFileSync(file, 'utf8'), `${path.relative(ROOT, file)} claims a per-ticket lock`).not.toMatch(LOCK_CLAIM);
-    }
-    // The guard bites: the same scan over a README copy carrying one such line must match.
-    const injected = `${fs.readFileSync(GUIDE, 'utf8')}\nThe board locks each ticket while an engineer works on it.\n`;
-    expect(injected).toMatch(LOCK_CLAIM);
+    for (let n = 1; n <= 8; n++) expect(guide, `section ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
   });
 
   it('T2.1 an install copies agent-mode/roles/ byte for byte', () => {

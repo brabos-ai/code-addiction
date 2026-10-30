@@ -36,9 +36,10 @@ const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubd
 // that NAMES the placeholders -- `{{cmd:}}` in add-qa-setup -- is not one.
 const PLACEHOLDER = /\{\{(skill|cmd|addpath):[^}]+\}\}/;
 
+// 0075B, F5: the sample named the deleted add--backlog skill and backlog-cli.cjs script.
 const SAMPLE = [
-  'see {{skill:add--backlog/references/lifecycle.md}} for the row,',
-  'run {{cmd:add-plan}} next, and read {{addpath:scripts/backlog-cli.cjs}}.',
+  'see {{skill:add--doc-schemas/references/delivery-index.md}} for the row,',
+  'run {{cmd:add-plan}} next, and read {{addpath:scripts/status.cjs}}.',
   'two on one line: {{skill:add--tdd/SKILL.md}} and {{skill:add--qa/SKILL.md}}',
 ].join('\n');
 
@@ -85,14 +86,5 @@ describe('P2/P3 -- injected commands, on disk', () => {
     expect(raw).toEqual([]);
   });
 
-  it('P2b: the board pointer resolves to each provider\'s own path', () => {
-    enableFeature(tmp, 'board');
-    for (const key of CMD_PROVIDERS) {
-      const file = path.join(tmp, PROVIDERS[key].dest, PROVIDERS[key].commandsSubdir, 'add-plan.md');
-      if (!fs.existsSync(file)) continue;
-      const want = resolvePlaceholders('{{skill:add--backlog/references/lifecycle.md}}', PROVIDERS[key]);
-      expect(fs.readFileSync(file, 'utf8'), key).toContain(want);
-    }
-  });
 
 });

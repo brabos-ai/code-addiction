@@ -44,12 +44,12 @@ describe('readChangeFlags (L1.2, L1.3)', () => {
 
   it('builds the feature and plugin delta maps from the four flags', () => {
     const flags = readChangeFlags([
-      '--enable-feature', 'board,qa-pipeline',
+      '--enable-feature', 'docs-pruning,qa-pipeline',
       '--disable-feature', 'tdd-pipeline',
       '--enable-plugin', 'gitnexus',
       '--disable-plugin=playwright',
     ]);
-    expect(flags.features).toEqual({ board: true, 'qa-pipeline': true, 'tdd-pipeline': false });
+    expect(flags.features).toEqual({ 'docs-pruning': true, 'qa-pipeline': true, 'tdd-pipeline': false });
     expect(flags.plugins).toEqual({ gitnexus: true, playwright: false });
     expect(flags.any).toBe(true);
   });
@@ -70,7 +70,7 @@ describe('readChangeFlags (L1.2, L1.3)', () => {
   });
 
   it('throws when one name is both enabled and disabled', () => {
-    expect(() => readChangeFlags(['--enable-feature', 'board', '--disable-feature', 'board'])).toThrow(/board/);
+    expect(() => readChangeFlags(['--enable-feature', 'docs-pruning', '--disable-feature', 'docs-pruning'])).toThrow(/docs-pruning/);
     expect(() => readChangeFlags(['--enable-plugin', 'x', '--disable-plugin', 'x'])).toThrow(/x/);
   });
 });

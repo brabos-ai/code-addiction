@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 118,
-  "slotCount": 110,
+  "membershipCount": 93,
+  "slotCount": 86,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -432,42 +432,6 @@
           ]
         },
         {
-          "id": "board.ticket-resolve",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-resolve"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-resolve"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-refining",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-refining"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-refining"
-            }
-          ]
-        },
-        {
           "id": "agent-mode.cap-scope",
           "fallback": "fallbacks/agent-mode.add-brainstorm.cap-scope.md",
           "sourceOrder": [
@@ -540,42 +504,6 @@
           ]
         },
         {
-          "id": "board.ticket-frontmatter",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-frontmatter"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-frontmatter"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-report",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
-            }
-          ]
-        },
-        {
           "id": "agent-mode.approval-ask",
           "fallback": "fallbacks/agent-mode.add-brainstorm.approval-ask.md",
           "sourceOrder": [
@@ -590,42 +518,6 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "approval-ask"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-intent",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-intent"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-intent"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-shaped",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-shaped"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-shaped"
             }
           ]
         },
@@ -688,24 +580,6 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "interaction"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-doing",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-doing"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-doing"
             }
           ]
         },
@@ -902,70 +776,6 @@
           ]
         },
         {
-          "id": "board.ticket-in-review+board.deferred-minors",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-in-review"
-            },
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "deferred-minors"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-in-review"
-            },
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "deferred-minors"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-attention",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-attention"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-attention"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-metadata",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-metadata"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-metadata"
-            }
-          ]
-        },
-        {
           "id": "qa-pipeline.next-command",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1126,42 +936,6 @@
           ]
         },
         {
-          "id": "board.ticket-close",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-close"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-close"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-carry",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-carry"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-carry"
-            }
-          ]
-        },
-        {
           "id": "gitnexus.graph-reindex",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1176,24 +950,6 @@
               "namespace": "plugin",
               "name": "gitnexus",
               "section": "graph-reindex"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-report",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
             }
           ]
         },
@@ -1242,42 +998,6 @@
           ]
         },
         {
-          "id": "board.ticket-resolve",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-resolve"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-resolve"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-doing",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-doing"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-doing"
-            }
-          ]
-        },
-        {
           "id": "tdd-pipeline.red-gate",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1310,42 +1030,6 @@
               "namespace": "plugin",
               "name": "gitnexus",
               "section": "graph-impact"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-frontmatter",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-frontmatter"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-frontmatter"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-report",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-report"
             }
           ]
         },
@@ -1412,60 +1096,6 @@
           ]
         },
         {
-          "id": "board.ticket-intent-field",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-intent-field"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-intent-field"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-board-write",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-board-write"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-board-write"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-skeleton",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-skeleton"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-skeleton"
-            }
-          ]
-        },
-        {
           "id": "gitnexus.graph-map",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1498,24 +1128,6 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "confirm-wait"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-shaped",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-shaped"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-shaped"
             }
           ]
         },
@@ -1628,24 +1240,6 @@
           ]
         },
         {
-          "id": "board.ticket-read",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-read"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-read"
-            }
-          ]
-        },
-        {
           "id": "gitnexus.graph-plan",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -1732,42 +1326,6 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "preview-wait"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-done-when",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-done-when"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-done-when"
-            }
-          ]
-        },
-        {
-          "id": "board.ticket-planned",
-          "fallback": "fallbacks/empty.md",
-          "sourceOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-planned"
-            }
-          ],
-          "expectedOrder": [
-            {
-              "namespace": "feature",
-              "name": "board",
-              "section": "ticket-planned"
             }
           ]
         },
@@ -2502,112 +2060,6 @@
       ]
     },
     {
-      "id": "product/fragment/fragments/board/add-brainstorm.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-brainstorm",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
-      "id": "product/fragment/fragments/board/add-build.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-build",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
-      "id": "product/fragment/fragments/board/add-done.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-done",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
-      "id": "product/fragment/fragments/board/add-hotfix.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-hotfix",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
-      "id": "product/fragment/fragments/board/add-new.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-new",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/script/backlog-commit.cjs",
-          "via": "RUNS_SCRIPT"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
-      "id": "product/fragment/fragments/board/add-plan.md",
-      "dependencies": [
-        {
-          "id": "product/command/add-plan",
-          "via": "INJECTS_INTO"
-        },
-        {
-          "id": "product/reference/add--backlog/references/lifecycle.md",
-          "via": "USES_SKILL"
-        },
-        {
-          "id": "product/skill/add--backlog",
-          "via": "USES_SKILL"
-        }
-      ]
-    },
-    {
       "id": "product/fragment/fragments/docs-pruning/add-done.md",
       "dependencies": [
         {
@@ -3146,30 +2598,6 @@
     {
       "file": "framwork/.codeadd/commands/add.md",
       "hits": 16
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-brainstorm.md",
-      "hits": 4
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-build.md",
-      "hits": 2
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-done.md",
-      "hits": 1
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-hotfix.md",
-      "hits": 3
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-new.md",
-      "hits": 3
-    },
-    {
-      "file": "framwork/.codeadd/fragments/board/add-plan.md",
-      "hits": 4
     },
     {
       "file": "framwork/.codeadd/fragments/docs-pruning/add-done.md",

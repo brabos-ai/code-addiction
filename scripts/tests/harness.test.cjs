@@ -101,8 +101,8 @@ test('the case map has the expected shape', () => {
   assert.equal(map.version, 1);
   assert.equal(map.baseline.shippedShellEntries, 19);
   assert.equal(map.baseline.rootShellEntries, 3);
-  assert.equal(map.baseline.batsSuites, 19);
-  assert.equal(map.scripts.length, 24);
+  assert.equal(map.baseline.batsSuites, 17); // 0075B, F5: backlog and backlog-commit suites removed
+  assert.equal(map.scripts.length, 22); // 0075B, F5: backlog and backlog-commit entries removed
   for (const s of map.scripts) {
     assert.equal(typeof s.name, 'string', 'script name');
     assert.equal(typeof s.source, 'string', `${s.name} source`);

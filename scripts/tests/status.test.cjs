@@ -805,7 +805,15 @@ test('status next-id: validates the prefix and exits 2 on an unknown one', (t) =
   const res = status(r, ['next-id', 'X']);
   assert.equal(res.status, 2);
   assert.match(res.stderr, /unknown prefix 'X'/);
-  assert.match(res.stderr, /valid: F, H, PRD, CHG, B/);
+  assert.match(res.stderr, /valid: F, H, PRD, CHG\)/);
+});
+
+test('status next-id: B is no longer a prefix and exits 2', (t) => {
+  const r = repo(t);
+  const res = status(r, ['next-id', 'B']);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /unknown prefix 'B'/);
+  assert.match(res.stderr, /valid: F, H, PRD, CHG\)/);
 });
 
 test('status next-id: an empty prefix exits 2', (t) => {
@@ -818,17 +826,15 @@ test('status next-id: an empty prefix exits 2', (t) => {
 test('NEXT_ID_AGREE: status next-id and next-id.cjs agree Node-to-Node', (t) => {
   const r = repo(t);
   writeIn(r, featurePath('0002F-docs', 'about.md'), '# about\n');
-  h.write(path.join(r.repo, 'docs', 'backlog.jsonl'), '{"id":"0005B","title":"board"}\n');
-  const env = { CODEADD_BOARD_DIR: r.repo };
-  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo, env });
-  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo, env });
+  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo });
+  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo });
   assert.equal(viaStatus.status, 0);
   assert.equal(viaScript.status, 0);
   assert.equal(viaStatus.stdout.trim(), viaScript.stdout.trim());
-  assert.equal(viaStatus.stdout.trim(), '0006F');
+  assert.equal(viaStatus.stdout.trim(), '0003F');
 });
 
-// ─── F6 — the BOARD= line, and ticket ids counted in the board clone ─────────
+// ─── 0075B — the main run prints no BOARD= line, and ids ignore a board clone ──
 
 /** One ticket row for a board file. */
 const boardRow = (id) => JSON.stringify({
@@ -845,61 +851,42 @@ function boardFixture(t, ids) {
 
 const boardLines = (res) => res.stdout.split('\n').filter((l) => l.startsWith('BOARD='));
 
-test('status#058 prints exactly one BOARD= line in each of the five states and keeps exit 0', (t) => {
+test('status#058 prints no BOARD= line in any state and keeps exit 0', (t) => {
   // none: a repository with neither config nor board file.
   const plain = repo(t);
   let res = h.runScript('status', [], { cwd: plain.repo, env: { CODEADD_BOARD_DIR: '' } });
   assert.equal(res.status, 0, res.output);
-  assert.deepEqual(boardLines(res), ['BOARD=none']);
+  assert.deepEqual(boardLines(res), []);
 
-  // ready.
+  // a board fixture and a leftover board.json do not bring the line back.
   const ready = boardFixture(t, ['0001B']);
   res = h.runScript('status', [], { cwd: ready.repo, env: ready.env });
   assert.equal(res.status, 0, res.output);
-  assert.deepEqual(boardLines(res), ['BOARD=ready']);
+  assert.deepEqual(boardLines(res), []);
 
-  // migration-required: the file in the checkout, no config.
   const old = repo(t);
-  writeIn(old, 'docs/backlog.jsonl', boardRow('0001B') + '\n');
+  h.write(path.join(old.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: 'x', branch: 'board' }));
   res = h.runScript('status', [], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
   assert.equal(res.status, 0, res.output);
-  assert.deepEqual(boardLines(res), ['BOARD=migration-required']);
-
-  // branch-missing: config names a branch the remote lacks.
-  const missing = boardFixture(t, []);
-  h.write(path.join(missing.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: missing.bare, branch: 'nope' }));
-  res = h.runScript('status', [], { cwd: missing.repo, env: missing.env });
-  assert.equal(res.status, 0, res.output);
-  assert.deepEqual(boardLines(res), ['BOARD=branch-missing']);
-
-  // checkout-missing: no clone and the remote is gone.
-  const offline = boardFixture(t, []);
-  h.write(path.join(offline.repo, '.codeadd', 'board.json'), JSON.stringify({ remote: path.join(offline.base, 'gone.git'), branch: 'board' }));
-  res = h.runScript('status', [], { cwd: offline.repo, env: offline.env });
-  assert.equal(res.status, 0, res.output);
-  assert.deepEqual(boardLines(res), ['BOARD=checkout-missing']);
+  assert.deepEqual(boardLines(res), []);
 });
 
-test('status#059 next-id B, next-id.cjs B and init.cjs allocate past a ticket that exists only in the clone', (t) => {
+test('status#059 a ticket that exists only in a board clone does not raise the next number', (t) => {
   const b = boardFixture(t, ['0007B']);
-  const viaStatus = h.runScript('status', ['next-id', 'B'], { cwd: b.repo, env: b.env });
-  assert.equal(viaStatus.status, 0, viaStatus.output);
-  assert.equal(viaStatus.stdout.trim(), '0008B');
-
   const viaNextId = h.runScript('next-id', ['F'], { cwd: b.repo, env: b.env });
   assert.equal(viaNextId.status, 0, viaNextId.output);
-  assert.equal(viaNextId.stdout.trim(), '0008F');
+  assert.equal(viaNextId.stdout.trim(), '0001F');
 
   const viaInit = h.runScript('init', [], { cwd: b.repo, env: b.env });
   assert.equal(viaInit.status, 0, viaInit.output);
-  assert.match(viaInit.stdout, /FEATURES:count=0 next=0008F/);
+  assert.match(viaInit.stdout, /FEATURES:count=0 next=0001F/);
 });
 
-test('status#060 without a ready board, allocation counts feature directories only', (t) => {
+test('status#060 allocation counts feature directories only — a checkout backlog file is never read', (t) => {
   const old = repo(t);
   writeIn(old, 'docs/backlog.jsonl', boardRow('0050B') + '\n');
   mkdirIn(old, featurePath('0003F-thing'));
-  const res = h.runScript('status', ['next-id', 'B'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
+  const res = h.runScript('status', ['next-id', 'F'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
   assert.equal(res.status, 0, res.output);
-  assert.equal(res.stdout.trim(), '0004B', 'the checkout file is never read');
+  assert.equal(res.stdout.trim(), '0004F', 'the checkout file is never read');
 });

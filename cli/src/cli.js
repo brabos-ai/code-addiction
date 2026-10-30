@@ -96,7 +96,7 @@ Commands:
   install --enable-feature <name> / --disable-feature <name>
   install --enable-plugin <name> / --disable-plugin <name>
                                Change features and plugins on top of the defaults.
-                               Repeat the flag or use commas: --enable-feature board,qa-pipeline
+                               Repeat the flag or use commas: --enable-feature docs-pruning,qa-pipeline
   install --no-gitignore       Do not write the .gitignore block (default: written)
   install --force              Overwrite existing .codeadd/ or provider files without asking
                                (an installation already registered is changed with modify or update)
@@ -154,7 +154,7 @@ Examples:
   npx codeadd providers add cursor
   npx codeadd providers remove codex --force
   npx codeadd modify
-  npx codeadd install --providers claude,codex --enable-feature board
+  npx codeadd install --providers claude,codex --enable-feature qa-pipeline
   npx codeadd install --providers claude --force
   npx codeadd install --providers none
   npx codeadd modify --providers claude --force --disable-feature tdd-pipeline
