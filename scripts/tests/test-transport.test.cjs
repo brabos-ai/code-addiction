@@ -23,7 +23,7 @@ test('snapshot excludes deps/generated/nested checkouts and tracks edits, additi
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 test('cache hashes every named manifest and image input; export error preserves failures', () => {
-  const input = { dockerfile: 'x', 'package.json': 'a', 'package-lock.json': 'b', 'cli/package.json': 'c', 'cli/package-lock.json': 'd', 'board/package.json': 'e', 'board/package-lock.json': 'f' };
+  const input = { dockerfile: 'x', 'package.json': 'a', 'package-lock.json': 'b', 'cli/package.json': 'c', 'cli/package-lock.json': 'd' };
   for (const key of Object.keys(input)) assert.notEqual(transport.imageTag(input), transport.imageTag({ ...input, [key]: input[key] + '!' }));
   assert.equal(transport.exportStatus(17, true), 17); assert.equal(transport.exportStatus(0, true), 2);
 });

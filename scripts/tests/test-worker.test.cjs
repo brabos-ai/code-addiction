@@ -5,15 +5,15 @@ test('groups run every leaf and preserve first failure, preparation is identifie
   const seen = [];
   const result = await worker.runSelection({ selection: 'all', extra: [], mode: 'run', root: require('node:path').resolve(__dirname, '../..'), authorize: () => {}, execute: async ({ leaf, preparation }) => { seen.push([leaf, preparation]); return !preparation && leaf === 'cli' ? 17 : 0; } });
   assert.equal(result, 17);
-  assert.deepEqual(seen.filter(([, prep]) => !prep).map(([leaf]) => leaf), ['cli', 'scripts', 'package', 'board', 'board-e2e']);
-  assert.ok(seen.some(([leaf, prep]) => leaf === 'board-e2e' && prep));
+  assert.deepEqual(seen.filter(([, prep]) => !prep).map(([leaf]) => leaf), ['cli', 'scripts', 'package']);
 });
 test('argv remains data; individual filters and group/package refusal', () => {
   const args = ['some file', '--testNamePattern', "a'; echo bad; # Ω"];
   const spec = worker.toolSpec({ leaf: 'cli', root: '/fixture', extra: args, mode: 'run' });
   assert.deepEqual(spec.args.slice(-args.length), args); assert.equal(spec.shell, false);
   for (const selection of ['all', 'framework', 'package']) assert.throws(() => worker.validateRequest({ selection, extra: ['filter'], mode: 'run' }), /filter|argument/);
-  assert.throws(() => worker.validateRequest({ selection: 'board', extra: [], mode: 'watch' }), /CLI/);
+  assert.throws(() => worker.validateRequest({ selection: 'scripts', extra: [], mode: 'watch' }), /CLI/);
+  assert.throws(() => worker.validateRequest({ selection: 'board', extra: [], mode: 'run' }));
 });
 test('scripts name filters cannot turn skipped-only result into green', () => {
   assert.equal(worker.noTestsSelected('scripts', '# tests 3\n# pass 0\n# fail 0\n# skipped 3\n'), true);
@@ -23,7 +23,6 @@ test('unverifiable reporter choices refuse and valued Node options retain bounda
   for (const extra of [['--test-reporter', 'dot'], ['--reporter=json'], ['--reporters', 'json']]) assert.throws(() => worker.validateRequest({ selection: 'cli', extra }), /reporter/);
   assert.deepEqual(worker.scriptArgs(['--require', 'preload with spaces.cjs', '--test-name-pattern', 'one two', 'file.cjs'], '/fixture'), ['--test', '--require', 'preload with spaces.cjs', '--test-name-pattern', 'one two', 'file.cjs']);
   assert.throws(() => worker.scriptArgs(['--unknown', 'value'], '/fixture'), /Unsupported/);
-  assert.equal(worker.noTestsSelected('board-e2e', '3 skipped'), true);
 });
 test('group cancellation stops before a subsequent leaf starts', async () => {
   const seen = [];

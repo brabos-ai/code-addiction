@@ -12,8 +12,12 @@ test('receipt binds canonical outer request and exact deterministic leaves', () 
   assert.match(context.refusal({ platform: 'linux', env, selection: 'all', receipt }), /selection/);
   assert.match(context.refusal({ platform: 'linux', env, selection: 'framework', leaf: 'board', receipt }), /leaf/);
   assert.match(context.refusal({ platform: 'linux', env, selection: 'framework', receipt: { ...receipt, leaves: ['cli', 'board'] } }), /leaves/);
-  const all = { ...receipt, selection: 'all', leaves: ['cli', 'scripts', 'package', 'board', 'board-e2e'] };
-  for (const leaf of ['board', 'board-e2e']) assert.equal(context.refusal({ platform: 'linux', env: { ...env, CODEADD_TESTS_SELECTION: 'all', CODEADD_TESTS_LEAF: leaf }, selection: 'all', leaf, receipt: all }), null);
+  const all = { ...receipt, selection: 'all', leaves: ['cli', 'scripts', 'package'] };
+  for (const leaf of ['cli', 'scripts', 'package']) assert.equal(context.refusal({ platform: 'linux', env: { ...env, CODEADD_TESTS_SELECTION: 'all', CODEADD_TESTS_LEAF: leaf }, selection: 'all', leaf, receipt: all }), null);
+  // 0075B F11: `all` has no board stage and `board` is not a selection.
+  assert.deepEqual(context.GROUPS.all, ['cli', 'scripts', 'package']);
+  assert.throws(() => context.canonicalSuite('board'));
+  assert.throws(() => context.canonicalSuite('board-e2e'));
   assert.equal(context.canonicalSuite('vitest'), 'cli'); assert.equal(context.canonicalSuite('bats'), 'scripts');
 });
 test('generic flags, absent or malformed receipts and incomplete CI refuse', () => {
