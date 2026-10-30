@@ -72,7 +72,7 @@ describe('board removed', () => {
     expect(Object.keys(FEATURES)).not.toContain('board');
   });
 
-  it.skip('F5: provider-map names no add--backlog and no board-init', () => {
+  it('F5: provider-map names no add--backlog and no board-init', () => {
     const text = fs.readFileSync(PROVIDER_MAP, 'utf8');
     expect(text).not.toContain('add--backlog');
     expect(text).not.toContain('board-init');
