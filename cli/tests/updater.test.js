@@ -471,6 +471,36 @@ describe('update path migrations (L2.2, L2.5, L2.6)', () => {
     expect(m.plugins).toEqual({ gitnexus: true });
   });
 
+  it('0075B — an install with the board feature on loses the flag, keeps its board data, and logs the note once', async () => {
+    const boardJson = JSON.stringify({ remote: 'x', branch: 'board' });
+    writeManifestFile(tmpDir, {
+      version: '1.0.0',
+      source: 'release',
+      ref: null,
+      providers: [],
+      files: [],
+      features: { 'tdd-pipeline': true, board: true },
+      migrations: ['0001-prune-legacy-orphans', '0002-harvest-relations', '0003-retire-about-suffix', '0004-sync-board-definitions', '0005-qa-settings'],
+    });
+    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), boardJson, 'utf8');
+
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+
+    const m = readManifest(tmpDir);
+    expect(m.migrations).toContain('0006-retire-board');
+    expect(m.migrations).toContain('0004-sync-board-definitions');
+    expect(m.features).not.toHaveProperty('board');
+    expect(m.features['tdd-pipeline']).toBe(true);
+    expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'board.json'), 'utf8')).toBe(boardJson);
+    const notes = vi.mocked(log.info).mock.calls.map((c) => String(c[0])).filter((s) => /board was removed from the framework/.test(s));
+    expect(notes).toHaveLength(1);
+    const warnings = vi.mocked(log.warn).mock.calls.map((c) => String(c[0]));
+    expect(warnings.filter((s) => /board/i.test(s))).toEqual([]);
+  });
+
   it('L2.6b — a ledger that already lists every id executes nothing and survives', async () => {
     writeManifestFile(tmpDir, {
       version: '1.0.0',

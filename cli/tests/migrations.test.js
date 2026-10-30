@@ -20,7 +20,7 @@ import {
   pendingMigrations,
   runMigrations,
   migrate,
-  syncBoardDefinitions,
+  retireBoard,
   migrateQaSettings,
 } from '../src/migrations.js';
 
@@ -319,117 +319,105 @@ describe('behavioural acceptance (L3)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 0004-sync-board-definitions (0057B)
+// 0006-retire-board (0075B) — the board feature is gone; the user's board data is not touched
 // ---------------------------------------------------------------------------
 
-describe('0004-sync-board-definitions (0057B)', () => {
-  /** A project that points at a board and holds the shipped write entry. */
-  function seedBoardProject({ script = true } = {}) {
-    fs.mkdirSync(path.join(tmpDir, '.codeadd', 'scripts'), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), JSON.stringify({ remote: 'x', branch: 'board' }), 'utf8');
-    if (script) fs.writeFileSync(path.join(tmpDir, '.codeadd', 'scripts', 'backlog-commit.cjs'), '// stub', 'utf8');
+describe('0006-retire-board (0075B)', () => {
+  const BOARD_JSON = JSON.stringify({ remote: 'x', branch: 'board' });
+
+  /** An install that had the board feature on, with its data around it. */
+  function seedBoardInstall({ boardJson = true, features = { board: true, 'tdd-pipeline': true } } = {}) {
+    writeManifestFile(tmpDir, { version: '1.0.0', providers: [], files: [], features });
+    if (boardJson) fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), BOARD_JSON, 'utf8');
   }
-  const reply = (status, stdout = '', extra = {}) => () => ({ status, stdout, stderr: '', ...extra });
-  const spy = (fn) => {
-    const calls = [];
-    const exec = (...args) => { calls.push(args); return fn(...args); };
-    return { exec, calls };
-  };
 
-  it('L2.7 is registered, after 0003, and allMigrationIds stays sorted', () => {
-    expect(MIGRATIONS.map((m) => m.id)).toContain('0004-sync-board-definitions');
-    const ids = allMigrationIds();
-    expect(ids).toEqual([...ids].sort());
-    expect(ids.indexOf('0004-sync-board-definitions')).toBeGreaterThan(ids.indexOf('0003-retire-about-suffix'));
-    expect(MIGRATIONS.find((m) => m.id === '0004-sync-board-definitions').description).toMatch(/board/i);
+  it('the registry reads exactly 0001, 0002, 0003, 0005, 0006 — 0004 is gone', () => {
+    expect(MIGRATIONS.map((m) => m.id)).toEqual([
+      '0001-prune-legacy-orphans',
+      '0002-harvest-relations',
+      '0003-retire-about-suffix',
+      '0005-qa-settings',
+      '0006-retire-board',
+    ]);
+    expect(allMigrationIds()).toEqual([...allMigrationIds()].sort());
+    expect(MIGRATIONS.find((m) => m.id === '0006-retire-board').description).toMatch(/board/i);
   });
 
-  it('exits 0 with names: one change entry naming them', () => {
-    seedBoardProject();
-    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'ROUTE=board\nDEFS_ADDED=refining,shaped\nCOMMITTED=yes\nPUSHED=yes\n'));
-    expect(out.changes).toEqual(['board definitions: added refining, shaped']);
+  it('a ledger that already holds 0004 gives no error and no pending entry for it', () => {
+    const ledger = ['0004-sync-board-definitions', ...allMigrationIds()];
+    expect(pendingMigrations(ledger).map((m) => m.id)).toEqual([]);
+    const run = runMigrations({ cwd: tmpDir, providers: [] }, ledger);
+    expect(run.failed).toEqual([]);
+    expect(run.applied).toEqual([]);
+    const partial = pendingMigrations(['0004-sync-board-definitions']);
+    expect(partial.map((m) => m.id)).not.toContain('0004-sync-board-definitions');
+    expect(partial.map((m) => m.id)).toContain('0006-retire-board');
   });
 
-  it('exits 0 with an empty list: one note, no change', () => {
-    seedBoardProject();
-    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'ROUTE=board\nCOMMITTED=no\n'));
-    expect(out.changes ?? []).toEqual([]);
-    expect(out.notes).toEqual(['board definitions already hold every default status']);
+  it('with the flag on and board.json present: the flag goes, one note, board.json byte-identical', () => {
+    seedBoardInstall();
+    const out = retireBoard({ cwd: tmpDir });
+    expect(readManifestFile(tmpDir).features).toEqual({ 'tdd-pipeline': true });
+    expect(out.changes).toHaveLength(1);
+    expect(out.notes).toHaveLength(1);
+    expect(out.notes[0]).toMatch(/board was removed from the framework/);
+    expect(out.notes[0]).toMatch(/untouched/);
+    expect(out.notes[0]).toMatch(/board.{0,10}branch/);
+    expect(out.notes[0]).toMatch(/\.codeadd\/board\.json/);
+    expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'board.json'), 'utf8')).toBe(BOARD_JSON);
   });
 
-  it('a DEGRADED line becomes a note that names it', () => {
-    seedBoardProject();
-    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(0, 'DEFS_ADDED=shaped\nCOMMITTED=yes\nPUSHED=no\nDEGRADED=push-refused\n'));
-    expect(out.changes).toEqual(['board definitions: added shaped']);
-    expect(out.notes.join(' ')).toContain('push-refused');
+  it('never touches the board branch or the board clone', () => {
+    seedBoardInstall();
+    const git = (...args) => spawnSync('git', args, { cwd: tmpDir, encoding: 'utf8' });
+    git('init', '-q', '-b', 'main');
+    git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'init');
+    git('branch', 'board');
+    const clone = path.join(tmpDir, 'board-clone');
+    fs.mkdirSync(path.join(clone, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(clone, 'docs', 'backlog.jsonl'), '{"id":"0001B"}\n');
+    const prior = process.env.CODEADD_BOARD_DIR;
+    process.env.CODEADD_BOARD_DIR = clone;
+    try {
+      retireBoard({ cwd: tmpDir });
+    } finally {
+      if (prior === undefined) delete process.env.CODEADD_BOARD_DIR;
+      else process.env.CODEADD_BOARD_DIR = prior;
+    }
+    expect(git('branch', '--list', 'board').stdout).toContain('board');
+    expect(fs.readFileSync(path.join(clone, 'docs', 'backlog.jsonl'), 'utf8')).toBe('{"id":"0001B"}\n');
   });
 
-  it('REFUSED=board-not-configured is applied with a note', () => {
-    seedBoardProject();
-    const out = syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'REFUSED=board-not-configured\n'));
-    expect(out.notes).toEqual(['no board in this project']);
-  });
-
-  it('REFUSED=definitions-unreadable throws, so the migration stays pending', () => {
-    seedBoardProject();
-    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'REFUSED=definitions-unreadable\n'))).toThrow(/definitions-unreadable/);
-  });
-
-  it('a board error throws with the ERROR= line', () => {
-    seedBoardProject();
-    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(1, 'ERROR=board-checkout-missing\n'))).toThrow(/board-checkout-missing/);
-  });
-
-  it('an older script that does not know the mode throws', () => {
-    seedBoardProject();
-    expect(() => syncBoardDefinitions({ cwd: tmpDir }, reply(2, 'ERROR=bad-mode\n'))).toThrow(/bad-mode/);
-  });
-
-  it('a timed-out or killed spawn throws', () => {
-    seedBoardProject();
-    expect(() => syncBoardDefinitions({ cwd: tmpDir }, () => ({ status: null, stdout: '', error: new Error('spawnSync ETIMEDOUT') }))).toThrow();
-    expect(() => syncBoardDefinitions({ cwd: tmpDir }, () => ({ status: null, stdout: '', signal: 'SIGTERM' }))).toThrow();
-  });
-
-  it('no .codeadd/board.json: applied, silent, and the spawn never happens', () => {
-    seedProject();
-    const { exec, calls } = spy(reply(0, ''));
-    const out = syncBoardDefinitions({ cwd: tmpDir }, exec);
-    expect(calls).toHaveLength(0);
+  it('with no board.json the flag goes and notes is empty', () => {
+    seedBoardInstall({ boardJson: false });
+    const out = retireBoard({ cwd: tmpDir });
+    expect(readManifestFile(tmpDir).features).toEqual({ 'tdd-pipeline': true });
     expect(out.notes).toEqual([]);
-    expect(out.changes).toEqual([]);
+    expect(fs.existsSync(path.join(tmpDir, '.codeadd', 'board.json'))).toBe(false);
   });
 
-  it('a board is configured but the script is not installed: applied with a note, no spawn', () => {
-    seedBoardProject({ script: false });
-    const { exec, calls } = spy(reply(0, ''));
-    const out = syncBoardDefinitions({ cwd: tmpDir }, exec);
-    expect(calls).toHaveLength(0);
-    expect(out.notes).toEqual(['backlog-commit.cjs not installed; nothing to sync']);
+  it('a second run changes nothing', () => {
+    seedBoardInstall();
+    retireBoard({ cwd: tmpDir });
+    const manifestAfterFirst = fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8');
+    const again = retireBoard({ cwd: tmpDir });
+    expect(again.changes).toEqual([]);
+    expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'manifest.json'), 'utf8')).toBe(manifestAfterFirst);
+    expect(fs.readFileSync(path.join(tmpDir, '.codeadd', 'board.json'), 'utf8')).toBe(BOARD_JSON);
   });
 
-  it('the default spawn runs the installed entry with sync-defs, in the project directory', () => {
-    seedBoardProject();
-    fs.writeFileSync(
-      path.join(tmpDir, '.codeadd', 'scripts', 'backlog-commit.cjs'),
-      "process.stdout.write('DEFS_ADDED=' + process.argv[2] + '\\n');\n",
-      'utf8',
-    );
-    const out = syncBoardDefinitions({ cwd: tmpDir });
-    expect(out.changes).toEqual(['board definitions: added sync-defs']);
+  it('a project with no manifest, or no board flag, is applied with no change', () => {
+    expect(retireBoard({ cwd: tmpDir })).toEqual({ changes: [], notes: [] });
+    seedBoardInstall({ boardJson: false, features: { 'tdd-pipeline': true } });
+    expect(retireBoard({ cwd: tmpDir }).changes).toEqual([]);
   });
 
-  it('through runMigrations a throw leaves 0004 out of applied, and a clean run records it', () => {
-    seedBoardProject();
-    const registry = [{ id: '0004-sync-board-definitions', description: 'x', run: (ctx) => syncBoardDefinitions(ctx, reply(2, 'REFUSED=definitions-unreadable\n')) }];
-    const failed = runMigrations({ cwd: tmpDir, providers: [] }, [], { registry });
-    expect(failed.applied).toEqual([]);
-    expect(failed.failed.map((f) => f.id)).toEqual(['0004-sync-board-definitions']);
-
-    const ok = [{ id: '0004-sync-board-definitions', description: 'x', run: (ctx) => syncBoardDefinitions(ctx, reply(0, 'DEFS_ADDED=shaped\n')) }];
-    const done = runMigrations({ cwd: tmpDir, providers: [] }, [], { registry: ok });
-    expect(done.applied).toEqual(['0004-sync-board-definitions']);
-    expect(done.changes).toEqual(['board definitions: added shaped']);
+  it('through runMigrations 0006 is recorded as applied', () => {
+    seedBoardInstall();
+    const done = runMigrations({ cwd: tmpDir, providers: [] }, allMigrationIds().filter((id) => id !== '0006-retire-board'));
+    expect(done.failed).toEqual([]);
+    expect(done.applied).toEqual(['0006-retire-board']);
+    expect(done.notes).toHaveLength(1);
   });
 });
 
@@ -525,11 +513,11 @@ describe('0005-qa-settings (0066B)', () => {
     }
   }
 
-  it('L2.8 is registered after 0004 and allMigrationIds includes it, sorted', () => {
+  it('L2.8 is registered after 0003 and allMigrationIds includes it, sorted', () => {
     const ids = allMigrationIds();
     expect(ids).toContain('0005-qa-settings');
     expect(ids).toEqual([...ids].sort());
-    expect(ids.indexOf('0005-qa-settings')).toBeGreaterThan(ids.indexOf('0004-sync-board-definitions'));
+    expect(ids.indexOf('0005-qa-settings')).toBeGreaterThan(ids.indexOf('0003-retire-about-suffix'));
     expect(MIGRATIONS.find((m) => m.id === '0005-qa-settings').description).toMatch(/settings/i);
   });
 
