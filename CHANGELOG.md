@@ -6,8 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-### Added
-- Enabling the `board` feature now creates the board. The new shipped script `board-init.cjs` writes `.codeadd/board.json`, pushes an orphan `board` branch to `origin` (never code), makes the clone and stages the config. `codeadd features enable board`, `codeadd modify --enable-feature board`, `codeadd install --enable-feature board` and `/add-setup` all run it; it needs an `origin` with the main branch pushed. A project that already has a board is left as it is, and any failure is one warning while the enable still succeeds. `/add-setup` no longer records `board` as `unavailable`, and no shipped text sends you to the framework maintainer for the board.
+### Removed
+- The `board` feature, the backlog board and everything around it: the `board` option of `codeadd features`, the fragments injected into six commands, the backlog scripts (`backlog-cli.cjs`, `backlog-commit.cjs` and the rest), the `add--backlog` skill, the agent-mode board guide and the ticket field of the agent-mode result block. Feature folders are now named `<id>-<slug>` and the allocator (`feature-id.cjs`, renamed from `backlog-id.cjs`) counts feature folders only; old `NNNNB` ids are still read, never given out. A legacy `ticket:` field in a document stays valid. Migration `0006-retire-board` drops the `board` flag on `codeadd update` and notes it once. **It leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched — your tickets stay where they are, readable as plain files.**
 
 ## [1.7.0] - 2026-10-25
 

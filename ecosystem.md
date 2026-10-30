@@ -18,7 +18,6 @@ graph LR
 
   AGIN{{add--agent-interaction}}
   BADE{{add--backend-development}}
-  BA{{add--backlog}}
   CORE{{add--code-review}}
   CO{{add--commit}}
   CRSFCO{{add--cross-sf-consistency}}
@@ -47,25 +46,20 @@ graph LR
 
   BRAINSTORM --> DEMO & DOSC & FIRE & HUIN & KNDI
   BRAINSTORM -->|agent-mode| AGIN
-  BRAINSTORM -->|board| BA
   NEW --> DEMO & DOSC & FESP & FIRE & HUIN & IDCO & KNDI & PLRE & REDI & SUDRDE
   NEW -->|agent-mode| AGIN
-  NEW -->|board| BA
   PLAN --> BADE & CRSFCO & DADE & DEMO & DOSC & FEDI & FIRE & FRDE & HUIN & IDCO & KNDI & PLRE & REDI & SUDRDE & TACH & UXDE
   PLAN -->|agent-mode| AGIN
-  PLAN -->|board| BA
   PLAN -->|qa-pipeline| QASP
   PLAN -->|tdd-pipeline| TESP
   BUILD --> BADE & CORE & CO & CRSFCO & DADE & DEMO & DOSC & FIRE & FRDE & HUIN & IDCO & REDI & SUDRDE & TACH & UXDE
   BUILD -->|agent-mode| AGIN
-  BUILD -->|board| BA
   BUILD -->|tdd-pipeline| TD
   REVIEW --> CO & DEMO & DOSC & FIRE & HUIN & IN & KNDI & SUDRDE & TACH
   REVIEW -->|agent-mode| AGIN
   REVIEW -->|qa-pipeline| QA
   DONE --> DOSC & EC & FIRE & HUIN & IDCO & WIMA
   DONE -->|agent-mode| AGIN
-  DONE -->|board| BA
 ```
 
 ## Graph 2 - Support Commands
@@ -85,7 +79,6 @@ graph LR
   AGIN{{add--agent-interaction}}
   AGMDST{{add--agents-md-style}}
   ARDI{{add--architecture-discovery}}
-  BA{{add--backlog}}
   CO{{add--commit}}
   DEMO{{add--delivery-mode}}
   DEENSE{{add--dev-environment-setup}}
@@ -113,7 +106,6 @@ graph LR
   DIAGNOSE -->|agent-mode| AGIN
   HOTFIX --> DOSC & EC & FIRE & HUIN & IDCO & IN & KNDI & SUDRDE & UXDE
   HOTFIX -->|agent-mode| AGIN
-  HOTFIX -->|board| BA
   HOTFIX -->|tdd-pipeline| TD
   PULLREQUEST --> CO & DOSC & FIRE & HUIN & IDCO
   PULLREQUEST -->|agent-mode| AGIN
