@@ -54,7 +54,7 @@ Look in this order and stop at the first hit:
 1. The `tracker: <card URL>` line in the feature's `about.md`, or in the intent file frontmatter.
 2. A search in the database for the Slug property.
 
-No card found: only the product PM creates one (see Ownership).
+No card found: only the product PM creates one (see Ownership). An engineer who finds none reports it to the PM and continues with no tracker. The one exception is a hotfix: the engineer starting it creates the card, with Type Hotfix.
 
 ### 3. Move the card
 

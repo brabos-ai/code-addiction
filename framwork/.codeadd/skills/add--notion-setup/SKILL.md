@@ -66,7 +66,7 @@ Authentication is the provider's own flow (OAuth login or an environment variabl
 
 ### 2. Ask once
 
-When a `## Setup answers` block is in the session (from `/add-setup`), read the columns and labels from it and ask nothing it already covers. Otherwise ask every question below in ONE numbered message, each with a RECOMMENDED answer and the reason, and WAIT once:
+When a `## Setup answers` block is in the session (from `/add-setup`), read every answer it carries (parent page, database name, columns, labels) and ask only what it does not cover. Use the properties table below as shown, with no second confirmation. Otherwise ask every question below in ONE numbered message, each with a RECOMMENDED answer and the reason, and WAIT once:
 
 1. **Parent page** that will hold the database and the `Como funciona` page. No default: the user names it.
 2. **Database name.** Default: the repository folder name; the user may edit it.
@@ -93,7 +93,7 @@ Create it through the Notion MCP, in the parent page, with the properties and va
 
 ### 4. Create the `Como funciona` page
 
-Create a page in the same parent as the database. The title is `Como funciona`, written in the user's language. The agents that read it later find it by this title, so the title is the page's identity: keep it. The page holds:
+Create a page in the same parent as the database. The title is always `Como funciona`, whatever language the page is written in. The agents that read it later find it by this exact title, so the title is the page's identity: keep it. The page holds:
 
 - the columns and what each one means;
 - the pipeline milestone that moves a card into each column (brainstorm, new, plan, build, review, done, hotfix);

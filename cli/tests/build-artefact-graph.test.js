@@ -954,7 +954,8 @@ describe('node inventory snapshot', () => {
       // (ticket 0060B, plan 2026-10-24T182329-PLAN--remove-generic-skills, F1).
       // skill 59 -> 60: add--settings, the project settings file (ticket 0066B, plan 2026-10-25T053315-PLAN--qa-settings, F4).
       // skill 60 -> 59: add--backlog removed with the board (0075B, F5).
-      skill: 59,
+      // skill 59 -> 61: add--notion-setup and add--notion (0076B, F1, F2).
+      skill: 61,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -1150,13 +1151,14 @@ describe('node inventory snapshot', () => {
     // 204 -> 197: the six fragments/board/ files and their feature node are removed (0075B, F2).
     // 197 -> 193: the add--backlog skill and three references removed (0075B, F5); the script count is derived from disk.
     // 193 -> 192: the internal command add-framework--backlog is removed (0075B, F13).
-    expect(nodes).toHaveLength(192 + agentModeFragments() + shippedScriptsCount);
+    // 192 -> 194: add--notion-setup and add--notion (0076B, F1, F2); both declare, so 136 -> 138.
+    expect(nodes).toHaveLength(194 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
     // declares 138 -> 137: add--backlog declared (0075B, F5).
     // declares 137 -> 136: add-framework--backlog declared (0075B, F13).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(136 + agentModeFragments());
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {
