@@ -1089,7 +1089,7 @@ Then, after the seven blocks, state:
 | Document | Role in the next activity |
 |---|---|
 | `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
-| `docs/features/<id>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| `docs/features/<id>-<slug>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---
