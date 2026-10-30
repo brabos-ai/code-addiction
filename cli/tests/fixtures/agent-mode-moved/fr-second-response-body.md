@@ -71,6 +71,4 @@ IF THIS RUN IS A WORKER, A SUBAGENT, OR A STEP NESTED INSIDE ANOTHER COMMAND:
 ```
 
 A worker that loads this skill to close out its own area is not the user's next stop, and a question
-from one leaves the user two threads to choose between. A backlog operation nested inside another
-command is the same case. A top-level backlog operation offers only when its host selected an actual
-next development activity; otherwise it ends normally.
+from one leaves the user two threads to choose between.
