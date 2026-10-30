@@ -235,6 +235,12 @@ describe('legacy tdd alias resolution', () => {
     expect(states).toEqual({ 'tdd-pipeline': false });
   });
 
+  it('normalizeFeatureStates drops the retired board key without throwing and reports the change', () => {
+    const { states, changed } = normalizeFeatureStates({ board: true, 'tdd-pipeline': true });
+    expect(states).toEqual({ 'tdd-pipeline': true });
+    expect(changed).toBe(true);
+  });
+
   it('normalizeFeatureStates is a no-op when no alias is present', () => {
     const { states, changed } = normalizeFeatureStates({ 'tdd-pipeline': true });
     expect(changed).toBe(false);
