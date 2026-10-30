@@ -805,7 +805,15 @@ test('status next-id: validates the prefix and exits 2 on an unknown one', (t) =
   const res = status(r, ['next-id', 'X']);
   assert.equal(res.status, 2);
   assert.match(res.stderr, /unknown prefix 'X'/);
-  assert.match(res.stderr, /valid: F, H, PRD, CHG, B/);
+  assert.match(res.stderr, /valid: F, H, PRD, CHG\)/);
+});
+
+test('status next-id: B is no longer a prefix and exits 2', (t) => {
+  const r = repo(t);
+  const res = status(r, ['next-id', 'B']);
+  assert.equal(res.status, 2);
+  assert.match(res.stderr, /unknown prefix 'B'/);
+  assert.match(res.stderr, /valid: F, H, PRD, CHG\)/);
 });
 
 test('status next-id: an empty prefix exits 2', (t) => {
@@ -818,14 +826,12 @@ test('status next-id: an empty prefix exits 2', (t) => {
 test('NEXT_ID_AGREE: status next-id and next-id.cjs agree Node-to-Node', (t) => {
   const r = repo(t);
   writeIn(r, featurePath('0002F-docs', 'about.md'), '# about\n');
-  h.write(path.join(r.repo, 'docs', 'backlog.jsonl'), '{"id":"0005B","title":"board"}\n');
-  const env = { CODEADD_BOARD_DIR: r.repo };
-  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo, env });
-  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo, env });
+  const viaStatus = h.runScript('status', ['next-id', 'F'], { cwd: r.repo });
+  const viaScript = h.runScript('next-id', ['F'], { cwd: r.repo });
   assert.equal(viaStatus.status, 0);
   assert.equal(viaScript.status, 0);
   assert.equal(viaStatus.stdout.trim(), viaScript.stdout.trim());
-  assert.equal(viaStatus.stdout.trim(), '0006F');
+  assert.equal(viaStatus.stdout.trim(), '0003F');
 });
 
 // ─── 0075B — the main run prints no BOARD= line, and ids ignore a board clone ──
@@ -876,11 +882,11 @@ test('status#059 a ticket that exists only in a board clone does not raise the n
   assert.match(viaInit.stdout, /FEATURES:count=0 next=0001F/);
 });
 
-test('status#060 without a ready board, allocation counts feature directories only', (t) => {
+test('status#060 allocation counts feature directories only — a checkout backlog file is never read', (t) => {
   const old = repo(t);
   writeIn(old, 'docs/backlog.jsonl', boardRow('0050B') + '\n');
   mkdirIn(old, featurePath('0003F-thing'));
-  const res = h.runScript('status', ['next-id', 'B'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
+  const res = h.runScript('status', ['next-id', 'F'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
   assert.equal(res.status, 0, res.output);
-  assert.equal(res.stdout.trim(), '0004B', 'the checkout file is never read');
+  assert.equal(res.stdout.trim(), '0004F', 'the checkout file is never read');
 });
