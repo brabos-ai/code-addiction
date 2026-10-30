@@ -226,7 +226,7 @@ A team can keep its cards in Notion. Notion is optional: the commands work the s
 - From then on agents keep the cards current by the rules on `How it works`. The page wins over any default.
   A card is always named `<id>-<slug>`.
 - A project that had the old local board moves it in this order. Move only the in-progress and pending cards to
-  Notion and check each one arrived. Then, after you say yes, delete `.codeadd/board.json`, the local folder
+  Notion and check each one arrived. The agent shows you what it sent and the three deletions and waits. Then, after you say yes, delete `.codeadd/board.json`, the local folder
   `~/.codeadd/<key>/board/` and the remote `board` branch, the branch last. Done and dropped cards are not moved.
 
 Without Notion, the handoff is the intent file and the feature folder, as in section 9.

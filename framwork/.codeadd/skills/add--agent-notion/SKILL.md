@@ -64,7 +64,7 @@ That page is the source of truth. It wins over everything in this skill.
 ## Use the board, each day
 
 1. **Read "How it works" before any write.** Find it by title through the Notion tools. When it does not exist, say the board is not built, offer to build it with the user, and continue the work with no card.
-2. **Find the card by its `<id>-<slug>` title.** Always show the id with the slug, as in `0075F-remove-board`. No card found: only the PM creates one. An engineer who finds none tells the PM and continues. The one exception is a hotfix, where the engineer starting it creates the card.
+2. **Find the card by its `<id>-<slug>` title.** Always show the id with the slug, as in `0075F-remove-board`. No card found: the PM creates one. When the team has no PM, the engineer creates it. An engineer on a team with a PM who finds none tells the PM and continues; the one exception is a hotfix, where the engineer starting it creates the card.
 3. **Update the card at each milestone.** Apply the page's rule. Only where the page has no rule, use this fallback:
 
 | Milestone | Card |
@@ -80,9 +80,9 @@ The column names above are the recommended defaults. When the page renamed a col
 
 ## Migrate the old local board
 
-Only for a project that had the old local board. Read its cards from one of three places: `.codeadd/board.json` in the repository, the `board` branch of the remote, or the local clone at `~/.codeadd/<key>/board/`. `<key>` is the folder the removed board used for this project: list `~/.codeadd/`, take the one folder holding a `board/` clone whose remote is this repository, and ask the user when you find none or more than one.
+Only for a project that had the old local board. First make sure the Notion board is built and "How it works" was read in this run; when the board is not built, build it first (section above). Then read the old cards from one of three places: `.codeadd/board.json` in the repository, the `board` branch of the remote, or the local clone at `~/.codeadd/<key>/board/`. `<key>` is the folder the removed board used for this project: list `~/.codeadd/`, take the one folder holding a `board/` clone whose remote is this repository, and ask the user when you find none or more than one.
 
-1. Send only the in-progress and pending cards to Notion. Insert each one, or update it when a card with the same `<id>-<slug>` title already exists. Skip the done and dropped cards: they are not migrated.
+1. Send only the in-progress and pending cards to Notion. The old status names are in each card's status field; when you cannot tell which are open, ask the user. Insert each one, or update it when a card with the same `<id>-<slug>` title already exists. Skip the done and dropped cards: they are not migrated.
 2. Check that every card you sent is in Notion.
 3. Show the user what was sent and the three deletions that come next, and wait for the user's yes.
 4. After the yes, delete in this order:
@@ -91,3 +91,14 @@ Only for a project that had the old local board. Read its cards from one of thre
    3. delete the remote `board` branch last.
 
 A deleted remote branch cannot be undone, which is why it goes last and only after the yes.
+
+## Rules
+
+ALWAYS:
+- Show the card as `<id>-<slug>`
+- Treat "How it works" as the source of truth over this skill
+- Confirm every sent card in Notion before any deletion
+
+NEVER:
+- Run this skill from a framework command or its agents
+- Delete the old board in any other order than the one above
