@@ -1,6 +1,6 @@
 ---
 name: add--id-convention
-description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) expect
+description: Use when allocating feature/hotfix/refactor/chore/docs IDs or creating branches — canonical `[NNNN][L]` format that the scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) expect
 ---
 
 # ID & Branch Naming Convention
@@ -15,7 +15,7 @@ description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs 
 - script: done.cjs
 - script: get-branch-metadata.cjs
 - script: next-id.cjs
-- script: backlog-id.cjs
+- script: feature-id.cjs
 - mention: init.cjs
 - script: qa-evidence.cjs
 - script: status.cjs
@@ -58,21 +58,15 @@ Scripts enforce this format; commands that diverge (e.g., letter-first `H0001` i
 | `D` | docs |
 | `P` | perf |
 | `T` | test |
-| `B` | backlog ticket — decided, not started |
 
 Must match the regex in `.codeadd/scripts/get-branch-metadata.cjs` (`[0-9]{4}[A-Z]`).
 
-⛔ **`B` IS THE ONE LETTER WITH NO BRANCH.** A ticket records work that has not started, so there is
-nothing to check out. When the ticket becomes work, that work allocates its own id of the matching
-type — `0007B` becomes feature `0012F`, not `feature/0007B-...`. The ticket keeps a `work_id` field
-pointing at the id it became, and the two stay distinct.
+`B` is retired: nothing allocates it any more (`status.cjs next-id B` exits 2). Folders and branches
+already named with an old `B` id stay valid — a reader of an EXISTING id accepts any letter. Only
+allocation is closed.
 
-```
-IF A TICKET IS BEING PICKED UP:
-  ⛔ DO NOT USE: Bash for git checkout -b on a B id
-  ⛔ DO NOT: Reuse the ticket's number for the work — the counter is global and 0007 is spent
-  ✅ DO: Allocate a new id of the work's own type, and record it on the ticket
-```
+⛔ **A report that names a feature prints `<id>-<slug>`, never the bare id.** The person reading it does
+not remember what `0042F` was; `0042F-login-timeout` tells them.
 
 ### Branch format
 
@@ -111,35 +105,29 @@ Examples: `status.cjs next-id F` → `0001F`, `status.cjs next-id H` → `0001H`
 
 Never hand-roll IDs. Never reuse an ID from another namespace.
 
-### One counter, two sources, one implementation
+### One counter, one source, one implementation
 
-The number is global across every letter. It is the max over **both** the
-`docs/features/[NNNN][L]-*/` directories of the code repository **and** the ids already on the backlog
-board, `docs/backlog.jsonl` in the board clone (`boardRoot`) — counting only the first would hand out a
-number a ticket already holds. A project with no usable board counts the feature directories alone.
+The number is global across every letter. It is the max over the
+`docs/features/[NNNN][L]-*/` directories of the code repository — nothing else is counted.
 
-**`backlog-id.cjs` is the one allocator, and it is native.** It computes the max+1 from both
-sources, anchored on the raw text, and every route delegates to it: `next-id.cjs` (one uppercase
-A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
-prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), and the `init.cjs` seed are
-thin adapters that retain their public argument validation, exit codes and exhaustion policy. Backlog allocation refuses `10000` (`ERROR=id-allocation-failed`). The public
-`next-id`, `status next-id` and `init` adapters preserve the old minimum-width formatting and
-can emit a five-digit number at the boundary; this does not expand the four-digit backlog schema.
+**`feature-id.cjs` is the one allocator, and it is native.** Every route delegates to it:
+`next-id.cjs` (one uppercase A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
+prefixes F|H|PRD|CHG, exit 2 on a bad prefix), and the `init.cjs` seed are thin adapters that retain
+their public argument validation, exit codes and exhaustion policy. The core's `calculate` refuses at
+9999 (`id-exhausted`); the public `next-id`, `status next-id` and `init` adapters preserve the
+minimum-width formatting and can emit a five-digit number (`10000F`) at the boundary.
 
 ```
 IF CHANGING HOW AN ID IS ALLOCATED:
   ⛔ DO NOT: Copy the scan into an entry — the old `next-id.sh` / `status.sh` pair did, and they
              diverged
-  ⛔ DO NOT: Parse JSON to read the backlog — the core reads it by raw-text anchor, so a damaged
-             line still yields its id
-  ✅ DO: Change the scan only in `backlog-id.cjs`; every entry delegates there
-  ✅ DO: Run the native allocator contract tests — `cli/tests/backlog-id.test.js` pins the
+  ✅ DO: Change the scan only in `feature-id.cjs`; every entry delegates there
+  ✅ DO: Run the native allocator contract tests — `cli/tests/feature-id.test.js` pins the
          canonical core, and `scripts/tests/status.test.cjs` pins `status next-id` against it
 ```
 
-**The core reads the backlog by raw-text anchor, never by parse.** A line whose JSON is damaged
-still yields its id, so a hand-broken board can never block an allocation. An absent board is a
-no-op: a project with no board gets exactly the id it got before.
+An absent `docs/features` is a no-op: a fresh project gets `0001`. An existing one that cannot be read
+is an explicit failure.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
 

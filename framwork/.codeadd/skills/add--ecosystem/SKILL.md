@@ -95,7 +95,7 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: qa-evidence.cjs
 - mention: status.cjs
 - mention: hotfix-gates.cjs
-- mention: backlog-id.cjs
+- mention: feature-id.cjs
 - mention: migrate-context-files.cjs
 - mention: init.cjs
 - mention: qa-preflight.cjs
@@ -288,7 +288,7 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | converge-gates.cjs | add-build (Checkpoint Sequence and epic-wide gate), add-done (STEP 4, delivery-gate preflight) — read-only probe for the five gates (review, QA baseline, epic, coverage, build ledger); one script backs both commands' verdicts so they can't drift apart |
 | build-ledger.cjs | add-build (10.0.1 pre-flight scan, 11.3 commit, 12.2 fix rounds, 16.2 iteration), add--subagent-driven-development — appends one line to the feature's build ledger, creating it with its identity header when absent. The ledger is what survives a compaction: a task with a `complete` line is never re-dispatched |
 | task-brief.cjs | add-build (STEP 10 dispatch), add--subagent-driven-development — extracts one `tasks.md` task with all six sub-bullets to its own file, so an implementer reads its requirements instead of the whole plan |
-| backlog-id.cjs | add--backlog — the native global id allocator: immediate `docs/features` slugs under the code root plus the raw backlog text of the board clone (`boardRoot`), anchored on the raw text exactly as the retired shell calculators grepped; 9999 overflows refuse rather than wrap |
+| feature-id.cjs | the native global id allocator: counts the immediate `docs/features/[NNNN][L]-*` folders only; calculate refuses at 9999, the public adapters keep minimum-width output |
 | migrate-context-files.cjs | add-brainstorm, add-wiki, add--agents-md-style — folds any legacy context file into `AGENTS.md` without losing a line, because a leftover one hides or overrides it |
 | review-package.cjs | add-build (the re-review of a fix round and, in TASKS MODE, the area validator over the committed range — never a validator on an uncommitted tree), add--subagent-driven-development — writes the scoped `BASE..HEAD` diff to one file for the reviewer, and refuses an empty range |
 

@@ -7,7 +7,7 @@ description: Use when writing commands or skills that reference other commands, 
 
 <!-- uses:
 - command: /add-wiki
-- script: backlog-id.cjs
+- script: feature-id.cjs
 -->
 
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/` paths to commands or skills break because these directories do not exist in the installed project. Use build-time variables to reference resources.
@@ -71,7 +71,7 @@ node .codeadd/scripts/status.cjs
 node .codeadd/scripts/done.cjs
 ```
 
-The shipped `backlog-id.cjs` is a Node CommonJS module (global id allocation). Invoke entries with `node .codeadd/scripts/<entry>.cjs`.
+The shipped `feature-id.cjs` is a Node CommonJS module (global id allocation). Invoke entries with `node .codeadd/scripts/<entry>.cjs`.
 
 ### `{{addpath:X}}`
 

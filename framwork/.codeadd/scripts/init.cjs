@@ -22,7 +22,7 @@
  *
  * DELEGATION. Branch detection is `get-branch-metadata.cjs`, main-branch
  * detection is `get-main-branch.cjs` and the next id comes from the one
- * canonical allocator `backlog-id.cjs` (through the same `calculate` core
+ * canonical allocator `feature-id.cjs` (through the same `calculate` core
  * that `next-id.cjs` renders). The old shell also re-checked that its helper
  * files existed and were executable; a sibling `require` fails loudly on a
  * missing helper, which is the native route to the same guarantee.
@@ -44,7 +44,7 @@ const path = require('node:path');
 
 const { discoverMainBranch } = require('./get-main-branch.cjs');
 const { currentBranch, branchMetadata } = require('./get-branch-metadata.cjs');
-const idc = require('./backlog-id.cjs');
+const idc = require('./feature-id.cjs');
 
 const DOCS_DIR = 'docs/features';
 

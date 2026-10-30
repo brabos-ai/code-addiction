@@ -9,18 +9,16 @@
  *   - on success it prints %04d + letter (e.g. 0001F) on stdout, exit 0.
  *
  * THE ALLOCATION IS NOT HERE. The global counter over
- * `docs/features/[NNNN][L]-*` directories AND the raw `docs/backlog.jsonl`
- * text lives in `backlog-id.cjs`; this entry only validates its own argument
- * and renders the result. `status.sh next-id` reimplements the SAME scan for
- * its own named-prefix contract (F|H|PRD|CHG|B, exit 2 on a bad prefix) and
- * delegates to the same core once it is native (F8). There is one allocator,
- * `backlog-id.cjs`; the two entries differ only in their public argument
- * validation and exit codes, exactly as the two shells did.
+ * `docs/features/[NNNN][L]-*` directories lives in `feature-id.cjs`; this
+ * entry only validates its own argument and renders the result.
+ * `status next-id` has its own named-prefix contract (F|H|PRD|CHG, exit 2 on
+ * a bad prefix) and delegates to the same core. There is one allocator,
+ * `feature-id.cjs`; the two entries differ only in their public argument
+ * validation and exit codes.
  *
  * An unreadable source is reported on stderr with exit 1. At 9999 this adapter
  * preserves the old printf's minimum-width behavior and emits a five-digit
- * number. Backlog allocation has its own four-digit refusal policy in the same
- * canonical core; it does not change this public entry's output contract.
+ * number. The core's own calculate() refuses at 9999; this entry opts out.
  *
  * Built-ins only: no dependency beyond the canonical core beside it. No
  * import-time I/O and no import-time exit — requiring this module allocates
@@ -29,7 +27,7 @@
 
 'use strict';
 
-const idc = require('./backlog-id.cjs');
+const idc = require('./feature-id.cjs');
 
 const TYPE_LETTER_RE = /^[A-Z]$/;
 

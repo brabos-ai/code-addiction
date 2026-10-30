@@ -16,8 +16,8 @@
  * ID allocation is delegated to the one canonical core.
  *
  * ALLOCATION IS NOT HERE. `next-id <PREFIX>` validates its own named prefixes
- * (F|H|PRD|CHG|B, exit 2 on anything else) then delegates to `backlog-id.cjs`,
- * the same core `next-id.cjs` uses. `cli/tests/backlog-id.test.js` holds the
+ * (F|H|PRD|CHG, exit 2 on anything else) then delegates to `feature-id.cjs`,
+ * the same core `next-id.cjs` uses. `cli/tests/feature-id.test.js` holds the
  * two entries to the same answer; the native suite holds the Node-to-Node
  * agreement. There is one allocator.
  *
@@ -50,7 +50,7 @@ let idc = null;
 let mainBranchMod = null;
 let branchMetaMod = null;
 try {
-  idc = require('./backlog-id.cjs');
+  idc = require('./feature-id.cjs');
 } catch (e) {
   idc = null;
 }
@@ -65,7 +65,7 @@ try {
   branchMetaMod = null;
 }
 
-const PREFIXES = ['F', 'H', 'PRD', 'CHG', 'B'];
+const PREFIXES = ['F', 'H', 'PRD', 'CHG'];
 const DOCS_FEATURES = path.join('docs', 'features');
 
 /** One human-readable stderr line per canonical-core refusal. */
@@ -488,12 +488,12 @@ function main(argv) {
     const prefix = args[3] === undefined ? '' : args[3];
     if (!PREFIXES.includes(prefix)) {
       process.stderr.write(
-        `ERROR:unknown prefix '${prefix}' (valid: F, H, PRD, CHG, B)\n`,
+        `ERROR:unknown prefix '${prefix}' (valid: F, H, PRD, CHG)\n`,
       );
       return 2;
     }
     if (!idc) {
-      process.stderr.write('ERROR:backlog-id.cjs not found or unreadable beside status.cjs\n');
+      process.stderr.write('ERROR:feature-id.cjs not found or unreadable beside status.cjs\n');
       return 1;
     }
     // No board option: the allocator counts under the code root (F6 drops the ticket count).
