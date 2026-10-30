@@ -41,8 +41,6 @@
     {"data":{"id":"add--id-convention","label":"id-convention","type":"skill"}},
     {"data":{"id":"add--investigation","label":"investigation","type":"skill"}},
     {"data":{"id":"add--knowledge-discovery","label":"knowledge-discovery","type":"skill"}},
-    {"data":{"id":"add--notion","label":"notion","type":"skill"}},
-    {"data":{"id":"add--notion-setup","label":"notion-setup","type":"skill"}},
     {"data":{"id":"add--plan-review","label":"plan-review","type":"skill"}},
     {"data":{"id":"add--qa","label":"qa","type":"skill"}},
     {"data":{"id":"add--qa-migration","label":"qa-migration","type":"skill"}},
