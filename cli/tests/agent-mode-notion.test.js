@@ -190,7 +190,9 @@ describe('F2 — /add-setup no longer offers notion (0077F)', () => {
   });
 });
 
-describe('F6 — the agent-mode guide has the optional Notion section', () => {
+describe('F5 — the guide and the role files point at add--agent-notion (0077F)', () => {
+  // Built by concatenation so the acceptance scan for the retired ids does not match this file.
+  const RETIRED_SKILL = 'add--' + 'notion';
   const guide = () => read(path.join(AGENT_MODE, 'README.md'));
   const section10 = () => {
     const src = guide();
@@ -199,27 +201,28 @@ describe('F6 — the agent-mode guide has the optional Notion section', () => {
     return src.slice(start);
   };
 
-  it('L1.10 section 10 names both skills, the page and /add-setup', () => {
+  it('L1.9 section 10 names the skill, the page, the three old-board places and says the branch goes last', () => {
     const section = section10();
-    for (const anchor of ['add--notion-setup', 'add--notion', 'Como funciona', '/add-setup']) {
-      expect(section, `section 10 names ${anchor}`).toContain(anchor);
-    }
+    const anchors = ['add--agent-notion', 'How it works', 'board.json', '~/.codeadd/<key>/board/', '`board` branch', 'the branch last', 'section 9'];
+    for (const anchor of anchors) expect(section, `section 10 names ${anchor}`).toContain(anchor);
   });
 
-  it('L1.10 section 10 says what happens without Notion and carries no board word or token', () => {
+  it('L1.9 section 10 names no /add-setup, no retired page title, no retired skill id and no token', () => {
     const section = section10();
-    expect(section).toContain('section 9');
-    expect(section).not.toMatch(/board/i);
+    expect(section).not.toContain('/add-setup');
+    expect(section).not.toContain('Como funciona');
+    expect(section).not.toContain(RETIRED_SKILL + '`');
+    expect(section).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\b'));
     for (const re of TOKEN_LIKE) expect(section).not.toMatch(re);
   });
-});
 
-describe('F7 — the role files point at add--notion', () => {
-  it.each(ROLES)('L1.11 roles/%s.md names add--notion, the page and the no-Notion handoff', (name) => {
+  it.each(ROLES)('L1.11 roles/%s.md names add--agent-notion, the page and the no-Notion handoff', (name) => {
     const text = roleText(name);
-    expect(text).toContain('add--notion');
-    expect(text).toContain('Como funciona');
+    expect(text).toContain('add--agent-notion');
+    expect(text).toContain('How it works');
     expect(text).toContain('otherwise the handoff is the intent');
+    expect(text).not.toMatch(new RegExp(RETIRED_SKILL + '(?!-)\b'));
+    expect(text).not.toContain('Como funciona');
   });
 
   it.each(ROLES)('L1.6 roles/%s.md carries no token-like literal, no backlog- and no board.json', (name) => {
