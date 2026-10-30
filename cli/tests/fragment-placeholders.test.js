@@ -36,9 +36,10 @@ const CMD_PROVIDERS = Object.entries(PROVIDERS).filter(([, p]) => p.commandsSubd
 // that NAMES the placeholders -- `{{cmd:}}` in add-qa-setup -- is not one.
 const PLACEHOLDER = /\{\{(skill|cmd|addpath):[^}]+\}\}/;
 
+// 0075B, F5: the sample named the deleted add--backlog skill and backlog-cli.cjs script.
 const SAMPLE = [
-  'see {{skill:add--backlog/references/lifecycle.md}} for the row,',
-  'run {{cmd:add-plan}} next, and read {{addpath:scripts/backlog-cli.cjs}}.',
+  'see {{skill:add--doc-schemas/references/delivery-index.md}} for the row,',
+  'run {{cmd:add-plan}} next, and read {{addpath:scripts/status.cjs}}.',
   'two on one line: {{skill:add--tdd/SKILL.md}} and {{skill:add--qa/SKILL.md}}',
 ].join('\n');
 

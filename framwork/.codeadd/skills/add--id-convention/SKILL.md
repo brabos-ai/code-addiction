@@ -15,7 +15,6 @@ description: Use when allocating feature/hotfix/refactor/chore/docs/backlog IDs 
 - script: done.cjs
 - script: get-branch-metadata.cjs
 - script: next-id.cjs
-- script: backlog-commit.cjs
 - script: backlog-id.cjs
 - mention: init.cjs
 - script: qa-evidence.cjs
@@ -110,13 +109,6 @@ node .codeadd/scripts/status.cjs next-id <LETTER>
 
 Examples: `status.cjs next-id F` → `0001F`, `status.cjs next-id H` → `0001H`.
 
-**A BACKLOG TICKET is the exception: allocation is native.** `backlog-id.cjs`, invoked through
-`node .codeadd/scripts/backlog-commit.cjs add --record-file <ticket.json>`, computes the same global
-counter — the feature directories in the code repository, the ticket ids in the board clone — inside the
-write lock, after the clone is brought level with the remote. The `status.cjs` call above stays valid for B,
-but the route the agent runs for a ticket is the publication entry's add, and `10000B` refuses like the
-wrapper's filter always did.
-
 Never hand-roll IDs. Never reuse an ID from another namespace.
 
 ### One counter, two sources, one implementation
@@ -129,11 +121,8 @@ number a ticket already holds. A project with no usable board counts the feature
 **`backlog-id.cjs` is the one allocator, and it is native.** It computes the max+1 from both
 sources, anchored on the raw text, and every route delegates to it: `next-id.cjs` (one uppercase
 A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
-prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), `backlog-commit.cjs add` and the `init.cjs` seed are
-thin adapters that retain their public argument validation, exit codes and exhaustion policy. The
-publication entry allocates for you
-when `add` runs — `node .codeadd/scripts/backlog-commit.cjs add --record-file <ticket.json>` needs no
-allocator call. Backlog allocation refuses `10000` (`ERROR=id-allocation-failed`). The public
+prefixes F|H|PRD|CHG|B, exit 2 on a bad prefix), and the `init.cjs` seed are
+thin adapters that retain their public argument validation, exit codes and exhaustion policy. Backlog allocation refuses `10000` (`ERROR=id-allocation-failed`). The public
 `next-id`, `status next-id` and `init` adapters preserve the old minimum-width formatting and
 can emit a five-digit number at the boundary; this does not expand the four-digit backlog schema.
 

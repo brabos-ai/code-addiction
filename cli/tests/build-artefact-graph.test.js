@@ -953,7 +953,8 @@ describe('node inventory snapshot', () => {
       // add--project-scaffolding and add--skill-creator removed; nothing loaded them
       // (ticket 0060B, plan 2026-10-24T182329-PLAN--remove-generic-skills, F1).
       // skill 59 -> 60: add--settings, the project settings file (ticket 0066B, plan 2026-10-25T053315-PLAN--qa-settings, F4).
-      skill: 60,
+      // skill 60 -> 59: add--backlog removed with the board (0075B, F5).
+      skill: 59,
       // agent 28 -> 29: plan-readback-agent, the cold reader dispatched by the
       // build before its first F-block.
       // agent 29 -> 30: prompt-review-agent, the third reader — it ticks the
@@ -977,7 +978,8 @@ describe('node inventory snapshot', () => {
       // reference 73 -> 74: add-final-report/references/result-block.md (2026-10-07T192430-PLAN--agent-friendly-workbench, F2).
       // reference 74 -> 55: the references/ files of those five skills went with them (0060B, F1).
       // reference 55 -> 48: the seven bundled library docs of add--ux-design went (0061B, F2).
-      reference: 48,
+      // reference 48 -> 45: add--backlog's two references and add--doc-schemas/references/backlog.md removed (0075B, F5).
+      reference: 45,
       // script 18 -> 17: feature-pr.sh deleted. It was a third PR flow whose
       // only declaring command, add-pull-request, forbade calling it; that
       // `uses:` declaration was the one thing keeping it off the orphan list.
@@ -1146,11 +1148,13 @@ describe('node inventory snapshot', () => {
     // 202 -> 203: add--settings, the project settings skill (0066B, F4); it declares, so 142 -> 143.
     // 203 -> 204: add-setup, the guided onboarding command (0067B, F4); it declares, so 143 -> 144.
     // 204 -> 197: the six fragments/board/ files and their feature node are removed (0075B, F2).
-    expect(nodes).toHaveLength(197 + agentModeFragments() + shippedScriptsCount);
+    // 197 -> 193: the add--backlog skill and three references removed (0075B, F5); the script count is derived from disk.
+    expect(nodes).toHaveLength(193 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
+    // declares 138 -> 137: add--backlog declared (0075B, F5).
+    expect(nodes.filter((n) => n.declares)).toHaveLength(137 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {

@@ -45,7 +45,6 @@ const path = require('node:path');
 const { discoverMainBranch } = require('./get-main-branch.cjs');
 const { currentBranch, branchMetadata } = require('./get-branch-metadata.cjs');
 const idc = require('./backlog-id.cjs');
-const board = require('./backlog-board.cjs');
 
 const DOCS_DIR = 'docs/features';
 
@@ -208,8 +207,7 @@ function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
   fs.mkdirSync(docsAbs, { recursive: true });
   const dirs = featureDirs(docsAbs);
 
-  const { boardRoot } = board.allocationRoot(cwd, { sync: true });
-  const allocated = idc.calculate(cwd, 'F', { allowOverflow: true, boardRoot });
+  const allocated = idc.calculate(cwd, 'F', { allowOverflow: true });
   const next = allocated.ok ? allocated.id : '0001F';
   lines.push(`FEATURES:count=${dirs.length} next=${next}`);
 
