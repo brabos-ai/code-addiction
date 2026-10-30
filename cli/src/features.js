@@ -9,7 +9,6 @@ import {
   reconcileSlots,
 } from './injection-core.js';
 import { isPluginDetected } from './plugins.js';
-import { initBoardOnEnable } from './board-init.js';
 import { resolveSelected } from './providers.js';
 
 /**
@@ -51,6 +50,9 @@ function setFeatureFlag(cwd, featureName, enabled) {
  * manifest written before the rename still resolves to the user's choice
  * instead of silently falling back to `default`.
  */
+/** Feature keys that no longer exist. A manifest that still carries one loses it on load. */
+const RETIRED_FEATURES = ['board'];
+
 export const FEATURES = {
   'tdd-pipeline': {
     description: 'TDD pipeline (test-first ordering + unit/integration generation)',
@@ -145,6 +147,14 @@ function resolveFeatureState(featureStates, key, meta) {
 export function normalizeFeatureStates(featureStates) {
   const states = { ...featureStates };
   let changed = false;
+
+  // A retired feature is dropped, not rejected: a manifest written while the feature
+  // existed must still load. Migration 0006-retire-board does the same to the manifest on update.
+  for (const retired of RETIRED_FEATURES) {
+    if (!Object.prototype.hasOwnProperty.call(states, retired)) continue;
+    delete states[retired];
+    changed = true;
+  }
 
   for (const [key, meta] of Object.entries(FEATURES)) {
     for (const alias of meta.aliases ?? []) {
@@ -295,7 +305,6 @@ export async function features(cwd, args, scope = 'project') {
       const nowEnabled = selected.includes(name);
       if (nowEnabled && !wasEnabled) {
         const { modified } = enableFeature(cwd, name);
-        initBoardOnEnable(cwd, name);
         totalModified += modified;
         log.success(`Feature "${name}" enabled. ${modified} file(s) modified.`);
         warnUninjectedProviders(cwd, name);
@@ -336,7 +345,6 @@ export async function features(cwd, args, scope = 'project') {
     const canonical = resolved.key;
     if (action === 'enable') {
       const { modified } = enableFeature(cwd, canonical);
-      initBoardOnEnable(cwd, canonical);
       log.success(`Feature "${canonical}" enabled. ${modified} file(s) modified.`);
       warnUninjectedProviders(cwd, canonical);
     } else {

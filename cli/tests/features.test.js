@@ -223,8 +223,17 @@ describe('legacy tdd alias resolution', () => {
     expect(row.legacyKey).toBe('tdd');
   });
 
+  it('getFeatureStates ignores a retired board key left in the manifest', () => {
+    writeManifest(tmpDir, { version: '1.0.0', features: { board: true, 'tdd-pipeline': true }, providers: ['claude'] });
+
+    const names = getFeatureStates(tmpDir).map((f) => f.name);
+    expect(names).not.toContain('board');
+    expect(names).toContain('tdd-pipeline');
+  });
+
   it('an unknown feature name is still rejected', () => {
     expect(resolveFeatureName('not-a-feature')).toBeNull();
+    expect(resolveFeatureName('board')).toBeNull();
     expect(resolveFeatureName('tdd')).toEqual({ key: 'tdd-pipeline', alias: 'tdd' });
     expect(resolveFeatureName('tdd-pipeline')).toEqual({ key: 'tdd-pipeline', alias: null });
   });
