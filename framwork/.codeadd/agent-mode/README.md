@@ -229,6 +229,6 @@ A team can keep its cards in Notion. Notion is optional: the commands work the s
   that page: the columns, the labels and how to fill a card. The page wins over any default. Where the page
   has no rule, the skill moves the card with the pipeline: created at brainstorm, planned at `/add-plan`, in
   progress and then in review at `/add-build`, done at `/add-done`.
-- Use the Kanban view in Notion to see the whole team's work.
+- To see the whole team's work as columns, add a Kanban view to the database in Notion (the setup does not create one).
 
 Without Notion, the handoff is the intent file and the feature folder, as in section 9.
