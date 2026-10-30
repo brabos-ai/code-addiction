@@ -207,3 +207,43 @@ describe('F5 — /add-setup offers and runs notion', () => {
     expect(row?.[2]).toContain('add--notion-setup');
   });
 });
+
+describe('F6 — the agent-mode guide has the optional Notion section', () => {
+  const guide = () => read(path.join(AGENT_MODE, 'README.md'));
+  const section10 = () => {
+    const src = guide();
+    const start = src.indexOf('## 10. Track work in Notion (optional)');
+    expect(start, 'the guide has section 10').toBeGreaterThan(-1);
+    return src.slice(start);
+  };
+
+  it('L1.10 section 10 names both skills, the page and /add-setup', () => {
+    const section = section10();
+    for (const anchor of ['add--notion-setup', 'add--notion', 'Como funciona', '/add-setup']) {
+      expect(section, `section 10 names ${anchor}`).toContain(anchor);
+    }
+  });
+
+  it('L1.10 section 10 says what happens without Notion and carries no board word or token', () => {
+    const section = section10();
+    expect(section).toContain('section 9');
+    expect(section).not.toMatch(/board/i);
+    for (const re of TOKEN_LIKE) expect(section).not.toMatch(re);
+  });
+});
+
+describe('F7 — the role files point at add--notion', () => {
+  it.each(ROLES)('L1.11 roles/%s.md names add--notion, the page and the no-Notion handoff', (name) => {
+    const text = roleText(name);
+    expect(text).toContain('add--notion');
+    expect(text).toContain('Como funciona');
+    expect(text).toContain('otherwise the handoff is the intent');
+  });
+
+  it.each(ROLES)('L1.6 roles/%s.md carries no token-like literal, no backlog- and no board.json', (name) => {
+    const text = roleText(name);
+    for (const re of TOKEN_LIKE) expect(text).not.toMatch(re);
+    expect(text).not.toContain('backlog-');
+    expect(text).not.toContain('board.json');
+  });
+});

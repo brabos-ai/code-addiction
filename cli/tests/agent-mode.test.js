@@ -122,7 +122,10 @@ describe('product agent mode', () => {
     expect(guide).toMatch(/OpenCode/);
     expect(guide).toMatch(/own documentation/i);
     // 0075B, F8: section 9 "Mirror the board" and its Notion example are gone; the guide names no board.
-    expect(guide).not.toMatch(/Mirror the board|Notion|backlog-cli|backlog-commit|board-management|awaiting-release/);
+    expect(guide).not.toMatch(/Mirror the board|backlog-cli|backlog-commit|board-management|awaiting-release/);
+    // 0076B, F6: Notion returns only as the optional section 10, so its ban stops at that heading.
+    const section10 = guide.indexOf('## 10.');
+    expect(guide.slice(0, section10 === -1 ? undefined : section10)).not.toMatch(/Notion/);
     expect(guide).not.toMatch(/board/i);
   });
 
@@ -207,7 +210,9 @@ describe('agent team roles', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
     const start = guide.indexOf('## 9. Work as a team of agents');
     expect(start, 'the guide has no section 9').toBeGreaterThan(-1);
-    const section = guide.slice(start);
+    // Section 9 ends where section 10 starts; without that bound its not-contain rules would read section 10.
+    const end = guide.indexOf('## 10.', start);
+    const section = guide.slice(start, end === -1 ? undefined : end);
     for (const anchor of ['section 2', '-intent.md', '/add-review', 'roles/product-pm.md', 'roles/chief-engineer.md']) {
       expect(section, `section 9 names ${anchor}`).toContain(anchor);
     }
@@ -215,7 +220,7 @@ describe('agent team roles', () => {
     // These two are the detail of section 2's list. Naming them again is the copy the drift risk warns about.
     expect(section).not.toContain('--continue');
     expect(section).not.toContain('.jsonl');
-    for (let n = 1; n <= 8; n++) expect(guide, `section ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
+    for (let n = 1; n <= 9; n++) expect(guide, `section ${n}`).toMatch(new RegExp(`^## ${n}\\. `, 'm'));
   });
 
   it('T2.1 an install copies agent-mode/roles/ byte for byte', () => {
