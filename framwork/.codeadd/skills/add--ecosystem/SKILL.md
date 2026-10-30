@@ -32,8 +32,6 @@ description: Consolidated view of the add-pro ecosystem - commands, skills, rela
 - mention: add--id-convention
 - mention: add--investigation
 - mention: add--knowledge-discovery
-- mention: add--notion
-- mention: add--notion-setup
 - mention: add--plan-review
 - mention: add--review-discipline
 - mention: add--qa
@@ -167,8 +165,6 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--id-convention | Canonical [NNNN][L] ID and branch naming convention for features, hotfixes, refactors, chores, and docs — enforced by scripts (next-id.cjs, get-branch-metadata.cjs, build-setup.cjs, done.cjs) | add-build, add-done, add-hotfix, add-new, add-plan, add-pull-request |
 | add--investigation | Rigorous investigation methodology (5 phases with Iron Law) for vague symptoms and information-flow bugs. Adapted from systematic-debugging. Reusable by any command needing RCA before acting | add-audit, add-diagnose, add-hotfix, add-review |
 | add--knowledge-discovery | Consult the delivery index, then the docs knowledge graph, then the project wiki at the context/discovery step for minimal token cost — loaded by add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm | add-brainstorm, add-diagnose, add-hotfix, add-new, add-plan, add-review |
-| add--notion | What an agent does with the project's Notion cards — read the `Como funciona` page first (it wins), find the card by its `tracker:` URL or Slug, move it along the pipeline milestones with a default table where the page has no rule. Instructions only | the agent-mode role files (`product-pm.md`, `chief-engineer.md`) |
-| add--notion-setup | One-time Notion setup with the user — checks the Notion MCP answers, creates the cards database and the `Como funciona` page, links each provider's MCP documentation, prints the two URLs. Instructions only: no script, no sync | add-setup |
 | add--plan-review | Pre-delivery executability rubric for about.md and plan.md — verdict (ok / fix-then-ok / blocked) plus required fixes, not questions; loaded by `plan-reviewer-agent` | add-new, add-plan |
 | add--qa | QA methodology (default-shipped); the `playwright` plugin adds live browser driving — Level C judge rubric, severity taxonomy, dual-judge (@ux-agent review ∥ @qa-agent) axis ownership, root-cause taxonomy, report schema/template, `.codeadd/settings.json` qa section and screens.json formats. `references/coordinator.md` holds the **coordinator-only** merge rules + Fix Routing — loaded at the QA merge step `qa-pipeline` adds to /add-review, never by a judge | add-qa-setup, add-review |
 | add--qa-migration | Adopt the code-addiction QA pipeline in a project that already runs Cypress/Jest/Vitest/custom QA — autonomous dogfooding sequence (add-new → add-plan → add-build → add-review) and its checkpoints; consumed by /add-qa-setup | add-qa-setup |
@@ -259,8 +255,6 @@ Enable/disable via `codeadd plugins enable|disable|list <name>`. Plugins are dis
 | add--ecosystem | add-help (loses full view), add-audit, add-diagnose, add-done, add-hotfix, add-setup, add-wiki — the commands that load it |
 | add--wiki-maintenance | add-wiki (update mode), add-done (STEP 4.9) |
 | add--knowledge-discovery | add-plan, add-hotfix, add-new, add-diagnose, add-review, add-brainstorm |
-| add--notion | the agent-mode role files `roles/product-pm.md` and `roles/chief-engineer.md` |
-| add--notion-setup | add-setup (STEP add-setup.execute) |
 | add--investigation | add-diagnose (primary, agent-dispatched mode), add-hotfix (STEP 6.1 escalation, agent-dispatched mode), add-review (STEP 5.1 ambiguous findings), add-audit (STEP 7.1 ambiguous findings) |
 | add--delivery-mode | add-brainstorm, add-new, add-plan, add-build, add-review, add-diagnose, add-done, add-hotfix, add-pull-request, add-qa-setup, add-setup, add-wiki — the delivery mode, deciding vs confirming stops, the same-session handoff and where the automatic path ends |
 | add--human-interaction | the 12 commands of the `agent-mode` feature (add-brainstorm, add-new, add-plan, add-build, add-review, add-done, add-diagnose, add-hotfix, add-qa-setup, add-pull-request, add-audit, add-wiki), by default — through each command's `agent-mode.interaction` slot |
