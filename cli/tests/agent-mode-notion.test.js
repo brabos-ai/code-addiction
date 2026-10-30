@@ -229,3 +229,50 @@ describe('F7 — the role files point at add--notion', () => {
     expect(text).not.toContain('board.json');
   });
 });
+
+describe('F4 — add--agent-notion, the one instruction-only skill (0077F)', () => {
+  const NAME = 'add--agent-notion';
+  const skill = () => read(skillPath(NAME));
+  const migration = () => sectionOf(skill(), '## Migrate the old local board');
+
+  it('L1.6 exists, its name equals the folder, and the registry lists it with no provider restriction', () => {
+    expect(fs.existsSync(skillPath(NAME)), `${NAME}/SKILL.md exists`).toBe(true);
+    expect(skill()).toMatch(/^---\nname: add--agent-notion\n/);
+    expect(readMap().skills[NAME]).toEqual({});
+  });
+
+  it('L1.6 names the page, the card identity, the milestones and the three places the old board lives', () => {
+    const text = skill();
+    const anchors = [
+      'How it works', '<id>-<slug>', 'brainstorm', 'new', 'plan', 'build', 'done', 'hotfix',
+      'board.json', '~/.codeadd/<key>/board/', '`board` branch',
+    ];
+    for (const anchor of anchors) expect(text, `the skill names ${anchor}`).toContain(anchor);
+  });
+
+  it('L1.6 the migration sends the open cards, waits for the yes, and deletes the remote branch last', () => {
+    const section = migration();
+    const send = section.indexOf('Send only the in-progress and pending cards');
+    const yes = section.indexOf("wait for the user's yes");
+    const local = section.indexOf('delete `.codeadd/board.json`');
+    const branch = section.indexOf('delete the remote `board` branch last');
+    for (const i of [send, yes, local, branch]) expect(i).toBeGreaterThan(-1);
+    expect([send, yes, local, branch]).toEqual([send, yes, local, branch].sort((a, b) => a - b));
+  });
+
+  it('L1.6 carries no MCP check step, no provider doc link, no setup-answers reader, no backlog script, no tracker line and no token', () => {
+    const text = skill();
+    expect(text).not.toMatch(/MCP check/i);
+    expect(text).not.toContain('https://');
+    expect(text).not.toContain('## Setup answers');
+    expect(text).not.toContain('backlog-');
+    expect(text).not.toContain('tracker:');
+    for (const re of TOKEN_LIKE) expect(text).not.toMatch(re);
+  });
+
+  it('L1.6 add--ecosystem lists it once in Skills, once in the Dependency Index and once as a mention', () => {
+    expect(ecosystemRows('## Skills', NAME), 'in ## Skills').toHaveLength(1);
+    expect(ecosystemRows('## Dependency Index', NAME), 'in ## Dependency Index').toHaveLength(1);
+    expect(read(ECOSYSTEM).split('\n').filter((l) => l === `- mention: ${NAME}`)).toHaveLength(1);
+  });
+});
