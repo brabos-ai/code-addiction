@@ -211,9 +211,9 @@ Rules for the team, every time:
   not repeated here.
 - One engineer takes one feature at a time. This is a process rule the product PM keeps: the PM says in its
   summary which engineer takes which intent file, and nothing stops a second engineer.
-- The product PM hands work to an engineer with the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`)
-  and the feature folder `docs/features/<id>-<slug>/`, both on main.
-- Commit and push the intent file and `docs/features/<id>-<slug>/` to the main branch before the handoff: `/add-new` makes no git write, and another worktree does not see an uncommitted file.
+- The product PM hands work to an engineer with the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`)
+  and the feature folder `.codeadd/docs/features/<id>-<slug>/`, both on `codeadd-docs`.
+- Push `codeadd-docs` before the handoff: `/add-new` commits locally and pushes nothing, and another worktree does not see a commit that was never pushed.
 - `/add-review` is optional (section 4). Another engineer may run it in its own worktree.
 
 ## 10. Track work in Notion (optional)

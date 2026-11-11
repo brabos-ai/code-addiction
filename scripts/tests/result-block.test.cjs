@@ -18,7 +18,7 @@ const base = {
   v: 1, status: 'done', stage: 'add-framework--build', branch: 'feat/x', commits: ['a1b2c3d'],
   tests: { before: { passed: 10, failed: 0, skipped: 0 }, after: { passed: 12, failed: 0, skipped: 0 } },
   pr: { number: 7, url: 'https://github.com/o/r/pull/7' }, ci: 'success',
-  next_step: '/add-framework--done docs/plans/x.md', needs_approval: false, reason: null,
+  next_step: '/add-framework--done .codeadd/docs/plans/x.md', needs_approval: false, reason: null,
 };
 const valid = {
   done: base,

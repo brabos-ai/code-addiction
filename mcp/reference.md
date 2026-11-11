@@ -67,16 +67,22 @@ guessing it on the way in.
 | `hotfix` | `work-item` | — | — | `id`, `severity` |
 | `prd` | `work-item` | — | — | `id` |
 | `setup-receipt` | `work-item` | — | — | `id` |
+| `code-quality-review` | `page` | — | `.codeadd/docs` |  |
+| `design-system` | `page` | — | `.codeadd/docs` |  |
 | `explanation` | `page` | — | `.codeadd/wiki` | `id` |
+| `health-check` | `page` | — | `.codeadd/docs` |  |
 | `how-to` | `page` | — | `.codeadd/wiki` | `id` |
 | `reference` | `page` | — | `.codeadd/wiki` | `id` |
 | `tutorial` | `page` | — | `.codeadd/wiki` | `id` |
+| `build-ledger` | `attachment` | `dir` | — |  |
 | `changelog` | `attachment` | `related` | — | `id` |
 | `epic` | `attachment` | `dir` | — | `id` |
 | `feature-design` | `attachment` | `dir` | — | `id` |
 | `feature-plan` | `attachment` | `dir` | — | `id` |
+| `iterations` | `attachment` | `dir` | — |  |
 | `qa-validation` | `attachment` | `dir` | — | `id` |
 | `review` | `attachment` | `dir` | — | `id` |
+| `tasks` | `attachment` | `dir` | — |  |
 <!-- /generated:TYPES -->
 
 `setup-receipt` is kept for legacy markdown receipts, which must still index. Current receipts live in the `qa` section of `.codeadd/settings.json` and are not documents.
@@ -163,8 +169,8 @@ model describes, declares:
 
 | Rule | Value | What it decides |
 |---|---|---|
-| `roots` | `docs`, `.codeadd/wiki` | Which directories are walked for `.md` files |
-| `probe` | `docs` | Whether the corpus is PRESENT at all |
+| `roots` | `.codeadd/docs`, `.codeadd/wiki` | Which directories are walked for `.md` files |
+| `probe` | `.codeadd/docs` | Whether the corpus is PRESENT at all |
 | `membership` | the type registry, or a declared `kind:` | Which of those files are in the graph |
 | `nodeRule` | the `id:` value, on every kind | What a node is called |
 | `edgeSources` | `## Relations`, `{{doc:ID}}`, `related:`, `superseded_by`, `sources` globs | Where an edge can come from |
@@ -174,7 +180,7 @@ model describes, declares:
 empty graph and a missing one look identical to a caller and mean opposite things.
 
 ⛔ **`probe` and `roots` are not the same list, and the gap is real.** The probe is
-`docs` alone, so a project that ran `/add-wiki` and never `/add-new` has pages under a
+`.codeadd/docs` alone — the worktree of the docs branch — so a project that ran `/add-wiki` and never `/add-new` has pages under a
 declared root and the corpus still refuses to open: `corpus "docs" is not present here`.
 Measured 2026-09-15. That is the behaviour today, recorded here rather than left for the
 next reader to rediscover — widening the probe is a behaviour change nobody has decided.

@@ -139,7 +139,7 @@ describe('L1.4(a) (F4) -- add--human-interaction holds every moved section byte 
 // L1.5 -- the bot text describes behaviour, never the result contract
 // ---------------------------------------------------------------------------
 // Words a result contract owns. The schema's own description carries them; no
-// prompt may (docs/deliveries/2026-10-08T193103-PLAN--product-agent-mode-claude-code).
+// prompt may (.codeadd/docs/deliveries/2026-10-08T193103-PLAN--product-agent-mode-claude-code).
 // `stopped` is a status value only when written as one: the plain word appears in the human text the fallbacks keep verbatim.
 const CONTRACT_WORDS = [/needs-approval/i, /`stopped`/, /status\W+(?:is\W+)?stopped/i, /next_step/, /structured_output/, /json-schema/i, /result block/i];
 

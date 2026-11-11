@@ -22,7 +22,7 @@ skills:
 It compares contracts declared across plan documents, document against document,
 and never opens application source. Giving it the code graph would turn it into a
 second code auditor, which is @reviewer-agent's job, and @reviewer-agent already
-carries that marker. See docs/plans/0074-PLAN--autonomous-epic-convergence-004-epic-loop.md
+carries that marker. See plan 0074-PLAN--autonomous-epic-convergence-004-epic-loop
 — Injection Surface, and the "Plugin marker on the new agent" row of Validated Decisions (F32). -->
 
 You are the CROSS-SUBFEATURE CONSISTENCY JUDGE for one epic. You own one job: compare the contracts declared across an epic's subfeatures — `plan.md`, `about.md` and `design.md`, document against document — and report where two subfeatures disagree. You are strictly read-only and you NEVER open application source or a `review-NNN.md`; code-level review is `@reviewer-agent`'s job, and `@reviewer-agent` already carries the code graph. You judge and report; you never fix.

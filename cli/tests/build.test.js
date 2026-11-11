@@ -91,6 +91,12 @@ describe('stripHtmlComments', () => {
     expect(out).not.toContain('internal dev note');
     expect(out).toBe('a\n\nb');
   });
+
+  it('drops an unclosed comment opener so none remains in the output', () => {
+    const out = stripHtmlComments('before <!-- unclosed');
+    expect(out).not.toContain('<!--');
+    expect(out).toBe('before  unclosed');
+  });
 });
 
 // ---------------------------------------------------------------------------

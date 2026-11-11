@@ -18,6 +18,7 @@
 - command: /add-build
 - command: /add-plan
 - command: /add-wiki
+- script: docs-branch.cjs
 - script: init.cjs
 - script: status.cjs
 -->
@@ -33,7 +34,7 @@
 
 Full feature discovery command BEFORE implementation.
 
-**IMPORTANT:** This command is READ-ONLY for project code. May only create/edit documentation in `docs/features/`.
+**IMPORTANT:** This command is READ-ONLY for project code. May only create/edit documentation in `.codeadd/docs/features/`.
 
 ---
 
@@ -53,10 +54,10 @@ All subsequent steps reference these loaded skills; DO NOT reload.
 
 ### STEP add-new.intent Resolve the Intent File — BEFORE anything else
 
-`/add-brainstorm` writes `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` carrying the path it
+`/add-brainstorm` writes `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` carrying the path it
 classified and every decision it closed. **Finding it is what stops this command re-asking them.**
 
-Match the argument as a **substring** of the basenames of `docs/brainstorm/*-intent.md`. A full
+Match the argument as a **substring** of the basenames of `.codeadd/docs/brainstorm/*-intent.md`. A full
 basename always works; a 24-character timestamp prefix is not typeable, so a slug fragment is the
 normal argument.
 
@@ -91,7 +92,7 @@ file is never read a second time.
 
 **Validate Execution Context:**
 
-- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate, STEP add-new.discover and STEP add-new.confirm, proceed to STEP add-new.decompose.
+- [CONTINUE MODE] Feature resolved from argument, or from current branch if it is a feature branch, or by listing `.codeadd/docs/features/` pending entries and asking. If `about.md` exists AND carries its validated decisions → skip STEP add-new.allocate, STEP add-new.discover and STEP add-new.confirm, proceed to STEP add-new.decompose.
 - [NEW FEATURE] If no existing feature docs match, proceed to STEP add-new.allocate.
 
 ---
@@ -101,7 +102,7 @@ file is never read a second time.
 **READ-ONLY GUARANTEE:**
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
-- ✅ MAY: Create `docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO git writes — branch is created later by /add-build)
+- ✅ MAY: Create `.codeadd/docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO code-branch git writes — branch is created later by /add-build)
 
 **Operation Modes:**
 - `/add-new [description]` — Create new feature
@@ -138,13 +139,13 @@ node .codeadd/scripts/status.cjs next-id F
 `/add-wiki update` folds them into AGENTS.md — while one of them is left, Claude Code ignores
 AGENTS.md. This is a notice: continue the STEP whatever the answer.
 
-Parse RECENT_CHANGELOGS (feature history). Read `docs/product/product.md` if it exists. Match user request keywords against changelog; if match found, read full `changelog.md` for patterns/files/implementations.
+Parse RECENT_CHANGELOGS (feature history). Read `.codeadd/docs/product/product.md` if it exists. Match user request keywords against changelog; if match found, read full `changelog.md` for patterns/files/implementations.
 
 **Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP add-new.load skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
 
 **Create structure:**
-1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add-build creates the branch)
-2. `mkdir docs/features/[NNNN]F-[name]/`
+1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO code-branch git writes — /add-build creates the branch)
+2. `mkdir .codeadd/docs/features/[NNNN]F-[name]/`
 3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP add-new.confirm)
 
 **Output:** Feature ID, branch (recorded — created by /add-build), directory.
@@ -158,7 +159,7 @@ file, load `{{skill:add--feature-specification/SKILL.md}}` and run its three-fac
 
 | Classification | This STEP |
 |---|---|
-| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered. Then write `docs/features/${FEATURE_ID}/discovery.md` yourself: the `RELATED_WORK` result under a `## Related Features` heading, `none` or `NOT VERIFIED` included — `/add-plan` stops without this file |
+| `bounded`, or clean on all three facts | **Skipped.** Run the INDEX and GRAPH steps below and nothing else — they are cheap, they dispatch no agent, and they are what stops this feature rebuilding something already delivered. Then write `.codeadd/docs/features/${FEATURE_ID}/discovery.md` yourself: the `RELATED_WORK` result under a `## Related Features` heading, `none` or `NOT VERIFIED` included — `/add-plan` stops without this file |
 | `architectural`, or any fact flagged | Everything below, as written |
 
 ⛔ **The light path skips the two agent dispatches, never the index and graph queries.** Those are the
@@ -170,13 +171,13 @@ check that costs nothing and catches the expensive mistake.
 
 1. **Agent: Past Features Discovery**
    - **Input:** RECENT_CHANGELOGS + skeleton about.md
-   - **Output:** `docs/features/${FEATURE_ID}/past-features.md`
+   - **Output:** `.codeadd/docs/features/${FEATURE_ID}/past-features.md`
    - Extract keywords from about.md. For each feature in RECENT_CHANGELOGS, check Quick Ref in changelog.md (fallback: first 30 lines). For matches, read iterations.jsonl + about.md, classify relationship. Write past-features.md.
    - **WAIT:** Verify past-features.md exists before continuing.
 
 2. **Agent: Codebase Discovery**
    - **Input:** past-features.md + skeleton about.md + feature request + selected wiki pages (if any, see Knowledge Base Check below)
-   - **Output:** `docs/features/${FEATURE_ID}/discovery.md`
+   - **Output:** `.codeadd/docs/features/${FEATURE_ID}/discovery.md`
    - **Knowledge Base Check (before dispatch):** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its **INDEX step, its GRAPH step and then its wiki steps**, in that order.
      - **INDEX and GRAPH run first, and run unconditionally.** Both are standalone, neither reads the wiki, and together they produce the ranked delivery-index entries and `RELATED_WORK`. **GRAPH question:** does this request already exist as delivered work, and what would it depend on? Resolve it in the skill's action table; do not name an action here.
      - **Then the wiki.** This command never runs the full context mapper, so check presence directly: test whether `.codeadd/wiki/index.md` exists. IF present: SELECT the minimal page set for the request's domain(s), freshness-check each, and pass their paths + one-line reasons + freshness verdicts into the dispatch prompt below with the instruction to build on documented knowledge instead of re-deriving it, and to flag any wiki-vs-code contradiction in its return. IF absent: note "knowledge base unavailable — /add-wiki generates it" and dispatch without it.
@@ -293,8 +294,8 @@ Whether to split the feature, and whether a subfeature belongs, were never part 
 approval.
 
 **IF epic confirmed:**
-1. Create `docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add--doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP add-new.load): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
-2. Create `docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
+1. Create `.codeadd/docs/features/${FEATURE_ID}/epic.md` per the `epic` schema — READ it in `{{skill:add--doc-schemas/references/new-feature.md}}` (the schema body lives in that reference file, NOT in the `SKILL.md` index loaded in STEP add-new.load): frontmatter `id: [NNNN]F`, `type: epic`, `related: [[NNNN]F]` — `id` is the BARE feature id (`0042F`), the same value `about.md` carries, NEVER the `${FEATURE_ID}` directory name (`0042F-user-preferences`), which the schema rejects; TL;DR; **Subfeatures** table with a **required header row naming every column** (`id | name | objective | status | dependencies | checkpoint`), then one row per subfeature — `status` starts `pending`, leave `dependencies`/`checkpoint` cells empty unless known; Order (optional) and Notes (optional) sections
+2. Create `.codeadd/docs/features/${FEATURE_ID}/subfeatures/SF01-[name]/` directory
 3. Create a compact `about.md` per subfeature through `{{skill:add--feature-specification/SKILL.md}}` — hand it the feature's `## Objective` and that subfeature's "serves the feature objective by" line; the skill writes the objective, `## Relations` (`part_of` the epic) and the rest
 4. **On `delivery: automatic` only — ask once how the epic runs** (deciding, in every state), with the recommendation marked:
 
@@ -329,7 +330,7 @@ is still unanswered. IF MISSING → ask that item alone.
 **`add--feature-specification`, loaded at STEP add-new.confirm, writes the document.** It owns the schema load, the
 sections and the extraction. This STEP owns the path and the provenance:
 
-- **Path:** `docs/features/[NNNN]F-[name]/about.md`
+- **Path:** `.codeadd/docs/features/[NNNN]F-[name]/about.md`
 - **Provenance:** record the intent file path consumed at STEP add-new.intent in the frontmatter. Continue Mode
   reads `about.md` from then on and never re-reads the intent file.
 
@@ -351,7 +352,7 @@ this command drifts from the schema the skill writes against, and produces two r
 
 **Dispatch Agent: Codebase Analysis**
 - **Input:** Feature name, about.md path
-- **Output:** Write `docs/features/${FEATURE_ID}/discovery.md` (prerequisites, related files, existing patterns)
+- **Output:** Write `.codeadd/docs/features/${FEATURE_ID}/discovery.md` (prerequisites, related files, existing patterns)
 
 ---
 
@@ -388,7 +389,7 @@ so an automatic delivery waits on them exactly as a confirmed one does.
 ⛔ **Do NOT read that skill’s readback-divergence table as governing this step.** It names the one site that dispatches a readback, `/add-plan`, and this command is not it.
 
 ⛔ **This command dispatches no readback.** The single readback of the whole flow runs at `/add-plan`,
-whose target is `docs/features/${FEATURE_ID}` — which already contains this `about.md`. The read moved;
+whose target is `.codeadd/docs/features/${FEATURE_ID}` — which already contains this `about.md`. The read moved;
 it was not removed.
 
 ---
@@ -409,6 +410,8 @@ it was not removed.
 ---
 
 ## Completion
+
+**Before the report, close the docs:** follow `add--doc-schemas` → Docs Branch (end-of-command rule) — `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Name a `DOCS_COMMIT=failed` result in the report.
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the artefact paths and the next command come after it.
@@ -438,8 +441,8 @@ objective reaches the reviewer and where an epic's consistency check runs.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/features/${FEATURE_ID}/about.md` | What this feature is for, and what "done" means |
-| `docs/features/${FEATURE_ID}/discovery.md` | What the codebase already has, and the prior art to build on |
+| `.codeadd/docs/features/${FEATURE_ID}/about.md` | What this feature is for, and what "done" means |
+| `.codeadd/docs/features/${FEATURE_ID}/discovery.md` | What the codebase already has, and the prior art to build on |
 | {{skill:add--feature-specification/SKILL.md}} | How to write the spec, when the plan needs one refined |
 
 **`automatic` never reaches this step.** It has already handed off, and `add--delivery-mode` owns

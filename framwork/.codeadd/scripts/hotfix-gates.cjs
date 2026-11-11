@@ -27,6 +27,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { DOCS_ROOT, DOCS_LAYOUT } = require('./docs-root.cjs');
 
 class ExitError extends Error {
   constructor(code, message) {
@@ -146,6 +147,9 @@ function headInfo(rel) {
 }
 
 function entryFor(rel, source) {
+  // Docs live in the docs worktree, a separate branch: no code commit or index holds them, so a
+  // docs path is read from the worktree whatever the requested source (a `--tree` recovery included).
+  if (rel.startsWith(`${DOCS_ROOT}/`)) source = 'worktree';
   let info = null;
   if (source === 'index') info = blobInfo(indexInfo(rel));
   if (source === 'worktree') info = fsInfo(rel);
@@ -352,8 +356,8 @@ function parseReviewArgs() {
 }
 
 function excluded(rel, hotfixDir) {
-  return rel === 'docs/delivered.jsonl' || rel === `${hotfixDir}/changelog.md` ||
-    rel === '.codeadd/project/decisions.jsonl' || rel.startsWith('.codeadd/wiki/');
+  return rel === `${DOCS_ROOT}/${DOCS_LAYOUT.delivered}` || rel === `${hotfixDir}/changelog.md` ||
+    rel === `${DOCS_ROOT}/${DOCS_LAYOUT.decisions}` || rel.startsWith('.codeadd/wiki/');
 }
 
 function deliveryPaths(hotfixDir, tree) {

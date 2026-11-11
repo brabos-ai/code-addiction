@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { installDocsRoot } from './helpers/brownfield-fixture.js';
 
 /**
  * Plan 2026-09-14T215936 — F1, the RED matrix for the document model.
@@ -38,6 +39,7 @@ function makeTree(files) {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, body, 'utf8');
   }
+  installDocsRoot(root);
   trees.push(root);
   return root;
 }
@@ -78,9 +80,40 @@ describe('L1 — the type registry decides, the suffix does not', () => {
     }
   });
 
+  it('L1.1b the six generated-document types of the doc schema are registered with the R13 kinds', async () => {
+    const { TYPES } = await import('../../mcp/types.mjs');
+    for (const type of ['iterations', 'build-ledger', 'tasks']) {
+      expect(TYPES[type], type).toMatchObject({ kind: 'attachment', owner: 'dir', requires: [] });
+    }
+    for (const type of ['health-check', 'design-system', 'code-quality-review']) {
+      expect(TYPES[type], type).toMatchObject({ kind: 'page', root: '.codeadd/docs', requires: [] });
+    }
+  });
+
+  it('L1.1c a stamped file of each new type indexes: attachments through their feature, pages from the docs root', async () => {
+    const stamp = (type) => `---\ntype: ${type}\nschema: 1\n---\n\n# ${type}\n`;
+    const root = makeTree({
+      '.codeadd/docs/features/0001F-login/about.md': fm({ id: '0001F', type: 'feature', slug: 'login', status: 'done' }),
+      '.codeadd/docs/features/0001F-login/iterations.md': stamp('iterations'),
+      '.codeadd/docs/features/0001F-login/build-ledger.md': stamp('build-ledger'),
+      '.codeadd/docs/features/0001F-login/tasks.md': stamp('tasks'),
+      '.codeadd/docs/health-checks/2026-01-01/report.md': stamp('health-check'),
+      '.codeadd/docs/design-system.md': stamp('design-system'),
+      '.codeadd/docs/code-quality-review.md': stamp('code-quality-review'),
+    });
+    const data = await load(root);
+    // A registered type is never reported as unknown. A page of the docs root may still be
+    // skipped for carrying no `id:` — a minimal frontmatter is type + schema, and that is a
+    // recorded reason, not an unrecognised type.
+    const unknown = data.skipped.filter((s) => /not (a )?(declared|registered|in the registry)|unknown type|unrecognised/i.test(String(s.reason)));
+    expect(unknown, JSON.stringify(unknown)).toEqual([]);
+    const attachments = data.nodes.flatMap((n) => (n.attachments || []).map((a) => a.type)).sort();
+    expect(attachments).toEqual(expect.arrayContaining(['build-ledger', 'iterations', 'tasks']));
+  });
+
   it('L1.2 an unknown type that declares `kind:` itself is honoured', async () => {
     const root = makeTree({
-      'docs/custom/thing.md': fm({ id: 'X-1', type: 'their-own-type', kind: 'work-item' }),
+      '.codeadd/docs/custom/thing.md': fm({ id: 'X-1', type: 'their-own-type', kind: 'work-item' }),
     });
     const data = await load(root);
     expect(data.nodes.map((n) => n.id)).toContain('X-1');
@@ -88,10 +121,10 @@ describe('L1 — the type registry decides, the suffix does not', () => {
 
   it('L1.3 an unknown type declaring no `kind:` is reported by name, never dropped silently', async () => {
     const root = makeTree({
-      'docs/custom/thing.md': fm({ id: 'X-2', type: 'their-own-type' }),
+      '.codeadd/docs/custom/thing.md': fm({ id: 'X-2', type: 'their-own-type' }),
     });
     const data = await load(root);
-    const reason = skipReason(data, 'docs/custom/thing.md');
+    const reason = skipReason(data, '.codeadd/docs/custom/thing.md');
     expect(reason, 'the skip must exist').toBeTruthy();
     expect(reason).toMatch(/their-own-type/);
     expect(reason, 'naming the wrong cause is the defect').not.toMatch(/resolves to no work item/);
@@ -129,11 +162,11 @@ describe('L2 — the corpus indexes what the registry declares', () => {
   it('L2.2 one document per registry type indexes, with zero owner failures', async () => {
     const { TYPES } = await import('../../mcp/types.mjs');
     const files = {
-      'docs/features/0001F-login/about.md': fm({ id: '0001F', type: 'feature', slug: 'login', status: 'done' }),
+      '.codeadd/docs/features/0001F-login/about.md': fm({ id: '0001F', type: 'feature', slug: 'login', status: 'done' }),
     };
     for (const [type, entry] of Object.entries(TYPES)) {
       if (entry.kind === 'page' || type === 'feature') continue;
-      const dir = entry.kind === 'attachment' && entry.owner === 'dir' ? 'docs/features/0001F-login' : `docs/${type}`;
+      const dir = entry.kind === 'attachment' && entry.owner === 'dir' ? '.codeadd/docs/features/0001F-login' : `.codeadd/docs/${type}`;
       const front = { id: `ID-${type}`, type };
       if (entry.kind === 'attachment' && entry.owner === 'related') front.related = '[0001F]';
       files[`${dir}/${type}-doc.md`] = fm(front);
@@ -144,7 +177,7 @@ describe('L2 — the corpus indexes what the registry declares', () => {
   });
 
   it('L2.3 setup-receipt indexes as a work item', async () => {
-    const root = makeTree({ 'docs/qa/qa-setup.md': fm({ id: 'QA-SETUP', type: 'setup-receipt' }) });
+    const root = makeTree({ '.codeadd/docs/qa/qa-setup.md': fm({ id: 'QA-SETUP', type: 'setup-receipt' }) });
     const data = await load(root);
     const node = data.nodes.find((n) => n.id === 'QA-SETUP');
     expect(node, 'measured before this plan: skipped').toBeTruthy();
@@ -205,8 +238,9 @@ describe('L2 — the corpus indexes what the registry declares', () => {
     // three of the four Diátaxis types names nothing retired, it is just
     // incomplete. `add--architecture-discovery` carried the three-value enum and
     // neither the plan, its review, nor the rename sweep surfaced it.
-    const { typesOfKind } = await import('../../mcp/types.mjs');
-    const pages = typesOfKind('page');
+    const { typesOfKind, TYPES, WIKI_ROOT } = await import('../../mcp/types.mjs');
+    // The four Diátaxis types — the pages rooted at the wiki. The docs-root pages are not part of that set.
+    const pages = typesOfKind('page').filter((t) => TYPES[t].root === WIKI_ROOT);
     const walk = (dir, out = []) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
@@ -257,10 +291,10 @@ describe('L2 — the corpus indexes what the registry declares', () => {
 
   it('L2.5 an attachment whose declared owner mode fails names the mode', async () => {
     const root = makeTree({
-      'docs/changelog/CHG0001.md': fm({ id: 'CHG0001', type: 'changelog', related: '[]' }),
+      '.codeadd/docs/changelog/CHG0001.md': fm({ id: 'CHG0001', type: 'changelog', related: '[]' }),
     });
     const data = await load(root);
-    const reason = skipReason(data, 'docs/changelog/CHG0001.md');
+    const reason = skipReason(data, '.codeadd/docs/changelog/CHG0001.md');
     expect(reason).toMatch(/related/);
   });
 
@@ -276,12 +310,12 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
 
   const brownfield = () =>
     makeTree({
-      'docs/features/0001F-login/about.md': fm(
+      '.codeadd/docs/features/0001F-login/about.md': fm(
         { id: '0001F', type: 'feature-about', slug: 'login', status: 'done', tags: '[auth]' },
         "\n## TL;DR\nBody text with 'quotes' and a # hash.\n",
       ),
       '.codeadd/wiki/backend/api.md': fm({ type: 'reference', area: 'backend', description: 'x' }),
-      'docs/features/0001F-login/notes.md': '# no frontmatter\n\nnot codeadd\'s file.\n',
+      '.codeadd/docs/features/0001F-login/notes.md': '# no frontmatter\n\nnot codeadd\'s file.\n',
     });
 
   const run = async (cwd) => {
@@ -294,7 +328,7 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
   it('L3.1 a retired type name is rewritten and the document then indexes', async () => {
     const cwd = brownfield();
     await run(cwd);
-    const after = fs.readFileSync(path.join(cwd, 'docs/features/0001F-login/about.md'), 'utf8');
+    const after = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0001F-login/about.md'), 'utf8');
     expect(after).toMatch(/^type: feature$/m);
     const data = await load(cwd);
     expect(data.nodes.find((n) => n.id === '0001F').type).toBe('feature');
@@ -311,7 +345,7 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
 
   it('L3.3 every document body is byte-identical', async () => {
     const cwd = brownfield();
-    const p = path.join(cwd, 'docs/features/0001F-login/about.md');
+    const p = path.join(cwd, '.codeadd/docs/features/0001F-login/about.md');
     const bodyBefore = fs.readFileSync(p, 'utf8').split(/^---$/m)[2];
     await run(cwd);
     expect(fs.readFileSync(p, 'utf8').split(/^---$/m)[2]).toBe(bodyBefore);
@@ -319,7 +353,7 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
 
   it('L3.3b every other frontmatter key is byte-identical — order, quoting, spacing', async () => {
     const cwd = brownfield();
-    const p = path.join(cwd, 'docs/features/0001F-login/about.md');
+    const p = path.join(cwd, '.codeadd/docs/features/0001F-login/about.md');
     const before = fs.readFileSync(p, 'utf8').split(/^---$/m)[1].split('\n');
     await run(cwd);
     const after = fs.readFileSync(p, 'utf8').split(/^---$/m)[1].split('\n');
@@ -332,16 +366,16 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
 
   it('L3.4 a document it cannot parse is reported by path, not skipped silently', async () => {
     const cwd = brownfield();
-    fs.writeFileSync(path.join(cwd, 'docs/features/0001F-login/broken.md'), '---\ntype: [unclosed\n', 'utf8');
+    fs.writeFileSync(path.join(cwd, '.codeadd/docs/features/0001F-login/broken.md'), '---\ntype: [unclosed\n', 'utf8');
     const outcome = await run(cwd);
     expect(JSON.stringify(outcome)).toMatch(/broken\.md/);
   });
 
   it('L3.5 it never deletes and never commits', async () => {
     const cwd = brownfield();
-    const before = fs.readdirSync(path.join(cwd, 'docs/features/0001F-login')).sort();
+    const before = fs.readdirSync(path.join(cwd, '.codeadd/docs/features/0001F-login')).sort();
     await run(cwd);
-    expect(fs.readdirSync(path.join(cwd, 'docs/features/0001F-login')).sort()).toEqual(before);
+    expect(fs.readdirSync(path.join(cwd, '.codeadd/docs/features/0001F-login')).sort()).toEqual(before);
     expect(fs.existsSync(path.join(cwd, '.git'))).toBe(false);
   });
 
@@ -352,18 +386,18 @@ describe('L3 — migration 0003 over a user\'s own documents', () => {
     // that 0002 harvests from documents carrying the NEW names, which is the
     // lost-ledger case migrations.js handles explicitly.
     const cwd = makeTree({
-      'docs/features/0009F-ledger/about.md': fm(
+      '.codeadd/docs/features/0009F-ledger/about.md': fm(
         { id: '0009F', type: 'feature', slug: 'ledger', status: 'live' },
         '\n## TL;DR\nThe ledger.\n\n## Relations\nNone\n',
       ),
-      'docs/features/0042F-purchase/about.md': fm(
+      '.codeadd/docs/features/0042F-purchase/about.md': fm(
         { id: '0042F', type: 'feature', slug: 'purchase', status: 'live' },
         '\n## TL;DR\nPurchases write through {{doc:0009F}}.\n\n## Relations\nNone\n',
       ),
     });
     const { MIGRATIONS } = await import('../src/migrations.js');
     MIGRATIONS.find((m) => m.id === '0002-harvest-relations').run({ cwd, providers: [] });
-    const after = fs.readFileSync(path.join(cwd, 'docs/features/0042F-purchase/about.md'), 'utf8');
+    const after = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0042F-purchase/about.md'), 'utf8');
     expect(after, 'a suffix test would match neither document and harvest nothing').toMatch(
       /\[\[0009F\]\]/,
     );
@@ -431,11 +465,11 @@ describe('L4b — the consumption rules reach the caller', () => {
 describe('L5 — the four measured defects are gone', () => {
   it('L5.1 a how-to page written exactly as add-wiki instructs is returned by search', async () => {
     const root = makeTree({
-      // `docs/` is here because the corpus PROBE requires it, even though the
+      // `.codeadd/docs/` is here because the corpus PROBE requires it, even though the
       // page lives under the wiki root. A wiki-only project is refused by a
       // corpus whose roots include the wiki — real, pre-existing, and outside
       // this plan; the ledger records it.
-      'docs/features/0001F-x/about.md': fm({ id: '0001F', type: 'feature', slug: 'x', status: 'done' }),
+      '.codeadd/docs/features/0001F-x/about.md': fm({ id: '0001F', type: 'feature', slug: 'x', status: 'done' }),
       '.codeadd/wiki/backend/deploy.md': fm({
         id: 'wiki/backend/deploy',
         type: 'how-to',
@@ -454,18 +488,18 @@ describe('L5 — the four measured defects are gone', () => {
 
   it('L5.2 a typo in a type name is reported as unknown, not demoted to an attachment', async () => {
     const root = makeTree({
-      'docs/features/0002F-x/about.md': fm({ id: '0002F', type: 'featrue', slug: 'x', status: 'done' }),
+      '.codeadd/docs/features/0002F-x/about.md': fm({ id: '0002F', type: 'featrue', slug: 'x', status: 'done' }),
     });
     const data = await load(root);
-    expect(skipReason(data, 'docs/features/0002F-x/about.md')).toMatch(/featrue/);
+    expect(skipReason(data, '.codeadd/docs/features/0002F-x/about.md')).toMatch(/featrue/);
   });
 
   it('L5.3 a dropped attachment names which owner mode failed', async () => {
     const root = makeTree({
-      'docs/changelog/CHG9999.md': fm({ id: 'CHG9999', type: 'changelog', related: '[]' }),
+      '.codeadd/docs/changelog/CHG9999.md': fm({ id: 'CHG9999', type: 'changelog', related: '[]' }),
     });
     const data = await load(root);
-    expect(skipReason(data, 'docs/changelog/CHG9999.md')).toMatch(/related|owner mode/);
+    expect(skipReason(data, '.codeadd/docs/changelog/CHG9999.md')).toMatch(/related|owner mode/);
   });
 
   it('L5.4 a reader of the registry classifies what the indexer classifies', async () => {

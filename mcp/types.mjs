@@ -48,6 +48,12 @@ export const OWNER_MODES = {
 export const WIKI_ROOT = '.codeadd/wiki';
 
 /**
+ * The docs root: the worktree of the docs branch. `mcp/` takes no dependency, so it
+ * holds its own copy; `cli/tests/mcp-corpora.test.js` asserts it equals the resolver's.
+ */
+export const DOCS_TYPE_ROOT = '.codeadd/docs';
+
+/**
  * Every type this framework writes.
  *
  * `requires` lists the frontmatter keys a document of that type must carry.
@@ -83,12 +89,22 @@ export const TYPES = {
   review: { kind: 'attachment', owner: 'dir', requires: ['id'] },
   'qa-validation': { kind: 'attachment', owner: 'dir', requires: ['id'] },
   changelog: { kind: 'attachment', owner: 'related', requires: ['id'] },
+  // The three formerly frontmatter-less files of a feature folder (0078F, R13). They belong to
+  // their work item exactly like `feature-plan`, and carry no `id` of their own — `requires` is
+  // empty on purpose: a minimal frontmatter of `type` + `schema` is the whole contract.
+  iterations: { kind: 'attachment', owner: 'dir', requires: [] },
+  'build-ledger': { kind: 'attachment', owner: 'dir', requires: [] },
+  tasks: { kind: 'attachment', owner: 'dir', requires: [] },
 
   // ---- pages: the four Diátaxis types, all of them ------------------------
   tutorial: { kind: 'page', root: WIKI_ROOT, requires: ['id'] },
   'how-to': { kind: 'page', root: WIKI_ROOT, requires: ['id'] },
   reference: { kind: 'page', root: WIKI_ROOT, requires: ['id'] },
   explanation: { kind: 'page', root: WIKI_ROOT, requires: ['id'] },
+  // The three project-level files: things you look up, rooted at the docs root (0078F, R13).
+  'health-check': { kind: 'page', root: DOCS_TYPE_ROOT, requires: [] },
+  'design-system': { kind: 'page', root: DOCS_TYPE_ROOT, requires: [] },
+  'code-quality-review': { kind: 'page', root: DOCS_TYPE_ROOT, requires: [] },
 };
 
 /**

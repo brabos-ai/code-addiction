@@ -7,6 +7,7 @@ description: 'Code review: IoC, RESTful, Contracts, Security (OWASP), Clean Arch
 
 <!-- uses:
 - skill: add--backend-development
+- skill: add--doc-schemas
 - skill: add--database-development
 - skill: add--frontend-development
 - skill: add--security-audit
@@ -64,7 +65,7 @@ The code-review agent MUST create todos for each validation category and for eac
 
 Sources (lookup):
 
-{"sources":{"contracts":"docs/features/${FEATURE_ID}/plan.md (prose: routes, services, DTOs, queues)","tick_state":"docs/features/${FEATURE_ID}/tasks.md → ## Acceptance Checklist"}}
+{"sources":{"contracts":".codeadd/docs/features/${FEATURE_ID}/plan.md (prose: routes, services, DTOs, queues)","tick_state":".codeadd/docs/features/${FEATURE_ID}/tasks.md → ## Acceptance Checklist"}}
 
 Validation procedure:
 
@@ -272,7 +273,7 @@ For EACH changed file, validate in order, marking each todo `in_progress` → `c
 
 ### Phase 4: Report
 
-Generate the review report at `docs/features/${featureId}/review-NNN.md` (next number in the per-feature sequence). The exact output template (score table, issue format, build status) is owned by the consuming command (`add-review`) — this skill validates; the command formats.
+Generate the review report at `.codeadd/docs/features/${featureId}/review-NNN.md` (next number in the per-feature sequence). The exact output template (score table, issue format, build status) is owned by the consuming command (`add-review`) — this skill validates; the command formats. The report is written under `.codeadd/docs/` — follow Docs Branch in {{skill:add--doc-schemas/SKILL.md}}.
 
 ---
 

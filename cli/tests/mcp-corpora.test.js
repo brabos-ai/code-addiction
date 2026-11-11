@@ -8,7 +8,11 @@ import {
   EXPECTED_NODES,
   EXPECTED_SKIPPED,
 } from './helpers/docs-corpus-fixture.js';
-import { CORPORA, resolveCorpus, probe, parseFrontmatter } from '../../mcp/corpora.mjs';
+import { createRequire } from 'node:module';
+import { CORPORA, DOCS_CORPUS_ROOT, resolveCorpus, probe, parseFrontmatter } from '../../mcp/corpora.mjs';
+
+const nodeRequire = createRequire(import.meta.url);
+const { DOCS_ROOT } = nodeRequire('../../framwork/.codeadd/scripts/docs-root.cjs');
 
 /**
  * Plan 2026-09-12T104012 — F6, the corpus registry and the two parsers.
@@ -69,7 +73,7 @@ describe('F6 — the probe validates what the flag selects', () => {
     expect(result.reason).toContain('framwork/provider-map.json');
   });
 
-  it('L2.5 the docs corpus is absent when docs/ is', () => {
+  it('L2.5 the docs corpus is absent when .codeadd/docs/ is', () => {
     expect(probe(CORPORA.docs, emptyTree).present).toBe(false);
     expect(probe(CORPORA.docs, docsTree).present).toBe(true);
   });
@@ -119,6 +123,17 @@ body
   });
 });
 
+describe('F11 — the docs corpus reads the docs root, and mcp/ holds its own copy of the constant', () => {
+  it('R3 the mcp/ root constant equals DOCS_ROOT from the resolver module', () => {
+    expect(DOCS_CORPUS_ROOT).toBe(DOCS_ROOT);
+  });
+
+  it('the docs corpus roots are the docs root and the wiki, and it probes the docs root', () => {
+    expect(CORPORA.docs.roots).toEqual([DOCS_ROOT, '.codeadd/wiki']);
+    expect(CORPORA.docs.probe).toBe(DOCS_ROOT);
+  });
+});
+
 describe('F6 — the docs parser decides membership by type:, never by path', () => {
   let corpus;
 
@@ -147,7 +162,7 @@ describe('F6 — the docs parser decides membership by type:, never by path', ()
     expect(feature.attachments.every((a) => a.type)).toBe(true);
   });
 
-  it('a changelog in docs/changelog/ attaches through its part_of relation', () => {
+  it('a changelog in .codeadd/docs/changelog/ attaches through its part_of relation', () => {
     // Decision 30: both layouts exist in the wild and both are read. This one
     // has no *-about sibling, so the directory rule cannot resolve it.
     const hotfix = corpus.nodes.find((n) => n.id === '0051H');
@@ -287,7 +302,7 @@ describe('F6 — decision 30: BOTH changelog layouts contribute edges', () => {
     expect(feature.attachments.map((a) => a.type)).toContain('changelog');
   });
 
-  it('a docs/changelog/ changelog contributes its body references too', () => {
+  it('a .codeadd/docs/changelog/ changelog contributes its body references too', () => {
     // THE GAP THIS CLOSES: the edge pass used to attribute attachment content
     // by DIRECTORY only. CHG0002 has no *-about sibling — it resolves to 0051H
     // through its own part_of line — so its Changes bullet reached nothing.

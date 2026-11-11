@@ -19,9 +19,10 @@
 //     (never items[].at), sorts status rank -> score -> recency -> id, and cuts
 //     two independent buckets (5 live, 2 dead) with NO backfill.
 //   - verify reports; only --repair writes, and a repair is a NEW line.
-//   - the corpus is `git ls-files --cached --others --exclude-standard` minus
-//     docs/, minus the index.
-//   - touched answers complete/curated from a DERIVED commit plus item anchors.
+//   - the corpus is `git ls-files --cached --others --exclude-standard`; the docs
+//     root (and so the index) is a separate worktree, not part of the code tree.
+//   - touched answers complete/curated from the entry's recorded `code_sha`
+//     plus item anchors; an entry without `code_sha` answers curated only.
 //
 // RETIRED CASE: delivered#065 ("a missing node prints ERROR=node-missing") is an
 // interpreter-specific failure the native migration retires — `node` IS the
@@ -36,11 +37,15 @@ const assert = require('node:assert/strict');
 const h = require('./helpers.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 // --- fixture helpers ---------------------------------------------------------
 
+function docsDir(repo) {
+  return path.join(repo, ...DOCS_ROOT.split('/'));
+}
 function indexPath(repo) {
-  return path.join(repo, 'docs', 'delivered.jsonl');
+  return path.join(docsDir(repo), DOCS_LAYOUT.delivered);
 }
 function src(repo, rel, content) {
   return h.write(path.join(repo, rel), content);
@@ -58,7 +63,7 @@ function validRecord(extra) {
     name: 'login com Google',
     words: 'login google oauth token social',
     commits: ['a1b2c3d'],
-    origin: 'docs/features/0042F-login-google/',
+    origin: DOCS_ROOT + '/features/0042F-login-google/',
     items: [{ what: 'POST /auth/google', at: 'src/auth/google.ts', find: 'authGoogleHandler' }],
   };
   if (extra) Object.assign(rec, extra);
@@ -81,7 +86,7 @@ function entry(id, status, name, words, at, find, extra) {
     name,
     words,
     commits: ['a1b2c3d'],
-    origin: 'docs/features/' + id + '/',
+    origin: DOCS_ROOT + '/features/' + id + '/',
     items: [{ what: 'thing', at, find }],
   };
   if (extra) Object.assign(o, extra);
@@ -132,6 +137,11 @@ function seedDelivery(r, id, file, find) {
 }
 function withRepo(fn) {
   const r = h.makeRepo();
+  // The docs root is a worktree of another branch in a real project; here a
+  // plain directory the code repository excludes locally, as `docs-branch
+  // prepare` does.
+  fs.mkdirSync(docsDir(r.repo), { recursive: true });
+  h.write(path.join(r.repo, '.git', 'info', 'exclude'), DOCS_ROOT + '\n');
   try {
     return fn(r);
   } finally {
@@ -387,7 +397,7 @@ test('delivered#019 L1.2: --layer filters', () =>
       record({
         v: 1, ts: '2026-09-07T12:00:00Z', id: 'plan-x', layer: 'internal', by: 'done',
         status: 'live', name: 'q internal', words: 'q internal', commits: ['a1b2c3d'],
-        origin: 'docs/plans/plan-x.md', items: [{ what: 't', at: 'src/live.ts', find: 'liveThing' }],
+        origin: DOCS_ROOT + '/deliveries/plan-x/', items: [{ what: 't', at: 'src/live.ts', find: 'liveThing' }],
       }),
     ]);
     const res = runRead(r.repo, ['q', '--no-verify', '--layer', 'product']);
@@ -547,14 +557,14 @@ test('delivered#030 L1.8: zero items are refused', () =>
     assert.match(res.output, /REFUSED=no-items/);
   }));
 
-test('delivered#031 L1.8: an item anchored into docs/ is refused', () =>
+test('delivered#031 L1.8: an item anchored under the docs root is refused', () =>
   withRepo((r) => {
-    src(r.repo, 'docs/notes.md', 'the docsAnchor lives here\n');
+    src(r.repo, DOCS_ROOT + '/notes.md', 'the docsAnchor lives here\n');
     commitAll(r.repo);
     const res = runWrite(r.repo, record({
       id: '0042F', layer: 'product', by: 'done', status: 'live', name: 'n', words: 'w',
       commits: ['a1b2c3d'], origin: 'o',
-      items: [{ what: 'w', at: 'docs/notes.md', find: 'docsAnchor' }],
+      items: [{ what: 'w', at: DOCS_ROOT + '/notes.md', find: 'docsAnchor' }],
     }));
     assert.equal(res.status, 2, res.output);
     assert.match(res.output, /REFUSED=item-in-docs/);
@@ -718,12 +728,12 @@ test('delivered#044 L1.14: a superseded line anchored into a path ignored since 
     assert.equal(kvOf(res).ENTRY, '0042F');
   }));
 
-test('delivered#045 L1.14: a superseded line anchored into docs/ is still refused', () =>
+test('delivered#045 L1.14: a superseded line anchored under the docs root is still refused', () =>
   withRepo((r) => {
     validSource(r.repo);
     commitAll(r.repo);
     writeIndex(r.repo, [entry('0099F', 'live', 'new', 'new', 'src/auth/google.ts', 'authGoogleHandler')]);
-    const res = runWrite(r.repo, supersededRecord('authGoogleHandler', '0099F', 'docs/x.md'));
+    const res = runWrite(r.repo, supersededRecord('authGoogleHandler', '0099F', DOCS_ROOT + '/x.md'));
     assert.equal(res.status, 2, res.output);
     assert.match(res.output, /REFUSED=item-in-docs/);
   }));
@@ -944,9 +954,8 @@ test('delivered#064 L1.13: a write the filesystem refuses exits 1, never 0', () 
   withRepo((r) => {
     validSource(r.repo);
     commitAll(r.repo);
-    // `docs` is a regular file, so the index directory cannot be created.
-    fs.rmSync(path.join(r.repo, 'docs'), { recursive: true, force: true });
-    src(r.repo, 'docs', 'not a directory\n');
+    // The index path is a directory, so the append is refused by the filesystem.
+    fs.mkdirSync(indexPath(r.repo), { recursive: true });
     const res = runWrite(r.repo, validRecord());
     assert.equal(res.status, 1, res.output);
     assert.equal(kvOf(res).ERROR, 'cannot-write-index');
@@ -1091,26 +1100,43 @@ test('delivered#074 L4.3: an entry with no node at all is still readable by its 
   }));
 
 // --- L1 — `touched`, the path query -----------------------------------------
+//
+// The delivery's commit is RECORDED in the entry as `code_sha`; the index lives
+// on another branch, so no history of it can be walked. An entry without
+// `code_sha` yields no `complete` answer — never a guess.
 
-test('delivered#075 L1.1: touched returns the delivery whose derived commit changed the path', () =>
+function headSha(repo) {
+  return h.git(repo, ['rev-parse', 'HEAD']).stdout.trim();
+}
+function codeEntry(id, file, find, sha, extra) {
+  return entry(id, 'live', 'delivery ' + id, 'words ' + id, file, find, Object.assign({ code_sha: sha, pr: null }, extra));
+}
+function seedCodeDelivery(r, id, file, find) {
+  src(r.repo, file, 'const ' + find + ' = 1;\n');
+  commitAll(r.repo, 'code for ' + id);
+  const prev = fs.existsSync(indexPath(r.repo)) ? h.read(indexPath(r.repo)) : '';
+  h.write(indexPath(r.repo), prev + codeEntry(id, file, find, headSha(r.repo)) + '\n');
+}
+
+test('delivered#075 L1.1: touched returns the delivery whose recorded code_sha changed the path', () =>
   withRepo((r) => {
-    seedDelivery(r, 'D1', 'src/one.ts', 'markerOne');
+    seedCodeDelivery(r, 'D1', 'src/one.ts', 'markerOne');
     const res = runTouched(r.repo, ['src/one.ts']);
     assert.equal(res.status, 0, res.output);
     const first = jsonOf(res.stdout)[0];
     assert.equal(first.id, 'D1');
     assert.equal(first.answer, 'complete');
+    assert.equal(first.commit, headSha(r.repo));
+    assert.equal(kvOf(res).CURATED_ONLY, '0');
   }));
 
-test('delivered#076 L1.2: an entry whose at names the path but whose commit does not comes back curated', () =>
+test('delivered#076 L1.2: an entry whose at names the path but whose code_sha does not comes back curated', () =>
   withRepo((r) => {
-    seedDelivery(r, 'D2', 'src/two.ts', 'markerTwo');
+    seedCodeDelivery(r, 'D2', 'src/two.ts', 'markerTwo');
     src(r.repo, 'src/other.ts', 'const markerOther = 1;\n');
     commitAll(r.repo, 'a later file the D2 commit never saw');
     const prev = h.read(indexPath(r.repo));
-    h.write(indexPath(r.repo), prev + entry('D3', 'live', 'delivery D3', 'words D3', 'src/other.ts', 'markerOther') + '\n');
-    h.git(r.repo, ['add', '-A']);
-    h.git(r.repo, ['commit', '-q', '-m', 'index line for D3, source already committed']);
+    h.write(indexPath(r.repo), prev + codeEntry('D3', 'src/other.ts', 'markerOther', h.git(r.repo, ['rev-parse', 'HEAD~1']).stdout.trim()) + '\n');
     const res = runTouched(r.repo, ['src/other.ts']);
     assert.equal(res.status, 0, res.output);
     const hit = jsonOf(res.stdout).find((e) => e.id === 'D3');
@@ -1118,44 +1144,38 @@ test('delivered#076 L1.2: an entry whose at names the path but whose commit does
     assert.equal(hit.answer, 'curated');
   }));
 
-test('delivered#077 L1.3: the derivation finds the line\'s FIRST commit, not a later correction', () =>
+test('delivered#077 L1.3: the LAST line for an id supplies the code_sha (a stamped line wins)', () =>
   withRepo((r) => {
-    seedDelivery(r, 'D4', 'src/four.ts', 'markerFour');
-    const first = h.git(r.repo, ['log', '--format=%h', '-1']).stdout.trim();
+    seedCodeDelivery(r, 'D4', 'src/four.ts', 'markerFour');
+    const sha = headSha(r.repo);
     const prev = h.read(indexPath(r.repo));
-    h.write(indexPath(r.repo), prev + entry('D4', 'live', 'delivery D4 corrected', 'words D4', 'src/four.ts', 'markerFour') + '\n');
-    h.git(r.repo, ['add', '-A']);
-    h.git(r.repo, ['commit', '-q', '-m', 'correction line for D4']);
+    const bare = entry('D4', 'live', 'delivery D4 recorded', 'words D4', 'src/four.ts', 'markerFour');
+    h.write(indexPath(r.repo), prev.replace(/\n*$/, '\n') + bare + '\n' + codeEntry('D4', 'src/four.ts', 'markerFour', sha) + '\n');
     const res = runTouched(r.repo, ['src/four.ts']);
     assert.equal(res.status, 0, res.output);
-    assert.match(res.output, new RegExp(first));
+    assert.equal(jsonOf(res.stdout)[0].commit, sha);
   }));
 
-test('delivered#078 L1.4: an entry whose derived commit touches only docs/ answers curated', () =>
+test('delivered#078 L1.4: an entry with no code_sha answers curated, never complete', () =>
   withRepo((r) => {
     src(r.repo, 'src/five.ts', 'const markerFive = 1;\n');
     commitAll(r.repo, 'source, committed alone');
-    const prev = fs.existsSync(indexPath(r.repo)) ? h.read(indexPath(r.repo)) : '';
-    h.write(indexPath(r.repo), prev + entry('D5', 'live', 'delivery D5', 'words D5', 'src/five.ts', 'markerFive') + '\n');
-    h.git(r.repo, ['add', 'docs']);
-    h.git(r.repo, ['commit', '-q', '-m', 'chore(delivery-index): record D5 after the fact']);
+    h.write(indexPath(r.repo), entry('D5', 'live', 'delivery D5', 'words D5', 'src/five.ts', 'markerFive') + '\n');
     const res = runTouched(r.repo, ['src/five.ts']);
     assert.equal(res.status, 0, res.output);
+    assert.equal(kvOf(res).TOUCHED_COMPLETE, '0');
     assert.equal(jsonOf(res.stdout)[0].answer, 'curated');
     assert.equal(kvOf(res).CURATED_ONLY, '1');
   }));
 
-test('delivered#079 L1.5: CURATED_ONLY counts every entry that could not answer from its commit', () =>
+test('delivered#079 L1.5: CURATED_ONLY counts every entry that could not answer from its code_sha', () =>
   withRepo((r) => {
     src(r.repo, 'src/six.ts', 'const markerSix = 1;\n');
     src(r.repo, 'src/seven.ts', 'const markerSeven = 1;\n');
     commitAll(r.repo, 'both sources');
-    const prev = fs.existsSync(indexPath(r.repo)) ? h.read(indexPath(r.repo)) : '';
-    h.write(indexPath(r.repo), prev
-      + entry('D6', 'live', 'delivery D6', 'words D6', 'src/six.ts', 'markerSix') + '\n'
+    h.write(indexPath(r.repo),
+      entry('D6', 'live', 'delivery D6', 'words D6', 'src/six.ts', 'markerSix') + '\n'
       + entry('D7', 'live', 'delivery D7', 'words D7', 'src/seven.ts', 'markerSeven') + '\n');
-    h.git(r.repo, ['add', 'docs']);
-    h.git(r.repo, ['commit', '-q', '-m', 'chore(delivery-index): record both after the fact']);
     const res = runTouched(r.repo, ['src/six.ts', 'src/seven.ts']);
     assert.equal(res.status, 0, res.output);
     assert.equal(kvOf(res).CURATED_ONLY, '2');
@@ -1163,7 +1183,7 @@ test('delivered#079 L1.5: CURATED_ONLY counts every entry that could not answer 
 
 test('delivered#080 L1.6: a path no delivery touched returns both blocks empty, exit 0', () =>
   withRepo((r) => {
-    seedDelivery(r, 'D8', 'src/eight.ts', 'markerEight');
+    seedCodeDelivery(r, 'D8', 'src/eight.ts', 'markerEight');
     const res = runTouched(r.repo, ['src/nowhere.ts']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
@@ -1185,12 +1205,11 @@ test('delivered#081 L1.7: an absent index makes touched a no-op, and says so in 
     assert.equal(fs.existsSync(indexPath(r.repo)), false);
   }));
 
-test('delivered#082 L1.7b: a history git cannot walk degrades to curated, never to an error', () =>
+test('delivered#082 L1.7b: a code_sha git cannot resolve degrades to curated, never to an error', () =>
   withRepo((r) => {
     src(r.repo, 'src/nine.ts', 'const markerNine = 1;\n');
-    commitAll(r.repo, 'source only, the index line never committed');
-    const prev = fs.existsSync(indexPath(r.repo)) ? h.read(indexPath(r.repo)) : '';
-    h.write(indexPath(r.repo), prev + entry('D9', 'live', 'delivery D9', 'words D9', 'src/nine.ts', 'markerNine') + '\n');
+    commitAll(r.repo, 'source only');
+    h.write(indexPath(r.repo), codeEntry('D9', 'src/nine.ts', 'markerNine', '0123456789abcdef0123456789abcdef01234567') + '\n');
     const res = runTouched(r.repo, ['src/nine.ts']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
@@ -1199,7 +1218,7 @@ test('delivered#082 L1.7b: a history git cannot walk degrades to curated, never 
     assert.equal(jsonOf(res.stdout)[0].answer, 'curated');
   }));
 
-test('delivered#083 L1.7c: a delivery landed by a MERGE commit still answers complete, with the merge sha', () =>
+test('delivered#083 L1.7c: a delivery landed by a MERGE commit answers complete with the recorded merge sha', () =>
   withRepo((r) => {
     src(r.repo, 'src/base.ts', 'const markerBase = 1;\n');
     commitAll(r.repo, 'base');
@@ -1207,13 +1226,12 @@ test('delivered#083 L1.7c: a delivery landed by a MERGE commit still answers com
     h.git(r.repo, ['checkout', '-q', '-b', 'feat']);
     src(r.repo, 'src/ten.ts', 'const markerTen = 1;\n');
     commitAll(r.repo, 'F1: code');
-    const prev = fs.existsSync(indexPath(r.repo)) ? h.read(indexPath(r.repo)) : '';
-    h.write(indexPath(r.repo), prev + entry('D10', 'live', 'delivery D10', 'words D10', 'src/ten.ts', 'markerTen') + '\n');
-    h.git(r.repo, ['add', 'docs']);
-    h.git(r.repo, ['commit', '-q', '-m', 'docs: index entry for D10']);
+    src(r.repo, 'src/ten-b.ts', 'const markerTenB = 1;\n');
+    commitAll(r.repo, 'F2: code');
     h.git(r.repo, ['checkout', '-q', trunk]);
     h.git(r.repo, ['merge', '-q', '--no-ff', 'feat', '-m', 'Merge pull request: D10']);
-    const merge = h.git(r.repo, ['log', '--format=%h', '-1']).stdout.trim();
+    const merge = headSha(r.repo);
+    h.write(indexPath(r.repo), codeEntry('D10', 'src/ten.ts', 'markerTen', merge) + '\n');
     const res = runTouched(r.repo, ['src/ten.ts']);
     assert.equal(res.status, 0, res.output);
     const hit = jsonOf(res.stdout)[0];
@@ -1227,3 +1245,79 @@ test('delivered#084 L1.8: touched with no path exits 2', () =>
     const res = h.runScript('delivered', ['touched'], { cwd: r.repo });
     assert.equal(res.status, 2, res.output);
   }));
+
+// --- code_sha / pr: the two fields the close-out records ---------------------
+
+test('delivered#085 L1.11: write accepts code_sha and pr, keeps v at 1, and persists both', () =>
+  withRepo((r) => {
+    validSource(r.repo);
+    commitAll(r.repo);
+    const sha = headSha(r.repo);
+    const res = runWrite(r.repo, validRecord({ code_sha: sha, pr: 77 }));
+    assert.equal(res.status, 0, res.output);
+    const line = JSON.parse(firstIndexLine(r.repo));
+    assert.equal(line.v, 1);
+    assert.equal(line.code_sha, sha);
+    assert.equal(line.pr, 77);
+  }));
+
+test('delivered#086 L1.11: pr may be null, and a malformed code_sha or pr is refused', () =>
+  withRepo((r) => {
+    validSource(r.repo);
+    commitAll(r.repo);
+    const ok = runWrite(r.repo, validRecord({ code_sha: headSha(r.repo), pr: null }));
+    assert.equal(ok.status, 0, ok.output);
+    assert.equal(JSON.parse(lastIndexLine(r.repo)).pr, null);
+    const badSha = runWrite(r.repo, validRecord({ code_sha: 'not-a-sha' }));
+    assert.equal(badSha.status, 2, badSha.output);
+    assert.match(badSha.output, /REFUSED=bad-code-sha/);
+    const badPr = runWrite(r.repo, validRecord({ code_sha: headSha(r.repo), pr: 'x' }));
+    assert.equal(badPr.status, 2, badPr.output);
+    assert.match(badPr.output, /REFUSED=bad-pr/);
+  }));
+
+test('delivered#087 L1.12: stamp appends a NEW line carrying code_sha and pr; the recorded line is untouched', () =>
+  withRepo((r) => {
+    validSource(r.repo);
+    commitAll(r.repo);
+    assert.equal(runWrite(r.repo, validRecord()).status, 0);
+    const before = firstIndexLine(r.repo);
+    const sha = headSha(r.repo);
+    const res = h.runScript('delivered', ['stamp', '0042F', '--code-sha', sha, '--pr', '12'], { cwd: r.repo });
+    assert.equal(res.status, 0, res.output);
+    assert.equal(kvOf(res).ENTRY, '0042F');
+    assert.equal(indexLines(r.repo), 2);
+    assert.equal(firstIndexLine(r.repo), before);
+    const last = JSON.parse(lastIndexLine(r.repo));
+    assert.equal(last.v, 1);
+    assert.equal(last.code_sha, sha);
+    assert.equal(last.pr, 12);
+    assert.equal(last.name, 'login com Google');
+    const touched = jsonOf(runTouched(r.repo, ['src/auth/google.ts']).stdout)[0];
+    assert.equal(touched.answer, 'complete');
+  }));
+
+test('delivered#088 L1.12: stamp on an id the index does not hold is an error, and writes nothing', () =>
+  withRepo((r) => {
+    commitAll(r.repo);
+    const res = h.runScript('delivered', ['stamp', '0042F', '--code-sha', 'abc1234'], { cwd: r.repo });
+    assert.equal(res.status, 2, res.output);
+    assert.match(res.output, /ERROR=entry-absent/);
+    assert.equal(fs.existsSync(indexPath(r.repo)), false);
+  }));
+
+test('delivered#089 L1.13: with no docs root, write is a named error and read is an empty answer', () => {
+  const r = h.makeRepo();
+  try {
+    validSource(r.repo);
+    commitAll(r.repo);
+    const w = runWrite(r.repo, validRecord());
+    assert.equal(w.status, 2, w.output);
+    assert.match(w.output, /ERROR=docs-root-missing/);
+    const rd = runRead(r.repo, ['login']);
+    assert.equal(rd.status, 0, rd.output);
+    assert.equal(kvOf(rd).MATCHED_LIVE, '0');
+  } finally {
+    r.cleanup();
+  }
+});

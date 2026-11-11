@@ -2,7 +2,7 @@
 
 **This is a format reference, not a doc schema.** Every other file under `references/` describes a Markdown
 document an agent authors, with frontmatter, depth floors and a Decision Log. This one describes a
-**minified machine log**: `docs/delivered.jsonl`, one JSON object per line, written by
+**minified machine log**: `.codeadd/docs/delivered.jsonl`, one JSON object per line, written by
 `.codeadd/scripts/delivered.cjs` and read by `add--knowledge-discovery`. It has no frontmatter template, no
 `id:` under the skill's ID convention, no TL;DR, no depth floors and no Decision Log, because none of those
 apply to a log a script appends to.
@@ -12,7 +12,7 @@ which no script can derive.
 
 ## The file
 
-`docs/delivered.jsonl` — tracked in git, flat directly under `docs/`, UTF-8, LF, one minified JSON object
+`.codeadd/docs/delivered.jsonl` — tracked on the `codeadd-docs` branch, flat directly under `.codeadd/docs/`, UTF-8, LF, one minified JSON object
 per line.
 
 The location is settled by elimination, not taste: the installer always gitignores `.codeadd/`, and this
@@ -31,7 +31,7 @@ independently trustworthy.
 ## The record
 
 ```
-{"v":1,"ts":"2026-09-07T12:39:19Z","id":"0042F","layer":"product","by":"done","status":"live","name":"login com Google","words":"login google oauth token social sso conta","commits":["a1b2c3d"],"origin":"docs/features/0042F-login-google/","items":[{"what":"POST /auth/google","at":"src/auth/google.ts","find":"/auth/google"},{"what":"tabela oauth_tokens","at":"db/migrations/0042.sql","find":"oauth_tokens"},{"what":"botão LoginGoogle","at":"ui/Login.tsx","find":"LoginGoogle"}]}
+{"v":1,"ts":"2026-09-07T12:39:19Z","id":"0042F","layer":"product","by":"done","status":"live","name":"login com Google","words":"login google oauth token social sso conta","commits":["a1b2c3d"],"origin":".codeadd/docs/features/0042F-login-google/","items":[{"what":"POST /auth/google","at":"src/auth/google.ts","find":"/auth/google"},{"what":"tabela oauth_tokens","at":"db/migrations/0042.sql","find":"oauth_tokens"},{"what":"botão LoginGoogle","at":"ui/Login.tsx","find":"LoginGoogle"}]}
 ```
 
 | Field | Required | Meaning |
@@ -45,10 +45,12 @@ independently trustworthy.
 | `name` | yes | Human label, in whatever language the project writes docs in |
 | `words` | yes | Free-text search surface — the words someone would actually type. `0042F` finds nothing; `login google oauth` finds it. `read` also searches `id`, `node` and each item's `what` and `find`, never an item's `at` |
 | `commits` | yes, ≥1 | Short hashes. Where to go look, never an explanation |
-| `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `docs/deliveries/<id>/`, the archived plan documents |
+| `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `.codeadd/docs/deliveries/<id>/`, the archived plan documents |
 | `items` | yes, ≥1 | What was delivered. **No upper bound** — a delivery that touched twenty artefacts records twenty, and one that touched two records two |
 | `superseded_by` | only when `status` is `superseded` | The `id` that replaced this one |
 | `node` | optional, internal only | The `artefact-graph.json` node id. **Part of the `read` search surface**, beside `words`, so a query for the bare artefact name finds the entry even when no other field spells it |
+| `code_sha` | optional | The code commit that delivered the entry, recorded by the close-out after the code commit. `touched` answers `complete` from it; an entry without it answers `curated` only. Additive — `v` stays `1` |
+| `pr` | optional | The delivery's pull request number, or `null` when there was none. Additive — `v` stays `1` |
 
 ⛔ **`items` has no ceiling, and removing the old one was deliberate.** It was capped at five with no
 stated reason, and a cap with no reason is a cap that gets hit: a delivery touching twenty artefacts had
@@ -58,7 +60,7 @@ cost of a short one is a delivered artefact the index cannot find. Those are not
 
 ⛔ **`origin` may not name a path the project ignores.** The value is there so a reader can go back to why a
 delivery happened, and a gitignored path answers that on exactly one machine. The internal layer wrote
-`docs/plans/<id>.md` until its close-out began archiving those documents to `docs/deliveries/<id>/`; that
+`.codeadd/docs/plans/<id>.md` until its close-out began archiving those documents to `.codeadd/docs/deliveries/<id>/`; that
 is the value now, and it is chosen for the same reason the feature directory is — it is still there
 afterwards. Lines already on disk keep whatever they were written with, because hard ban 6 forbids
 rewriting one.
@@ -132,7 +134,7 @@ and a feature marks itself dead only when its capabilities have **all** vanished
 One rule, stated precisely because getting it wrong makes the mechanism produce the exact false answer it
 exists to prevent:
 
-> **The corpus is every file git does not ignore, minus `docs/`, minus the index itself.** Never a raw
+> **The corpus is every file git does not ignore, minus `.codeadd/docs/`, minus the index itself.** Never a raw
 > filesystem walk, and — equally — never restricted to committed files.
 
 The scoping key is **`.gitignore`, not commit status**. Concretely
@@ -148,9 +150,9 @@ Both halves are load-bearing, and getting either wrong breaks the mechanism in o
 - **Not "tracked only" either.** A file that is merely uncommitted is not garbage. A source file created an
   hour ago is real work, and an anchor that legitimately resolves there must resolve. `git ls-files` alone
   would report it `gone` — the same false answer, from the opposite direction.
-- **Minus `docs/` and the index.** A `find` string quoted in the documentation being audited would
+- **Minus `.codeadd/docs/` and the index.** A `find` string quoted in the documentation being audited would
   otherwise keep its own item `live` forever — the index validating itself from its own citations. This
-  subtraction is total: **an item may never anchor into `docs/` at all.**
+  subtraction is total: **an item may never anchor into `.codeadd/docs/` at all.**
 
 **Taking `.gitignore` at face value has one real exception**, and the corpus rule does not bend for it. A
 project may deliberately ignore something that *is* cited surface — a generated API client, say. An item
@@ -216,38 +218,23 @@ never merged into one list.
 field; writing the answer layer there would overwrite it, and a caller would lose the one thing
 `--layer` filters on.
 
-**The delivery's commit is DERIVED, never stored.** The close-out commits the entry on the branch, and
-**the first-parent commit on the default branch that introduced an entry's line IS the commit that
-delivered it** — on both layers, with no field to add and nothing to keep in step:
+**The delivery's commit is RECORDED, on the entry.** The index lives on the docs branch, so no code history can be walked
+to find it. The close-out writes `code_sha` — the code commit that delivered the entry — and `pr` (the pull request number,
+or `null`) onto the entry after the code commit exists. On a route where the merge commit does not exist yet at that moment,
+`code_sha` is the branch tip, and `delivered.cjs stamp <id> --code-sha <sha>` appends the corrected line (corrections are
+new lines, per hard ban 6; stamping the same values twice appends nothing). `touched` reads `code_sha` and diffs that commit.
 
-```bash
-git log --first-parent -m --format=%h -S'"id":"<id>"' -- docs/delivered.jsonl | tail -1
-```
+⛔ **An entry with no `code_sha`, or one git cannot resolve, answers `curated` only.** It is never given a guessed
+commit and never falls back to walking history — an entry written before this field existed simply has no `complete` answer
+until it is stamped.
 
-**It holds on both merge routes, and they reach it differently:**
-
-| Route | What lands on the default branch | The first-parent commit that introduced the line |
-|---|---|---|
-| The PR route — both close-outs run `gh pr merge --merge` | Every branch commit, plus a merge commit | **The merge commit.** Diffed against its first parent it carries the code and the line together |
-| `done.cjs`'s local route — a `git merge --squash` | One squash commit | **The squash commit**, which carries both |
-
-⛔ **`--first-parent -m` is not optional on the PR route.** Without it the walk reaches the branch
-commit that added the line — the close-out's docs commit, which touches only `docs/` — and every
-merged delivery reads as a docs-only recording. `-m` is what makes the pickaxe see the merge commit's
-diff at all.
-
-⛔ **`commits` cannot answer this and is not asked to.** It holds the BRANCH shas. On the local route
-a squash makes every one of them unreachable from the default branch. On the PR route they ARE
-reachable, but as individual F-block commits, none of which is the delivery as a whole. Either way the
-stored list is not the delivery's commit.
-
-⛔ **The pickaxe reports every commit where the id's occurrence count changed, so take the OLDEST.** A
-corrected entry has two lines — corrections are new lines, per hard ban 6 — and the newer match is the
-correction's own commit, which describes nothing about the delivery.
+⛔ **`commits` cannot answer this and is not asked to.** It holds the BRANCH shas. On the local route a squash makes every
+one of them unreachable from the default branch. On the PR route they ARE reachable, but as individual F-block commits,
+none of which is the delivery as a whole. Either way the stored list is not the delivery's commit.
 
 | `answer` | Where the path came from | What it is worth |
 |---|---|---|
-| `complete` | The derived commit's own diff | Exact and whole. Every file that delivery changed |
+| `complete` | The recorded `code_sha` commit's own diff | Exact and whole. Every file that delivery changed |
 | `curated` | The entry's `items[].at` anchors, each carrying its verified status | A sample — `at` is capped at 5 — but the only file pointer that self-heals, because `verify --repair` reappoints it against the current tree |
 
 ⛔ **`matched` has a different shape per layer, and a caller must read `answer` before parsing it.**
@@ -264,11 +251,11 @@ still there. A reader that cannot tell them apart will read a five-item sample a
 **Three cases answer from the curated layer, and they are one fact to a caller: the commit cannot
 answer, the anchors can.** An index line recorded outside
 the normal flow — the close-out's recovery route writes one on `main` after the merge, with a message
-like `chore(delivery-index): record …` — resolves to a commit that touches only `docs/`. That commit
+like `chore(delivery-index): record …` — resolves to a commit that touches only `.codeadd/docs/`. That commit
 describes the recording, not the delivery. Such an entry answers from the curated layer alone, and
 `CURATED_ONLY` counts them so a reader knows how much of the index could not answer completely. A
 history git cannot walk, such as a shallow clone, is treated identically: degraded, counted, never an
-error. So is a delivery that genuinely only changed documentation — its commit is honestly `docs/`-only
+error. So is a delivery that genuinely only changed documentation — its commit is honestly `.codeadd/docs/`-only
 and there is no non-docs file for a path query to match, so nothing is lost by routing it the same way.
 
 ⛔ **Nothing is repaired to fix this.** Hard ban 6 forbids rewriting a line, and an entry that answers
@@ -290,7 +277,7 @@ from the curated layer is answering honestly rather than failing.
    `superseded_by` naming an id the index does not already hold.
 8. **The anchor check honours `.gitignore`** — neither a filesystem walk nor a tracked-files-only scan. This
    binds the anchor check specifically and says nothing about unrelated searches a consumer may perform.
-9. **No item anchored into `docs/`, or into a path the project ignores.** Both produce an item that can
+9. **No item anchored into `.codeadd/docs/`, or into a path the project ignores.** Both produce an item that can
    never verify honestly — the first always `live`, the second always `gone`.
 
 Every one of these is a string or count check, testable before anything depends on it.
@@ -299,7 +286,7 @@ Every one of these is a string or count check, testable before anything depends 
 so the checks that read the repository as it is now do not run on it: ban 3, the over-match thresholds
 below, and the ignored-path half of ban 9 — a path can become ignored after the line was written, as
 build output that used to be tracked does. It reports no `LOOSE=`. Every other ban still runs, ban 4
-and the `docs/` half of ban 9 included: they check the line's own text, not the repository. Its `superseded_by` is what it carries instead, so ban 7 requires that
+and the `.codeadd/docs/` half of ban 9 included: they check the line's own text, not the repository. Its `superseded_by` is what it carries instead, so ban 7 requires that
 pointer to resolve.
 
 ## `REFUSED=` vocabulary
@@ -322,7 +309,7 @@ names cover what no numbered ban states — input that is not a record, and the 
 | `bad-status` | 7 | `status` is outside `live` \| `changed` \| `gone` \| `superseded` |
 | `superseded-without-by` | 7 | `status` is `superseded` with no `superseded_by` |
 | `superseded-by-unknown` | 7 | `superseded_by` names an id no line of the index carries — an absent index resolves nothing |
-| `item-in-docs` | 9 | an item's `at` is under `docs/` |
+| `item-in-docs` | 9 | an item's `at` is under `.codeadd/docs/` |
 | `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes — never on a `superseded` line |
 | `find-over-matched` | — | the `find` string appears in **more than 20** corpus files |
 

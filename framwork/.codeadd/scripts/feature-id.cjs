@@ -9,17 +9,19 @@
  * place is the whole point: a second copy is how two allocators drift apart.
  *
  * The number is global across every work letter: it is the max over the
- * immediate `docs/features/` folders (`[NNNN][L]-<name>`, one level, basename
- * only). Nothing else is counted — no ticket file, no board.
+ * immediate folders of the docs root's features directory (`[NNNN][L]-<name>`,
+ * one level, basename only). Nothing else is counted — no ticket file, no board.
  *
  * THE MATCH IS ON THE DIRECTORY BASENAME, NEVER THE PATH ABOVE IT. A parent
  * directory carrying four digits, or a slug with a year (`0001F-auth-2024`),
  * does not count; only an immediate declaration matches `^[0-9]{4}[A-Z]-`.
  * The letter is read as any A–Z, so folders from older work keep counting.
  *
- * An absent `docs/features` is a no-op: a fresh project gets exactly 0001. An
- * EXISTING one that cannot be read is an explicit failure — silently dropping
- * it would hand out a number already in use. The rejection happens BEFORE
+ * A docs root with no features folder yet is a no-op: a fresh project gets
+ * exactly 0001. An ABSENT docs root is an explicit failure (`docs-root-missing`,
+ * carrying the resolver's DOCS_ROOT_MISSING message): counting nothing would
+ * hand out a number that the docs branch may already use. An EXISTING features
+ * folder that cannot be read is an explicit failure too. The rejection happens BEFORE
  * persistence by the caller, and no reservation is made here: calculate is
  * max+1 by definition, stateless, with no concurrency protocol.
  *
@@ -30,14 +32,16 @@
  * NO IMPORT-TIME I/O. Everything happens inside scanIds()/calculate();
  * requiring this module reads nothing.
  *
- * Dependencies: Node >= 22.19.0 built-ins only. No argv, stdin, stdout, exit,
- * shell, or Git.
+ * The features folder is resolved through the docs root resolver beside this
+ * file (docs-root.cjs), never spelled here.
+ *
+ * Dependencies: Node >= 22.19.0 built-ins and the resolver. No argv, stdin,
+ * stdout, exit or shell.
  */
 
 const fs = require('node:fs');
-const path = require('node:path');
 
-const FEATURES_DIR = 'docs/features';
+const { DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
 
 // One basename each: the id is the first five characters of a directory name
 // that starts with four digits and one letter, discounting the exact '-' a
@@ -54,12 +58,21 @@ const MAX_NUMBER = 9999;
  *
  * @param {string} root - absolute path to the project root
  * @returns {{ok: true, ids: Set<string>} |
- *           {ok: false, reason: 'features-unreadable'}}
+ *           {ok: false, reason: 'features-unreadable'} |
+ *           {ok: false, reason: 'docs-root-missing', message: string}}
  */
 function scanIds(root) {
   const ids = new Set();
 
-  const featuresDir = path.join(root, FEATURES_DIR);
+  let featuresDir;
+  try {
+    featuresDir = docsPath(root, DOCS_LAYOUT.features);
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') {
+      return { ok: false, reason: 'docs-root-missing', message: e.message };
+    }
+    throw e;
+  }
   if (fs.existsSync(featuresDir)) {
     let entries;
     try {
@@ -89,11 +102,14 @@ function scanIds(root) {
  * @param {{allowOverflow?: boolean}} options - allowOverflow preserves a
  *   public adapter's minimum-width output
  * @returns {{ok: true, id: string} |
- *           {ok: false, reason: 'features-unreadable'|'id-exhausted'}}
+ *           {ok: false, reason: 'features-unreadable'|'id-exhausted'|'docs-root-missing',
+ *            message?: string}}
  */
 function calculate(root, letter, { allowOverflow = false } = {}) {
   const scanned = scanIds(root);
-  if (!scanned.ok) return { ok: false, reason: scanned.reason };
+  if (!scanned.ok) {
+    return scanned.message ? { ok: false, reason: scanned.reason, message: scanned.message } : { ok: false, reason: scanned.reason };
+  }
 
   let max = 0;
   for (const id of scanned.ids) {

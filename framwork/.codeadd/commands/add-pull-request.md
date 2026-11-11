@@ -6,6 +6,7 @@
 - skill: add--doc-schemas
 - skill: add--delivery-mode (conditional)
 - skill: add--final-report
+- script: docs-branch.cjs
 - skill: add--id-convention
 - mention: add--ecosystem
 - command: /add-done
@@ -14,7 +15,7 @@
 > **MODEL:** Use `haiku` model
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
-Idempotent PR command for the current branch. Detects whether a PR already exists: creates a new one or appends an update section to the existing body. On feature branches, generates the permanent feature changelog before opening the PR so it ships as part of the diff.
+Idempotent PR command for the current branch. Detects whether a PR already exists: creates a new one or appends an update section to the existing body. On feature branches, generates the permanent feature changelog before opening the PR; it is written on the `codeadd-docs` branch, not in the PR diff.
 
 ---
 
@@ -130,7 +131,7 @@ Use `{{skill:add--id-convention/SKILL.md}}` rules. Run:
 node .codeadd/scripts/get-branch-metadata.cjs
 ```
 
-Output captures: `BRANCH_TYPE` (feature | hotfix | other), `FEATURE_ID` (e.g. `0012F`), `FEATURE_DIR` (e.g. `docs/features/0012F-*`).
+Output captures: `BRANCH_TYPE` (feature | hotfix | other), `FEATURE_ID` (e.g. `0012F`), `FEATURE_DIR` (e.g. `.codeadd/docs/features/0012F-*`).
 
 If branch metadata script is unavailable, fall back to regex:
 - `^(feature|feat)/[0-9]{4}F-` → feature
@@ -194,6 +195,8 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schem
 
 ⛔ If gate returns anything other than `PASS` → fix and re-run. DO NOT proceed to STEP add-pull-request.commit with an invalid changelog.
 
+On `PASS`, close the changelog per `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
+
 ---
 
 ## STEP add-pull-request.commit: Stage & Commit Pending Changes
@@ -212,7 +215,7 @@ If output contains `.env`, `*.key`, `secrets.*`, `*.pem`, `*.p12` → STOP (see 
 git diff --quiet HEAD && echo "CLEAN" || echo "DIRTY"
 ```
 
-If `CLEAN` AND no changelog was just generated → skip to STEP add-pull-request.push.
+If `CLEAN` → skip to STEP add-pull-request.push.
 
 ### STEP add-pull-request.generate-commit-message Generate commit message
 
@@ -224,11 +227,10 @@ Apply `{{skill:add--commit/SKILL.md}}` adaptive logic:
 
 ### STEP add-pull-request.stage-commit Stage and commit
 
-**Feature-scoped staging** (stage all code changes + ONLY the current feature's docs; other features' untracked docs stay untracked — see `{{skill:add--commit/SKILL.md}}` Staging Rules):
+**Feature-scoped staging** (stage all code changes; the docs root is a separate worktree and is never staged here — see `{{skill:add--commit/SKILL.md}}` Staging Rules):
 
 ```bash
-git add -A -- . ':(exclude)docs/features/*'
-[ -d "${FEATURE_DIR}" ] && git add -A -- "${FEATURE_DIR}"
+git add -A
 git commit -m "<generated message>"
 ```
 
@@ -262,7 +264,7 @@ git push
 
 ### STEP add-pull-request.body-sections Sections
 
-Compose the body with three sections:
+Compose the body with three sections, plus one link line to the feature's spec when `BRANCH_TYPE` = feature:
 
 ```markdown
 ## Summary
@@ -281,6 +283,8 @@ Compose the body with three sections:
 - [ ] [verifiable check, e.g. "feature flow on local dev"]
 - [ ] [verifiable check, e.g. "no regressions in adjacent module"]
 ```
+
+The link line goes under `## Summary`, one short line derived from the feature folder name: `Spec: \`.codeadd/docs/features/<id>-<slug>/\` on branch \`codeadd-docs\``. Nothing else of the docs is copied into the body.
 
 ### STEP add-pull-request.title Title
 
@@ -356,12 +360,12 @@ Then, after the seven blocks, report:
 |-------|-------|
 | Branch | `$BRANCH` |
 | PR | URL (mark `(updated)` if STEP add-pull-request.publish-update was used) |
-| Feature changelog | `${FEATURE_DIR}/changelog.md` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
+| Feature changelog | `${FEATURE_DIR}/changelog.md` on `codeadd-docs` (if generated) or `(complemented — already existed)` or `(skipped — not feature branch)` |
 | Commits pushed | count from `git log @{push}..HEAD` before push, or 0 if clean |
 
 Post-merge guidance: "After PR is merged on GitHub, run `/add-done` for branch cleanup."
 
-State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
+State that a delivery index entry is still owed and that `{{cmd:add-done}}` is what writes it. Merging the PR on GitHub records nothing in `.codeadd/docs/delivered.jsonl` — without that run the feature ships and leaves no trace in the index, which is the fifth state this index exists to close. One sentence, beside the guidance above: not a new policy and not a gate.
 
 ### STEP add-pull-request.handoff Offer the continuation
 
@@ -375,7 +379,7 @@ State that a delivery index entry is still owed and that `{{cmd:add-done}}` is w
 | Document | Role in the next activity |
 |---|---|
 | `${FEATURE_DIR}/changelog.md` | What the PR carries, and what the close-out indexes |
-| `docs/delivered.jsonl` | The entry `/add-done` still owes after the merge |
+| `.codeadd/docs/delivered.jsonl` | The entry `/add-done` still owes after the merge |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing after a merge |
 
 ---

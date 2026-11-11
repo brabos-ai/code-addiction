@@ -30,7 +30,7 @@ const PLANNED_PATH = [
   },
   {
     "name": "STEP 4 changelog lookup paragraph",
-    "text": "⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `main` for one delivery, each telling part of its story.\n\n"
+    "text": "⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `codeadd-docs` for one delivery, each telling part of its story.\n\n"
   },
   {
     "name": "6.1 plan and ledger stop block",
@@ -38,7 +38,7 @@ const PLANNED_PATH = [
   },
   {
     "name": "STEP 8 removal list",
-    "text": "**Order is forced**, because a branch checked out in a worktree cannot be deleted:\n\n1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.\n2. **The branch**, local and remote.\n3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**\n\n"
+    "text": "**Order is forced**, because a branch checked out in a worktree cannot be deleted:\n\n1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.\n2. **The branch**, local and remote.\n3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `.codeadd/docs/plans/`, the design doc in `.codeadd/docs/brainstorming/`, and this plan's files in `.codeadd/docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**\n\n"
   }
 ];
 
@@ -49,7 +49,7 @@ test('the planned path of done is still present, byte for byte', () => {
 
 test('add-plan-authoring names the fix record, its changelog key, and its archive member', () => {
   const a = read(AUTHORING);
-  assert.match(a, /^\| The fix record \| `docs\/plans\/YYYY-MM-DDTHHMMSS-FIX--<slug>\.md` /m);
+  assert.match(a, /^\| The fix record \| `\.codeadd\/docs\/plans\/YYYY-MM-DDTHHMMSS-FIX--<slug>\.md` /m);
   assert.match(a, /written only by `\/add-framework--done --fix`, never by hand/);
   assert.match(a, /`-fix-<slug>`/);
   const home = a.split('## The Delivered Home')[1].split(/^## /m)[0];
@@ -62,11 +62,11 @@ test('add-plan-authoring resolves --fix through the three sources and keeps plan
   const a = read(AUTHORING);
   const res = a.split('## Argument Resolution')[1].split(/^## /m)[0];
   assert.match(res, /`--fix <slug>` resolves `\*-FIX--<slug>`/);
-  assert.match(res, /docs\/delivered\.jsonl/);
-  assert.match(res, /docs\/deliveries\/\*-FIX--<slug>\//);
-  assert.match(res, /docs\/plans\/\*-FIX--<slug>\.md/);
+  assert.match(res, /\.codeadd\/docs\/delivered\.jsonl/);
+  assert.match(res, /\.codeadd\/docs\/deliveries\/\*-FIX--<slug>\//);
+  assert.match(res, /\.codeadd\/docs\/plans\/\*-FIX--<slug>\.md/);
   assert.match(res, /never resolves as a plan/);
-  assert.match(res, /docs\/deliveries\/<id>\/fix\.md/);
+  assert.match(res, /\.codeadd\/docs\/deliveries\/<id>\/fix\.md/);
 });
 
 // ---- done: the --fix track ------------------------------------------------------------------------
@@ -108,7 +108,7 @@ test('1.2 rebuilds the fix record on every run, reuse included, and stamps the h
   assert.match(s, /keeps its `id`/);
   assert.match(s, /`## Validation` it carries is dropped/);
   assert.match(s, /`> \*\*Head:\*\*` the output of `git rev-parse HEAD`/);
-  assert.match(s, /On the resume path \(2\.5\) the record is the committed one and is not rebuilt/);
+  assert.match(s, /On the resume path \(2\.5\) the record is the archived one and is not rebuilt/);
 });
 
 test('--fix is named in the description, the intro and the STEP summary', () => {
@@ -131,7 +131,7 @@ test('the fix gate replaces 2.2 and 2.3 writes ## Validation', () => {
   assert.match(g, /at least one commit/);
   assert.match(g, /`> \*\*Head:\*\*` SHA \*\*equals\*\* `git rev-parse HEAD`/);
   assert.match(g, /A non-empty SHA is not enough/);
-  assert.match(g, /ancestor of HEAD/);
+  assert.match(g, /HEAD has not moved and the equality check stands unchanged/);
   assert.match(g, /IF `--fix` WAS GIVEN:\n  ⛔ DO NOT USE: Read on a ledger/);
   const ci = section(done, '### 2.3', '### 2.4');
   assert.match(ci, /write `## Validation` into the fix record/);
@@ -140,18 +140,18 @@ test('the fix gate replaces 2.2 and 2.3 writes ## Validation', () => {
 test('2.4 is unavailable on the fix track', () => {
   const s = section(read(DONE), '### 2.4', '### 2.5');
   assert.match(s, /2\.4 is unavailable on the fix track/);
-  assert.match(s, /IF `--fix` AND 2\.1 ROUTED TO THE RECOVERY PATH:\n  ⛔ DO NOT USE: Write on docs\/delivered\.jsonl/);
+  assert.match(s, /IF `--fix` AND 2\.1 ROUTED TO THE RECOVERY PATH:\n  ⛔ DO NOT USE: Write on \.codeadd\/docs\/delivered\.jsonl/);
 });
 
 test('2.5 resume reads the record from the archive when no local copy exists', () => {
   const s = section(read(DONE), '### 2.5', '## STEP 3');
-  assert.match(s, /docs\/deliveries\/<id>\/fix\.md/);
+  assert.match(s, /\.codeadd\/docs\/deliveries\/<id>\/fix\.md/);
   assert.match(s, /no local copy exists/);
 });
 
 test('STEP 4 looks up -fix-<slug> and writes verb fix', () => {
   const s = section(read(DONE), '## STEP 4', '## STEP 5');
-  assert.match(s, /`docs\/changelog\/\*-fix-<slug>\.md`/);
+  assert.match(s, /`\.codeadd\/docs\/changelog\/\*-fix-<slug>\.md`/);
   assert.match(s, /verb `fix`/);
 });
 

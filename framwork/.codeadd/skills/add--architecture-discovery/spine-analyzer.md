@@ -18,7 +18,7 @@ Generate THREE pages at the wiki root: `{{addpath:wiki/architecture.md}}`, `{{ad
 
 1. Read the classified app/dispatch plan produced by App Classification (`{{skill:add--architecture-discovery/SKILL.md}}`) — gives system shape (which apps exist, their types, their relationships).
 2. Read root configs: `package.json` (root + workspaces), `turbo.json`/`nx.json`, `tsconfig.json` (paths/references), monorepo manifest, CI config (`.github/workflows/*`).
-3. Read existing human docs as PRIMARY source material: `README.md`, `docs/**/*.md`, `CONTRIBUTING.md`. If a doc conflicts with what the code actually does, **prefer the code** and note the doc as stale in the relevant page (do not silently drop the discrepancy).
+3. Read existing human docs as PRIMARY source material: `README.md`, the project's own documentation files, `CONTRIBUTING.md`. If a doc conflicts with what the code actually does, **prefer the code** and note the doc as stale in the relevant page (do not silently drop the discrepancy).
 4. Read Validation Gates Detection results (`{{skill:add--architecture-discovery/SKILL.md}}` → Validation Gates Detection) — feeds `workflows.md` directly.
 5. Read git history for rationale — recent, high-signal only: `git log --oneline -20`, and for genuinely architectural decisions `git log --all --grep="refactor\|migrate\|architecture" --oneline | head -10`. Do NOT mine the full history; a handful of commit messages that explain *why* a boundary exists is the target, not a changelog.
 6. When `{{addpath:wiki/conventions.md}}` (or, in a tiny wiki, the folded conventions section of `{{addpath:wiki/index.md}}`) already exists, read its Stack Conventions rows. A `decided` row is carried into the new page, never replaced by detection:
@@ -34,7 +34,7 @@ System shape, boundaries, layer rules, why it's built this way.
 - Layer hierarchy and dependency direction (reuse Architecture Contract discovery — see `{{skill:add--architecture-discovery/SKILL.md}}` → Phase 1)
 - Boundaries between apps/domains — what talks to what, and through what (HTTP, message queue, shared package, direct import)
 - Entry points may be NAMED (e.g., `apps/api/src/main.ts` is the HTTP entry point) — but NEVER an import/caller inventory; point to the code graph or code for that
-- Why-it's-built-this-way: rationale recoverable from README/docs/git history for real architectural decisions (e.g., "domain package has zero deps so it can be shared with the mobile app")
+- Why-it's-built-this-way: rationale recoverable from README, the project's own documentation and git history for real architectural decisions (e.g., "domain package has zero deps so it can be shared with the mobile app")
 
 ## What to Discover — conventions.md (type: reference)
 
@@ -69,7 +69,7 @@ cat turbo.json nx.json 2>/dev/null
 
 # 3. Existing human docs
 find . -maxdepth 2 -iname "README.md" -o -iname "CONTRIBUTING.md" 2>/dev/null
-find docs -maxdepth 2 -name "*.md" 2>/dev/null | head -20
+find . -maxdepth 3 -name "*.md" -not -path "*/node_modules/*" -not -path "./.codeadd/*" 2>/dev/null | head -20
 
 # 4. CI / validation gates
 cat .github/workflows/*.yml 2>/dev/null | grep -E "run:|script"
@@ -139,7 +139,7 @@ a rule, trimmed to what's needed.]
 ## Critical Rules
 
 **MANDATORY:**
-- Read real config/docs/history to ground every claim
+- Read real config, documentation and history to ground every claim
 - Prefer code over stale docs when they disagree — and say so on the page
 - Only include sections that ACTUALLY apply — `## Stack Conventions` is the one exception: always written, all seven rows present, the literal `none` allowed there and nowhere else
 - Carry every `decided` Stack Conventions row forward; detection never replaces it
@@ -147,7 +147,7 @@ a rule, trimmed to what's needed.]
 
 **FORBIDDEN:**
 - Caller lists, import inventories, call graphs, or any structural fact that rots per commit — point to the code graph or code instead
-- Fabricate rationale not recoverable from README/docs/git history
+- Fabricate rationale not recoverable from README, the project's own documentation and git history
 - Duplicate a domain-local convention here, or a project-wide convention on a domain page
 - Mine full git history — recent, high-signal commits only
 
@@ -157,5 +157,5 @@ Report back:
 - `FILES_WRITTEN`: the three page paths (`wiki/architecture.md`, `wiki/conventions.md`, `wiki/workflows.md`), each with line count and whether it landed within the 300-line target / 500-line hard cap
 - `TOPICS` per page: the `##` section headers actually written (so the coordinator can validate frontmatter `description`/`tags` reflect real content before deriving the hub)
 - `STACK_CONVENTIONS: tenancy=<yes|no> di=<…> barrels=<yes|no>` — one line, so the coordinator can check the table without re-reading the page; plus one line per `decided` row in drift (`DRIFT: <row key> — <path:line>`)
-- Any discovered stale human doc (README/docs claim contradicted by code) — one line per instance, path + what was stale
+- Any discovered stale human doc (README or documentation claim contradicted by code) — one line per instance, path + what was stale
 - Any input that was missing (no CI config found, no git history signal, no README) so the coordinator can note gaps in the Backlog

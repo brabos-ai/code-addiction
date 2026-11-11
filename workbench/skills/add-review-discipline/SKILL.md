@@ -151,7 +151,7 @@ report goes where decisions already go — the build ledger, as a ruling with it
 
 ```
 IF YOU WANT TO KEEP SOMETHING FROM A REPORT:
-  ⛔ DO NOT USE: Write on docs/plans/, other than the ledger
+  ⛔ DO NOT USE: Write on .codeadd/docs/plans/, other than the ledger
   ⛔ DO NOT USE: Write on any path matching --review-v, --audit- or --verdict
   ⛔ DO NOT: Ask any reader to save its own report
   ✅ DO: Put what survives in the ledger, as a ruling

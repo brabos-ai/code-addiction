@@ -1,3 +1,8 @@
+---
+type: hotfix
+schema: {{doc-schema}}
+---
+
 # Hotfix: {{TITLE}}
 
 > **ID:** {{HOTFIX_ID}}

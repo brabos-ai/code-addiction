@@ -3,9 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { builtinModules } from 'node:module';
+import { builtinModules, createRequire } from 'node:module';
 import AdmZip from 'adm-zip';
 import { loadCorpus, actions } from '../../mcp/engine.mjs';
+
+const DOCS_SEGMENTS = createRequire(import.meta.url)('../../framwork/.codeadd/scripts/docs-root.cjs').DOCS_ROOT.split('/');
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
@@ -630,15 +632,15 @@ describe('F23 — the installed native runtime closure (L6)', () => {
     // A delivery index in the installed project, then a git repository so the
     // reader's `git rev-parse` root probe succeeds. `src/auth.ts` carries the
     // marker the index entry verifies against.
-    fs.mkdirSync(path.join(tmpDir, 'docs'), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, ...DOCS_SEGMENTS), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, 'src'), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, 'src', 'auth.ts'), 'const marker = 1;\n');
     fs.writeFileSync(
-      path.join(tmpDir, 'docs', 'delivered.jsonl'),
+      path.join(tmpDir, ...DOCS_SEGMENTS, 'delivered.jsonl'),
       JSON.stringify({
         v: 1, ts: '2026-01-01T00:00:00Z', id: 'E1', layer: 'product', by: 'done',
         status: 'live', name: 'the auth file', words: 'auth', commits: [],
-        origin: 'docs/plans/E1.md',
+        origin: 'plans/E1.md',
         items: [{ what: 'auth', at: 'src/auth.ts', find: 'marker' }],
       }) + '\n',
     );
@@ -659,7 +661,7 @@ describe('F23 — the installed native runtime closure (L6)', () => {
     // than pretending the reader ran — the resolution is what the install fed.
     const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-noruntime-'));
     try {
-      fs.mkdirSync(path.join(bare, 'docs'), { recursive: true });
+      fs.mkdirSync(path.join(bare, ...DOCS_SEGMENTS), { recursive: true });
       const missing = actions.touched_by(
         loadCorpus('docs', bare),
         { files: ['src/auth.ts'] },

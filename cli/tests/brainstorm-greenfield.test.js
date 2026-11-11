@@ -7,7 +7,7 @@ import path from 'node:path';
 
 /**
  * Brainstorm greenfield (ticket 0064B) — the validation matrix L1 of plan
- * `docs/plans/2026-10-24T190124-PLAN--brainstorm-greenfield.md`.
+ * `.codeadd/docs/plans/2026-10-24T190124-PLAN--brainstorm-greenfield.md`.
  *
  * RED FIRST. Every non-GUARD assertion (L1.1-L1.10) was confirmed FAILING
  * against the tree before F2 landed, and is driven GREEN by F2-F9. A test
@@ -129,7 +129,7 @@ describe('brainstorm greenfield — L1 source guard', () => {
       'brainstorm-greenfield', 'INSTRUCTIONS.md', 'git init',
     ]) expect(w).toContain(t);
     const firstConv = w.indexOf('conventions.md');
-    const intentLine = w.indexOf('Write `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md`');
+    const intentLine = w.indexOf('Write `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md`');
     expect(firstConv).toBeGreaterThanOrEqual(0);
     expect(intentLine).toBeGreaterThan(firstConv);
   });

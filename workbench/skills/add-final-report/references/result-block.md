@@ -22,7 +22,7 @@ Stdout is the result envelope (one JSON object). The validated block is its `.st
 bash:
 
 ```bash
-claude -p "/add-framework--build docs/plans/x.md" --output-format json \
+claude -p "/add-framework--build .codeadd/docs/plans/x.md" --output-format json \
   --json-schema "$(cat workbench/skills/add-final-report/references/result-block.schema.json)"
 ```
 
@@ -30,7 +30,7 @@ PowerShell:
 
 ```powershell
 $schema = (Get-Content workbench/skills/add-final-report/references/result-block.schema.json -Raw) -replace '"','\"'
-claude -p "/add-framework--build docs/plans/x.md" --output-format json --json-schema $schema
+claude -p "/add-framework--build .codeadd/docs/plans/x.md" --output-format json --json-schema $schema
 ```
 
 To fail a step on anything but `done`, save the envelope to a file and check it. The schema says a run that ends at a STOP, a gate or a refusal is `stopped` and one that ends on a question is `needs-approval`, never `done`. `claude -p` itself exits 0 whenever the model finishes, so the exit code is the caller's to set.

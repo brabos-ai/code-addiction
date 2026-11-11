@@ -894,9 +894,9 @@ describe('node inventory snapshot', () => {
       // now carry a per-F-block layer tag instead of one layer each. The two
       // shared- commands were renamed, which moves no count.
       // command 23 -> 24: add-framework--roadmap, the internal writer for
-      // docs/roadmap/index.md. It carried no uses: block when it was added; it
+      // .codeadd/docs/roadmap/index.md. It carried no uses: block when it was added; it
       // declares one as of the final-report-shape plan. Since renamed
-      // add-framework--backlog, writing docs/backlog/index.md — a rename, so no
+      // add-framework--backlog, writing .codeadd/docs/backlog/index.md — a rename, so no
       // count moved. The name above is kept as it was when this line was true.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12 and F13.)
       // command 24 -> 23: add-framework--review deleted, its audit folded into
@@ -972,7 +972,7 @@ describe('node inventory snapshot', () => {
       // the one dispatch rule every dispatching command points at.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
       // reference 70 -> 71: add--doc-schemas/references/backlog.md, the record
-      // format for docs/backlog.jsonl and docs/backlog.definitions.json.
+      // format for .codeadd/docs/backlog.jsonl and .codeadd/docs/backlog.definitions.json.
       // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5.)
       // reference 71 -> 72: add--backlog/references/lifecycle.md, the one
       // procedure the five pipeline commands share for a ticket they carry.
@@ -1025,7 +1025,9 @@ describe('node inventory snapshot', () => {
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
-      template: 4,
+      // template 4 -> 5: docs-migrate-prompt.md, the one home of the prompt `codeadd docs migrate`
+      // prints (0078F, F27). Like the others it ships in the ZIP and nothing names it by a path.
+      template: 5,
       // feature 0 -> 3, plugin 0 -> 2: container nodes, one per directory under
       // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
       // never reported as orphans; they own their members through CONTAINS.
@@ -1156,7 +1158,8 @@ describe('node inventory snapshot', () => {
     // 192 -> 194: the two Notion skills (0076B, F1, F2); both declare, so 136 -> 138.
     // 194 -> 195: add--agent-notion (0077F, F4); a skill is a declaring kind, so 138 -> 139.
     // 195 -> 193: the two Notion skills of 0076B removed (0077F, F6); both declared, so 139 -> 137.
-    expect(nodes).toHaveLength(193 + agentModeFragments() + shippedScriptsCount);
+    // 193 -> 194: the docs-migrate-prompt template node (0078F, F27); it declares nothing.
+    expect(nodes).toHaveLength(194 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).

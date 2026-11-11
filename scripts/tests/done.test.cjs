@@ -40,6 +40,13 @@ const h = require('./helpers.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { DOCS_ROOT, DOCS_LAYOUT, DOCS_BRANCH } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+const { DOCS_BRANCH_TYPE } = require(path.join(h.SCRIPTS_DIR, 'get-branch-metadata.cjs'));
+
+// The docs root is a worktree of another branch, never part of the code tree.
+// A close-out output the CODE tree still carries is the wiki, so the tests that
+// need "a pending file the delivery owns" use a wiki page.
+const OWN = '.codeadd/wiki/own.md';
 
 // --- fixture helpers ---------------------------------------------------------
 
@@ -108,6 +115,18 @@ function withRepo(fn) {
   } finally {
     r.cleanup();
   }
+}
+/** A project with a real bare remote and a prepared docs worktree (`p.docs`). */
+function withProject(fn) {
+  const p = h.makeProject();
+  try {
+    return fn(p);
+  } finally {
+    p.cleanup();
+  }
+}
+function docsFile(root, rel) {
+  return path.join(root, ...rel.split('/'));
 }
 
 // --- Context mode (default) -------------------------------------------------
@@ -198,12 +217,12 @@ test('done#009 context mode: chore/0003C-deps detected as chore', () =>
     assert.match(res.output, /FEATURE_NUMBER=0003C/);
   }));
 
-test('done#010 context mode: docs/0004D-readme detected as docs', () =>
+test('done#010 context mode: a documentation-type branch is detected as that type', () =>
   withRepo((r) => {
-    branchCreate(r.repo, 'docs/0004D-readme');
+    branchCreate(r.repo, `${DOCS_BRANCH_TYPE}/0004D-readme`);
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
-    assert.match(res.output, /BRANCH_TYPE=docs/);
+    assert.equal(h.parseKV(res.stdout).BRANCH_TYPE, DOCS_BRANCH_TYPE);
     assert.match(res.output, /FEATURE_NUMBER=0004D/);
   }));
 
@@ -298,71 +317,67 @@ test('done#017 merge mode: skips commit when branch has no commits beyond main',
 
 // --- Feature-scoped staging -------------------------------------------------
 
-test('done#018 merge mode: does not sweep another feature\'s untracked docs into the commit', () =>
-  withRepo((r) => {
-    setupRemote(r);
-    branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
-    src(r.repo, 'docs/features/0002F-other/about.md', 'other\n');
-    h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
-    const res = runDone(r.repo, ['--merge']);
+test('done#018 merge mode: another feature\'s docs never enter the code commit — the docs root is not in the code tree', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, OWN, 'own\n');
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), 'own\n');
+    h.write(docsFile(p.docs, 'features/0002F-other/about.md'), 'other\n');
+    const res = runDone(p.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
-    assert.notEqual(h.git(r.repo, ['ls-files', 'docs/features/0001F-test/about.md']).stdout.trim(), '');
-    assert.equal(h.git(r.repo, ['ls-files', 'docs/features/0002F-other/about.md']).stdout.trim(), '');
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/features/0002F-other/about.md')), true);
+    assert.equal(h.git(p.repo, ['ls-files', '--', DOCS_ROOT]).stdout.trim(), '');
+    assert.notEqual(h.git(p.repo, ['ls-files', OWN]).stdout.trim(), '');
+    assert.equal(fs.existsSync(docsFile(p.docs, 'features/0002F-other/about.md')), true);
   }));
 
-test('done#019 merge mode: commits final QA snapshots and leaves ignored working runs local', () =>
-  withRepo((r) => {
-    setupRemote(r);
-    branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/_tests/run-001/qa-validation-001.md', 'working\n');
-    src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'final\n');
-    src(r.repo, '.gitignore', '# ADD QA evidence - managed by add.qa-setup\ndocs/features/**/_tests/run-*/\n# END ADD QA evidence\n');
-    commitOnly(r.repo, ['.gitignore'], 'ignore rules');
-    h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
-    const res = runDone(r.repo, ['--merge']);
+test('done#019 commit-push: final QA snapshots are committed on the docs branch, working runs stay local', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    const tests = 'features/0001F-test/_tests';
+    h.write(docsFile(p.docs, tests + '/run-001/qa-validation-001.md'), 'working\n');
+    h.write(docsFile(p.docs, tests + '/final/run-001/qa-validation-001.md'), 'final\n');
+    const res = runDone(p.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
-    assert.notEqual(h.git(r.repo, ['ls-files', 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md']).stdout.trim(), '');
-    assert.equal(h.git(r.repo, ['ls-files', 'docs/features/0001F-test/_tests/run-001/qa-validation-001.md']).stdout.trim(), '');
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/features/0001F-test/_tests/run-001/qa-validation-001.md')), true);
+    assert.match(res.output, /DOCS_COMMIT=committed/);
+    assert.notEqual(h.git(p.docs, ['ls-files', tests + '/final/run-001/qa-validation-001.md']).stdout.trim(), '');
+    assert.equal(h.git(p.docs, ['ls-files', tests + '/run-001/qa-validation-001.md']).stdout.trim(), '');
+    assert.equal(fs.existsSync(docsFile(p.docs, tests + '/run-001/qa-validation-001.md')), true);
   }));
 
-test('done#020 merge mode: blocks when a broad ignore rule would omit final QA evidence', () =>
-  withRepo((r) => {
-    setupRemote(r);
-    branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'final\n');
-    src(r.repo, '.gitignore', 'docs/features/**/_tests/\n');
-    commitOnly(r.repo, ['.gitignore'], 'ignore rules');
-    h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
-    const res = runDone(r.repo, ['--merge']);
+test('done#020 commit-push: blocks when a broad ignore rule in the docs branch would omit final QA evidence', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    h.write(docsFile(p.docs, '.gitignore'), 'features/**/_tests/\n');
+    h.git(p.docs, ['add', '.gitignore']);
+    h.git(p.docs, ['commit', '-q', '-m', 'ignore rules']);
+    h.write(docsFile(p.docs, 'features/0001F-test/_tests/final/run-001/qa-validation-001.md'), 'final\n');
+    const res = runDone(p.repo, ['--commit-push']);
     assert.equal(res.status, 1, res.output);
     assert.match(res.output, /Final QA snapshot is ignored/);
   }));
 
-test('done#021 merge mode: blocks modification of an already tracked final snapshot', () =>
-  withRepo((r) => {
-    setupRemote(r);
-    src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'original\n');
-    commitAll(r.repo, 'add final evidence');
-    h.git(r.repo, ['push', 'origin', 'main', '-q']);
-    branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'modified\n');
-    const res = runDone(r.repo, ['--merge']);
+test('done#021 commit-push: blocks modification of an already committed final snapshot', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    const snap = 'features/0001F-test/_tests/final/run-001/qa-validation-001.md';
+    h.write(docsFile(p.docs, snap), 'original\n');
+    h.git(p.docs, ['add', '-A']);
+    h.git(p.docs, ['commit', '-q', '-m', 'add final evidence']);
+    h.write(docsFile(p.docs, snap), 'modified\n');
+    const res = runDone(p.repo, ['--commit-push']);
     assert.equal(res.status, 1, res.output);
     assert.match(res.output, /Immutable final QA snapshot differs from HEAD/);
   }));
 
-test('done#022 merge mode: blocks deletion of an already tracked final snapshot', () =>
-  withRepo((r) => {
-    setupRemote(r);
-    src(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md', 'original\n');
-    commitAll(r.repo, 'add final evidence');
-    h.git(r.repo, ['push', 'origin', 'main', '-q']);
-    branchCreate(r.repo, 'feature/0001F-test');
-    fs.rmSync(path.join(r.repo, 'docs/features/0001F-test/_tests/final/run-001/qa-validation-001.md'), { force: true });
-    const res = runDone(r.repo, ['--merge']);
+test('done#022 commit-push: blocks deletion of an already committed final snapshot', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    const snap = 'features/0001F-test/_tests/final/run-001/qa-validation-001.md';
+    h.write(docsFile(p.docs, snap), 'original\n');
+    h.git(p.docs, ['add', '-A']);
+    h.git(p.docs, ['commit', '-q', '-m', 'add final evidence']);
+    fs.rmSync(docsFile(p.docs, snap), { force: true });
+    const res = runDone(p.repo, ['--commit-push']);
     assert.equal(res.status, 1, res.output);
     assert.match(res.output, /Immutable final QA snapshot differs from HEAD/);
   }));
@@ -420,9 +435,9 @@ test('done#026 merge mode: main already carries the branch -> direct mode, entry
     commitAll(r.repo, 'squash from PR');
     h.git(r.repo, ['push', 'origin', 'main', '-q']);
     h.git(r.repo, ['checkout', 'feature/0001F-index', '-q']);
-    src(r.repo, 'docs/features/0001F-index/changelog.md', '# changelog\n');
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0001F"}\n');
-    commitAll(r.repo, 'docs');
+    src(r.repo, '.codeadd/wiki/changelog-note.md', '# changelog\n');
+    src(r.repo, '.codeadd/wiki/delivered-note.md', 'one line\n');
+    commitAll(r.repo, 'wiki notes');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-index', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
@@ -430,8 +445,8 @@ test('done#026 merge mode: main already carries the branch -> direct mode, entry
     assert.match(res.output, /MERGE_COMMIT=OK/);
     assert.doesNotMatch(res.output, /ERROR=Merge conflict detected/);
     assert.equal(h.git(r.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim(), 'main');
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/delivered.jsonl')), true);
-    assert.equal(h.read(path.join(r.repo, 'docs/delivered.jsonl')).split('\n').filter(Boolean).length, 1);
+    assert.equal(fs.existsSync(path.join(r.repo, '.codeadd/wiki/delivered-note.md')), true);
+    assert.equal(h.read(path.join(r.repo, '.codeadd/wiki/delivered-note.md')).split('\n').filter(Boolean).length, 1);
     assert.equal(h.read(path.join(r.repo, 'app.txt')).trim(), 'feature');
   }));
 
@@ -444,14 +459,14 @@ test('done#027 merge mode: a normal branch still takes the squash route', () =>
     branchCreate(r.repo, 'feature/0002F-normal');
     src(r.repo, 'app.txt', 'feature\n');
     commitAll(r.repo, 'feat');
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0002F"}\n');
-    commitAll(r.repo, 'docs');
+    src(r.repo, '.codeadd/wiki/delivered-note.md', 'two\n');
+    commitAll(r.repo, 'wiki notes');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0002F-normal', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /MERGE_MODE=squash/);
     assert.match(res.output, /SQUASH=OK/);
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/delivered.jsonl')), true);
+    assert.equal(fs.existsSync(path.join(r.repo, '.codeadd/wiki/delivered-note.md')), true);
     assert.equal(h.read(path.join(r.repo, 'app.txt')).trim(), 'feature');
   }));
 
@@ -459,7 +474,7 @@ test('done#028 merge mode: direct mode carries a STEP 6 DELETION, not just addit
   withRepo((r) => {
     setupRemote(r);
     src(r.repo, 'app.txt', 'base\n');
-    src(r.repo, 'docs/features/0003F-prune/discovery.md', 'scaffolding\n');
+    src(r.repo, '.codeadd/wiki/prune/discovery.md', 'scaffolding\n');
     commitAll(r.repo, 'docs scaffolding');
     h.git(r.repo, ['push', 'origin', 'main', '-q']);
     branchCreate(r.repo, 'feature/0003F-prune');
@@ -470,15 +485,15 @@ test('done#028 merge mode: direct mode carries a STEP 6 DELETION, not just addit
     commitAll(r.repo, 'squash from PR');
     h.git(r.repo, ['push', 'origin', 'main', '-q']);
     h.git(r.repo, ['checkout', 'feature/0003F-prune', '-q']);
-    fs.rmSync(path.join(r.repo, 'docs/features/0003F-prune/discovery.md'), { force: true });
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0003F"}\n');
-    commitAll(r.repo, 'docs');
+    fs.rmSync(path.join(r.repo, '.codeadd/wiki/prune/discovery.md'), { force: true });
+    src(r.repo, '.codeadd/wiki/delivered-note.md', 'three\n');
+    commitAll(r.repo, 'wiki notes');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0003F-prune', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /MERGE_MODE=direct/);
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/delivered.jsonl')), true);
-    assert.equal(fs.existsSync(path.join(r.repo, 'docs/features/0003F-prune/discovery.md')), false);
+    assert.equal(fs.existsSync(path.join(r.repo, '.codeadd/wiki/delivered-note.md')), true);
+    assert.equal(fs.existsSync(path.join(r.repo, '.codeadd/wiki/prune/discovery.md')), false);
   }));
 
 // --- Mode split -------------------------------------------------------------
@@ -487,7 +502,7 @@ test('done#029 commit-push: commits and pushes the branch, and does NOT switch t
   withRepo((r) => {
     setupRemote(r);
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
@@ -551,7 +566,7 @@ test('done#034 merge: still emits every key of the whole sequence', () =>
   withRepo((r) => {
     setupRemote(r);
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--merge']);
     assert.equal(res.status, 0, res.output);
@@ -614,7 +629,7 @@ test('done#039 probe: no delivered.jsonl at all -> INDEX_ENTRY=no-index', () =>
 test('done#040 probe: delivered.jsonl without this id -> INDEX_ENTRY=absent', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0099F","name":"other"}\n');
+    src(r.repo, `${DOCS_ROOT}/${DOCS_LAYOUT.delivered}`, '{"v":1,"id":"0099F","name":"other"}\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /INDEX_ENTRY=absent/);
@@ -623,7 +638,7 @@ test('done#040 probe: delivered.jsonl without this id -> INDEX_ENTRY=absent', ()
 test('done#041 probe: an UNCOMMITTED entry for this id still reads present', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0001F","name":"this one"}\n');
+    src(r.repo, `${DOCS_ROOT}/${DOCS_LAYOUT.delivered}`, '{"v":1,"id":"0001F","name":"this one"}\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /INDEX_ENTRY=present/);
@@ -651,10 +666,10 @@ test('done#043 probe: MERGED_ON_MAIN=unknown when origin/main does not resolve',
 test('done#044 probe: LEDGER_PATH points at the feature\'s build-ledger.md', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', '# about\n');
+    src(r.repo, `${DOCS_ROOT}/features/0001F-test/about.md`, '# about\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
-    assert.match(res.output, /LEDGER_PATH=docs\/features\/0001F-test\/build-ledger\.md/);
+    assert.equal(h.parseKV(res.stdout).LEDGER_PATH, `${DOCS_ROOT}/features/0001F-test/build-ledger.md`);
   }));
 
 test('done#045 probe: no ledger -> PUBLISH_RECORD=none', () =>
@@ -668,7 +683,7 @@ test('done#045 probe: no ledger -> PUBLISH_RECORD=none', () =>
 test('done#046 probe: the LAST Publish line wins — the ledger is a log, not a set', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/build-ledger.md',
+    src(r.repo, `${DOCS_ROOT}/features/0001F-test/build-ledger.md`,
       '# Build ledger\nPublish: declined — local merge\nT01: complete (commits a..b)\nPublish: pr-opened https://example.test/pr/9\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
@@ -679,7 +694,7 @@ test('done#046 probe: the LAST Publish line wins — the ledger is a log, not a 
 test('done#047 probe: a declined record carries no url', () =>
   withRepo((r) => {
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/build-ledger.md', '# Build ledger\nPublish: declined — local merge\n');
+    src(r.repo, `${DOCS_ROOT}/features/0001F-test/build-ledger.md`, '# Build ledger\nPublish: declined — local merge\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /PUBLISH_RECORD=declined/);
@@ -810,7 +825,7 @@ test('done#055 commit body: the co-author trailer sits at column 0, not indented
   withRepo((r) => {
     setupRemote(r);
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
@@ -823,7 +838,7 @@ test('done#056 commit body: git itself parses the trailer', () =>
   withRepo((r) => {
     setupRemote(r);
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
@@ -891,21 +906,21 @@ test('done#060 worktree: context runs in a linked worktree on the feature branch
 test('done#061 worktree: commit-push in the matching linked worktree lands on the branch and the remote', () =>
   withRepo((r) => {
     const wt = linkedFixture(r);
-    src(wt, 'docs/features/0002F-wt/about.md', 'own\n');
+    src(wt, OWN, 'own\n');
     const res = runDone(wt, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /COMMIT=OK/);
     assert.match(res.output, /PUSH_BRANCH=OK/);
     const tip = h.git(wt, ['rev-parse', 'HEAD']).stdout.trim();
     assert.equal(remoteTip(r, 'feature/0002F-wt'), tip);
-    assert.notEqual(h.git(wt, ['ls-files', 'docs/features/0002F-wt/about.md']).stdout.trim(), '');
+    assert.notEqual(h.git(wt, ['ls-files', OWN]).stdout.trim(), '');
     assert.equal(h.git(r.repo, ['branch', '--show-current']).stdout.trim(), 'main');
   }));
 
 test('done#062 worktree: --merge refuses in a linked worktree and changes nothing', () =>
   withRepo((r) => {
     const wt = linkedFixture(r);
-    src(wt, 'docs/features/0002F-wt/about.md', 'own\n');
+    src(wt, OWN, 'own\n');
     const head = h.git(wt, ['rev-parse', 'HEAD']).stdout.trim();
     const mainTip = h.git(r.repo, ['rev-parse', 'main']).stdout.trim();
     const res = runDone(wt, ['--merge']);
@@ -980,7 +995,7 @@ test('done#065 scoped staging: unrelated dirty files are listed, never staged, a
     scopedFixture(r);
     src(r.repo, 'stray.txt', 'stray\n');
     src(r.repo, 'other.txt', 'o2\n');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     const head = h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim();
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 1, res.output);
@@ -997,7 +1012,7 @@ test('done#066 scoped staging: a file staged by hand outside the delivery is ref
     scopedFixture(r);
     src(r.repo, 'stray.txt', 'stray\n');
     h.git(r.repo, ['add', 'stray.txt']);
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
+    src(r.repo, OWN, 'own\n');
     const head = h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim();
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 1, res.output);
@@ -1006,15 +1021,13 @@ test('done#066 scoped staging: a file staged by hand outside the delivery is ref
     assert.equal(h.git(r.repo, ['rev-parse', 'HEAD']).stdout.trim(), head);
   }));
 
-test('done#067 scoped staging: branch-diff files, siblings, the delivery folder and the index are all committed', () =>
+test('done#067 scoped staging: branch-diff files, siblings and the wiki are committed', () =>
   withRepo((r) => {
     scopedFixture(r);
     src(r.repo, 'a.txt', 'a3\n');
     fs.rmSync(path.join(r.repo, 'd.txt'), { force: true });
     src(r.repo, 'src/new.js', 'n\n');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
-    src(r.repo, 'docs/delivered.jsonl', '{"v":1,"id":"0001F"}\n');
-    src(r.repo, 'docs/features/0002F-other/about.md', 'other\n');
+    src(r.repo, OWN, 'own\n');
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /COMMIT=OK/);
@@ -1022,10 +1035,8 @@ test('done#067 scoped staging: branch-diff files, siblings, the delivery folder 
     assert.match(shown, /^M\ta\.txt$/m);
     assert.match(shown, /^D\td\.txt$/m);
     assert.match(shown, /^A\tsrc\/new\.js$/m);
-    assert.match(shown, /^A\tdocs\/features\/0001F-test\/about\.md$/m);
-    assert.match(shown, /^A\tdocs\/delivered\.jsonl$/m);
-    assert.doesNotMatch(shown, /0002F-other/);
-    assert.equal(h.git(r.repo, ['status', '--porcelain']).stdout.trim(), '?? docs/features/0002F-other/');
+    assert.match(shown, /^A\t\.codeadd\/wiki\/own\.md$/m);
+    assert.equal(h.git(r.repo, ['status', '--porcelain']).stdout.trim(), '');
   }));
 
 test('done#068 scoped staging: context lists the same unrelated paths and still exits 0', () =>
@@ -1033,7 +1044,6 @@ test('done#068 scoped staging: context lists the same unrelated paths and still 
     scopedFixture(r);
     src(r.repo, 'stray.txt', 'stray\n');
     src(r.repo, 'other.txt', 'o2\n');
-    src(r.repo, 'docs/features/0002F-other/about.md', 'other\n');
     const res = runDone(r.repo);
     assert.equal(res.status, 0, res.output);
     assert.match(res.output, /DIRTY_UNRELATED_COUNT=2/);
@@ -1070,20 +1080,186 @@ test('done#070 scoped staging: commit-push run from a subdirectory stages root-r
     assert.match(shown, /^A\tsrc\/new\.js$/m);
   }));
 
-test('done#071 commit-push: a delivery doc removed with git rm is committed, not handed to git add', () =>
+test('done#071 commit-push: a wiki page removed with git rm is committed, not handed to git add', () =>
   withRepo((r) => {
     setupRemote(r);
     branchCreate(r.repo, 'feature/0001F-test');
-    src(r.repo, 'docs/features/0001F-test/about.md', 'own\n');
-    src(r.repo, 'docs/features/0001F-test/gone.md', 'gone\n');
-    commitAll(r.repo, 'delivery docs');
+    src(r.repo, OWN, 'own\n');
+    src(r.repo, '.codeadd/wiki/gone.md', 'gone\n');
+    commitAll(r.repo, 'wiki pages');
     h.git(r.repo, ['push', '-u', 'origin', 'feature/0001F-test', '-q']);
-    h.git(r.repo, ['rm', '-q', 'docs/features/0001F-test/gone.md']);
+    h.git(r.repo, ['rm', '-q', '.codeadd/wiki/gone.md']);
     const res = runDone(r.repo, ['--commit-push']);
     assert.equal(res.status, 0, res.output);
     assert.doesNotMatch(res.output, /did not match/);
     assert.match(res.output, /COMMIT=OK/);
     assert.match(res.output, /PUSH_BRANCH=OK/);
     const shown = h.git(r.repo, ['show', '--name-status', '--format=', 'HEAD']).stdout.replace(/\r/g, '');
-    assert.match(shown, /^D\tdocs\/features\/0001F-test\/gone\.md$/m);
+    assert.match(shown, /^D\t\.codeadd\/wiki\/gone\.md$/m);
+  }));
+
+// --- The docs branch at close-out (L2.4) -------------------------------------
+//
+// The docs root is a worktree of `codeadd-docs`. The code commit never carries it;
+// after the code commit the delivery-index entry records `code_sha` and `pr`, and
+// the docs worktree is committed and pushed to its own branch.
+
+function deliveryRecord() {
+  return JSON.stringify({
+    id: '0001F', layer: 'product', by: 'done', status: 'live', name: 'the delivery',
+    words: 'delivery words', commits: ['a1b2c3d'], origin: `${DOCS_ROOT}/features/0001F-test/`,
+    items: [{ what: 'app entry', at: 'src/app.js', find: 'appMarker' }],
+  });
+}
+function bareLines(p, file) {
+  const shown = h.git(p.bare, ['show', `${DOCS_BRANCH}:${file}`]);
+  assert.equal(shown.status, 0, shown.output);
+  return shown.stdout.split('\n').filter(Boolean).map((l) => JSON.parse(l));
+}
+
+test('done#072 L2.4 commit-push: the code commit holds no docs path; the docs branch holds the index line with code_sha and pr', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'src/app.js', 'const appMarker = 1;\n');
+    commitAll(p.repo, 'feat: app');
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
+    const wrote = h.runScript('delivered', ['write'], { cwd: p.repo, input: deliveryRecord() });
+    assert.equal(wrote.status, 0, wrote.output);
+    src(p.repo, OWN, 'own\n');
+    const gh = stubGh(p.base, JSON.stringify({ number: 42 }));
+
+    const res = runDone(p.repo, ['--commit-push'], { env: { GH_BIN: gh } });
+    assert.equal(res.status, 0, res.output);
+    const kv = h.parseKV(res.stdout);
+    assert.equal(kv.DOCS_GUARD, 'clean');
+    assert.equal(kv.INDEX_STAMP, 'stamped');
+    assert.equal(kv.DOCS_COMMIT, 'committed');
+    assert.equal(kv.DOCS_PUSH, 'pushed');
+    assert.equal(kv.PUSH_BRANCH, 'OK');
+    assert.equal(kv.STATUS, 'SUCCESS');
+
+    // The code side: nothing under the docs root, no gitlink, nothing left staged.
+    const codeSha = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    const names = h.git(p.repo, ['diff', '--name-only', 'main...HEAD']).stdout;
+    assert.ok(!names.includes(DOCS_ROOT), names);
+    assert.match(names, /\.codeadd\/wiki\/own\.md/);
+    assert.equal(h.git(p.repo, ['ls-files', '-s']).stdout.split('\n').filter((l) => l.startsWith('160000')).length, 0);
+    assert.equal(h.git(p.repo, ['ls-files', '--', DOCS_ROOT]).stdout.trim(), '');
+    assert.equal(h.git(p.repo, ['diff', '--cached', '--name-only']).stdout.trim(), '');
+
+    // The docs side, read from the REMOTE: the entry, its code_sha and pr, v still 1.
+    const lines = bareLines(p, DOCS_LAYOUT.delivered);
+    const last = lines[lines.length - 1];
+    assert.equal(last.id, '0001F');
+    assert.equal(last.code_sha, codeSha);
+    assert.equal(last.pr, 42);
+    assert.equal(last.v, 1);
+    assert.equal(h.git(p.bare, ['show', `${DOCS_BRANCH}:features/0001F-test/about.md`]).stdout, '# about\n');
+    assert.equal(h.git(p.docs, ['status', '--porcelain']).stdout.trim(), '');
+  }));
+
+test('done#073 commit-push: `git add -A` can never stage the docs worktree', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
+    h.git(p.repo, ['add', '-A']);
+    const staged = h.git(p.repo, ['diff', '--cached', '--name-only']).stdout;
+    assert.ok(!staged.includes(DOCS_ROOT), staged);
+    assert.equal(h.git(p.repo, ['ls-files', '-s']).stdout.split('\n').filter((l) => l.startsWith('160000')).length, 0);
+  }));
+
+test('done#074 commit-push: a misplaced Code Addiction output is filed under the docs root before the code commit', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'stray/spec.md', '---\ntype: feature\nid: 0001F\n---\n# spec\n');
+    src(p.repo, OWN, 'own\n');
+    const res = runDone(p.repo, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    assert.equal(h.parseKV(res.stdout).DOCS_GUARD, 'moved:1');
+    assert.equal(fs.existsSync(path.join(p.repo, 'stray', 'spec.md')), false);
+    assert.equal(fs.existsSync(docsFile(p.docs, 'features/spec.md')), true);
+    assert.doesNotMatch(h.git(p.repo, ['show', '--name-only', '--format=', 'HEAD']).stdout, /spec\.md/);
+    assert.equal(h.parseKV(res.stdout).DOCS_COMMIT, 'committed');
+  }));
+
+test('done#075 commit-push: a docs push the remote rejects is reported, the local docs commit is kept, the close-out still succeeds', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    const hook = path.join(p.bare, 'hooks', 'pre-receive');
+    h.write(hook, `#!/bin/sh\nwhile read old new ref; do\n  case "$ref" in refs/heads/${DOCS_BRANCH}) echo "no docs here" >&2; exit 1;; esac\ndone\nexit 0\n`);
+    fs.chmodSync(hook, 0o755);
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
+    src(p.repo, OWN, 'own\n');
+    const res = runDone(p.repo, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    const kv = h.parseKV(res.stdout);
+    assert.equal(kv.DOCS_COMMIT, 'committed');
+    assert.equal(kv.DOCS_PUSH, 'rejected');
+    assert.equal(kv.PUSH_BRANCH, 'OK');
+    assert.equal(kv.STATUS, 'SUCCESS');
+    assert.match(h.git(p.docs, ['log', '-1', '--format=%s']).stdout, /close-out/);
+  }));
+
+test('done#076 commit-push: with no docs root the close-out still succeeds and says so on the docs lines', () =>
+  withRepo((r) => {
+    setupRemote(r);
+    branchCreate(r.repo, 'feature/0001F-test');
+    src(r.repo, OWN, 'own\n');
+    const res = runDone(r.repo, ['--commit-push']);
+    assert.equal(res.status, 0, res.output);
+    const kv = h.parseKV(res.stdout);
+    assert.equal(kv.DOCS_GUARD, 'clean');
+    assert.equal(kv.INDEX_STAMP, 'skipped');
+    assert.equal(kv.DOCS_COMMIT, 'failed');
+    assert.equal(kv.STATUS, 'SUCCESS');
+  }));
+
+test('done#077 cleanup: a proven merge commit re-stamps the entry, and the docs branch carries it', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'src/app.js', 'const appMarker = 1;\n');
+    commitAll(p.repo, 'feat: app');
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
+    assert.equal(h.runScript('delivered', ['write'], { cwd: p.repo, input: deliveryRecord() }).status, 0);
+    src(p.repo, OWN, 'own\n');
+    const gh = stubGh(p.base, JSON.stringify({ number: 42 }));
+    const first = runDone(p.repo, ['--commit-push'], { env: { GH_BIN: gh } });
+    assert.equal(first.status, 0, first.output);
+    const tip = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(bareLines(p, DOCS_LAYOUT.delivered).pop().code_sha, tip, 'commit-push stamps the branch tip');
+
+    // the forge merges with a merge commit, a NEW commit on main
+    h.git(p.repo, ['checkout', 'main', '-q']);
+    h.git(p.repo, ['merge', '--no-ff', '--no-edit', 'feature/0001F-test', '-q']);
+    h.git(p.repo, ['push', 'origin', 'main', '-q']);
+    const mergeSha = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.notEqual(mergeSha, tip);
+    h.git(p.repo, ['checkout', 'feature/0001F-test', '-q']);
+
+    const res = runDone(p.repo, ['--cleanup', mergeSha], { env: { GH_BIN: gh } });
+    assert.equal(res.status, 0, res.output);
+    const kv = h.parseKV(res.stdout);
+    assert.equal(kv.INDEX_STAMP_MERGE, 'stamped');
+    assert.equal(kv.DOCS_PUSH, 'pushed');
+    const last = bareLines(p, DOCS_LAYOUT.delivered).pop();
+    assert.equal(last.code_sha, mergeSha, 'the remote index now names the merge commit');
+    assert.equal(last.pr, 42);
+    assert.equal(last.v, 1);
+  }));
+
+test('done#078 cleanup: an omitted pr keeps the one an earlier stamp recorded', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'src/app.js', 'const appMarker = 1;\n');
+    commitAll(p.repo, 'feat: app');
+    assert.equal(h.runScript('delivered', ['write'], { cwd: p.repo, input: deliveryRecord() }).status, 0);
+    const sha1 = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(h.runScript('delivered', ['stamp', '0001F', '--code-sha', sha1, '--pr', '7'], { cwd: p.repo }).status, 0);
+    src(p.repo, 'src/more.js', 'x\n');
+    commitAll(p.repo, 'feat: more');
+    const sha2 = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(h.runScript('delivered', ['stamp', '0001F', '--code-sha', sha2], { cwd: p.repo }).status, 0);
+    const last = h.readJsonl(docsFile(p.docs, DOCS_LAYOUT.delivered)).pop();
+    assert.equal(last.code_sha, sha2);
+    assert.equal(last.pr, 7);
   }));

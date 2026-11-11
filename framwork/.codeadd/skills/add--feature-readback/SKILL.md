@@ -63,7 +63,7 @@ The caller passes a **target** and a **scope**. No schema name and no doc type �
 
 | `scope` | Target | Reading set |
 |---|---|---|
-| `feature` (default) | a feature folder, or a feature ID under `docs/features/` | the whole folder, recursively |
+| `feature` (default) | a feature folder, or a feature ID under `.codeadd/docs/features/` | the whole folder, recursively |
 | `subfeature` | a feature folder plus the subfeature id in play | the folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature** |
 | `document` | one file path | that file alone |
 
@@ -210,7 +210,7 @@ compares against what was actually decided.>
 
 ## Example
 
-**Input:** `docs/features/0042F-notifications` (about.md + 2 subfeatures).
+**Input:** `.codeadd/docs/features/0042F-notifications` (about.md + 2 subfeatures).
 
 **Excerpt of the emitted report.** Note that it ships in the documents' language, not this skill's — that is the rule working, not a slip:
 

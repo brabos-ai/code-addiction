@@ -16,7 +16,7 @@ import { treeFixture } from './helpers/tree-fixture.js';
 
 /**
  * Validation matrix for
- * docs/plans/2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.md
+ * .codeadd/docs/plans/2026-09-13T153219-PLAN--test-terminal-states-and-qa-feature-boundary.md
  *
  * The plan specifies four levels. L1.1/L1.2 already live in
  * loop-consolidation-0070.test.js and L1.4 in build-artefact-graph.test.js, so

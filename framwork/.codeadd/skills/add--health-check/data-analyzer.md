@@ -4,7 +4,7 @@
 
 **Objective:** Analyze the project's database, migrations, and queries.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/data-report.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/data-report.md`
 
 **Criticality:** 🟡 MEDIUM
 
@@ -24,8 +24,8 @@ You are a subagent specialized in data analysis. Your job is:
 ## Prerequisite: Read Context
 
 ```bash
-cat docs/health-checks/YYYY-MM-DD/context-discovery.md
-cat docs/health-checks/YYYY-MM-DD/infrastructure-report.md
+cat .codeadd/docs/health-checks/YYYY-MM-DD/context-discovery.md
+cat .codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md
 ```
 
 **Extract:**
@@ -199,9 +199,14 @@ grep -rn "selectFrom\|findAll\|findById" libs/app-database/src/repositories/ --i
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/data-report.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/data-report.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Data Report
 
 **Generated on:** [date]
@@ -374,7 +379,7 @@ The following analyses were NOT possible:
 - Compare real schema vs expected
 
 For complete analysis, configure the MCP Supabase by following:
-`docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
+`.codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ---
 

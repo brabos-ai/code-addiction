@@ -14,11 +14,13 @@
  *   MODULES:<a,b,...>                               (only when modules dir)
  *   RECENT_CHANGELOGS:                              (only when changelogs)
  *     <id>|<summary>
- *   CHANGELOGS_PATH:docs/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md
+ *   CHANGELOGS_PATH:<docs root>/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md
  *
  * READ-ONLY WITH RESPECT TO GIT. This entry never creates, checks out or
  * mutates a branch, ref, the index or the working tree. The only filesystem
- * mutation is `mkdir -p docs/features`, exactly as the shell did.
+ * mutation is creating the features folder inside the docs root. An absent docs
+ * root is an explicit failure (DOCS_ROOT_MISSING, exit 1): the root belongs to
+ * the docs branch and is never created here.
  *
  * DELEGATION. Branch detection is `get-branch-metadata.cjs`, main-branch
  * detection is `get-main-branch.cjs` and the next id comes from the one
@@ -29,7 +31,7 @@
  *
  * Exit codes (preserved):
  *   0 — snapshot printed
- *   1 — git is not installed / not a git repository
+ *   1 — git is not installed / not a git repository / the docs root is absent
  *   2 — no verifiable main branch
  *
  * Dependencies: Node built-ins only, plus the sibling helpers; git on PATH.
@@ -45,8 +47,10 @@ const path = require('node:path');
 const { discoverMainBranch } = require('./get-main-branch.cjs');
 const { currentBranch, branchMetadata } = require('./get-branch-metadata.cjs');
 const idc = require('./feature-id.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
 
-const DOCS_DIR = 'docs/features';
+// The changelog glob an agent is told to read, relative to the repository top.
+const CHANGELOGS_PATH = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md`;
 
 // The one context file, then the legacy files a stale root may still carry.
 const LEGACY_CONTEXT_FILES = ['CLAUDE.md', '.claude/CLAUDE.md', 'GEMINI.md'];
@@ -110,7 +114,7 @@ function evalValue(value) {
   return value;
 }
 
-/** The feature directories under docs/features, `[NNNN][L]-*`, sorted. */
+/** The feature directories under the docs root's features folder, `[NNNN][L]-*`, sorted. */
 function featureDirs(docsAbs) {
   let entries;
   try {
@@ -130,7 +134,7 @@ function presentDocs(workDirAbs) {
 }
 
 /**
- * The changelogs under docs/features at depth 2, newest first, capped at five
+ * The changelogs under the features folder at depth 2, newest first, capped at five
  * — what `find -maxdepth 2 -name changelog.md | xargs ls -t | head -5` gave.
  */
 function recentChangelogs(docsAbs) {
@@ -187,7 +191,7 @@ function extractSummary(content) {
  * Build the full snapshot as an array of output lines. Pure with respect to
  * git; the caller owns writing and the exit code. `main` is the pre-resolved
  * main-branch probe: the entry checks it before any filesystem mutation, so
- * `docs/features` is never created on a fatal path.
+ * the features folder is never created on a fatal path.
  */
 function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
   const lines = [];
@@ -203,7 +207,7 @@ function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
       `uncommitted=${uncommitted}`,
   );
 
-  const docsAbs = path.join(cwd, DOCS_DIR);
+  const docsAbs = docsPath(cwd, DOCS_LAYOUT.features);
   fs.mkdirSync(docsAbs, { recursive: true });
   const dirs = featureDirs(docsAbs);
 
@@ -246,7 +250,7 @@ function snapshot(cwd = process.cwd(), main = discoverMainBranch(cwd)) {
       const summary = extractSummary(fs.readFileSync(file, 'utf8'));
       if (summary !== '') lines.push(`  ${match[0]}|${summary}`);
     }
-    lines.push('CHANGELOGS_PATH:docs/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md');
+    lines.push(`CHANGELOGS_PATH:${CHANGELOGS_PATH}`);
   }
 
   if (meta.BRANCH_TYPE === 'main') {
@@ -282,13 +286,22 @@ function main() {
     return 2;
   }
 
-  const probe = snapshot(cwd, main);
+  let probe;
+  try {
+    probe = snapshot(cwd, main);
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') {
+      process.stderr.write(`ERROR: ${e.message}\n`);
+      return 1;
+    }
+    throw e;
+  }
   process.stdout.write(`${probe.lines.join('\n')}\n`);
   return 0;
 }
 
 module.exports = {
-  DOCS_DIR,
+  CHANGELOGS_PATH,
   FEATURE_DOCS,
   git,
   evalValue,

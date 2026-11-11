@@ -98,9 +98,9 @@ Brainstorm docs record the design the user approves before anything is written a
 
 ### feature
 
-For `/add-new` (creates `docs/features/<slug>/about.md`).
+For `/add-new` (creates `.codeadd/docs/features/<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]F`, `type: feature`, `schema: {{doc-schema}}`, `slug:`, `status:`, `branch: [type]/[NNNN][L]-[slug]`, `related: []`, `tags: []`
   - **`branch:`** (required for new docs) — the branch `/add-build` will create. Post-`/` slug MUST equal the docs dir name (Hard Invariant). Decided once by `/add-new` with full discovery context; immutable thereafter (`build-setup.cjs` executes it verbatim).
   - **`tags:`** — bare lowercase topic words, per Universal Document Requirements in `{{skill:add--doc-schemas/SKILL.md}}`, which is where that rule is stated. Written from the discovery result, never from a question put to the user.
 - **Sections (ordered):** TL;DR · Objective · Problem · Users · Scope (Includes / Does NOT Include) · Success Metrics · Relations · Observations · References
@@ -119,9 +119,9 @@ For `/add-new` (creates `docs/features/<slug>/about.md`).
 
 ### feature-plan
 
-For `/add-plan` (feature mode, creates `docs/features/<slug>/plan.md`).
+For `/add-plan` (feature mode, creates `.codeadd/docs/features/<slug>/plan.md`).
 
-- **Frontmatter:** `id: [NNNN]F` (same as about), `type: feature-plan`, `related: [[NNNN]F]`
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: feature-plan`, `schema: {{doc-schema}}`, `related: [[NNNN]F]`
 - **Header:** a `> **Delivery:** confirm|automatic` line under the title, copied from the intent file's `delivery:` — `confirm` when there is none
 - **Sections:** TL;DR · Objective · Context (link `{{doc:[NNNN]F}}`) · Global Constraints · Architecture Decisions · Tasks · Risks · Validation
 - **Depth floor:**
@@ -156,6 +156,7 @@ id: [NNNN]F            # SF-qualified as [NNNN]F-SFxx when the design is scoped 
 type: feature-design
 created: YYYY-MM-DD    # today on FIRST write; NEVER overwritten on a re-run
 updated: YYYY-MM-DD    # today, on EVERY write
+schema: {{doc-schema}}
 related: [[NNNN]F]
 provenance: sha256:<hash of the about.md bytes the design was derived from>
 ---
@@ -186,9 +187,9 @@ provenance: sha256:<hash of the about.md bytes the design was derived from>
 
 ### brainstorm
 
-For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). Date prefix is mandatory for chronological tree ordering — and the `THHMMSS` time component is what makes that sentence true: two brainstorms written on the same day sort arbitrarily without it. Local time, no separators inside the time part (Windows forbids `:` in filenames), so lexicographic sort equals chronological sort.
+For `/add-brainstorm` (creates `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). Date prefix is mandatory for chronological tree ordering — and the `THHMMSS` time component is what makes that sentence true: two brainstorms written on the same day sort arbitrarily without it. Local time, no separators inside the time part (Windows forbids `:` in filenames), so lexicographic sort equals chronological sort.
 
-- **Frontmatter:** `id: BRN-<slug>`, `type: brainstorm`, `related: []`
+- **Frontmatter:** `id: BRN-<slug>`, `type: brainstorm`, `schema: {{doc-schema}}`, `related: []`
 - **Sections:** TL;DR · Objective · Discovery · Problem · Candidate Directions · Scope (Includes / Does NOT Include) · Key Decisions · Ecosystem Impact · Trade-offs & Risks · Open Threads
 - **Depth floor:**
   - **Objective** — one or two sentences, in the user's words, answering: what will be true when this is done that is not true today? Drafted by `/add-brainstorm` and corrected by the user. It names an outcome, never the thing being built.
@@ -205,13 +206,13 @@ For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md`). D
 
 ### brainstorm-intent
 
-For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its handoff, on the `bounded` and `architectural` paths — never on `spike`). It reuses the brainstorm document's timestamp verbatim when one was written, so the pair sorts adjacent; on `bounded`, where no document is written, it takes its own timestamp and stands alone.
+For `/add-brainstorm` (creates `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its handoff, on the `bounded` and `architectural` paths — never on `spike`). It reuses the brainstorm document's timestamp verbatim when one was written, so the pair sorts adjacent; on `bounded`, where no document is written, it takes its own timestamp and stands alone.
 
 **This is the handoff contract, not a document anyone reads for pleasure.** `/add-new` extracts its decisions without asking a single question, so its whole value is being short enough to be read in one pass and complete enough to be trusted. If it reads like a document, it is too long.
 
-**Narrowing of Universal Document Requirements — declared, not assumed.** This schema keeps `id`, `type` and `created`, adds `path`, `topic`, `doc` and `delivery`, and **relaxes `related`, `tags`, `## TL;DR` and the TOC rule**. The one-screen cap is the artifact's entire purpose, and every relaxed field costs lines without being read by the one consumer this file has.
+**Narrowing of Universal Document Requirements — declared, not assumed.** This schema keeps `id`, `type`, `created` and `schema`, adds `path`, `topic`, `doc` and `delivery`, and **relaxes `related`, `tags`, `## TL;DR` and the TOC rule**. The one-screen cap is the artifact's entire purpose, and every relaxed field costs lines without being read by the one consumer this file has.
 
-- **Frontmatter:** `id: BRN-<slug>` (the same id the paired brainstorm carries — no new prefix, and never `status.cjs next-id`), `type: brainstorm-intent`, `created: YYYY-MM-DD`, `path: spike|bounded|architectural`, `topic: <slug>`, `doc: <brainstorm document path, or none>`, `delivery: confirm|automatic` (the user's answer to the approval; `{{skill:add--delivery-mode/SKILL.md}}` owns what each value does, and an absent key reads as `confirm`)
+- **Frontmatter:** `id: BRN-<slug>` (the same id the paired brainstorm carries — no new prefix, and never `status.cjs next-id`), `type: brainstorm-intent`, `created: YYYY-MM-DD`, `schema: {{doc-schema}}`, `path: spike|bounded|architectural`, `topic: <slug>`, `doc: <brainstorm document path, or none>`, `delivery: confirm|automatic` (the user's answer to the approval; `{{skill:add--delivery-mode/SKILL.md}}` owns what each value does, and an absent key reads as `confirm`)
 - **Sections:** Objective · Decided · Open · Prior art · Rejected
 - **Depth floor:**
   - **Objective** — the brainstorm's objective, copied verbatim. On `bounded`, where no brainstorm document exists, this section is the only place it survives the handoff.
@@ -224,13 +225,13 @@ For `/add-brainstorm` (creates `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.
 
 ### epic
 
-For `/add-new` STEP add-new.decompose (creates `docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add-build` STEP add-build.log and by its Checkpoint Sequence; the `checkpoint` cell is written **only by that sequence, which creates the checkpoint commit and its tag**. Read by `/add-plan` STEP add-plan.cross-sf, `/add-done` STEP add-done.validate-epic-md, `status.cjs`, and `converge-gates.cjs`.
+For `/add-new` STEP add-new.decompose (creates `.codeadd/docs/features/<slug>/epic.md` when the feature decomposes into subfeatures). Row `status` is updated by `/add-build` STEP add-build.log and by its Checkpoint Sequence; the `checkpoint` cell is written **only by that sequence, which creates the checkpoint commit and its tag**. Read by `/add-plan` STEP add-plan.cross-sf, `/add-done` STEP add-done.validate-epic-md, `status.cjs`, and `converge-gates.cjs`.
 
 **Compatibility.** `/add-new` STEP add-new.decompose has always written this doc freeform ("subfeature table + order + notes" — no fixed frontmatter, TL;DR, or section headings). This schema is additive: every existing `epic.md` is valid as written, nothing gets rewritten. Universal Document Requirements (frontmatter, TL;DR, TOC) bind schema-aware writes going forward; a pre-schema doc missing any of them is read as-is — warn, never fail. The one contract that already binds every `epic.md`, old or new, is the Subfeatures row shape below.
 
 **Reading a legacy table.** `/add-new` STEP 5 never specified a header, so pre-schema docs carry whatever header that run invented. Consumers resolve columns **by header name**, and apply exactly one rule for the legacy case: *a data row with more cells than the header declares has its trailing extra cell read as `checkpoint`* — that is the one cell older `/add-build` runs appended to a row at STEP 16 (block 16.4 turned a 4-cell `pending` row into a 5-cell `done` row); today only `/add-build`'s Checkpoint Sequence writes it, under a header that declares it. One deterministic rule, no inspection of cell contents. A schema-conforming doc never hits it, because its header declares every column it uses.
 
-- **Frontmatter:** `id: [NNNN]F` (same as about), `type: epic`, `related: [[NNNN]F]`
+- **Frontmatter:** `id: [NNNN]F` (same as about), `type: epic`, `schema: {{doc-schema}}`, `related: [[NNNN]F]`
 - **Sections:** TL;DR · Subfeatures · Order (optional) · Notes (optional)
 - **Depth floor:**
   - **Subfeatures** — one markdown table with a **required header row naming every column it uses**, then one row per subfeature. The header is what makes this table machine-readable and is the single thing this schema adds that `/add-new` never had. Columns: `id` (`SFxx`, zero-padded, unique, ascending), `name`, `objective`, `status` (required — exactly one of `pending`, `in_progress`, `done`, the only three legal values. `status.cjs` still matches them as text; every schema-aware consumer resolves the `status` COLUMN by header name and reads its cell — never by string-matching the row), `dependencies` (**optional** — comma-separated `SFxx` ids this row depends on; absent cell = no dependencies), `checkpoint` (**optional** — the checkpoint tag name minus its `checkpoint/` prefix, shape `<FEATURE_ID>-<SFxx>-done`, written only by `/add-build`'s Checkpoint Sequence, which creates the checkpoint commit the tag points at — the per-task commits never write it; absent cell = no checkpoint recorded yet). Both optional columns are resolved **by header name**, never by guessing at cell contents — see the Compatibility rule above for the one legacy case where a header is absent or short.

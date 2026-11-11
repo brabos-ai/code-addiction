@@ -37,7 +37,7 @@ produce the same document from the same rules.
 
 ## Phase 1: Check State
 
-Read `docs/features/[FEATURE_ID]/about.md`.
+Read `.codeadd/docs/features/[FEATURE_ID]/about.md`.
 
 | State | Action |
 |---|---|
@@ -48,7 +48,7 @@ Read `docs/features/[FEATURE_ID]/about.md`.
 ## Phase 2: Read the Intent File, Then Ask Only What It Left Open
 
 **The calling command resolves the intent file and hands it over.** It is
-`docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md`, written by `/add-brainstorm`, and its shape is
+`.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md`, written by `/add-brainstorm`, and its shape is
 the `brainstorm-intent` schema in `{{skill:add--doc-schemas/SKILL.md}}`.
 
 ### 2.1 Extract, do not re-ask
@@ -180,7 +180,7 @@ produces a document that reads complete and specifies something unusable.
 ## Phase 4: Persist
 
 Write the file. **The validation gate is the calling command's**, and it runs after this skill
-returns — see When NOT to Use.
+returns — see When NOT to Use. The file is written under `.codeadd/docs/` — follow Docs Branch in {{skill:add--doc-schemas/SKILL.md}}.
 
 ---
 

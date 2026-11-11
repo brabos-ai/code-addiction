@@ -20,7 +20,7 @@ import path from 'node:path';
 
 const FILES = {
   // ---- the feature the other two point at, so precedence is testable ------
-  'docs/features/0009F-ledger/about.md': `---
+  '.codeadd/docs/features/0009F-ledger/about.md': `---
 id: 0009F
 type: feature
 slug: ledger
@@ -42,7 +42,7 @@ None
 `,
 
   // ---- a feature: one node, three attachments -----------------------------
-  'docs/features/0042F-itemised-purchase/about.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/about.md': `---
 id: 0042F
 type: feature
 slug: itemised-purchase
@@ -69,7 +69,7 @@ Totals alone cannot answer "what did I actually buy".
 - [constraint] the ledger row id must stay stable across a split
 `,
 
-  'docs/features/0042F-itemised-purchase/plan.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/plan.md': `---
 id: 0042F
 type: feature-plan
 created: 2026-08-02
@@ -81,7 +81,7 @@ related: [0042F]
 The build order for the itemised purchase split.
 `,
 
-  'docs/features/0042F-itemised-purchase/changelog.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/changelog.md': `---
 id: CHG0001
 type: changelog
 date: 2026-08-20
@@ -98,7 +98,7 @@ Shipped the itemised purchase split.
 - part_of [[0042F]]
 `,
 
-  'docs/features/0042F-itemised-purchase/discovery.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/discovery.md': `---
 id: 0042F
 type: feature-discovery
 created: 2026-08-01
@@ -111,7 +111,7 @@ Where the ledger writes a purchase today.
 `,
 
   // ---- a hotfix: one node, one legacy attachment ---------------------------
-  'docs/features/0051H-token-refresh/about.md': `---
+  '.codeadd/docs/features/0051H-token-refresh/about.md': `---
 id: 0051H
 type: hotfix
 slug: token-refresh
@@ -138,7 +138,7 @@ as a silent write failure, which is how this surfaced at all.
 - [cause] refresh shipped with no expiry test #auth
 `,
 
-  'docs/features/0051H-token-refresh/related.md': `---
+  '.codeadd/docs/features/0051H-token-refresh/related.md': `---
 id: 0051H-related
 type: hotfix-related
 created: 2026-09-01
@@ -157,10 +157,10 @@ Assets this hotfix touched.
 - {{doc:0042F}} introduced the second refresh call and deserves a regression test
 `,
 
-  // Named by NOTHING except docs/changelog/CHG0002.md's Changes bullet. It is
+  // Named by NOTHING except .codeadd/docs/changelog/CHG0002.md's Changes bullet. It is
   // how the out-of-directory layout's contribution can be asserted in
   // isolation: any edge reaching it came from that file and from nowhere else.
-  'docs/features/0012F-session-store/about.md': `---
+  '.codeadd/docs/features/0012F-session-store/about.md': `---
 id: 0012F
 type: feature
 slug: session-store
@@ -179,7 +179,7 @@ None
 `,
 
   // ---- the changelog directory layout, which also exists in the wild -------
-  'docs/changelog/CHG0002.md': `---
+  '.codeadd/docs/changelog/CHG0002.md': `---
 id: CHG0002
 type: changelog
 date: 2026-09-01
@@ -197,12 +197,12 @@ Shipped the token refresh fix.
 `,
 
   // ---- the user's own material, which must be invisible --------------------
-  'docs/chat-gpt/transcript.md': `# A chat transcript
+  '.codeadd/docs/chat-gpt/transcript.md': `# A chat transcript
 
 No frontmatter at all. This belongs to the user.
 `,
 
-  'docs/critical-findings.md': `---
+  '.codeadd/docs/critical-findings.md': `---
 author: someone
 updated: 2026-09-02
 ---
@@ -247,7 +247,7 @@ export function makeDocsCorpus(extra = {}) {
   return root;
 }
 
-/** A tree with no `docs/` and no provider map — neither corpus is present. */
+/** A tree with no `.codeadd/docs/` and no provider map — neither corpus is present. */
 export function makeEmptyTree() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-empty-'));
   fs.writeFileSync(path.join(root, 'README.md'), '# nothing here\n', 'utf8');
@@ -282,9 +282,9 @@ export const EXPECTED_SKIPPED = [
   // template carries no frontmatter at all. Both are the case the registry
   // exists to REPORT by name rather than demote, and a fixture holding only
   // current-format documents tests that path not at all.
-  'docs/features/0042F-itemised-purchase/discovery.md',
-  'docs/features/0051H-token-refresh/related.md',
+  '.codeadd/docs/features/0042F-itemised-purchase/discovery.md',
+  '.codeadd/docs/features/0051H-token-refresh/related.md',
   '.codeadd/wiki/index.md',
-  'docs/chat-gpt/transcript.md',
-  'docs/critical-findings.md',
+  '.codeadd/docs/chat-gpt/transcript.md',
+  '.codeadd/docs/critical-findings.md',
 ];

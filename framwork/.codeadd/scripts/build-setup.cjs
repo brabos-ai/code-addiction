@@ -12,8 +12,11 @@
  * Output (parseable, last non-hint line):
  *   BRANCH:<name> STATE:created|existing|current MODE:in-place|worktree [DERIVED:true] [WORKTREE:<path>]
  *
- * --worktree, when THIS run added the worktree, also prints one line BEFORE the
+ * --worktree, when THIS run added the worktree, also prints lines BEFORE the
  * BRANCH: line (BRANCH: stays the last stdout line):
+ *   DOCS=linked|missing  the new worktree's docs root, linked to the primary
+ *                        checkout's docs worktree (a `DOCS_REASON=` line follows
+ *                        a `missing`; the build goes on, the docs just are not there)
  *   COPIED=<dir>,<dir>   the installed directories copied in, in .gitignore order
  *   COPIED=none          nothing was copied (no ADD block, or nothing to carry)
  * It is never printed in in-place mode or on STATE:current, where the worktree
@@ -21,7 +24,8 @@
  *
  * Exit codes (preserved):
  *   0 — success
- *   2 — feature dir not found / ambiguous / missing argument
+ *   2 — feature dir not found / ambiguous / missing argument / the docs root is
+ *       absent (DOCS_ROOT_MISSING)
  *   3 — invalid branch: format or slug != dirname (Hard Invariant)
  *   4 — no verifiable main branch
  *   5 — dirty tracked working tree (in-place mode, and only when a checkout will
@@ -30,8 +34,9 @@
  * MUTATION GUARDS. In-place mode refuses a working tree with tracked
  * modifications before it checks anything out; a tree that is already on the
  * target branch is left alone. Worktree mode skips that guard (it never
- * disturbs the current checkout) and copies untracked feature docs into the
- * new worktree, because `worktree add` does not follow them.
+ * disturbs the current checkout). The feature docs are NOT copied into the new
+ * worktree: they live in the docs root, which the new worktree gets as a link to
+ * the primary checkout's — one copy of the docs, shared by every worktree.
  *
  * INSTALLED FRAMEWORK. `worktree add` brings tracked files only, and the
  * installed `.codeadd/` and the provider folders are gitignored, so a new
@@ -42,9 +47,12 @@
  * The gate is per file: only files git neither tracks nor already finds in the
  * new worktree are copied (git ls-files --others --ignored). Nothing is ever
  * overwritten, and a tracked file always arrives from the commit, not the copy.
+ * The docs root is the one thing under `.codeadd` that is never copied — it is
+ * linked, not carried.
  *
  * Dependencies: Node built-ins only, git on PATH, and the sibling
- * get-main-branch.cjs / get-branch-metadata.cjs helpers. No shell.
+ * get-main-branch.cjs / get-branch-metadata.cjs helpers, plus the docs root
+ * resolver and the docs branch module (`linkDocs`). No shell.
  */
 
 'use strict';
@@ -54,9 +62,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { discoverMainBranch } = require('./get-main-branch.cjs');
-const { currentBranch } = require('./get-branch-metadata.cjs');
+const { currentBranch, DOCS_BRANCH_TYPE } = require('./get-branch-metadata.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
+const { linkDocs } = require('./docs-branch.cjs');
 
-const FEATURES_DIR = 'docs/features';
+// The features folder as messages and the feature-dir contract print it: POSIX,
+// relative to the repository top.
+const FEATURES_DIR = `${DOCS_ROOT}/${DOCS_LAYOUT.features}`;
 
 // The legacy ID-letter → branch type map.
 const TYPE_BY_LETTER = {
@@ -64,7 +76,7 @@ const TYPE_BY_LETTER = {
   H: 'hotfix',
   R: 'refactor',
   C: 'chore',
-  D: 'docs',
+  D: DOCS_BRANCH_TYPE,
   P: 'perf',
   T: 'test',
 };
@@ -157,6 +169,9 @@ function copyInstalled(cwd, wtAbs) {
     if (listed.status !== 0) continue;
     let count = 0;
     for (const rel of listed.stdout.split('\0').filter((p) => p !== '')) {
+      // The docs root is linked into a new worktree, never copied (D8).
+      const posixRel = rel.replace(/\\/g, '/');
+      if (posixRel === DOCS_ROOT || posixRel.startsWith(`${DOCS_ROOT}/`)) continue;
       const dest = path.join(wtAbs, rel);
       if (fs.existsSync(dest)) continue;
       try {
@@ -184,11 +199,21 @@ function parseArgs(argv) {
 
 /**
  * Resolve the feature directory (relative, forward slashes) from an id glob or
- * an exact slug. Returns `{ ok: true, featureDir, dirname }` or
- * `{ ok: false, code }` after writing the diagnostic.
+ * an exact slug, inside the docs root. Returns `{ ok: true, featureDir, dirname,
+ * featureAbs }` or `{ ok: false, code }` after writing the diagnostic. An absent
+ * docs root is its own explicit failure (exit 2).
  */
 function resolveFeature(cwd, featureArg) {
-  const baseAbs = path.join(cwd, FEATURES_DIR);
+  let baseAbs;
+  try {
+    baseAbs = docsPath(cwd, DOCS_LAYOUT.features);
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') {
+      process.stderr.write(`ERROR: ${e.message}\n`);
+      return { ok: false, code: 2 };
+    }
+    throw e;
+  }
   if (ID_ARG_RE.test(featureArg)) {
     let names = [];
     try {
@@ -210,15 +235,15 @@ function resolveFeature(cwd, featureArg) {
       for (const name of names) process.stderr.write(`  ${FEATURES_DIR}/${name}\n`);
       return { ok: false, code: 2 };
     }
-    return { ok: true, featureDir: `${FEATURES_DIR}/${names[0]}`, dirname: names[0] };
+    return { ok: true, featureDir: `${FEATURES_DIR}/${names[0]}`, dirname: names[0], featureAbs: path.join(baseAbs, names[0]) };
   }
 
   const featureDir = `${FEATURES_DIR}/${featureArg}`;
-  if (!isDirectory(path.join(cwd, featureDir))) {
+  if (!isDirectory(path.join(baseAbs, featureArg))) {
     process.stderr.write(`ERROR: feature docs not found: ${featureDir}.\n`);
     return { ok: false, code: 2 };
   }
-  return { ok: true, featureDir, dirname: featureArg };
+  return { ok: true, featureDir, dirname: featureArg, featureAbs: path.join(baseAbs, featureArg) };
 }
 
 /** Read `branch:` from about.md frontmatter, or '' when absent. */
@@ -247,10 +272,10 @@ function main(argv = process.argv.slice(2)) {
 
   const resolved = resolveFeature(cwd, featureArg);
   if (!resolved.ok) return resolved.code;
-  const { featureDir, dirname } = resolved;
+  const { dirname, featureAbs } = resolved;
 
   // --- 2. Read branch: from about.md (legacy fallback if absent) ---
-  let branch = readBranchFromAbout(path.join(cwd, featureDir, 'about.md'));
+  let branch = readBranchFromAbout(path.join(featureAbs, 'about.md'));
   let derived = false;
 
   if (branch === '') {
@@ -311,6 +336,7 @@ function main(argv = process.argv.slice(2)) {
   let wtPath = '';
   let wtAbs = '';
   let copied = null;
+  let docsLink = null;
 
   if (!worktree) {
     mode = 'in-place';
@@ -343,10 +369,8 @@ function main(argv = process.argv.slice(2)) {
         if (result.status !== 0) { process.stderr.write(result.stderr); return result.status || 1; }
         state = 'created';
       }
-      // Untracked feature docs do not follow `worktree add` — copy them in.
-      const destParent = path.join(cwd, wtPath, path.dirname(featureDir));
-      fs.mkdirSync(destParent, { recursive: true });
-      fs.cpSync(path.join(cwd, featureDir), path.join(destParent, dirname), { recursive: true });
+      // The docs root is not in the commit: link it to the primary checkout's.
+      docsLink = linkDocs(path.resolve(cwd, wtPath), cwd);
       // The installed framework is gitignored, so it does not follow either.
       copied = copyInstalled(cwd, path.resolve(cwd, wtPath));
     }
@@ -355,6 +379,10 @@ function main(argv = process.argv.slice(2)) {
   }
 
   // --- 8. Output ---
+  if (docsLink !== null) {
+    process.stdout.write(`DOCS=${docsLink.status}\n`);
+    if (docsLink.reason) process.stdout.write(`DOCS_REASON=${String(docsLink.reason).split('\n')[0]}\n`);
+  }
   if (copied !== null) process.stdout.write(`COPIED=${copied.length > 0 ? copied.join(',') : 'none'}\n`);
   let out = `BRANCH:${branch} STATE:${state} MODE:${mode}`;
   if (derived) out += ' DERIVED:true';

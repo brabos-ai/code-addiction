@@ -4,7 +4,7 @@
 
 **Objective:** Verify compliance with architectural patterns and identify violations.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/architecture-report.md`
 
 **Criticality:** 🟠 HIGH
 
@@ -24,7 +24,7 @@ You are a subagent specialized in architecture analysis. Your job is:
 ## Prerequisite: Read Context
 
 ```bash
-cat docs/health-checks/YYYY-MM-DD/context-discovery.md
+cat .codeadd/docs/health-checks/YYYY-MM-DD/context-discovery.md
 ```
 
 **Extract:**
@@ -192,9 +192,14 @@ grep -rn "export.*class" libs/backend/src/index.ts libs/domain/src/index.ts 2>/d
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/architecture-report.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/architecture-report.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Architecture Report
 
 **Generated on:** [date]

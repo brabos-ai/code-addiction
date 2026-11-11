@@ -20,6 +20,7 @@
 - command: /add-new
 - command: /add-plan
 - command: /add-wiki
+- script: docs-branch.cjs
 - script: hotfix-gates.cjs
 - script: status.cjs
 -->
@@ -68,7 +69,7 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 | **STEP add-diagnose.dispatch** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP add-diagnose.dispatch** | A outputs incomplete | Proceed to STEP add-diagnose.analyze, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
 | **STEP add-diagnose.analyze** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
-| **READ-ONLY** | Always | Edit files, Bash (except status.cjs and hotfix-gates.cjs), Write outside docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
+| **READ-ONLY** | Always | Edit files, Bash (except status.cjs, hotfix-gates.cjs and the closing `docs-branch.cjs commit`), Write outside .codeadd/docs/diagnose/, branches, code commits, /add-new/hotfix/build | Suggest next steps |
 | **STEP add-diagnose.persist** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
 | **STEP add-diagnose.validate** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
 | **STEP add-diagnose.complete** | Always | Report before STEP add-diagnose.complete, or skip it on a no-action route | Emit the report in the shape, on every route |
@@ -165,7 +166,7 @@ This payload is passed to BOTH Fase A agents.
 ⛔ **CRITICAL:** Dispatch BOTH agents in a SINGLE message with TWO Agent tool calls (parallel execution). Do NOT dispatch sequentially.
 
 **DISPATCH AGENT: @feature-history-agent**
-Prompt: "Reconstruct feature relevance for this symptom. Predicate: <predicate>. Symptom class: <class>. Keywords: <keywords>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Scan `docs/features/`, score relevance, deep-read top-10, return structured Feature History Report."
+Prompt: "Reconstruct feature relevance for this symptom. Predicate: <predicate>. Symptom class: <class>. Keywords: <keywords>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Scan `.codeadd/docs/features/` (pass that root explicitly), score relevance, deep-read top-10, return structured Feature History Report."
 
 **DISPATCH AGENT: @git-history-agent**
 Prompt: "Correlate recent git history with this symptom. Predicate: <predicate>. Keywords: <keywords>. Knowledge base pages (map material, if any): <wiki page paths + reasons + freshness>. Window: 30 days. Use git log/show/diff/branch (read-only) to identify suspicious commits and active branches. Return structured Git History Report."
@@ -309,7 +310,7 @@ Ask only: do you agree with this diagnosis?
 
 ### STEP add-diagnose.write-conditions-met Write (if conditions met)
 
-Load {{skill:add--doc-schemas/SKILL.md}} schema `diagnose-report`. Write `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
+Load {{skill:add--doc-schemas/SKILL.md}} schema `diagnose-report`. Write `.codeadd/docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` per schema (extractive only).
 
 When the accepted route is hotfix, append `## Hotfix Handoff` from `{{skill:add--doc-schemas/references/review.md}}`. Fill scalars from STEP add-diagnose.synthesize. Fill Findings from the accepted causal chain. Fill Confirmed Relations from the links shown at STEP add-diagnose.report. Paste the Working Tree Baseline fence from `diagnosis-baseline`, or `clean`. Omit `## Hotfix Handoff` on every other accepted route.
 
@@ -339,7 +340,7 @@ Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` for schem
 ## STEP add-diagnose.complete: Completion
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
-the self-check. Emit the report FIRST — the report path and the recommended command come after it.
+the self-check. When a document was written, close it first per {{skill:add--doc-schemas/SKILL.md}} → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Emit the report FIRST — the report path and the recommended command come after it.
 
 **This step runs on every route, including no-action and a rejected diagnosis.** The gate above is
 conditional; the report is not. A run that wrote no document still owes the user its diagnosis.
@@ -362,8 +363,8 @@ Then, after the seven blocks, state the accepted route and that this command nev
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` | The causal chain and the `## Hotfix Handoff` the next command reads |
-| `docs/features/<id>/about.md` | What the feature created for this gap is for, on the `feature` and `extend` routes |
+| `.codeadd/docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md` | The causal chain and the `## Hotfix Handoff` the next command reads |
+| `.codeadd/docs/features/<id>/about.md` | What the feature created for this gap is for, on the `feature` and `extend` routes |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the accepted route takes next |
 
 ---

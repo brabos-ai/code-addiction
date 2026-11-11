@@ -127,6 +127,7 @@ const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c")
             <li><a href="#agent-mode" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.agentMode")}</a></li>
             <li><a href="#plugins" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.plugins")}</a></li>
             <li><a href="#providers" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.providers")}</a></li>
+            <li><a href="#docs-branch" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.docsBranch")}</a></li>
             <li><a href="#structure" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.structure")}</a></li>
             <li><a href="#ecosystem" class="text-muted-light hover:text-foreground transition-colors">{t("docs.sidebar.items.ecosystem")}</a></li>
           </ul>
@@ -723,6 +724,28 @@ const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c")
       </section>
 
       <!-- STRUCTURE -->
+      <section id="docs-branch" class="mb-20">
+        <h2 id="docs-branch-heading" class="font-display font-bold text-2xl sm:text-3xl mb-4">{t("docs.docsBranch.heading")}</h2>
+        <p class="text-muted-light mb-6" set:html={t("docs.docsBranch.intro")} />
+
+        <div class="space-y-3">
+          {t<{ label: string; desc: string }[]>("docs.docsBranch.rows").map((row) => (
+            <div class="flex items-start gap-4 p-4 rounded-lg border border-white/5 bg-white/[0.02]">
+              <span class="text-accent font-mono text-sm whitespace-nowrap">{row.label}</span>
+              <span class="text-muted-light text-sm" set:html={row.desc} />
+            </div>
+          ))}
+        </div>
+
+        <h3 class="font-display font-semibold text-lg mt-8 mb-4">{t("docs.docsBranch.migrateTitle")}</h3>
+        <p class="text-muted-light mb-4" set:html={t("docs.docsBranch.migrateIntro")} />
+        <div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 font-mono text-sm space-y-3">
+          <CommandLine command="npx codeadd docs migrate --dry-run" bare />
+          <CommandLine command="npx codeadd docs migrate" bare />
+        </div>
+        <p class="text-muted text-sm mt-4" set:html={t("docs.docsBranch.migrateNote")} />
+      </section>
+
       <section id="structure" class="mb-20">
         <h2 id="structure-heading" class="font-display font-bold text-2xl sm:text-3xl mb-6">{t("docs.structure.heading")}</h2>
         <p class="text-muted-light mb-6">
@@ -736,7 +759,7 @@ const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c")
           <span class="text-foreground">│   └── .codeadd/</span><span class="text-muted ml-2">{t("docs.structure.codeadd")}</span><br/>
           <span class="text-foreground">├── web/</span><span class="text-muted ml-14">{t("docs.structure.web")}</span><br/>
           <span class="text-foreground">├── scripts/</span><span class="text-muted ml-8">{t("docs.structure.scripts")}</span><br/>
-          <span class="text-foreground">└── docs/</span><span class="text-muted ml-12">{t("docs.structure.docs")}</span>
+          <span class="text-foreground">└── .codeadd/docs/</span><span class="text-muted ml-2">{t("docs.structure.docs")}</span>
         </div>
       </section>
 

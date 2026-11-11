@@ -16,6 +16,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+const buildSetup = require(path.join(h.SCRIPTS_DIR, 'build-setup.cjs'));
+
+const DOCS_SEGMENTS = DOCS_ROOT.split('/');
 
 function has(res, needle) {
   assert.ok(
@@ -57,16 +61,16 @@ test('build-setup does not copy docs into an occupied unregistered worktree dest
   const res = run(r, ['0001F', '--worktree']);
   assert.notEqual(res.status, 0, res.output);
   assert.equal(h.read(path.join(dest, 'personal.txt')), 'preserve');
-  assert.equal(fs.existsSync(path.join(dest, 'docs')), false);
+  assert.equal(fs.existsSync(path.join(dest, ...DOCS_SEGMENTS)), false);
   assert.doesNotMatch(res.stdout, /STATE:/);
 });
 
-/** docs/features/<dir>/about.md with optional `branch:` frontmatter. */
+/** <docs root>/features/<dir>/about.md with optional `branch:` frontmatter. */
 function makeFeature(r, dir, branch = '') {
   let body = `---\nid: ${dir}\n`;
   if (branch) body += `branch: ${branch}\n`;
   body += '---\n# about\n';
-  h.write(path.join(r.repo, 'docs', 'features', dir, 'about.md'), body);
+  h.write(path.join(r.repo, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, dir, 'about.md'), body);
 }
 
 /** A tracked file is committed once, then modified. */
@@ -97,6 +101,7 @@ test('build-setup#002 resolves feature dir by full slug', (t) => {
 
 test('build-setup#003 not-found feature dir exits 2 with stderr', (t) => {
   const r = repo(t);
+  fs.mkdirSync(path.join(r.repo, ...DOCS_SEGMENTS), { recursive: true });
   const res = run(r, ['9999F']);
   assert.equal(res.status, 2);
   has(res, '9999F');
@@ -251,17 +256,68 @@ test('build-setup#018 worktree mode appends .worktrees/ to .gitignore', (t) => {
   assert.ok(h.read(path.join(r.repo, '.gitignore')).includes('.worktrees/'));
 });
 
-test('build-setup#019 worktree mode copies untracked feature docs into worktree', (t) => {
+test('build-setup#019 worktree mode links the docs root and copies no feature docs', (t) => {
+  const p = h.makeProject();
+  t.after(p.cleanup);
+  h.write(path.join(p.docs, DOCS_LAYOUT.features, '0042F-auth', 'about.md'), '---\nbranch: feature/0042F-auth\n---\n# about\n');
+  const res = h.runScript('build-setup', ['0042F', '--worktree'], { cwd: p.repo });
+  assert.equal(res.status, 0, res.output);
+  const wtDocs = path.join(p.repo, '.worktrees', '0042F-auth', ...DOCS_SEGMENTS);
+  assert.ok(fs.existsSync(path.join(wtDocs, DOCS_LAYOUT.features, '0042F-auth', 'about.md')), 'feature docs reachable in the worktree');
+});
+
+test('build-setup#027 --worktree links the code worktree docs root to the primary one, never copies it (L2.3)', (t) => {
+  const p = h.makeProject();
+  t.after(p.cleanup);
+  h.write(path.join(p.docs, DOCS_LAYOUT.features, '0042F-auth', 'about.md'), '---\nbranch: feature/0042F-auth\n---\n# about\n');
+  // The installed framework is gitignored, exactly as the CLI leaves it.
+  h.write(path.join(p.repo, '.gitignore'), ADD_BLOCK);
+  p.git('add', '.gitignore');
+  p.git('commit', '-m', 'ignore installed', '-q');
+  h.write(path.join(p.repo, '.codeadd', 'manifest.json'), '{"installed":true}\n');
+
+  const res = h.runScript('build-setup', ['0042F', '--worktree'], { cwd: p.repo });
+  assert.equal(res.status, 0, res.output);
+  has(res, 'DOCS=linked\n');
+  const lines = res.stdout.trim().split('\n');
+  assert.match(lines[lines.length - 1], /^BRANCH:/, 'BRANCH: stays the last stdout line');
+
+  const wt = path.join(p.repo, '.worktrees', '0042F-auth');
+  const link = path.join(wt, ...DOCS_SEGMENTS);
+  // A link to the primary's docs worktree — not a copy of it.
+  assert.equal(fs.lstatSync(link).isSymbolicLink(), true, 'the docs root of the code worktree is a link');
+  assert.equal(fs.realpathSync(link), fs.realpathSync(p.docs));
+
+  // A file written through the link appears in the primary's docs worktree.
+  h.write(path.join(link, DOCS_LAYOUT.features, '0042F-auth', 'plan.md'), '# plan\n');
+  assert.equal(h.read(path.join(p.docs, DOCS_LAYOUT.features, '0042F-auth', 'plan.md')), '# plan\n');
+
+  // The other installed files still arrive, and the docs root is not among them.
+  has(res, 'COPIED=.codeadd\n');
+  assert.equal(h.read(path.join(wt, '.codeadd', 'manifest.json')), '{"installed":true}\n');
+});
+
+test('build-setup#028 copyInstalled excludes the docs root and still copies other installed files (D8)', (t) => {
   const r = repo(t);
-  makeFeature(r, '0042F-auth', 'feature/0042F-auth');
-  const res = run(r, ['0042F', '--worktree']);
-  assert.equal(res.status, 0);
-  assert.ok(
-    fs.existsSync(
-      path.join(r.repo, '.worktrees', '0042F-auth', 'docs', 'features', '0042F-auth', 'about.md'),
-    ),
-    'feature docs copied into the worktree',
-  );
+  h.write(path.join(r.repo, '.gitignore'), ADD_BLOCK);
+  r.git('add', '.gitignore');
+  r.git('commit', '-m', 'ignore installed', '-q');
+  // A plain directory with files: git lists each one, so nothing but the exclusion keeps them out.
+  h.write(path.join(r.repo, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0042F-auth', 'about.md'), '# about\n');
+  h.write(path.join(r.repo, '.codeadd', 'manifest.json'), '{"installed":true}\n');
+  const dest = path.join(r.base, 'dest');
+  fs.mkdirSync(dest);
+  const copied = buildSetup.copyInstalled(r.repo, dest);
+  assert.deepEqual(copied, ['.codeadd']);
+  assert.equal(h.read(path.join(dest, '.codeadd', 'manifest.json')), '{"installed":true}\n');
+  assert.equal(fs.existsSync(path.join(dest, ...DOCS_SEGMENTS)), false, 'the docs root was not copied');
+});
+
+test('build-setup#029 an absent docs root is an explicit DOCS_ROOT_MISSING failure, exit 2', (t) => {
+  const r = repo(t);
+  const res = run(r, ['0042F']);
+  assert.equal(res.status, 2, res.output);
+  assert.match(res.stderr, /DOCS_ROOT_MISSING/);
 });
 
 test('build-setup#020 worktree mode does not run dirty-tree guard', (t) => {

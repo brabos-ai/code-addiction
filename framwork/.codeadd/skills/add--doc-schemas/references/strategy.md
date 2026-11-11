@@ -38,9 +38,9 @@ A risk without a probability and a mitigation is a worry, not a risk entry.
 
 ### prd
 
-For `/add-plan` (framework mode; creates `docs/prd/PRD[NNNN]-<slug>.md`). PRDs drive the framework's own evolution and are consumed by `/add-build`.
+For `/add-plan` (framework mode; creates `.codeadd/docs/prd/PRD[NNNN]-<slug>.md`). PRDs drive the framework's own evolution and are consumed by `/add-build`.
 
-- **Frontmatter:** `id: PRD[NNNN]`, `type: prd`, `created:`, `updated:`, `related: []`
+- **Frontmatter:** `id: PRD[NNNN]`, `type: prd`, `created:`, `updated:`, `schema: {{doc-schema}}`, `related: []`
 - **Status header (immediately after H1):** `Status:` (`draft` | `approved` | `implemented` | `superseded`), `Type:` (`command` | `skill` | `script` | `workflow` | `architecture`), `Created:`, `Author:`
 - **Sections (ordered):** TL;DR · Context · Problem · Proposal · Scope (Includes / Does NOT Include) · Validated Decisions · Accepted Trade-offs · Risks and Mitigations · Ecosystem Impact · References · Next Steps · PRD Changelog
 - **Depth floor:**

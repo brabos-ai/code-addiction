@@ -13,7 +13,7 @@
 <!-- section:offer -->
 
 **This command stays advisory about what happens next.** It fixed a bug and stopped. It does not
-merge, and it never routes to `/add-review` — the diagnose `@docs/diagnose/<file>.md` handoff and the
+merge, and it never routes to `/add-review` — the diagnose `@.codeadd/docs/diagnose/<file>.md` handoff and the
 route to `/add-done` are untouched by this step.
 
 | State | Next activity |

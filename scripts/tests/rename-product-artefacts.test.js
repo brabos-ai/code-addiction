@@ -20,7 +20,7 @@ function fixture(t) {
   put('framwork/.codeadd/commands/add.plan.md', 'Load {{skill:add-commit/SKILL.md}}; run /add.plan\n');
   put('framwork/.codeadd/skills/add-commit/SKILL.md', '---\nname: add-commit\n---\n');
   put('README.md', 'Use /add.plan with add-commit\n');
-  put('docs/deliveries/old/plan.md', 'Historic /add.plan and add-commit\n');
+  put('.codeadd/docs/deliveries/old/plan.md', 'Historic /add.plan and add-commit\n');
   return { root, put };
 }
 
@@ -50,7 +50,7 @@ test('preview is deterministic JSONL with separate summary; apply migrates activ
   assert.ok(fs.existsSync(path.join(root, 'framwork/.codeadd/skills/add--commit/SKILL.md')));
   assert.ok(!fs.existsSync(path.join(root, 'framwork/.codeadd/commands/add.plan.md')));
   assert.match(fs.readFileSync(path.join(root, 'README.md'), 'utf8'), /\/add-plan with add--commit/);
-  assert.match(fs.readFileSync(path.join(root, 'docs/deliveries/old/plan.md'), 'utf8'), /\/add\.plan/);
+  assert.match(fs.readFileSync(path.join(root, '.codeadd/docs/deliveries/old/plan.md'), 'utf8'), /\/add\.plan/);
 });
 
 test('stale preview or conflicting destination fails before any write', (t) => {

@@ -29,6 +29,9 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPTS_DIR = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
 const ROOT_SCRIPTS_DIR = path.join(REPO_ROOT, 'scripts');
+// The docs root, from the one module that owns it (never spelled out here).
+const DOCS_ROOT = require(path.join(SCRIPTS_DIR, 'docs-root.cjs')).DOCS_ROOT;
+const DOCS_ROOT_SEGMENTS = DOCS_ROOT.split('/');
 const CASE_MAP_PATH = path.join(__dirname, 'native-script-cases.json');
 
 /** Every child of the harness runs with a deterministic environment. */
@@ -135,7 +138,7 @@ function makeRepo({ branch = 'main', prefix = 'codeadd-repo-' } = {}) {
 
 /**
  * A board fixture: a temp bare remote holding an orphan `board` branch with an
- * empty docs/backlog.jsonl, a code repository on `main` whose committed
+ * empty backlog.jsonl at its root, a code repository on `main` whose committed
  * .codeadd/board.json points at that remote, and the CODEADD_BOARD_DIR path the
  * board clone lands at. No test may use the real ~/.codeadd/: every call to a
  * script passes `env`.
@@ -151,7 +154,7 @@ function makeBoard({ files = {} } = {}) {
   git(seed, ['config', 'user.email', 'test@test.com']);
   git(seed, ['config', 'user.name', 'Test']);
   git(seed, ['config', 'commit.gpgsign', 'false']);
-  write(path.join(seed, 'docs', 'backlog.jsonl'), '');
+  write(path.join(seed, 'backlog.jsonl'), '');
   for (const [rel, content] of Object.entries(files)) write(path.join(seed, rel), content);
   git(seed, ['add', '.']);
   git(seed, ['commit', '-q', '-m', 'seed board']);
@@ -170,6 +173,37 @@ function makeBoard({ files = {} } = {}) {
   const boardDir = path.join(base, 'board-clone');
   const env = { CODEADD_BOARD_DIR: boardDir, HOME: base, USERPROFILE: base };
   return { base, bare, repo, boardDir, env, git: (cwd, ...args) => git(cwd, args), cleanup: () => rmrf(base) };
+}
+
+/**
+ * A code project with a REAL separate bare remote (never one temp dir as both),
+ * optionally with the docs worktree already prepared. `docs` is the absolute docs
+ * root. The remote is a bare repository on its own path; the code repository's
+ * `origin` points at it.
+ * Returns { base, bare, repo, docs, git, prepare, cleanup }.
+ */
+function makeProject({ prepared = true, remote = true, branch = 'main' } = {}) {
+  const base = fs.realpathSync(mkTmp('codeadd-project-'));
+  const bare = path.join(base, 'remote.git');
+  const repo = path.join(base, 'repo');
+  if (remote) git(base, ['init', '--bare', '-q', '--initial-branch=' + branch, bare]);
+  fs.mkdirSync(repo, { recursive: true });
+  git(repo, ['init', '-q', '--initial-branch=' + branch]);
+  git(repo, ['config', 'user.email', 'test@test.com']);
+  git(repo, ['config', 'user.name', 'Test']);
+  git(repo, ['config', 'commit.gpgsign', 'false']);
+  git(repo, ['commit', '--allow-empty', '-m', 'init', '-q']);
+  if (remote) {
+    git(repo, ['remote', 'add', 'origin', bare]);
+    git(repo, ['push', '-q', '-u', 'origin', branch]);
+  }
+  const docs = path.join(repo, ...DOCS_ROOT_SEGMENTS);
+  const prepare = (cwd = repo) => runScript('docs-branch', ['prepare'], { cwd });
+  if (prepared) {
+    const r = prepare();
+    if (!/DOCS=(ready|created)/.test(r.stdout)) throw new Error(`makeProject: prepare failed: ${r.output}`);
+  }
+  return { base, bare, repo, docs, git: (...args) => git(repo, args), prepare, cleanup: () => rmrf(base) };
 }
 
 /** Write a file, creating parents. */
@@ -254,6 +288,7 @@ module.exports = {
   SCRIPTS_DIR,
   ROOT_SCRIPTS_DIR,
   CASE_MAP_PATH,
+  DOCS_ROOT,
   cleanEnv,
   mkTmp,
   rmrf,
@@ -264,6 +299,7 @@ module.exports = {
   git,
   makeRepo,
   makeBoard,
+  makeProject,
   write,
   read,
   readJsonl,

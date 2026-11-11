@@ -32,7 +32,7 @@
 
 <!-- section:graph-quality -->
 
-**Graph focus for the code-quality analyzer — fold into its dispatch prompt:** use the graph for the checks grep cannot do — dead code (symbols with zero inbound callers via `impact`), circular dependencies (`cypher` cycle query over module imports), and god-objects / high coupling (outsized fan-in/fan-out). Report these in `docs/code-quality-review.md` with graph evidence (symbol + caller count), not heuristics. This report stays outside the wiki, so its structural findings are exempt from the wiki's no-structural-facts rule.
+**Graph focus for the code-quality analyzer — fold into its dispatch prompt:** use the graph for the checks grep cannot do — dead code (symbols with zero inbound callers via `impact`), circular dependencies (`cypher` cycle query over module imports), and god-objects / high coupling (outsized fan-in/fan-out). Report these in `.codeadd/docs/code-quality-review.md` with graph evidence (symbol + caller count), not heuristics. This report stays outside the wiki, so its structural findings are exempt from the wiki's no-structural-facts rule.
 
 <!-- /section:graph-quality -->
 

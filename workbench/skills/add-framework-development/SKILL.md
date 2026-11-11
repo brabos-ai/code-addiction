@@ -161,8 +161,8 @@ Prompt: [full prompt with ${FEATURE_ID}, output path, format template]
 **Wait Points** — `**WAIT:** [condition]` blocks execution until artifact exists.
 
 **Output Paths** — Always use `${FEATURE_ID}` variable:
-- `docs/features/${FEATURE_ID}/plan.md`
-- `docs/features/${FEATURE_ID}/design.md`
+- `.codeadd/docs/features/${FEATURE_ID}/plan.md`
+- `.codeadd/docs/features/${FEATURE_ID}/design.md`
 - Temp files: `plan-database.md`, `plan-backend.md`, etc.
 
 **Completion** — Always reference `add--ecosystem` skill for next steps.

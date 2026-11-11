@@ -21,7 +21,8 @@
  *   milliseconds: `YYYY-MM-DDTHH:MM:SSZ`. `Date#toISOString()` yields
  *   milliseconds, so the fractional part is sliced off, never rounded.
  *
- *   OUTPUT KEYS. The emitted object is `{"ts":...,"agent":...,"type":...,<raw>}`;
+ *   OUTPUT KEYS. The emitted object is `{"v":1,"ts":...,"agent":...,"type":...,<raw>}`, `v` being
+ *   LOG_LINE_VERSION (the line format, independent of the document format version);
  *   the shell printed `LOGGED:<file>`, `TYPE:<type>`, `AGENT:<agent>` on stdout.
  *
  *   EXIT CODES. Fewer than four arguments is a misuse exit 1, as are empty
@@ -35,6 +36,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+
+// The version of this writer's line format, declared once. Every line carries it as `v`.
+const LOG_LINE_VERSION = 1;
 
 const USAGE = "USAGE: node .codeadd/scripts/log-jsonl.cjs <file> <type> <agent> '<extra-fields>'";
 
@@ -64,7 +68,7 @@ function main(argv) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
 
   const ts = new Date().toISOString().slice(0, 19) + 'Z';
-  const line = `{"ts":"${ts}","agent":"${agent}","type":"${type}",${fields}}\n`;
+  const line = `{"v":${LOG_LINE_VERSION},"ts":"${ts}","agent":"${agent}","type":"${type}",${fields}}\n`;
 
   fs.appendFileSync(file, line);
 

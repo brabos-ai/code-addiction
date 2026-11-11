@@ -42,12 +42,12 @@ them — it points at them.**
 
 | Document | Carries |
 |---|---|
-| `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` | [which decisions/contracts live there] |
-| `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-intent.md` | [the classified path, the closed decisions, what stayed open] |
+| `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` | [which decisions/contracts live there] |
+| `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic]-intent.md` | [the classified path, the closed decisions, what stayed open] |
 
 [This table is what `/add-framework--done` resolves both archival members from. A plan that cites
 neither gets neither, and that is not a defect — but a `bounded` plan that cites nothing has left its
-only record of the reasoning in a gitignored directory.]
+only record of the reasoning in an untracked directory.]
 
 ## Global Constraints
 
@@ -180,7 +180,7 @@ Gaps a reviewer must actively hunt, because they are the ones this plan is most 
 
 ## Next Steps
 
-/add-framework--build docs/plans/<this plan's basename>.md
+/add-framework--build .codeadd/docs/plans/<this plan's basename>.md
 
 [One command executes every F-block, whichever layer each is tagged. Do NOT route part of the plan to
 a second command. The line names this plan's own path, unchecked, because the file is still being

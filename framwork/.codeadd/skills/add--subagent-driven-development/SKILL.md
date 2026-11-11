@@ -102,17 +102,17 @@ Subagents must read original documentation — never work from summaries. The co
 **Example — simple feature:**
 ```
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
-- docs/features/0005F-media-library/about.md
-- docs/features/0005F-media-library/plan.md
+- .codeadd/docs/features/0005F-media-library/about.md
+- .codeadd/docs/features/0005F-media-library/plan.md
 ```
 
 **Example — epic with subfeatures:**
 ```
 ## TASK_DOCUMENTS (read ALL before starting — source of truth)
-- docs/features/0005F-media-library/about.md
-- docs/features/0005F-media-library/discovery.md
-- docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/about.md
-- docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/plan.md
+- .codeadd/docs/features/0005F-media-library/about.md
+- .codeadd/docs/features/0005F-media-library/discovery.md
+- .codeadd/docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/about.md
+- .codeadd/docs/features/0005F-media-library/subfeatures/SF01-chunked-analysis/plan.md
 ```
 
 The coordinator already knows if it's a simple feature or epic, which subfeature is current, and which docs exist. It assembles the correct list. The subagent has zero conditional logic — just reads what it receives.
@@ -142,7 +142,7 @@ de-duplicating would erase "fix round 1" followed by "fix round 2" of the same f
 Append-only, one line per event, identity on the first line:
 
 ```markdown
-# Build ledger — feature: F0003 — plan: docs/features/F0003/plan.md
+# Build ledger — feature: F0003 — plan: .codeadd/docs/features/F0003/plan.md
 
 Preflight: 4 pairs checked, 1 conflict — T05 consumes `UserDto.name`, T02 produces `UserDto.fullName`
 Preflight: Ruling: T02's name wins (plan.md Architecture Decisions names it) — costs a rename in T05 if wrong

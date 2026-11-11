@@ -44,13 +44,13 @@ You receive:
   `status`, `name`, and what each item was. Absent means the caller resolved none.
 
   ⛔ **An `id` is not always a plan slug.** An internal entry's `id` IS the plan basename, so it
-  matches a `docs/deliveries/` directory. A **product** entry's `id` is `[NNNN][L]` and matches no
+  matches a `.codeadd/docs/deliveries/` directory. A **product** entry's `id` is `[NNNN][L]` and matches no
   plan directory at all. Match on `id` where it looks like a plan basename, and on `name` otherwise;
   where neither resolves, scan for that plan as though the field had not named it.
 
 ```
 IF prior_deliveries ARRIVES FILLED:
-  ⛔ DO NOT: Re-scan docs/deliveries/ for the plans it already names
+  ⛔ DO NOT: Re-scan .codeadd/docs/deliveries/ for the plans it already names
   ⛔ DO NOT: Re-derive their delivered state — the caller resolved it, and a second
              derivation that disagrees is worse than no second derivation
   ✅ DO: Take those entries as given, mark them `[delivered]`, and scan only for what
@@ -141,15 +141,15 @@ Scan filenames and read first ~20 lines of each artefact:
 ### 2. Plan Scan (always, regardless of scope)
 
 **Read `prior_deliveries` first.** When the caller filled it, those plans are already resolved: take
-their delivered state as given and skip the `docs/deliveries/` glob for them. Scan for everything the
-field does not name, exactly as below. When the field is absent or empty, run both globs whole.
+their delivered state as given and skip the `.codeadd/docs/deliveries/` glob for them. Scan for everything the
+field does not name, exactly as below. When the field is absent or empty, run both globs whole. Both globs name `.codeadd/docs/` explicitly — `Glob` and `rg` skip git-ignored paths, and the code branch ignores the docs root.
 
-- `Glob docs/plans/*.md` → plans still in flight, gitignored and local
-- `Glob docs/deliveries/*/plan.md` → plans already closed out, tracked. **Take the slug from the DIRECTORY name, never from the filename** — every one of these files is called `plan.md` and carries no slug at all.
+- `Glob .codeadd/docs/plans/*.md` → plans still in flight, untracked and local
+- `Glob .codeadd/docs/deliveries/*/plan.md` → plans already closed out, tracked. **Take the slug from the DIRECTORY name, never from the filename** — every one of these files is called `plan.md` and carries no slug at all.
 - **Strip the leading token first**, then extract slug words. The leading token is the timestamp (`2026-09-07T005046`) on a new plan or the `NNNN` number on a legacy one — both forms are on disk. Drop the `PLAN` / `SELF-PLAN` marker too. ⛔ Never score `2026`, `09` or `07T005046` as a topic keyword.
   - `2026-09-07T005046-SELF-PLAN--framework-discovery-agent-for-planning-commands` → words: framework, discovery, agent, planning, commands
   - `0031-SELF-PLAN--framework-discovery-agent-for-planning-commands` → the same words
-- **Score and rank both sources in ONE list**, and mark each row by **which glob found it**. A plan from `docs/deliveries/` is suffixed ` [delivered]`; a plan from `docs/plans/` carries no suffix. A delivered plan is prior art of the strongest kind — it shipped — and the caller must be able to tell that from an open decision without opening the file.
+- **Score and rank both sources in ONE list**, and mark each row by **which glob found it**. A plan from `.codeadd/docs/deliveries/` is suffixed ` [delivered]`; a plan from `.codeadd/docs/plans/` carries no suffix. A delivered plan is prior art of the strongest kind — it shipped — and the caller must be able to tell that from an open decision without opening the file.
 
 ```
 IF THE PLAN IS NAMED IN prior_deliveries:
@@ -157,8 +157,8 @@ IF THE PLAN IS NAMED IN prior_deliveries:
   ✅ DO: Use the state the field gave, and mark it `[delivered]`
 
 IF IT IS NOT (OR THE FIELD IS ABSENT):
-  ⛔ DO NOT: Read its `Status:` line, its body, its ledger, or docs/delivered.jsonl
-  ⛔ DO NOT: Mark a plan found under docs/plans/ as delivered, whatever its text claims
+  ⛔ DO NOT: Read its `Status:` line, its body, its ledger, or .codeadd/docs/delivered.jsonl
+  ⛔ DO NOT: Mark a plan found under .codeadd/docs/plans/ as delivered, whatever its text claims
   ✅ DO: Use the directory it was found in, and nothing else
 ```
 

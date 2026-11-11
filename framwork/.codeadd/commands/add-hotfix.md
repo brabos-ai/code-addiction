@@ -22,6 +22,7 @@
 - command: /add-wiki
 - mention: /add-review
 - script: delivered.cjs
+- script: docs-branch.cjs
 - script: hotfix-gates.cjs
 - script: status.cjs
 -->
@@ -29,7 +30,7 @@
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 > **ARCHITECTURE REFERENCE:** Use the project wiki ({{addpath:wiki/conventions.md}}, {{addpath:wiki/architecture.md}}) as source of patterns; `AGENTS.md` for structure and commands.
 > **ID FORMAT:** Global sequential with type suffix (e.g., `0001H`, `0002H`)
-> **STRUCTURE:** Docs in `docs/features/[NNNN]H-[slug]/`; relationships live in the `about.md` `## Relations` section
+> **STRUCTURE:** Docs in `.codeadd/docs/features/[NNNN]H-[slug]/`; relationships live in the `about.md` `## Relations` section
 
 ---
 
@@ -48,7 +49,7 @@ Load `{{skill:add--doc-schemas/SKILL.md}}` before STEP add-hotfix.context (schem
 
 **STEPS IN ORDER:**
 ```
-STEP add-hotfix.context:  Run status.cjs             → FIRST COMMAND; parse optional @docs/diagnose/*.md
+STEP add-hotfix.context:  Run status.cjs             → FIRST COMMAND; parse optional @.codeadd/docs/diagnose/*.md
 STEP add-hotfix.branch-check:  Check branch              → IF main: STOP (step 3 required); validate diagnose report before branch creation
 STEP add-hotfix.allocate:  Allocate ID + branch      → status.cjs next-id H, branch, skeleton about.md
 STEP add-hotfix.history:  Discover history (index + parallel agents) → delivery index (--no-verify) → @feature-history-agent ∥ @git-history-agent
@@ -80,7 +81,7 @@ IF SCHEMA NOT LOADED:
 
 IF BRANCH NOT CREATED:
   ⛔ DO NOT: Proceed to investigation
-  ✅ DO: Create hotfix/[NNNN]H-[slug] branch and docs/features/[NNNN]H-[slug]/
+  ✅ DO: Create hotfix/[NNNN]H-[slug] branch and .codeadd/docs/features/[NNNN]H-[slug]/
 
 IF HISTORY AGENTS NOT DISPATCHED AND NO VALID DIAGNOSE REPORT:
   ⛔ DO NOT USE: Grep on code
@@ -131,7 +132,7 @@ node .codeadd/scripts/status.cjs
 
 ### STEP add-hotfix.parse-diagnose Parse optional diagnose report
 
-If the invocation carries `@docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
+If the invocation carries `@.codeadd/docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
 
 ---
 
@@ -165,7 +166,7 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 ### IF the branch matches `hotfix/[NNNN]H-*`:
 
-✅ Branch OK. If `docs/features/[NNNN]H-<slug>/about.md` already carries `## Review`, go to STEP add-hotfix.resume-review. Otherwise skip to STEP add-hotfix.history.
+✅ Branch OK. If `.codeadd/docs/features/[NNNN]H-<slug>/about.md` already carries `## Review`, go to STEP add-hotfix.resume-review. Otherwise skip to STEP add-hotfix.history.
 
 ### IF the branch is any other:
 
@@ -175,7 +176,7 @@ This gate runs before STEP add-hotfix.allocate creates or changes a branch.
 
 The receipt exists and the delivery gate sent you back because it is `stale` or `blocked`. Only the review runs again.
 
-0. Run `node .codeadd/scripts/hotfix-gates.cjs review-validate docs/features/[NNNN]H-<slug>/`. Resume only on `HOTFIX_REVIEW=stale` or `blocked`. Any other verdict (`ok`, `missing`, `malformed`): do not resume — `ok` needs nothing, the others go to STEP add-hotfix.history as a full hotfix.
+0. Run `node .codeadd/scripts/hotfix-gates.cjs review-validate .codeadd/docs/features/[NNNN]H-<slug>/`. Resume only on `HOTFIX_REVIEW=stale` or `blocked`. Any other verdict (`ok`, `missing`, `malformed`): do not resume — `ok` needs nothing, the others go to STEP add-hotfix.history as a full hotfix.
 1. Build `OBJECTIVE` from that `about.md`, as one sentence: the topic sentence of `## Root Cause`, with the bullets of `## Fix` folded in. No new field is read.
 2. Take `[NNNN]H` and the slug from the branch name. Re-run STEP add-hotfix.verify-build. When the receipt says `pinned-test: passed`, re-run the pinned test that `## Verification` of that `about.md` names.
 3. The blast radius was not retained on this path: rebuild it from that `about.md`'s `## Relations` (`None` means none), and still ask the file-overlap graph question of STEP add-hotfix.review-input.
@@ -210,7 +211,7 @@ git checkout -b hotfix/[NNNN]H-[hotfix-slug]
 ### STEP add-hotfix.create-doc-directory Create Doc Directory
 
 ```
-docs/features/[NNNN]H-<slug>/
+.codeadd/docs/features/[NNNN]H-<slug>/
 ├── about.md    (schema: hotfix — written in STEP add-hotfix.receipt)
 └── iterations.jsonl
 ```
@@ -280,7 +281,7 @@ From the user's bug report plus `RECENT_CHANGELOGS` from STEP add-hotfix.context
 **Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
 **DISPATCH AGENT: @feature-history-agent**
-Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Candidate ids already ranked by the delivery index, each with its status: <index results, or 'none — index absent or no match'>. Start from those, then scan `docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."
+Prompt: "Find existing features whose docs (about.md, changelog.md, plan.md) plausibly relate to this bug. Brief: <brief>. Candidate ids already ranked by the delivery index, each with its status: <index results, or 'none — index absent or no match'>. Start from those, then scan `.codeadd/docs/features/`, score relevance, deep-read top-10. Return structured Feature History Report."
 
 ⛔ The candidate list changes the agent's **starting point, never its method**. It still scans, scores and deep-reads. Do NOT tell it to skip the scan, and do NOT restrict it to the listed ids — a `gone` entry names a feature whose docs still exist and still matter.
 
@@ -506,7 +507,7 @@ Any `blocker` or `major` still `open` or `not-addressed` after re-review blocks 
 **BEFORE writing the receipt, append entry to iterations.jsonl:**
 
 ```bash
-node .codeadd/scripts/log-jsonl.cjs "docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/[NNNN]H-<slug>/iterations.jsonl" "fix" "/hotfix" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 **Parameters:**
@@ -520,7 +521,7 @@ node .codeadd/scripts/log-jsonl.cjs "docs/features/[NNNN]H-<slug>/iterations.jso
 
 EXECUTE schema `hotfix` from `{{skill:add--doc-schemas/SKILL.md}}` and `{{skill:add--doc-schemas/references/fix.md}}`.
 
-**Path:** `docs/features/[NNNN]H-<slug>/about.md`
+**Path:** `.codeadd/docs/features/[NNNN]H-<slug>/about.md`
 
 **ID:** `[NNNN]H` from STEP add-hotfix.allocate. Write per `hotfix` schema. Extractive only.
 
@@ -540,9 +541,9 @@ On the normal path the set was confirmed in STEP add-hotfix.synthesize. On the r
 
 ### STEP add-hotfix.fingerprint Fingerprint
 
-1. Run `node .codeadd/scripts/hotfix-gates.cjs review-manifest docs/features/[NNNN]H-<slug>/`.
+1. Run `node .codeadd/scripts/hotfix-gates.cjs review-manifest .codeadd/docs/features/[NNNN]H-<slug>/`.
 2. Replace the Reviewed Paths fence with that manifest.
-3. Run `node .codeadd/scripts/hotfix-gates.cjs review-fingerprint docs/features/[NNNN]H-<slug>/`.
+3. Run `node .codeadd/scripts/hotfix-gates.cjs review-fingerprint .codeadd/docs/features/[NNNN]H-<slug>/`.
 4. Replace `sha256:<PENDING>` with the printed `REVIEWED_TREE` value. Replace only that field.
 
 ⛔ No hotfix-owned file changes after this replacement.
@@ -554,12 +555,12 @@ A deletion of a path the manifest lists, made after this step, stays covered. An
 ## STEP add-hotfix.validate: Validation Gate
 
 Execute the validation gate from `{{skill:add--doc-schemas/SKILL.md}}` on:
-`hotfix` — `docs/features/[NNNN]H-<slug>/about.md`
+`hotfix` — `.codeadd/docs/features/[NNNN]H-<slug>/about.md`
 
 Then run:
 
 ```bash
-node .codeadd/scripts/hotfix-gates.cjs review-validate docs/features/[NNNN]H-<slug>/
+node .codeadd/scripts/hotfix-gates.cjs review-validate .codeadd/docs/features/[NNNN]H-<slug>/
 ```
 
 `HOTFIX_REVIEW` must be `ok`. Any other verdict STOPS.
@@ -570,7 +571,9 @@ node .codeadd/scripts/hotfix-gates.cjs review-validate docs/features/[NNNN]H-<sl
 
 ## STEP add-hotfix.complete: Hotfix Complete
 
-⛔ **DO NOT commit** - branch ready for next phase.
+⛔ **DO NOT commit code** - branch ready for next phase (the docs commit above is the only commit this command makes).
+
+**Before the report, close the docs:** follow `add--doc-schemas` → Docs Branch (end-of-command rule) — `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Name a `DOCS_COMMIT=failed` result in the report.
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the hotfix ID, the branch and the next phase come after it.
@@ -593,7 +596,7 @@ files, build status.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/features/[NNNN]H-<slug>/about.md` | What the hotfix changed, and the root cause it removed |
+| `.codeadd/docs/features/[NNNN]H-<slug>/about.md` | What the hotfix changed, and the root cause it removed |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the finalize routing a hotfix takes |
 
 ---
@@ -602,7 +605,7 @@ files, build status.
 
 **ALWAYS:**
 - Use `status.cjs next-id H` to allocate hotfix ID
-- Create hotfix branch and docs in `docs/features/[NNNN]H-<slug>/`
+- Create hotfix branch and docs in `.codeadd/docs/features/[NNNN]H-<slug>/`
 - Load the `hotfix` schema from add--doc-schemas before writing
 - Dispatch @feature-history-agent ∥ @git-history-agent (parallel) before investigating code, unless a valid diagnose report already supplied that investigation
 - Wait for both history reports before any Grep/Read on code, unless STEPS 4-6 were skipped
@@ -638,7 +641,7 @@ files, build status.
 # STEP add-hotfix.context-2: status.cjs → BRANCH:main → STOP
 # STEP add-hotfix.allocate: status.cjs next-id H → H0001
 #   git checkout -b hotfix/0001H-screenshot-delete-error
-#   mkdir docs/features/0001H-screenshot-delete-error/
+#   mkdir .codeadd/docs/features/0001H-screenshot-delete-error/
 # STEP add-hotfix.history: Dispatch @feature-history-agent ∥ @git-history-agent (parallel)
 #   → A.1 surfaces F0036 ai-screenshot-validation; A.2 flags commit abc123 as suspicious
 # STEP add-hotfix.synthesize: Confirm F0036 with user; retain {F0036, abc123} as the blast radius

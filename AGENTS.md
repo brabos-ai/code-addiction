@@ -23,8 +23,8 @@ array has a length.
 {"commands":["add-audit","add-brainstorm","add-build","add-diagnose","add-done","add-help","add-hotfix","add-new","add-plan","add-pull-request","add-qa-setup","add-review","add-setup","add-ux","add-wiki"]}
 {"skills":["add--agent-interaction","add--agent-notion","add--agents-md-style","add--architecture-discovery","add--backend-architecture","add--backend-development","add--code-review","add--commit","add--cross-sf-consistency","add--database-development","add--delivery-mode","add--delivery-validation","add--dev-environment-setup","add--doc-schemas","add--ecosystem","add--feature-discovery","add--feature-readback","add--feature-specification","add--final-report","add--frontend-architecture","add--frontend-development","add--health-check","add--human-interaction","add--id-convention","add--investigation","add--knowledge-discovery","add--plan-review","add--qa","add--qa-migration","add--qa-spec","add--resource-path-convention","add--review-discipline","add--security-audit","add--settings","add--setup-contract","add--subagent-driven-development","add--tasks-checklist","add--tdd","add--test-specification","add--token-efficiency","add--ux-design","add--wiki-maintenance"]}
 {"agents":["architecture","backend","conformance","consistency","database","discovery","e2e","failure-analysis","feature-history","fix","frontend","git-history","plan-reviewer","qa","readback","reviewer","security","system-design","test","ux","ux-flow","ux-layout"]}
-{"scripts":["build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","done.cjs","feature-id.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
-{"templates":["feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
+{"scripts":["build-ledger.cjs","build-setup.cjs","converge-gates.cjs","delivered.cjs","delivery-index-core.cjs","docs-branch.cjs","docs-guard.cjs","docs-root.cjs","done.cjs","feature-id.cjs","get-branch-metadata.cjs","get-main-branch.cjs","hotfix-gates.cjs","init.cjs","log-iteration.cjs","log-jsonl.cjs","migrate-context-files.cjs","migrate-ids.cjs","next-id.cjs","qa-evidence.cjs","qa-preflight.cjs","review-package.cjs","status.cjs","task-brief.cjs"]}
+{"templates":["docs-migrate-prompt","feature-about-template","feature-discovery-template","hotfix","hotfix-template"],"fragments":["agent-mode","docs-pruning","qa-pipeline","tdd-pipeline"],"plugins":["design","gitnexus","playwright"],"transforms":["gemini/commands.md"],"sidecars":["artefact-graph.json","contracts.json","injection-points.json"]}
 [//]: # (codeadd-inventory:end)
 
 ### Product Layer — `mcp/`
@@ -64,8 +64,8 @@ Development tools that build and maintain the framework itself. **It has a provi
 | Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `workbench/agents/*.md` |
-| Plans | `docs/plans/` — gitignored working artefacts, local only |
-| Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
+| Plans | `.codeadd/docs/plans/` — on the `codeadd-docs` branch, untracked there (local working artefacts) |
+| Deliveries | `.codeadd/docs/deliveries/<plan-basename>/` — tracked on `codeadd-docs`, with the changelog and the delivery index. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
 ### The internal pipeline — four skills
 
@@ -77,7 +77,7 @@ as `/<name>` and declares the next with `handoff:`.
 | `add-framework--brainstorm` | Collaborative ideation; its one approval can deliver automatically up to the build's PR question | Both layers |
 | `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
 | `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
-| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Never reached unattended | Branches, PRs, `docs/delivered.jsonl` |
+| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Commits and pushes the `codeadd-docs` branch. Never reached unattended | Branches, PRs, `.codeadd/docs/delivered.jsonl` |
 
 ### Internal commands
 
@@ -240,6 +240,8 @@ Auto-updated by `add-framework--sync` before releases (4 analyzer agents in para
 ## Shell Calls
 
 Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline. Authoring side: `building-commands`.
+
+When searching docs with rg, Grep or Glob, always pass `.codeadd/docs/` explicitly — they skip git-ignored paths and the docs worktree is one.
 
 ## Where the details live
 

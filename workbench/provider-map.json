@@ -13,7 +13,7 @@
         "slashCommands": true,
         "structuredQuestions": true
       },
-      "docs": [
+      "links": [
         "https://docs.anthropic.com/en/docs/claude-code/hooks",
         "https://docs.anthropic.com/en/docs/claude-code/mcp",
         "https://docs.anthropic.com/en/docs/claude-code/slash-commands"
@@ -32,7 +32,7 @@
         "slashCommands": true,
         "structuredQuestions": false
       },
-      "docs": [
+      "links": [
         "https://opencode.ai/docs/plugins/",
         "https://opencode.ai/docs/mcp-servers/",
         "https://opencode.ai/docs/agents/",
@@ -53,7 +53,7 @@
         "slashCommands": false,
         "structuredQuestions": false
       },
-      "docs": [
+      "links": [
         "https://developers.openai.com/codex/config-advanced",
         "https://developers.openai.com/codex/mcp",
         "https://developers.openai.com/codex/subagents",

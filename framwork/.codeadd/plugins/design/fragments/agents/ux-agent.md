@@ -6,7 +6,7 @@
 
 **Design source — ui-ux-pro-max.** Critique Mode only, and only when the prompt carries `DESIGN_SOURCE=ui-ux-pro-max <dir>`.
 
-**Precedence:** inspected project tokens (`design-context.md`) → `docs/design-system.md` (or a user-made `design-system/<slug>/MASTER.md`) → ui-ux-pro-max → `add--ux-design` defaults.
+**Precedence:** inspected project tokens (`design-context.md`) → `.codeadd/docs/design-system.md` (or a user-made `design-system/<slug>/MASTER.md`) → ui-ux-pro-max → `add--ux-design` defaults.
 
 - Use results ONLY as evidence on items that already exist in `critique-rubric.md` (contrast, typography pairing, chart choice). From `<dir>`: `python3 scripts/search.py "<keywords>" --domain ux` or `--domain color`. Add no rubric item and change no severity.
 - Never pass `--persist` — your write scope is `design-review.md`.

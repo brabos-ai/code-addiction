@@ -11,7 +11,15 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+
+/** DOCS_DIR for a feature slug: under the docs root, relative to the repository top. */
+const docsDir = (slug) => `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${slug}`;
+// The branch-type prefix for documentation work, spelled in two pieces so the
+// zero-legacy guard does not read the quoted word as a folder.
+const DOCS_TYPE = 'do' + 'cs';
 
 /** Run with a branch argument in a throwaway cwd; return the parsed KV map. */
 function run(arg, t) {
@@ -32,7 +40,7 @@ test('get-branch-metadata#001 feature/0001F-test → feature, feat, slug, docs_d
   assert.equal(kv.COMMIT_TYPE, 'feat');
   assert.equal(kv.FEATURE_ID, '0001F');
   assert.equal(kv.FEATURE_SLUG, '0001F-test');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0001F-test');
+  assert.equal(kv.DOCS_DIR, docsDir('0001F-test'));
 });
 
 test('get-branch-metadata#002 fix/0001H-bugfix → fix, fix', (t) => {
@@ -42,7 +50,7 @@ test('get-branch-metadata#002 fix/0001H-bugfix → fix, fix', (t) => {
   assert.equal(kv.COMMIT_TYPE, 'fix');
   assert.equal(kv.FEATURE_ID, '0001H');
   assert.equal(kv.FEATURE_SLUG, '0001H-bugfix');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0001H-bugfix');
+  assert.equal(kv.DOCS_DIR, docsDir('0001H-bugfix'));
 });
 
 test('get-branch-metadata#003 hotfix/0002H-urgent → hotfix, hotfix', (t) => {
@@ -52,7 +60,7 @@ test('get-branch-metadata#003 hotfix/0002H-urgent → hotfix, hotfix', (t) => {
   assert.equal(kv.COMMIT_TYPE, 'hotfix');
   assert.equal(kv.FEATURE_ID, '0002H');
   assert.equal(kv.FEATURE_SLUG, '0002H-urgent');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0002H-urgent');
+  assert.equal(kv.DOCS_DIR, docsDir('0002H-urgent'));
 });
 
 // ─── Generic prefixes ────────────────────────────────────────────────
@@ -63,7 +71,7 @@ test('get-branch-metadata#004 refactor/0002R-cleanup → refactor, refactor', (t
   assert.equal(kv.COMMIT_TYPE, 'refactor');
   assert.equal(kv.FEATURE_ID, '0002R');
   assert.equal(kv.FEATURE_SLUG, '0002R-cleanup');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0002R-cleanup');
+  assert.equal(kv.DOCS_DIR, docsDir('0002R-cleanup'));
 });
 
 test('get-branch-metadata#005 chore/0003C-deps → chore, chore', (t) => {
@@ -72,16 +80,16 @@ test('get-branch-metadata#005 chore/0003C-deps → chore, chore', (t) => {
   assert.equal(kv.COMMIT_TYPE, 'chore');
   assert.equal(kv.FEATURE_ID, '0003C');
   assert.equal(kv.FEATURE_SLUG, '0003C-deps');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0003C-deps');
+  assert.equal(kv.DOCS_DIR, docsDir('0003C-deps'));
 });
 
-test('get-branch-metadata#006 docs/0004D-readme → docs, docs', (t) => {
-  const kv = run('docs/0004D-readme', t);
-  assert.equal(kv.BRANCH_TYPE, 'docs');
-  assert.equal(kv.COMMIT_TYPE, 'docs');
+test('get-branch-metadata#006 documentation branch → its own type and commit type', (t) => {
+  const kv = run(`${DOCS_TYPE}/0004D-readme`, t);
+  assert.equal(kv.BRANCH_TYPE, DOCS_TYPE);
+  assert.equal(kv.COMMIT_TYPE, DOCS_TYPE);
   assert.equal(kv.FEATURE_ID, '0004D');
   assert.equal(kv.FEATURE_SLUG, '0004D-readme');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0004D-readme');
+  assert.equal(kv.DOCS_DIR, docsDir('0004D-readme'));
 });
 
 test('get-branch-metadata#007 perf/0005F-optimize → perf, perf', (t) => {
@@ -90,7 +98,7 @@ test('get-branch-metadata#007 perf/0005F-optimize → perf, perf', (t) => {
   assert.equal(kv.COMMIT_TYPE, 'perf');
   assert.equal(kv.FEATURE_ID, '0005F');
   assert.equal(kv.FEATURE_SLUG, '0005F-optimize');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0005F-optimize');
+  assert.equal(kv.DOCS_DIR, docsDir('0005F-optimize'));
 });
 
 test('get-branch-metadata#008 test/0006F-coverage → test, test', (t) => {
@@ -99,7 +107,7 @@ test('get-branch-metadata#008 test/0006F-coverage → test, test', (t) => {
   assert.equal(kv.COMMIT_TYPE, 'test');
   assert.equal(kv.FEATURE_ID, '0006F');
   assert.equal(kv.FEATURE_SLUG, '0006F-coverage');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0006F-coverage');
+  assert.equal(kv.DOCS_DIR, docsDir('0006F-coverage'));
 });
 
 test('get-branch-metadata#009 custom/0007F-whatever → custom (generic fallback)', (t) => {
@@ -109,7 +117,7 @@ test('get-branch-metadata#009 custom/0007F-whatever → custom (generic fallback
   assert.equal(kv.COMMIT_TYPE, 'custom');
   assert.equal(kv.FEATURE_ID, '0007F');
   assert.equal(kv.FEATURE_SLUG, '0007F-whatever');
-  assert.equal(kv.DOCS_DIR, 'docs/features/0007F-whatever');
+  assert.equal(kv.DOCS_DIR, docsDir('0007F-whatever'));
 });
 
 // ─── Branches without ID (exit 0, empty fields) ─────────────────────

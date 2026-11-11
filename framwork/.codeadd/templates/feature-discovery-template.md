@@ -1,3 +1,7 @@
+---
+schema: {{doc-schema}}
+---
+
 # Discovery: {{TASK_NAME}}
 
 > **Branch:** {{BRANCH_NAME}}
