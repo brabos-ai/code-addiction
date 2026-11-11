@@ -36,6 +36,7 @@
 - command: /add-done
 - command: /add-review
 - command: /add-wiki
+- script: docs-branch.cjs
 - script: status.cjs
 -->
 
@@ -133,7 +134,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 ## STEP add-plan.recent: Load Recent Context (INTELLIGENT)
 
-**Cache Detection:** IF `docs/features/${FEATURE_ID}/past-features.md` exists, read it (cache). IF cache + discovery.md has section "Related Features", use as context and skip agent dispatch. Otherwise, dispatch Past Features Discovery Agent.
+**Cache Detection:** IF `.codeadd/docs/features/${FEATURE_ID}/past-features.md` exists, read it (cache). IF cache + discovery.md has section "Related Features", use as context and skip agent dispatch. Otherwise, dispatch Past Features Discovery Agent.
 
 **Before any dispatch in this command:** read `{{skill:add--subagent-driven-development/references/dispatch-rules.md}}` — a fresh dispatch leaves the engine's resume and session fields empty; only an id an earlier dispatch returned is ever passed.
 
@@ -145,7 +146,7 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 - **Returns:** the complete `past-features.md` content, in its report
 
 ⛔ **The agent is read-only and writes nothing. THIS STEP writes the file** to
-`docs/features/${FEATURE_ID}/past-features.md`, verbatim from the report.
+`.codeadd/docs/features/${FEATURE_ID}/past-features.md`, verbatim from the report.
 
 ```
 IF THE REPORT CARRIES NO DOCUMENT:
@@ -194,8 +195,8 @@ Extract from status.cjs: `FEATURE_ID`, `CURRENT_PHASE` (must be `discovered` or 
 
 | Type | Files to read | Priority |
 |------|---------------|----------|
-| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md` (schema `epic`), `docs/design-system.md` (if exists) | PRIMARY |
-| Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
+| Epic feature (HAS_EPIC=true) | `${SF_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `${SF_DIR}/plan.md` (if exists), `${SF_DIR}/design.md` (if HAS_DESIGN), `${FEATURE_DIR}/epic.md` (schema `epic`), `.codeadd/docs/design-system.md` (if exists) | PRIMARY |
+| Normal feature | `${FEATURE_DIR}/about.md`, `${FEATURE_DIR}/discovery.md`, `design.md` (if HAS_DESIGN), `.codeadd/docs/design-system.md` (if HAS_FOUNDATIONS) | PRIMARY |
 | Design data | Use design.md to inform backend contracts (endpoints serve UI needs) | IF HAS_DESIGN=true |
 | Knowledge base | Selected wiki pages from STEP add-plan.recent's Consult Knowledge Base sub-step (paths + freshness verdicts) | IF WIKI:present |
 
@@ -274,7 +275,7 @@ BACKEND_SELECTED  = true|false
 <!-- /plugin:gitnexus:graph-plan -->
 <!-- /slot:gitnexus.graph-plan -->
 
-**Output location:** Each subagent writes to: `docs/features/${FEATURE_ID}/plan-[area].md` (temporary; deleted after consolidation).
+**Output location:** Each subagent writes to: `.codeadd/docs/features/${FEATURE_ID}/plan-[area].md` (temporary; deleted after consolidation).
 
 ---
 
@@ -341,7 +342,7 @@ sha256sum "${ABOUT_PATH}" | cut -d' ' -f1     # macOS: shasum -a 256 "${ABOUT_PA
 #### STEP add-plan.dispatch-ux-flow DISPATCH @ux-flow-agent (flow & interaction)
 
 - **Output (temps):** `${SCOPE_DIR}/design-context.md` + `${SCOPE_DIR}/design-flow.md`
-- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, and `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}` (if true it reads `docs/design-system.md` and prefers its tokens). Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
+- **Prompt:** name the agent's role for feature `${FEATURE_ID}${SF_SUFFIX}`, then pass ONLY: target directory `${SCOPE_DIR}` (exact — never invent a path), the two output paths above, the inputs `${ABOUT_PATH}` + `${FEATURE_DIR}/discovery.md`, and `HAS_FOUNDATIONS=${HAS_FOUNDATIONS}` (if true it reads `.codeadd/docs/design-system.md` and prefers its tokens). Instruct it to follow its own agent definition — do NOT restate the method here — and to report `frontend_false` and STOP without writing, if the project has no frontend at all.
 - **Early exit:** IF the agent reports `frontend_false` → SKIP the remainder of STEP add-plan.ux-design (no `design.md` is written), note it in your output, and continue with STEP add-plan.database through STEP add-plan.frontend as selected in STEP add-plan.analyze-scope.
 - **Soft-degrade:** if `@ux-flow-agent` is not available in this engine, dispatch a generic subagent with this same directive + the `add--ux-design` skill.
 
@@ -406,7 +407,7 @@ ${RELATED_WORK}
 ## MANDATORY: Load Context (FIRST STEP)
 1. Run: node .codeadd/scripts/status.cjs
 2. Read ALL files listed in TASK_DOCUMENTS above
-3. Check for previous planning files: ls docs/features/${FEATURE_ID}/plan-*.md
+3. Check for previous planning files: ls .codeadd/docs/features/${FEATURE_ID}/plan-*.md
 ```
 
 ---
@@ -416,7 +417,7 @@ ${RELATED_WORK}
 **When to create:** Feature requires new entities, tables, or data changes.
 
 **DISPATCH AGENT: @database-agent**
-- **Output:** `docs/features/${FEATURE_ID}/plan-database.md`
+- **Output:** `.codeadd/docs/features/${FEATURE_ID}/plan-database.md`
 - **Prompt:**
   ```
   You are the DATABASE SPECIALIST planning for feature ${FEATURE_ID}.
@@ -428,7 +429,7 @@ ${RELATED_WORK}
   When Cross-SF Context is present, ensure schema fields match the data structures expected by consumer SFs.
 
   ## Output Format
-  Write to: docs/features/${FEATURE_ID}/plan-database.md
+  Write to: .codeadd/docs/features/${FEATURE_ID}/plan-database.md
 
   Use this EXACT format:
 
@@ -464,7 +465,7 @@ ${RELATED_WORK}
 **When to create:** Feature requires API, business logic, workers, or events.
 
 **DISPATCH AGENT: @backend-agent**
-- **Output:** `docs/features/${FEATURE_ID}/plan-backend.md`
+- **Output:** `.codeadd/docs/features/${FEATURE_ID}/plan-backend.md`
 - **Prompt:**
   ```
   You are the BACKEND SPECIALIST planning for feature ${FEATURE_ID}.
@@ -479,7 +480,7 @@ ${RELATED_WORK}
   Find similar modules in the codebase to use as references.
 
   ## Output Format
-  Write to: docs/features/${FEATURE_ID}/plan-backend.md
+  Write to: .codeadd/docs/features/${FEATURE_ID}/plan-backend.md
 
   Use this EXACT format:
 
@@ -535,13 +536,13 @@ ${RELATED_WORK}
 **Reference, Never Repeat:** the frontend section REFERENCES `design.md` for layout, tokens, and states — it NEVER restates them. The layout contract lives in `design.md` only (written by STEP add-plan.ux-design, or the pre-existing one when STEP add-plan.ux-design was skipped); `plan-frontend.md` carries the code-side structure (pages, components, hooks, types) and points at `design.md` for the visual contract.
 
 **DISPATCH AGENT: @frontend-agent**
-- **Output:** `docs/features/${FEATURE_ID}/plan-frontend.md`
+- **Output:** `.codeadd/docs/features/${FEATURE_ID}/plan-frontend.md`
 - **Prompt:**
   ```
   You are the FRONTEND SPECIALIST planning for feature ${FEATURE_ID}.
 
   ${SUBAGENT_BOOTSTRAP}
-  4. Read docs/design-system.md (if exists - tokens)
+  4. Read .codeadd/docs/design-system.md (if exists - tokens)
 
   ## Your Task
   Create the frontend planning section.
@@ -551,7 +552,7 @@ ${RELATED_WORK}
   **If not:** Find similar pages/components in the codebase to use as references.
 
   ## Output Format
-  Write to: docs/features/${FEATURE_ID}/plan-frontend.md
+  Write to: .codeadd/docs/features/${FEATURE_ID}/plan-frontend.md
 
   Use this EXACT format:
 
@@ -705,6 +706,7 @@ IF THE REPORT CARRIES NO DOCUMENT:
 ```
 
 **Rules:**
+- The generated tasks.md MUST open with the frontmatter block from `{{skill:add--tasks-checklist/SKILL.md}}` (`type: tasks`, `schema: {{doc-schema}}`) above the `# Tasks:` heading
 - The generated tasks.md MUST honour `## Delivery Boundary` in `{{skill:add--tasks-checklist/SKILL.md}}`
 - tasks.md MUST have exact sections: `## Metadata`, `## Requirements Coverage`, `## TDD`, `## Execution`, `## Acceptance Checklist`, `## Validation Gates` (validators parse by text). **The sixth is conditional** — write it only when `AGENTS.md` exposes a `validation_gates` block, and omit the section entirely otherwise
 - Every `## Execution` task carries **6** metadata sub-bullets in order: `Service`, `Files`, `Deps`, `Consumes`, `Produces`, `Verify` — never 4. `Produces` is the **exact signature** a later task will call (`-` when nothing); `Consumes` is the **exact signature** plus the producing task ID in parentheses (`-` when nothing). Every `Consumes` MUST match a `Produces` on an **earlier** task **character for character** — STEP add-plan.schema-gate checks this mechanically, and a `Consumes` written as prose fails there
@@ -742,7 +744,7 @@ Append to plan.md: **Overview** (1-2 paragraphs from about.md), **Main Flow** (n
 ### STEP add-plan.cleanup Cleanup Temporary Files
 
 ```bash
-cd "docs/features/${FEATURE_ID}"
+cd ".codeadd/docs/features/${FEATURE_ID}"
 rm -f plan-database.md plan-backend.md plan-frontend.md plan-test-spec.md plan-qa-spec.md
 ```
 
@@ -827,7 +829,7 @@ Schema gate PASSED. Do not present `plan.md` or the next command as delivered ye
 
 ### STEP add-plan.readback Comprehension readback
 
-1. **DISPATCH** `@readback-agent` with `target` = `docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
+1. **DISPATCH** `@readback-agent` with `target` = `.codeadd/docs/features/${FEATURE_ID}` and `scope: subfeature`, naming the subfeature just planned. Its reading set is the feature folder's top-level `.md` plus that one subfeature's subtree — **no sibling subfeature**, because divergence between siblings belongs to `@consistency-agent` on its own five dimensions. On a non-epic feature there are no subfeatures and the scope reads the whole folder.
 
    Run it ONLY after the reviewer's verdict (step 2 above) resolved to proceed, STEP add-plan.consistency finished, and every applied fix is on disk.
 
@@ -855,6 +857,8 @@ IF THE READBACK DIVERGES:
 ---
 
 ## STEP add-plan.complete: Completion
+
+The plan documents are committed once, as the last step before the report — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the feature ID, the paths and the next command come after it.
@@ -886,9 +890,9 @@ Then, after the seven blocks, state:
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/features/${FEATURE_ID}/plan.md` | The tasks, requirements and areas `/add-build` implements against |
-| `docs/features/${FEATURE_ID}/design.md` | The design contract STEP add-plan.ux-design settled, when one exists |
-| `docs/features/${FEATURE_ID}/tasks.md` | The dependency order and per-area checklist `/add-build` works from |
+| `.codeadd/docs/features/${FEATURE_ID}/plan.md` | The tasks, requirements and areas `/add-build` implements against |
+| `.codeadd/docs/features/${FEATURE_ID}/design.md` | The design contract STEP add-plan.ux-design settled, when one exists |
+| `.codeadd/docs/features/${FEATURE_ID}/tasks.md` | The dependency order and per-area checklist `/add-build` works from |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops `/add-build` waits at, and where its automatic path ends |
 
 **`automatic` never reaches this step.** It has already handed off, and `add--delivery-mode` owns

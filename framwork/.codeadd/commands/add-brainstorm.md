@@ -16,6 +16,7 @@
 - command: /add-wiki
 - mention: /add-plan
 - mention: /add-done
+- script: docs-branch.cjs
 - script: status.cjs
 - script: migrate-context-files.cjs
 -->
@@ -80,12 +81,12 @@ IF THE USER CHOSE "Approve, deliver automatically" AT STEP add-brainstorm.handof
   ⛔ DO NOT: Follow /add-diagnose, /add-hotfix or /add-plan — every route stays a suggestion the user accepts, never one you run
 ```
 
-**The two brainstorm files are always the only ones written under `docs/brainstorm/`. A greenfield run adds four more files, listed in the last row:**
+**The two brainstorm files are always the only ones written under `.codeadd/docs/brainstorm/`. A greenfield run adds four more files, listed in the last row:**
 
 | File | When |
 |---|---|
-| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, always, at STEP add-brainstorm.write-doc |
-| `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, after the approval at STEP add-brainstorm.handoff |
+| `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` | The brainstorm document — architectural path, always, at STEP add-brainstorm.write-doc |
+| `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` | The intent file — bounded and architectural, after the approval at STEP add-brainstorm.handoff |
 | `.codeadd/wiki/conventions.md`, `.codeadd/wiki/index.md`, `.codeadd/wiki/.meta.json`, `AGENTS.md` | Greenfield only (`GREENFIELD=yes`), after either Approve option, at STEP add-brainstorm.write-intent-file, before the intent file |
 
 The foundation files and the context-file migration (`migrate-context-files.cjs`) are project documentation, not application code, so the HARD GATE's ban on application code and on Bash for implementation does not cover them. Their managed blocks are copied from `/add-wiki` ({{cmd:add-wiki}}).
@@ -117,7 +118,7 @@ Parse output: BRANCH, FEATURE, PROJECT_DOCS, RECENT_CHANGELOGS.
 **Greenfield check — evaluate `GREENFIELD` once, here.** `GREENFIELD=yes` only when both hold:
 
 - there is no `AGENTS.md` at the project root;
-- after listing the files with `git ls-files --cached --others --exclude-standard` (a plain directory listing when the folder is not a git repository) and dropping dot-prefixed paths, `docs/`, root `*.md` and `LICENSE*`, nothing remains.
+- after listing the files with `git ls-files --cached --others --exclude-standard` (a plain directory listing when the folder is not a git repository) and dropping dot-prefixed paths, root `*.md` and `LICENSE*`, nothing remains.
 
 If either fails, `GREENFIELD` is not `yes` and nothing below about greenfield applies.
 
@@ -135,7 +136,7 @@ IF GREENFIELD IS NOT yes AND status.cjs FAILS:
 This command runs read-only git queries only (`git ls-files`, `git rev-parse`). It never runs `git init`, `git add` or `git commit`.
 
 Then load:
-- **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `docs/features/{FEAT_ID}/changelog.md` for context
+- **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `.codeadd/docs/features/{FEAT_ID}/changelog.md` for context
 - **PRIOR WORK — ranked, not swept:** Load `{{skill:add--knowledge-discovery/SKILL.md}}` and run its INDEX step against the brainstorm topic. It returns entries ordered `live` → `changed` → `superseded` → `gone`. Then **deep-read `about.md` for the matched entries only** — the index says *whether* something shipped and never *how* it works, so the business rules and integration points still have to be read. Ranked-then-deep-read, on a handful of features instead of the whole directory.
 - **RELATED WORK — what those entries connect to:** run the skill's GRAPH step over the same topic. **GRAPH question:** what has already been delivered near this topic, and what did it connect to? Resolve it in the skill's action table; do not name an action here. **`RELATED_WORK` destination:** the document's `## Discovery` section, where a direction that repeats delivered work is named as such, and STEP add-brainstorm.explore's `Used by` answers.
 
@@ -159,7 +160,7 @@ IF AN ENTRY CAME BACK gone OR superseded:
   ✅ DO: Surface it — "this was built and dropped" is the answer that stops a rebuild
 ```
 
-**A directory sweep is not a substitute.** Reading every folder under `docs/features/` weights abandoned work exactly like shipped work, which is the landfill read this step replaced. If no index exists yet, the INDEX step no-ops with a note; fall back to `RECENT_CHANGELOGS` and ask the user, never to the sweep.
+**A directory sweep is not a substitute.** Reading every folder under `.codeadd/docs/features/` weights abandoned work exactly like shipped work, which is the landfill read this step replaced. If no index exists yet, the INDEX step no-ops with a note; fall back to `RECENT_CHANGELOGS` and ask the user, never to the sweep.
 
 ---
 
@@ -408,7 +409,7 @@ action — and carry the answer into Ecosystem impact's `Used by` column.
 
 ```
 IF AN AREA IN THE DESIGN HAS NO `Used by` ANSWER:
-  ⛔ DO NOT USE: Write on docs/brainstorm/
+  ⛔ DO NOT USE: Write on .codeadd/docs/brainstorm/
   ⛔ DO NOT: Present the design as ready for approval
   ⛔ DO NOT: Fill the column from filenames or recollection
   ✅ DO: Ask the graph, and fill it from the answer
@@ -447,7 +448,7 @@ IF ON THE architectural PATH AND STEP add-brainstorm.summary-approval IS APPROVE
   ✅ DO: Write it now, then run STEP add-brainstorm.self-review
 ```
 
-**Path:** `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` (timestamp prefix for chronological ordering — local time, no separators inside `HHMMSS` because Windows forbids `:` in filenames, so lexicographic sort equals chronological sort even for two brainstorms written the same day)
+**Path:** `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>.md` (timestamp prefix for chronological ordering — local time, no separators inside `HHMMSS` because Windows forbids `:` in filenames, so lexicographic sort equals chronological sort even for two brainstorms written the same day)
 
 **ID allocation:** Use fixed ID `BRN-<slug>` derived in kebab-case from topic. DO NOT call `status.cjs next-id`.
 
@@ -489,6 +490,8 @@ DO NOT skip. DO NOT continue to STEP add-brainstorm.handoff until the gate retur
 
 ### STEP add-brainstorm.report Report
 
+**Before the report, close the docs:** follow `add--doc-schemas` → Docs Branch (end-of-command rule) — `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Name a `DOCS_COMMIT=failed` result in the report.
+
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST, then the approval.
 
@@ -524,7 +527,7 @@ merge is always the user's.
 
 ```
 IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
-  ⛔ DO NOT USE: Write on docs/brainstorm/ for the intent file, or, on greenfield, on `.codeadd/wiki/conventions.md`, `.codeadd/wiki/index.md`, `.codeadd/wiki/.meta.json` or `AGENTS.md`
+  ⛔ DO NOT USE: Write on .codeadd/docs/brainstorm/ for the intent file, or, on greenfield, on `.codeadd/wiki/conventions.md`, `.codeadd/wiki/index.md`, `.codeadd/wiki/.meta.json` or `AGENTS.md`
   ⛔ DO NOT: Follow /add-new
   ✅ DO: Ask, and WAIT
 
@@ -559,7 +562,7 @@ IF WRITING THE FOUNDATION FILES:
 
 Then the intent file, as below.
 
-Write `docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` against the `brainstorm-intent` schema in
+Write `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug>-intent.md` against the `brainstorm-intent` schema in
 `{{skill:add--doc-schemas/SKILL.md}}`. On `architectural` it reuses the brainstorm document's timestamp
 verbatim, so the pair sorts adjacent; on `bounded` it takes its own and stands alone. Same `BRN-<slug>`
 id either way.

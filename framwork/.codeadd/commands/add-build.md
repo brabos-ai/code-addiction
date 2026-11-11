@@ -37,6 +37,7 @@
 - script: build-ledger.cjs
 - script: build-setup.cjs
 - script: converge-gates.cjs
+- script: docs-branch.cjs
 - script: done.cjs
 - script: review-package.cjs
 - script: status.cjs
@@ -137,7 +138,7 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 
 ### STEP add-build.cross-feature-decisions Cross-Feature Decisions Context (PRD0031)
 
-**IF `.codeadd/project/decisions.jsonl` exists:**
+**IF `.codeadd/docs/decisions.jsonl` exists:**
 1. READ file
 2. FILTER entries where `"type":"pivot"`
 3. TAKE last 20 entries
@@ -161,15 +162,15 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
 ## STEP add-build.detect: Detect Context
 
 **IF HAS_EPIC=true:**
-1. READ `docs/features/${FEATURE_ID}/epic.md`
+1. READ `.codeadd/docs/features/${FEATURE_ID}/epic.md`
 2. IDENTIFY current subfeature: `EPIC_CURRENT_SF` from script output
 3. IF `EPIC_CURRENT_SF` is empty → STOP. Inform all subfeatures complete → suggest `/add-done` (**deciding**, in every state — no delivery reaches `/add-done` unattended). **Except with `--loop-end SFxx`:** a resume after the last subfeature's checkpoint flipped its row finds `EPIC_CURRENT_SF` empty by design — set it to `SFxx` and continue
-4. SET `SF_DIR = docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/`
+4. SET `SF_DIR = .codeadd/docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/`
 5. SET `TASKS_FILE = ${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
 6. Inform: "Executing subfeature `${EPIC_CURRENT_SF}` of epic `${FEATURE_ID}`"
 7. ASSEMBLE `TASK_DOCUMENTS`:
-   - `docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
-   - `docs/features/${FEATURE_ID}/discovery.md`
+   - `.codeadd/docs/features/${FEATURE_ID}/subfeatures/${EPIC_CURRENT_SF}-*/about.md`
+   - `.codeadd/docs/features/${FEATURE_ID}/discovery.md`
    - `design.md` (if `HAS_DESIGN`) — resolved per the `feature-design` **Location** rule in `{{skill:add--doc-schemas/references/new-feature.md}}` (SF-level first, feature-level fallback)
    - `${SF_DIR}/plan.md` (if exists)
    - `${SF_DIR}/tasks.md` (if `HAS_TASKS=true`)
@@ -185,7 +186,7 @@ line on an epic (`EPIC_DELIVERY` = `automatic` | `semi-automatic` | absent). No 
    - IF N-1 complete → proceed (treat as feature N subfeature context)
 
 **ELSE (Simple Mode):**
-ASSEMBLE `TASK_DOCUMENTS` from `docs/features/${FEATURE_ID}/`:
+ASSEMBLE `TASK_DOCUMENTS` from `.codeadd/docs/features/${FEATURE_ID}/`:
 - `about.md`
 - `discovery.md`
 - `design.md` (if exists)
@@ -244,7 +245,7 @@ This command detects automatically:
 through 18 and run `## Loop End`. It implements nothing; a resume that stopped after `## Final Review` re-enters here.
 
 **Routed-findings pre-check (BEFORE the ladder):** IF the highest
-`docs/features/${FEATURE_ID}/review-NNN.md` carries a `## Fix Routing` table with
+`.codeadd/docs/features/${FEATURE_ID}/review-NNN.md` carries a `## Fix Routing` table with
 unresolved rows and no `## Resolution Annex` closing them → this invocation is a
 **correction leg**: enter CORRECTION MODE and work the routed rows. There is no
 separate `qa` argument mode — one correction contract, one path.
@@ -523,9 +524,9 @@ Execute this task only. Confirm its verify command passes.
 ```
 
 **DECISION LOGGING (MANDATORY for TASKS MODE subagents):**
-Each subagent MUST append to `docs/features/${FEATURE_ID}/decisions.jsonl` **only on pivot** (changed approach):
+Each subagent MUST append to `.codeadd/docs/features/${FEATURE_ID}/decisions.jsonl` **only on pivot** (changed approach):
 ```bash
-node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N],"error":"[if any]"'
+node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N],"error":"[if any]"'
 ```
 
 ---
@@ -705,7 +706,7 @@ Read: skill add--${AREA}-development (patterns, validation, code style)
 ${TASK_LIST}
 
 ## DECISION LOGGING (PRD0031 — pivots only)
-On approach change: `node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
+On approach change: `node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/${FEATURE_ID}/decisions.jsonl" "pivot" "[area]" '"from":"[old]","decision":"[new]","reason":"[why]","attempt":[N]'`
 
 ## REPORT FORMAT
 Write your full report to REPORT_FILE. Return inline ONLY:
@@ -969,7 +970,6 @@ BATCH_BASE=$(git rev-parse HEAD)
 # Stage THIS batch's files BY PATH — from the IMPLEMENTATION subagent's FILES_CREATED +
 # FILES_MODIFIED. Not the validator's: it is read-only and modifies nothing.
 for f in ${AREA_FILES}; do [ -e "$f" ] || continue; git add -- "$f" || exit 1; done
-[ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
 # _build/ ignores itself, so briefs, reports and diff packages never enter the index.
 git commit -m "<type>(<scope>): <subject per add--commit>" \
            -m "Task-Id: ${TASK_ID}" -m "Feature-Id: ${FEATURE_ID}"
@@ -1033,7 +1033,7 @@ feature-gated either.
 
 ### STEP add-build.consume Consume
 
-Read `## Fix Routing` from the **highest** `docs/features/${FEATURE_ID}/review-NNN.md`.
+Read `## Fix Routing` from the **highest** `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md`.
 
 **Split the rows BEFORE any dispatch.** Small findings do not extend the loop:
 
@@ -1249,10 +1249,10 @@ Reference: **cache documental** rule from `{{skill:add--doc-schemas/SKILL.md}}`
 
 **16.1 Log Iteration (MANDATORY before user notification):**
 
-Check if `docs/features/${FEATURE_ID}/iterations.jsonl` exists. If not, create empty file. Append entry:
+Check if `.codeadd/docs/features/${FEATURE_ID}/iterations.jsonl` exists. If not, create empty file. Append entry:
 
 ```bash
-node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
+node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/${FEATURE_ID}/iterations.jsonl" "<TYPE>" "/dev" '"slug":"<SLUG>","what":"<WHAT max 60 chars>","files":["<file1>","<file2>"]'
 ```
 
 IF `HAS_EPIC=true`, add `"sf"` field: `"sf":"${EPIC_CURRENT_SF}"`
@@ -1318,7 +1318,7 @@ feature. It implements
 nothing and dispatches no implementer.
 
 1. **Not an epic** → run the gate script once, un-scoped, and read its `KEY=VALUE` lines — never re-derive
-   a gate by hand: `node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}"`.
+   a gate by hand: `node .codeadd/scripts/converge-gates.cjs ".codeadd/docs/features/${FEATURE_ID}"`.
    `GATES_OK=5/5` → the feature converged, go to STEP add-build.publish. Anything short of `5/5` →
    exit BLOCKED naming each gate that is not `ok` (a `skipped` gate is a pass, not named) (with `GATE_REVIEW_DETAIL` / `GATE_COVERAGE_DETAIL` when
    present), then go to STEP add-build.publish, which prints them before its question. A simple feature has
@@ -1362,7 +1362,7 @@ tagged cannot gate anything. Running it inside the final review lets an open `bl
 After the last subfeature's checkpoint has landed, run the gate script once with NO `SFxx` argument:
 
 ```bash
-node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}"
+node .codeadd/scripts/converge-gates.cjs ".codeadd/docs/features/${FEATURE_ID}"
 ```
 
 Require `GATE_EPIC=ok` — every row reads `done`, because each checkpoint flipped exactly one.
@@ -1385,7 +1385,7 @@ name — `/add-done` owns that feature's commit. `EPIC_CURRENT_SF` below is the 
 by reading the documents yourself:
 
 ```bash
-node .codeadd/scripts/converge-gates.cjs "docs/features/${FEATURE_ID}" "${EPIC_CURRENT_SF}"
+node .codeadd/scripts/converge-gates.cjs ".codeadd/docs/features/${FEATURE_ID}" "${EPIC_CURRENT_SF}"
 ```
 
 `GATES_OK=5/5` → the subfeature **converged**, continue with step 0. Anything short of `5/5` → exit
@@ -1413,47 +1413,13 @@ BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. STEP 
    both columns **by header name**; add a `checkpoint` column to the header when
    the document carries none yet. This sequence is that cell's only writer.
 
-2. **Stage path by path, each one guarded — NEVER one multi-pathspec `git
-   add`.** `add--commit`'s Staging Rules (`{{skill:add--commit/SKILL.md}}`)
-   exclude all of `docs/features/*`, then re-include ONE path,
-   `${FEATURE_DIR}`. Neither reading works for a subfeature checkpoint:
-   re-including only `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*` leaves
-   `epic.md` out — it lives at `${FEATURE_DIR}/epic.md`, a SIBLING of
-   `subfeatures/`, not inside it — so step 1's row flip would never reach the
-   commit; re-including the whole `${FEATURE_DIR}` sweeps in a later,
-   still-pending subfeature's half-written files. `add--commit` has no
-   subfeature-scoped re-include today, so it is spelled out here:
-   ```bash
-   git add -A -- . ':(exclude)docs/features/*'
-   for p in "${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}"-* \
-            "${FEATURE_DIR}/epic.md" \
-            "${FEATURE_DIR}/review-NNN.md"; do
-     [ -e "$p" ] || continue        # absent path → SKIP it, never abort the run
-     git add -A -- "$p" || exit 1   # an add that fails on a path that EXISTS is fatal
-   done
-   git diff --cached --name-only -- "${FEATURE_DIR}/epic.md" | grep -q . \
-     || { echo "epic.md not staged — refusing to checkpoint"; exit 1; }
-   ```
-   ⛔ **One `git add` per path, and the `[ -e ]` guard is mandatory.** `git add`
-   aborts the WHOLE invocation on the first pathspec matching nothing (`fatal:
-   pathspec ... did not match any files`, exit 128, nothing staged) — and the
-   `':(exclude)docs/features/*'` add above it already succeeded, so a
-   coordinator that does not check the exit status commits the code files and
-   silently loses step 1's row flip, then tags THAT commit as the checkpoint.
-   The guard is what turns an absent path into a skip instead of an abort.
-
-   **QA evidence lives under the SUBFEATURE, not the feature root.** On an epic
-   it is `${FEATURE_DIR}/subfeatures/${EPIC_CURRENT_SF}-*/_tests/run-NNN/` —
-   already swept in by the first path above — and with `qa-pipeline` disabled it
-   exists nowhere at all. `${FEATURE_DIR}/_tests/run-NNN/` is NOT a path to
-   stage here; it is precisely the non-matching pathspec that aborts the run.
-   (`review-NNN.md` is the highest-numbered one, when `/add-review` wrote any.)
-
-   **Verify the index before committing.** The `git diff --cached` line is not
-   optional: `epic.md` is the one file whose absence from the index is both
-   invisible and fatal — the commit still succeeds, the tag still lands, and the
-   epic silently never progresses. Empty output → exit BLOCKED and do NOT
-   commit.
+2. **Save the docs change, then verify it.** The row flip in `epic.md` and the
+   checkpoint's other docs (`review-NNN.md`, ledger files) are NOT staged in the
+   code commit — they live on `codeadd-docs`. Right before the code commit, run
+   `node .codeadd/scripts/docs-branch.cjs commit "<checkpoint message>"` and read
+   its `DOCS_COMMIT=` line: `committed` or `clean` goes on; `failed` stops the
+   checkpoint — exit BLOCKED and do NOT commit, or the epic silently never
+   progresses. The code commit then stages code only (`git add -A`).
 
 3. **Commit — gated on convergence.** A subfeature that did not converge
    produces NO row flip, NO checkpoint commit and NO tag — and **the absence of
@@ -1565,6 +1531,8 @@ already answered.
 
 ## STEP add-build.complete: Completion (Inform user based on mode)
 
+**Commit the docs first.** The ledger, `iterations.jsonl`, `tasks.md` and every other document this build wrote under `.codeadd/docs/` are committed once, before the report — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
+
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all
 come after it, never in front of it.
@@ -1644,7 +1612,7 @@ print the report and the line, then follow the next command from its first step,
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/features/${FEATURE_ID}/plan.md` | The tasks this build implemented against, and the ones still open |
+| `.codeadd/docs/features/${FEATURE_ID}/plan.md` | The tasks this build implemented against, and the ones still open |
 | `${LEDGER_FILE}`, resolved to the actual feature or subfeature `build-ledger.md` | The rulings and latest `Final review:` verdict, including what `/add-done` reads |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 

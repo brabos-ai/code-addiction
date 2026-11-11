@@ -6,6 +6,7 @@
 - skill: add--ecosystem
 - skill: add--delivery-mode (conditional)
 - skill: add--final-report
+- script: docs-branch.cjs
 - skill: add--health-check
 - skill: add--investigation
 - skill: add--subagent-driven-development
@@ -17,7 +18,7 @@
 
 Execute complete technical analysis of the project, identifying security, architecture, data and documentation issues. Designed for entrepreneurs using vibe coding who need a roadmap of technical adjustments.
 
-**Output:** `docs/audit/<YYYY-MM-DD>.md` (per `audit-report` schema) + supporting reports in `docs/audits/<YYYY-MM-DD>/`
+**Output:** `.codeadd/docs/audits/<YYYY-MM-DD>.md` (per `audit-report` schema) + supporting reports in `.codeadd/docs/audits/<YYYY-MM-DD>/`
 
 > **LANG:** Respond in user's native language (detect from input). Tech terms always in English. Short sentences, one idea each; the common word over the rare one; a technical term explained in one line the first time it appears.
 
@@ -78,7 +79,7 @@ ALWAYS:
     │   └── data-analyzer          → Migrations, indexes, queries
     │
     └── STEP add-audit.complete - CONSOLIDATION (schema-driven)
-        └── Coordinator            → docs/audit/<date>.md via audit-report schema
+        └── Coordinator            → .codeadd/docs/audits/<date>.md via audit-report schema
 ```
 
 ---
@@ -108,8 +109,7 @@ ALWAYS:
 
 ```bash
 AUDIT_DATE=$(date +%Y-%m-%d)
-mkdir -p "docs/audits/${AUDIT_DATE}"
-mkdir -p "docs/audit"
+mkdir -p ".codeadd/docs/audits/${AUDIT_DATE}"
 ```
 
 **⛔ GATE CHECK: Folders created?**
@@ -138,7 +138,7 @@ Check whether `AGENTS.md` exists at project root. Detect project layout (look fo
 Use the Agent Registry above (rows: Context, Documentation, Infrastructure). For each agent:
 1. Load prompt from skill `add--health-check` file named in Skill File column
 2. Dispatch with Capability/Complexity noted
-3. Instruct agent to write to output path: `docs/audits/${AUDIT_DATE}/<output>`
+3. Instruct agent to write to output path: `.codeadd/docs/audits/${AUDIT_DATE}/<output>`
 
 **⛔ WAIT-ALL: Verify outputs exist:**
 - [ ] `context-discovery.md` (contains mandatory sections)
@@ -167,7 +167,7 @@ Use the Agent Registry above (rows: Security, Architecture, Data). For each agen
 1. Load prompt from skill `add--health-check` file named in Skill File column
 2. **Pass context:** Provide content of `context-discovery.md` to all agents; for Security and Data agents, also pass `infrastructure-report.md`
 3. Dispatch with Capability/Complexity noted
-4. Instruct agent to write to output path: `docs/audits/${AUDIT_DATE}/<output>`
+4. Instruct agent to write to output path: `.codeadd/docs/audits/${AUDIT_DATE}/<output>`
 
 **⛔ WAIT-ALL: Verify outputs exist:**
 - [ ] `security-report.md`
@@ -184,7 +184,7 @@ Use the Agent Registry above (rows: Security, Architecture, Data). For each agen
 
 ## STEP add-audit.consolidate: Consolidation & Differential Diagnosis
 
-Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
+Read all generated reports from `.codeadd/docs/audits/${AUDIT_DATE}/`.
 
 **Parse each report for:**
 - Issue severity (Critical, High, Medium, Low)
@@ -211,10 +211,10 @@ Read all generated reports from `docs/audits/${AUDIT_DATE}/`.
 
 **EXECUTE schema `audit-report` from {{skill:add--doc-schemas/SKILL.md}} (MANDATORY).**
 
-- **Path:** `docs/audit/${AUDIT_DATE}.md`
+- **Path:** `.codeadd/docs/audits/${AUDIT_DATE}.md`
 - **ID:** `AUDIT-${AUDIT_DATE}`; `related: [STACK]`
 - Write extractive only (per schema)
-- **Link supporting reports** in References section using relative paths: `../audits/${AUDIT_DATE}/*.md`
+- **Link supporting reports** in References section using relative paths: `./${AUDIT_DATE}/*.md`
 
 ---
 
@@ -231,7 +231,7 @@ Execute the validation gate from {{skill:add--doc-schemas/SKILL.md}} for schema 
 ## STEP add-audit.complete: Completion - Inform User
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
-the self-check. Emit the report FIRST — the scorecard and the report path come after it, whole.
+the self-check. Before the report, close the docs per {{skill:add--doc-schemas/SKILL.md}} → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Emit the report FIRST — the scorecard and the report path come after it, whole.
 
 This command changes no application code, so `Files touched` names the audit documents STEP add-audit.write-report wrote
 and nothing else — never "none", because those files are real. `What was delivered` is the finding
@@ -252,8 +252,8 @@ Then, after the seven blocks, present the overall scorecard, issue counts by sev
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/audit/${AUDIT_DATE}.md` | The findings and severities the new feature is scoped from |
-| `docs/features/<id>/about.md` | What the feature created for that critical issue is for |
+| `.codeadd/docs/audits/${AUDIT_DATE}.md` | The findings and severities the new feature is scoped from |
+| `.codeadd/docs/features/<id>/about.md` | What the feature created for that critical issue is for |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing a new feature takes next |
 
 ---

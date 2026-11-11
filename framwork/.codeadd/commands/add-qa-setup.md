@@ -12,6 +12,7 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - skill: add--doc-schemas
 - skill: add--delivery-mode (conditional)
 - skill: add--final-report
+- script: docs-branch.cjs
 - skill: add--qa
 - skill: add--qa-migration
 - skill: add--settings
@@ -21,7 +22,6 @@ argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that
 - agent: e2e-agent
 - command: /add-build
 - command: /add-review
-- script: qa-evidence.cjs
 - script: qa-preflight.cjs
 - script: status.cjs
 -->
@@ -62,7 +62,7 @@ STEP add-qa-setup.migration: Detect migration         → ALWAYS scan; ask only 
 STEP add-qa-setup.qa-project: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (shape from ## Materializes)
 STEP add-qa-setup.config: Scaffold QA config       → .codeadd/settings.json, `qa` value fields (interactive, project-wide; shape from ## Materializes)
 STEP add-qa-setup.catalog: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
-STEP add-qa-setup.ignore: Ignore working evidence  → materialize the dedicated QA block in .gitignore
+STEP add-qa-setup.ignore: Ignore working evidence  → confirm the docs branch's .gitignore carries the QA run-output line
 STEP add-qa-setup.migrate: Autonomous migration    → IF MIGRATE: dispatch add-new→add-plan→add-build→add-review (checkpoints only)
 STEP add-qa-setup.proof: Setup proof              → qa-preflight.cjs a (+ b when a feature has screens.json); no nested review or build
 STEP add-qa-setup.receipt: Write the receipt       → .codeadd/settings.json, `qa` receipt fields + `qa.log` (rewritten even on a no-op)
@@ -84,9 +84,9 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.migration** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
 | **STEP add-qa-setup.migration** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP add-qa-setup.migration** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
-| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and STEP add-qa-setup.ignore's root `.gitignore`. Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and nothing under STEP add-qa-setup.ignore (the docs branch's own `.codeadd/docs/.gitignore` is created by the branch, never edited here). Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP add-qa-setup.catalog** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add-plan}}` owns content |
-| **STEP add-qa-setup.ignore** | QA evidence block not materialized exactly once | Running migration | Normalize the QA block while preserving installer-managed and user-authored content |
+| **STEP add-qa-setup.ignore** | `.codeadd/docs/.gitignore` lacks the QA run-output line | Running migration | Run `node .codeadd/scripts/docs-branch.cjs prepare`, which recreates the line, then re-check |
 | **STEP add-qa-setup.migrate** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
 | **STEP add-qa-setup.migrate** | Migration branch produced | Merging autonomously | Hand the branch back for user review |
 | **STEP add-qa-setup.proof** | No feature with a scaffolded `screens.json` exists | Forcing a synthetic feature, or running preflight `b` | Run `a` only; note in hand-off that `b` was not run |
@@ -103,8 +103,8 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:5a8b5405851bf4d8
-changed-in: 1.7.0
+shape: sha256:7e9e973468b6b777
+changed-in: 1.9.0
 paths:
   - path: .codeadd/settings.json#qa
     owner: shared
@@ -115,7 +115,7 @@ paths:
   - path: FEATURE_DIR/_tests/screens.json
     owner: shared
     step: 8
-  - path: .gitignore
+  - path: .codeadd/docs/.gitignore
     owner: shared
     step: 9
 ```
@@ -143,21 +143,21 @@ The value fields of the `qa` section. The receipt fields are written by STEP add
   "screens": [
     { "id": "login", "sf": "SF02", "name": "Login", "kind": "route",
       "path": "/login", "auth": false,
-      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md" },
+      "design": ".codeadd/docs/features/<id>-.../subfeatures/SF02-.../design.md" },
     { "id": "entry-form", "sf": "SF01", "name": "Entry form", "kind": "modal",
       "open": [{ "goto": "/entries" }, { "click": "role=button[name=New entry]" }],
       "auth": true,
-      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md" }
+      "design": ".codeadd/docs/features/<id>-.../subfeatures/SF01-.../design.md" }
   ]
 }
 ```
 
-### .gitignore
+### .codeadd/docs/.gitignore
+
+Created by the docs branch itself; this command only confirms the line is there.
 
 ```gitignore
-# ADD QA evidence - managed by add-qa-setup
-docs/features/**/_tests/run-*/
-# END ADD QA evidence
+features/**/_tests/run-*/
 ```
 
 ### `<provider skills dir>/qa-project/SKILL.md`
@@ -200,7 +200,7 @@ Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this pro
 ```bash
 node .codeadd/scripts/status.cjs
 ```
-Parse: PROJECT_DOCS, package manager hints, features under `docs/features/`.
+Parse: PROJECT_DOCS, package manager hints, features under `.codeadd/docs/features/`.
 
 ### STEP add-qa-setup.load-install-methodology Load install methodology
 Read {{skill:add--dev-environment-setup/SKILL.md}} — reuse its OS-detection + confirm-before-install discipline. This command installs (confirm-then-execute), it does NOT merely instruct.
@@ -211,8 +211,8 @@ Read {{skill:add--dev-environment-setup/SKILL.md}} — reuse its OS-detection + 
 - Neither flag is required for normal operation. Stale-detection and migration re-offer are automatic.
 
 ### STEP add-qa-setup.resolve-target-feature Resolve target feature (optional)
-- If a `feature-id` arg was given → `FEATURE_DIR = docs/features/<feature-id>-*`.
-- Else → list features under `docs/features/` and ask which feature's screen catalog to scaffold (STEP add-qa-setup.catalog). Config (STEP add-qa-setup.config) is project-wide regardless.
+- If a `feature-id` arg was given → `FEATURE_DIR = .codeadd/docs/features/<feature-id>-*`.
+- Else → list features under `.codeadd/docs/features/` and ask which feature's screen catalog to scaffold (STEP add-qa-setup.catalog). Config (STEP add-qa-setup.config) is project-wide regardless.
 
 ### STEP add-qa-setup.classify-receipt Classify + compare (add--setup-contract)
 Read `SETUP_QA:` / `SETUP_QA_STALE:` from the STEP add-qa-setup.context output, then run the {{skill:add--setup-contract/SKILL.md}} procedure against the `qa` section of `.codeadd/settings.json`.
@@ -365,13 +365,13 @@ A missing or pre-schema `design.md` is a planning gap. Remedy: re-run `{{cmd:add
 
 ## STEP add-qa-setup.ignore: Ignore Working QA Evidence
 
-Target: root `.gitignore` (shared, co-owned state; never receipt-hashed).
+Target: `.codeadd/docs/.gitignore` (the docs branch's own file, shared state; never receipt-hashed).
 
-Execute `node .codeadd/scripts/qa-evidence.cjs ensure-ignore "."`. The deterministic operation materializes the exact block declared in `## Materializes` → `.gitignore`, keeps it separate from the installer-owned block, preserves unrelated lines, normalizes duplicates, and is byte-idempotent.
+Confirm it holds the line declared in `## Materializes` → `.codeadd/docs/.gitignore`. The branch writes it when it is created; if the line is missing, run `node .codeadd/scripts/docs-branch.cjs prepare` and check again. Do NOT write to the root `.gitignore`.
 
-The pattern intentionally ignores only working `docs/features/**/_tests/run-*/` directories. Do NOT add a `!final/` exception: `_tests/final/run-NNN/` does not match the working-run pattern and remains trackable.
+The pattern intentionally ignores only working `features/**/_tests/run-*/` directories. Do NOT add a `!final/` exception: `_tests/final/run-NNN/` does not match the working-run pattern and remains trackable.
 
-⛔ Do NOT continue to migration or the setup proof until the canonical QA block exists exactly once.
+⛔ Do NOT continue to migration or the setup proof until the QA run-output line is present in `.codeadd/docs/.gitignore`.
 
 ---
 
@@ -428,7 +428,7 @@ Read the file, merge into `qa`, write it back. ⛔ Never replace the whole file,
 
 1. **Receipt fields.** `qa["setup-shape"]` = the shipped hash from `.codeadd/contracts.json` → `contracts["add-qa-setup"].shape` (bare `sha256:<16 hex>`). `qa["framework-version"]` from the manifest (informational). `qa["first-run"]` preserved byte-identically, or set to today on a true first run. `qa["last-run"]` = today.
 2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` itself is `owner: shared`.
-3. **`qa.prereqs`** from STEP add-qa-setup.install, `qa["qa-pipeline-feature"]` from STEP add-qa-setup.feature-gate, `qa.migration` from STEP add-qa-setup.migration. Record `.gitignore` in `qa.materialized` with `owner: shared` and `hash: null`.
+3. **`qa.prereqs`** from STEP add-qa-setup.install, `qa["qa-pipeline-feature"]` from STEP add-qa-setup.feature-gate, `qa.migration` from STEP add-qa-setup.migration. Record `.codeadd/docs/.gitignore` in `qa.materialized` with `owner: shared` and `hash: null`.
 4. **`qa.log`.** APPEND one entry `{date, item, decision, reason, shape}` per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing entry. ⛔ Never log narration or instructions — an entry records a choice, not a step.
 
 ---
@@ -440,7 +440,7 @@ Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT s
 1. **It parses.** Read the file and parse it as JSON. If it does not parse: STOP. Fix the file. Re-run this gate.
 2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
 3. **Vocabularies.** Every `prereqs.<name>`, `qa-pipeline-feature`, `migration.decision` and `materialized[].owner` holds a value declared in {{skill:add--settings/SKILL.md}}. `migration.detected` is sorted alphabetically.
-4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json` and `.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
+4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
 5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
 6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
 7. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
@@ -453,6 +453,8 @@ Output at end:
 ---
 
 ## STEP add-qa-setup.handoff: Hand-off
+
+Before the report, close the docs written here per {{skill:add--doc-schemas/SKILL.md}} → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the ordered hand-off list below comes after it, whole and in

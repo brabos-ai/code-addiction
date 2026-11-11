@@ -13,6 +13,7 @@
 - skill: add--subagent-driven-development
 - skill: add--subagent-driven-development/references/dispatch-rules.md
 - script: migrate-context-files.cjs
+- script: docs-branch.cjs
 -->
 
 Discovery coordinator that dispatches specialized analyzer agents based on app classification. Does NOT analyze code itself - classifies apps, dispatches agents, and consolidates outputs into a portable project wiki (`.codeadd/wiki/`) with a derived hub, spine pages, and per-domain pages.
@@ -434,14 +435,14 @@ Follow ALL instructions.
 
 ## TASK
 1. Analyze code quality (actual code, not just config)
-2. WRITE to docs/code-quality-review.md
+2. WRITE to .codeadd/docs/code-quality-review.md
 3. Return: FILE_WRITTEN, SOLID_SCORE, CLEAN_CODE_SCORE, TECH_DEBT, TOP_ISSUES (top 3)
 
 ## OUTPUT
-Write docs/code-quality-review.md
+Write .codeadd/docs/code-quality-review.md, opening with the frontmatter in the analyzer's Output Format (`type: code-quality-review`, `schema: {{doc-schema}}`)
 ```
 
-`docs/code-quality-review.md` stays outside `.codeadd/wiki/` — it is a point-in-time report (scores, top issues), not durable knowledge; mixing report artifacts into the wiki would make staleness semantics incoherent.
+`.codeadd/docs/code-quality-review.md` stays outside `.codeadd/wiki/` — it is a point-in-time report (scores, top issues), not durable knowledge; mixing report artifacts into the wiki would make staleness semantics incoherent.
 
 ### STEP add-wiki.spine-analyzer-new Spine Analyzer (NEW — cross-cutting knowledge)
 
@@ -459,7 +460,7 @@ Follow ALL instructions.
 ## INPUTS
 - Dispatch plan from STEP add-wiki.classify (classified apps, paths, detected stack)
 - Root configs (package.json, turbo.json, tsconfig, etc.)
-- Existing docs (README, docs/) as primary source material
+- Existing documentation (README and the project's own documentation files) as primary source material
 - Validation Gates detection
 - Existing Stack Conventions rows, if any, from conventions.md or the folded `### Stack Conventions` in index.md (decided rows are kept)
 
@@ -495,7 +496,7 @@ Write {{addpath:wiki/architecture.md}}, {{addpath:wiki/conventions.md}}, {{addpa
 - [ ] All `{{addpath:wiki/domains/*.md}}` files from the dispatch plan exist
 - [ ] Spine — standard mode: `{{addpath:wiki/architecture.md}}`, `{{addpath:wiki/conventions.md}}`, `{{addpath:wiki/workflows.md}}` exist. Tiny mode (STEP add-wiki.determine-mode-recorded): NO spine files expected; instead the spine analyzer's report contains the three folded sections
 - [ ] Stack Conventions — standard mode: `{{addpath:wiki/conventions.md}}` has `## Stack Conventions` with all seven row keys (Tenancy, DI, Barrels, Layering, Validation, ORM / data access, Entity language). Tiny mode: the spine report's folded conventions section has `### Stack Conventions` with all seven row keys. Both modes: the spine report carries `STACK_CONVENTIONS`. This is a presence check only; the `index.md` fold happens later, so this step never looks at `index.md`
-- [ ] `docs/code-quality-review.md` exists
+- [ ] `.codeadd/docs/code-quality-review.md` exists
 - [ ] Every wiki page has complete frontmatter (id, type, area, description, sources, commit, generated, tags)
 - [ ] All wiki pages contain the mandatory body sections (TL;DR, TOC if >100 lines, topic chunks, Related footer)
 - [ ] Topic counts confirmed per page
@@ -805,7 +806,7 @@ shared with the team. Do NOT silently continue as if unaffected.
 ## STEP add-wiki.report: Report & Cleanup
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
-the self-check. Emit the report FIRST — the detail list and the navigation guidance come after it.
+the self-check. Before the report, close the code-quality report per {{skill:add--doc-schemas/SKILL.md}} → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Emit the report FIRST — the detail list and the navigation guidance come after it.
 
 Fill `How it works` with how the wiki is meant to be read: the hub is the only entrypoint, and the
 frontmatter is the index. `⚠️ Needs your attention` carries the Backlog entries, the gitignore
@@ -873,7 +874,7 @@ Where:
 | conventions (spine) | `{{addpath:wiki/conventions.md}}` |
 | workflows (spine) | `{{addpath:wiki/workflows.md}}` |
 
-**Special:** Code Quality → `docs/code-quality-review.md` (stays outside the wiki — a point-in-time report, not durable knowledge).
+**Special:** Code Quality → `.codeadd/docs/code-quality-review.md` (stays outside the wiki — a point-in-time report, not durable knowledge).
 
 ---
 
@@ -895,7 +896,7 @@ frontend-analyzer → apps/admin      → domains/frontend.md (includes admin + 
 generic template  → apps/cli        → domains/cli.md
 database-analyzer → libs/database   → domains/database.md
 spine-analyzer    → project-wide    → architecture.md, conventions.md, workflows.md
-quality-analyzer  → project-wide    → docs/code-quality-review.md
+quality-analyzer  → project-wide    → .codeadd/docs/code-quality-review.md
 ```
 
 **Note:** When multiple apps share the same type (e.g., apps/admin + apps/portal both frontend), the analyzer covers both in a single `domains/frontend.md` file. Its frontmatter `sources` lists all paths.
