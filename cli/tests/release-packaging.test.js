@@ -123,4 +123,24 @@ describe('release packaging', () => {
 
     expect(emitted.sort()).toEqual([...SIDECARS].sort());
   });
+
+  it('runs the tests on an unmutated tree, before the --package build', () => {
+    // Regression (v1.9.0): `build.js --package` resolves {{doc-schema}} in the
+    // trees that ship unbuilt, and the Release workflow ran it BEFORE `npm test`,
+    // so the schema/token tests saw the mutated checkout and failed.
+    const yml = fs.readFileSync(RELEASE_WORKFLOW, 'utf8');
+    const runs = [...yml.matchAll(/^\s+run:\s*(.+)$/gm)].map((m) => m[1].trim());
+    const at = (re) => runs.findIndex((cmd) => re.test(cmd));
+
+    const tests = at(/^npm test$/);
+    const pkg = at(/^node scripts\/build\.js --package$/);
+    const plain = at(/^node scripts\/build\.js$/);
+
+    expect(tests, 'no `npm test` step in release.yml').toBeGreaterThanOrEqual(0);
+    expect(pkg, 'no `build.js --package` step in release.yml').toBeGreaterThanOrEqual(0);
+    expect(tests, '`npm test` must run BEFORE `build.js --package`').toBeLessThan(pkg);
+    expect(plain, 'a plain `build.js` (as CI runs) must precede the tests').toBeGreaterThanOrEqual(0);
+    expect(plain).toBeLessThan(tests);
+    expect(at(/^npm run test:package$/), 'smoke test must follow the --package build').toBeGreaterThan(pkg);
+  });
 });

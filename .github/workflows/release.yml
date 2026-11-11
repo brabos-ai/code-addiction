@@ -84,12 +84,10 @@ jobs:
         if: steps.cli_changes.outputs.changed == 'true'
         run: npm ci
 
-      - name: Build framework
+      # Plain build, exactly as CI runs it: tests must see an unmutated tree.
+      - name: Build framework (for tests)
         working-directory: .
-        # --package also resolves {{doc-schema}} in the trees that ship unbuilt
-        # (templates, fragments, plugins, fallbacks, agent-mode). Safe here only
-        # because this checkout is thrown away.
-        run: node scripts/build.js --package
+        run: node scripts/build.js
 
       - name: Run tests
         if: steps.cli_changes.outputs.changed == 'true'
@@ -97,6 +95,15 @@ jobs:
           CODEADD_TESTS_CONTEXT: github-actions
           CODEADD_TESTS_SELECTION: cli
         run: npm test
+
+      - name: Build framework
+        working-directory: .
+        # --package also resolves {{doc-schema}} in the trees that ship unbuilt
+        # (templates, fragments, plugins, fallbacks, agent-mode). Safe here only
+        # because this checkout is thrown away, and it must stay AFTER
+        # "Run tests": the schema/token tests assert those trees still carry
+        # the unresolved token.
+        run: node scripts/build.js --package
 
       # GATE: pack the CLI and execute the npm-generated bin before any
       # publication work. A silent entrypoint (0.6.2 regression) must fail here.
