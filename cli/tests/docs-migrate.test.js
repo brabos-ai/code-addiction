@@ -1,0 +1,472 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { docsMigrate, collectLegacy, migrateQaSettings } from '../src/docs-migrate.js';
+import { MIGRATIONS, runMigrations } from '../src/migrations.js';
+import { installDocsRoot } from './helpers/brownfield-fixture.js';
+
+const require = createRequire(import.meta.url);
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
+const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
+const FIXTURE = path.join(import.meta.dirname, 'fixtures', 'docs-migrate', 'legacy');
+const { docSchemaOf, DOCS_ROOT, DOCS_BRANCH } = require(path.join(SCRIPTS, 'docs-root.cjs'));
+
+const git = (cwd, ...args) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim();
+
+/** Copy the fixture tree; `dot-codeadd` lands as `.codeadd` (a dot-directory would be ignored by this repo's own ignore rules). */
+function copyFixture(dest) {
+  const walk = (from, to) => {
+    for (const e of fs.readdirSync(from, { withFileTypes: true })) {
+      const name = e.name === 'dot-codeadd' ? '.codeadd' : e.name;
+      if (e.isDirectory()) {
+        fs.mkdirSync(path.join(to, name), { recursive: true });
+        walk(path.join(from, e.name), path.join(to, name));
+      } else {
+        fs.copyFileSync(path.join(from, e.name), path.join(to, name));
+      }
+    }
+  };
+  walk(FIXTURE, dest);
+}
+
+/** A legacy project against a REAL separate bare remote, scripts installed, nothing prepared. */
+function makeLegacyProject({ legacy = true } = {}) {
+  const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'docs-migrate-')));
+  const bare = path.join(base, 'remote.git');
+  const repo = path.join(base, 'repo');
+  fs.mkdirSync(repo);
+  git(base, 'init', '--bare', '-q', '--initial-branch=main', bare);
+  git(repo, 'init', '-q', '--initial-branch=main');
+  git(repo, 'config', 'user.email', 't@t.t');
+  git(repo, 'config', 'user.name', 'T');
+  git(repo, 'config', 'commit.gpgsign', 'false');
+  git(repo, 'remote', 'add', 'origin', bare);
+  if (legacy) copyFixture(repo);
+  const scriptsDest = path.join(repo, '.codeadd', 'scripts');
+  fs.mkdirSync(scriptsDest, { recursive: true });
+  for (const f of ['docs-root.cjs', 'docs-branch.cjs', 'docs-guard.cjs']) fs.copyFileSync(path.join(SCRIPTS, f), path.join(scriptsDest, f));
+  fs.writeFileSync(
+    path.join(repo, '.codeadd', 'manifest.json'),
+    JSON.stringify({ version: '1.8.1', providers: ['claude'], files: [], scope: 'project' }),
+  );
+  fs.writeFileSync(path.join(repo, '.gitignore'), '.codeadd/*\n!.codeadd/project\n');
+  git(repo, 'add', '-A');
+  if (fs.existsSync(path.join(repo, '.codeadd', 'project'))) git(repo, 'add', '-f', '.codeadd/project');
+  git(repo, 'commit', '-q', '-m', 'legacy project');
+  git(repo, 'push', '-q', '-u', 'origin', 'main');
+  return { base, bare, repo, docsRoot: path.join(repo, ...DOCS_ROOT.split('/')) };
+}
+
+let out;
+let spy;
+beforeEach(() => {
+  out = [];
+  spy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+    out.push(String(chunk));
+    return true;
+  });
+});
+afterEach(() => spy.mockRestore());
+const stdout = () => out.join('');
+
+describe('F18 — docs migrate', () => {
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+
+  it('--dry-run lists what would move and writes nothing', async () => {
+    p = makeLegacyProject();
+    const head = git(p.repo, 'rev-parse', 'HEAD');
+    await docsMigrate(p.repo, ['--dry-run']);
+    expect(stdout()).toMatch(/MIGRATED=moved:\d+/);
+    expect(stdout()).toContain('WOULD_MOVE');
+    expect(git(p.repo, 'status', '--porcelain')).toBe('');
+    expect(fs.existsSync(p.docsRoot)).toBe(false);
+    expect(git(p.repo, 'rev-parse', 'HEAD')).toBe(head);
+  });
+
+  it('collects the Code Addiction outputs and leaves the user\'s own file out', () => {
+    p = makeLegacyProject();
+    const from = collectLegacy(p.repo).map((f) => f.from);
+    expect(from).toContain('docs/features/0001F-login/about.md');
+    expect(from).toContain('docs/features/0001F-login/iterations.md');
+    expect(from).toContain('docs/health-checks/2026-01-01/security.md');
+    expect(from).toContain('docs/delivered.jsonl');
+    expect(from).toContain('.codeadd/project/decisions.jsonl');
+    expect(from).not.toContain('docs/api.md');
+    // audit and audits are one `audits` now (R8)
+    expect(collectLegacy(p.repo).find((f) => f.from === 'docs/audit/2026-01-01.md').to).toBe('audits/2026-01-01.md');
+  });
+
+  it('moves everything into one commit on the docs branch with the Migrated-From trailer', async () => {
+    p = makeLegacyProject();
+    const head = git(p.repo, 'rev-parse', 'HEAD');
+    await docsMigrate(p.repo, []);
+    const n = Number(/MIGRATED=moved:(\d+)/.exec(stdout())[1]);
+    expect(n).toBeGreaterThan(8);
+
+    const doc = (rel) => path.join(p.docsRoot, ...rel.split('/'));
+    for (const rel of [
+      'features/0001F-login/about.md',
+      'features/0001F-login/iterations.md',
+      'features/0001F-login/plan.md',
+      'brainstorm/2026-01-01T000000-idea-intent.md',
+      'diagnose/report.md',
+      'audits/2026-01-01.md',
+      'health-checks/2026-01-01/security.md',
+      'changelog/CHG0001.md',
+      'delivered.jsonl',
+      'design-system.md',
+      'decisions.jsonl',
+    ]) {
+      expect(fs.existsSync(doc(rel)), rel).toBe(true);
+    }
+
+    // one migration commit, carrying the trailer with the code base sha
+    const log = git(p.docsRoot, 'log', '--format=%H%n%B', '--grep=^Migrated-From:');
+    expect(log).toContain(`Migrated-From: ${head}`);
+    expect(git(p.docsRoot, 'log', '--grep=^Migrated-From:', '--format=%H').split('\n')).toHaveLength(1);
+
+    // the code side: deletions staged, nothing committed, the user's file untouched
+    expect(git(p.repo, 'rev-parse', 'HEAD')).toBe(head);
+    const status = git(p.repo, 'status', '--porcelain');
+    expect(status).toMatch(/^D {2}docs\/features\/0001F-login\/about\.md$/m);
+    expect(status).toMatch(/^D {2}\.codeadd\/project\/decisions\.jsonl$/m);
+    expect(fs.existsSync(path.join(p.repo, 'docs', 'api.md'))).toBe(true);
+    expect(fs.existsSync(path.join(p.repo, 'docs', 'features'))).toBe(false);
+  });
+
+  it('runs the former 0005: the QA config and receipt land in settings.json', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    const settings = JSON.parse(fs.readFileSync(path.join(p.repo, '.codeadd', 'settings.json'), 'utf8'));
+    expect(settings.qa.framework).toBe('playwright');
+    expect(fs.existsSync(path.join(p.repo, 'docs', 'qa'))).toBe(false);
+  });
+
+  it('re-runs the content repairs over the new root: the {{doc:}} reference becomes a relation', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    const about = fs.readFileSync(path.join(p.docsRoot, 'features', '0001F-login', 'about.md'), 'utf8');
+    expect(about).toMatch(/## Relations/);
+    expect(about).toMatch(/links_to \[\[0002F\]\]/);
+  });
+
+  it('a second run answers already and moves nothing', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    const docsHead = git(p.docsRoot, 'rev-parse', 'HEAD');
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=already');
+    expect(git(p.docsRoot, 'rev-parse', 'HEAD')).toBe(docsHead);
+  });
+
+  it('a project with nothing to move answers nothing', async () => {
+    p = makeLegacyProject({ legacy: false });
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=nothing');
+  });
+
+  it('never pushes: the docs branch stays local until /add-done', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    let remoteHas = true;
+    try {
+      git(p.bare, 'rev-parse', '--verify', `refs/heads/${DOCS_BRANCH}`);
+      // the orphan root commit is pushed by prepare; the migration commit is not
+      const remoteLog = git(p.bare, 'log', DOCS_BRANCH, '--format=%s');
+      expect(remoteLog).not.toMatch(/migrate Code Addiction outputs/);
+    } catch {
+      remoteHas = false;
+    }
+    expect(typeof remoteHas).toBe('boolean');
+  });
+
+  it('is not a registered migration: update never reaches it, and 0005 left the registry', () => {
+    const ids = MIGRATIONS.map((m) => m.id);
+    expect(ids.some((id) => /docs/.test(id))).toBe(false);
+    expect(ids).not.toContain('0005-qa-settings');
+    expect(ids).toContain('0002-harvest-relations');
+    expect(ids).toContain('0003-retire-about-suffix');
+  });
+
+  it('adds or changes no schema key on a moved file', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    expect(docSchemaOf(fs.readFileSync(path.join(p.docsRoot, 'features', '0001F-login', 'about.md'), 'utf8'))).toBe(0);
+    expect(docSchemaOf(fs.readFileSync(path.join(p.docsRoot, 'features', '0002F-signup', 'about.md'), 'utf8'))).toBe(1);
+  });
+
+  it('fails explicitly when there is no remote to hold the docs branch', async () => {
+    p = makeLegacyProject();
+    git(p.repo, 'remote', 'remove', 'origin');
+    await expect(docsMigrate(p.repo, [])).rejects.toThrow(/DOCS=missing/);
+    // nothing moved
+    expect(fs.existsSync(path.join(p.repo, 'docs', 'features'))).toBe(true);
+  });
+});
+
+
+describe('0005-qa-settings (0066B) — now the first step of docs migrate', () => {
+  let tmpDir;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-qa-migrate-'));
+    installDocsRoot(tmpDir);
+  });
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+  const only0005 = [{ id: '0005-qa-settings', description: 'qa settings', run: migrateQaSettings }];
+
+  const OLD_SHAPE = 'sha256:25b937ee17628d6b';
+  const NEW_SHAPE = 'sha256:5a8b5405851bf4d8';
+  const REPO_ROOT = ROOT;
+  const SKILL = '.claude/skills/qa-project/SKILL.md';
+  const SKILL_OLD = [
+    '# qa-project',
+    '1. Probe `baseUrl` (from `docs/qa/config.json`).',
+    '2. Boot with `<boot command / config.json bootHint>`.',
+    '',
+  ].join('\n');
+  const sha = (text) => 'sha256:' + crypto.createHash('sha256').update(text).digest('hex');
+  const providers = () => [{ key: 'claude', dest: '.claude' }];
+  const ctx = () => ({ cwd: tmpDir, providers: providers() });
+  const file = (rel) => path.join(tmpDir, rel);
+  const readJson = (rel) => JSON.parse(fs.readFileSync(file(rel), 'utf8'));
+  const put = (rel, text) => {
+    fs.mkdirSync(path.dirname(file(rel)), { recursive: true });
+    fs.writeFileSync(file(rel), text, 'utf8');
+  };
+
+  const CONFIG = {
+    baseUrl: 'http://localhost:5173',
+    viewports: { desktop: [1440, 900], mobile: [375, 812] },
+    bootHint: '<command that starts the app>',
+    authSeed: '<how to sign in as a seeded user>',
+    teamNote: 'kept as is',
+  };
+
+  function receipt(shape = OLD_SHAPE) {
+    return [
+      '---',
+      'id: RCPT-add-qa-setup',
+      'type: setup-receipt',
+      'created: 2026-07-27',
+      'updated: 2026-10-01',
+      'related: []',
+      'command: add-qa-setup',
+      `setup-shape: ${shape}`,
+      'framework-version: 1.6.0',
+      'first-run: 2026-07-27',
+      'last-run: 2026-10-01',
+      'materialized:',
+      '  - path: docs/qa/config.json',
+      '    owner: setup',
+      '    hash: sha256:1f3a',
+      `  - path: ${SKILL}`,
+      '    owner: setup',
+      `    hash: ${sha(SKILL_OLD)}`,
+      '  - path: docs/features/0001F-x/_tests/screens.json',
+      '    owner: shared',
+      '    hash: null',
+      'prereqs:',
+      '  playwright-test: installed',
+      '  playwright-mcp: declined',
+      'qa-pipeline-feature: enabled',
+      'migration:',
+      '  detected: [cypress]',
+      '  decision: declined',
+      '  decided-at: 2026-07-27',
+      '---',
+      '',
+      '## TL;DR',
+      '',
+      'The install record for add-qa-setup.',
+      '',
+      '## Decision Log',
+      '',
+      '| Date | Shape | Decision | Rationale |',
+      '|---|---|---|---|',
+      '| 2026-07-27 | sha256:aaaaaaaaaaaaaaaa | Declined Playwright MCP wiring | Team runs QA in CI only |',
+      `| 2026-10-01 | ${shape} | Re-materialized after a shape change | Shape moved |`,
+      '',
+    ].join('\n');
+  }
+
+  function seedOldProject({ shape = OLD_SHAPE, contracts = true } = {}) {
+    put('docs/qa/config.json', JSON.stringify(CONFIG, null, 2));
+    put('docs/qa/qa-setup.md', receipt(shape));
+    put(SKILL, SKILL_OLD);
+    if (contracts) {
+      put('.codeadd/contracts.json', JSON.stringify({
+        version: 1,
+        contracts: { 'add-qa-setup': { shape: NEW_SHAPE, changed_in: '1.7.0', paths: [] } },
+      }));
+    }
+  }
+
+  it('full convert: values, unknown key, receipt fields, log rows, qa-project text and hash, old files deleted', () => {
+    seedOldProject();
+    const out = migrateQaSettings(ctx());
+
+    const doc = readJson('.codeadd/settings.json');
+    expect(doc.schema).toBe(1);
+    expect(doc.qa).toMatchObject({
+      baseUrl: CONFIG.baseUrl,
+      viewports: CONFIG.viewports,
+      bootHint: CONFIG.bootHint,
+      authSeed: CONFIG.authSeed,
+      teamNote: 'kept as is',
+      'framework-version': '1.6.0',
+      'first-run': '2026-07-27',
+      'last-run': '2026-10-01',
+      'qa-pipeline-feature': 'enabled',
+      prereqs: { 'playwright-test': 'installed', 'playwright-mcp': 'declined' },
+      migration: { detected: ['cypress'], decision: 'declined', 'decided-at': '2026-07-27' },
+    });
+    for (const dropped of ['id', 'type', 'created', 'updated', 'related', 'command']) {
+      expect(doc.qa).not.toHaveProperty(dropped);
+    }
+
+    // The Decision Log rows, in order, then the migration entry.
+    expect(doc.qa.log).toHaveLength(3);
+    expect(doc.qa.log[0]).toEqual({
+      date: '2026-07-27',
+      item: 'qa-setup',
+      decision: 'Declined Playwright MCP wiring',
+      reason: 'Team runs QA in CI only',
+      shape: 'sha256:aaaaaaaaaaaaaaaa',
+    });
+    expect(doc.qa.log[1].decision).toBe('Re-materialized after a shape change');
+    expect(doc.qa.log[2]).toMatchObject({
+      item: 'qa-setup',
+      decision: 'migrated to .codeadd/settings.json',
+      reason: 'migration 0005',
+    });
+
+    // materialized: the config entry becomes the shared settings entry; the skill hash is recomputed.
+    const skillText = fs.readFileSync(file(SKILL), 'utf8');
+    expect(skillText).not.toContain('docs/qa/config.json');
+    expect(skillText).toContain('.codeadd/settings.json');
+    expect(doc.qa.materialized).toEqual([
+      { path: '.codeadd/settings.json', owner: 'shared', hash: null },
+      { path: SKILL, owner: 'setup', hash: sha(skillText) },
+      { path: 'docs/features/0001F-x/_tests/screens.json', owner: 'shared', hash: null },
+    ]);
+
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(false);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(false);
+    expect(fs.existsSync(file('docs/qa'))).toBe(false);
+    expect(out.changes.join('\n')).toMatch(/\.codeadd\/settings\.json/);
+    expect(out.changes.join('\n')).toMatch(/removed docs\/qa\/config\.json/);
+  });
+
+  it('no QA setup to migrate → a note, no change, no file written', () => {
+    fs.mkdirSync(path.join(tmpDir, ".codeadd"), { recursive: true });
+    const out = migrateQaSettings(ctx());
+    expect(out.changes).toEqual([]);
+    expect(out.notes).toEqual(['no QA setup to migrate']);
+    expect(fs.existsSync(file('.codeadd/settings.json'))).toBe(false);
+  });
+
+  it('a second run changes nothing', () => {
+    seedOldProject();
+    migrateQaSettings(ctx());
+    const settings = fs.readFileSync(file('.codeadd/settings.json'), 'utf8');
+    const again = migrateQaSettings(ctx());
+    expect(again.changes).toEqual([]);
+    expect(again.notes).toEqual(['no QA setup to migrate']);
+    expect(fs.readFileSync(file('.codeadd/settings.json'), 'utf8')).toBe(settings);
+  });
+
+  it('stamps the shipped shape only when the recorded shape is the last pre-refactor one', () => {
+    seedOldProject({ shape: OLD_SHAPE });
+    migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(NEW_SHAPE);
+  });
+
+  it('copies any other recorded shape unchanged, so the project stays STALE', () => {
+    const other = 'sha256:0123456789abcdef';
+    seedOldProject({ shape: other });
+    migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(other);
+  });
+
+  it('unreadable contracts.json → the recorded shape is copied and a note says why', () => {
+    seedOldProject({ contracts: false });
+    const out = migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa['setup-shape']).toBe(OLD_SHAPE);
+    expect(out.notes.join('\n')).toMatch(/contracts\.json/);
+  });
+
+  it('an existing qa section → merge missing keys only, keep the old files, add a note', () => {
+    seedOldProject();
+    put('.codeadd/settings.json', JSON.stringify({
+      schema: 1,
+      setup: { 'last-run': '2026-10-20' },
+      qa: { baseUrl: 'http://localhost:9999', log: [{ date: '2026-10-20', item: 'x', decision: 'kept', reason: 'r' }] },
+    }));
+    const out = migrateQaSettings(ctx());
+
+    const doc = readJson('.codeadd/settings.json');
+    expect(doc.setup).toEqual({ 'last-run': '2026-10-20' });
+    expect(doc.qa.baseUrl).toBe('http://localhost:9999');
+    expect(doc.qa.bootHint).toBe(CONFIG.bootHint);
+    expect(doc.qa.log).toHaveLength(1);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+    expect(out.notes.join('\n')).toMatch(/already (has|holds) a qa section/);
+  });
+
+  it('a malformed old file throws and deletes nothing', () => {
+    seedOldProject();
+    put('docs/qa/config.json', '{not json');
+    expect(() => migrateQaSettings(ctx())).toThrow(/config\.json/);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+    expect(fs.existsSync(file('.codeadd/settings.json'))).toBe(false);
+    expect(fs.readFileSync(file(SKILL), 'utf8')).toBe(SKILL_OLD);
+  });
+
+  it('a malformed existing .codeadd/settings.json throws and deletes nothing', () => {
+    seedOldProject();
+    put('.codeadd/settings.json', '{not json');
+    expect(() => migrateQaSettings(ctx())).toThrow(/settings\.json/);
+    expect(fs.existsSync(file('docs/qa/config.json'))).toBe(true);
+    expect(fs.existsSync(file('docs/qa/qa-setup.md'))).toBe(true);
+  });
+
+  it('through runMigrations a throw leaves 0005 out of applied', () => {
+    seedOldProject();
+    put('docs/qa/qa-setup.md', '---\n: : not yaml [\n---\n');
+    const registry = only0005;
+    const res = runMigrations(ctx(), [], { registry });
+    expect(res.applied).toEqual([]);
+    expect(res.failed.map((f) => f.id)).toEqual(['0005-qa-settings']);
+  });
+
+  it('L3.3 a v1.6.0-shaped project with a current setup reads CURRENT afterwards, in both scripts', () => {
+    seedOldProject();
+    // mask host Playwright installs, as the scripts suite does
+    put('node_modules/@playwright/test/package.json', JSON.stringify({ name: '@playwright/test', main: 'not-installed.js' }));
+    const res = runMigrations(ctx(), [], { registry: only0005 });
+    expect(res.failed).toEqual([]);
+
+    const git = (...args) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args], { cwd: tmpDir });
+    git('init', '-q', '-b', 'main');
+    git('commit', '-q', '--allow-empty', '-m', 'init');
+    const scripts = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
+    const pre = spawnSync(process.execPath, [path.join(scripts, 'qa-preflight.cjs'), 'a'], { cwd: tmpDir, encoding: 'utf8' });
+    expect(pre.stdout).toContain('QA_RECEIPT=ok');
+    expect(pre.stdout).toContain('QA_CONTRACT_MATCH=ok');
+    const status = spawnSync(process.execPath, [path.join(scripts, 'status.cjs')], { cwd: tmpDir, encoding: 'utf8' });
+    expect(status.stdout).toContain('SETUP_QA:present');
+    expect(status.stdout).not.toContain('SETUP_QA_STALE');
+  });
+});

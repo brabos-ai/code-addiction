@@ -38,3 +38,13 @@ export function loadDocsBranch(cwd) {
     throw new Error(`DOCS_ROOT_MISSING: ${file} is not installed — run codeadd install or update first (${err.code || err.message})`);
   }
 }
+
+/** The installed docs-guard module for `cwd`. */
+export function loadDocsGuard(cwd) {
+  const file = path.join(cwd, '.codeadd', 'scripts', 'docs-guard.cjs');
+  try {
+    return nodeRequire(file);
+  } catch (err) {
+    throw new Error(`DOCS_ROOT_MISSING: ${file} is not installed — run codeadd install or update first (${err.code || err.message})`);
+  }
+}

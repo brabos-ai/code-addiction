@@ -12,6 +12,7 @@ import { features } from './features.js';
 import { plugins } from './plugins.js';
 import { providers, modify } from './modify.js';
 import { migrate } from './migrations.js';
+import { docsMigrate } from './docs-migrate.js';
 import { mcp } from './mcp.js';
 import { promptUninstallScope } from './prompt.js';
 
@@ -82,6 +83,9 @@ export async function resolveUninstallScope(cwd) {
   return [];
 }
 
+// Subcommands that take a second word: `docs migrate`.
+const NAMESPACED = { docs: { migrate: docsMigrate } };
+
 export const USAGE = `
 Usage: codeadd <command>
 
@@ -129,6 +133,9 @@ Commands:
   migrate                      Apply pending one-off repairs to this install
   migrate --list               List applied and pending migrations
   migrate --dry-run            Show what migrate would do, write nothing
+  docs migrate                 Move the Code Addiction outputs in your code branch to the codeadd-docs
+                               branch (optional, safe to re-run; nothing is committed on the code side)
+  docs migrate --dry-run       List what would move, write nothing
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates
 
@@ -162,6 +169,8 @@ Examples:
   npx codeadd doctor
   npx codeadd validate
   npx codeadd validate --repair
+  npx codeadd docs migrate --dry-run
+  npx codeadd docs migrate
   npx codeadd config show
   npx codeadd config show --verbose
   npx codeadd mcp --corpus=docs
@@ -240,6 +249,14 @@ export async function runCli(argv) {
       // Reachable even when `update` would early-return on an already-current
       // project — which is the only way such a project can be repaired.
       await migrate(targetDir, args, scope);
+    } else if (Object.hasOwn(NAMESPACED, subcommand)) {
+      const handler = NAMESPACED[subcommand][args[0]];
+      if (handler) {
+        await handler(targetDir, args.slice(1), scope);
+      } else {
+        log.message(USAGE);
+        process.exit(1);
+      }
     } else if (subcommand === 'config') {
       const subCmd = args[0];
       if (subCmd === 'show') {
