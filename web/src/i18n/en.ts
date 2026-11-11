@@ -117,6 +117,7 @@ export const en = {
         agentMode: "Agent Mode",
         plugins: "Plugins",
         providers: "Providers",
+        docsBranch: "Docs Branch",
         structure: "Project Structure",
         ecosystem: "Ecosystem Map",
       },
@@ -454,7 +455,7 @@ export const en = {
       },
       design: {
         card: "UI plans get a style, palette and type choice from a design library instead of defaults.",
-        summary: 'Makes the design step of <code class="font-mono">/add-plan</code> use ui-ux-pro-max, which you install yourself, as the data source for style, palette, typography and chart choice. Your inspected project tokens and <code class="font-mono">docs/design-system.md</code> still come first, and the design core keeps its notation, rubric and schema gate. Code Addiction ships no copy of the skill and installs nothing.',
+        summary: 'Makes the design step of <code class="font-mono">/add-plan</code> use ui-ux-pro-max, which you install yourself, as the data source for style, palette, typography and chart choice. Your inspected project tokens and <code class="font-mono">.codeadd/docs/design-system.md</code> still come first, and the design core keeps its notation, rubric and schema gate. Code Addiction ships no copy of the skill and installs nothing.',
         installTitle: "1 — Install ui-ux-pro-max (one of two official routes)",
         installText: 'Required before enabling the plugin. Code Addiction looks for <code class="font-mono">ui-ux-pro-max/SKILL.md</code> in the project and home skill folders of every supported provider, and in Claude\'s installed plugins list. In Claude Code:',
         anyProvider: 'Any provider, with the official CLI (not the stale <code class="font-mono">uipro-cli</code> package):',
@@ -469,6 +470,21 @@ export const en = {
       format: "Format",
       caveat: 'Commands and skills build to all six providers. Agent definitions ship to Claude Code, Cursor, OpenCode, Codex and ZCode — Antigravity is deferred because its native <code class="font-mono">.agents/agents/</code> path collides with the Codex skills root. ZCode reads commands and skills from the same <code class="font-mono">.agents/</code> tree as Codex and keeps its agents in <code class="font-mono">.zcode/</code>, so the two never duplicate a file on disk.',
     },
+    docsBranch: {
+      heading: "Docs Branch",
+      intro: 'Every output Code Addiction writes (plans, feature docs, wiki, QA reports, the delivery index) lives in <code class="font-mono text-xs text-foreground">.codeadd/docs/</code>, a git worktree of the <code class="font-mono text-xs text-foreground">codeadd-docs</code> branch in your own remote. Your code pull requests no longer carry any Code Addiction document.',
+      rows: [
+        { label: "The branch", desc: '<code class="font-mono text-xs text-foreground">codeadd-docs</code> is an orphan branch with its own history. No command, uninstall or migration ever deletes it; <code class="font-mono text-xs text-foreground">/add-done</code> commits and pushes it.' },
+        { label: "The DOCS= line", desc: '<code class="font-mono text-xs text-foreground">status.cjs</code> prepares the worktree and prints one <code class="font-mono text-xs text-foreground">DOCS=</code> line with the result. It never fails on this step: offline or without a remote, the work continues locally.' },
+        { label: "The docs-guard", desc: 'If an output lands outside <code class="font-mono text-xs text-foreground">.codeadd/docs/</code>, the guard moves it there silently at close-out, so a misplaced file never reaches the code PR.' },
+        { label: "Searching", desc: '<code class="font-mono text-xs text-foreground">rg</code>, Grep and Glob skip git-ignored paths. Pass <code class="font-mono text-xs text-foreground">.codeadd/docs/</code> explicitly when you search the docs.' },
+        { label: "The schema: field", desc: 'Every generated markdown document carries <code class="font-mono text-xs text-foreground">schema: 1</code> in its frontmatter: the version of the document format, not the package version. A document without it is schema 0, a legacy document. JSONL outputs carry a per-line <code class="font-mono text-xs text-foreground">v</code> instead.' },
+        { label: "QA ignore", desc: 'The ignore of the QA run output moved to the docs branch: re-run <code class="font-mono text-xs text-foreground">/add-qa-setup</code> once in every project that uses QA.' },
+      ],
+      migrateTitle: "Migrating an existing project",
+      migrateIntro: 'A project that kept its Code Addiction outputs in the code branch can move them with one optional, idempotent command. Run it with <code class="font-mono text-xs text-foreground">--dry-run</code> first to see what would move.',
+      migrateNote: 'It copies the outputs into the docs branch, makes one commit there, and stages the deletions in your code branch without committing them, so you review and commit them yourself. It never runs an agent and never stamps a version. It ends by printing a ready-to-paste prompt, between <code class="font-mono text-xs">--- AGENT PROMPT ---</code> and <code class="font-mono text-xs">--- END AGENT PROMPT ---</code>, for your own agent: it brings every document without <code class="font-mono text-xs">schema:</code> up to the current standard and stamps it. Paste it into any agent you use.',
+    },
     structure: {
       heading: "Project Structure",
       intro: "The Code Addiction repository is organized as follows:",
@@ -477,7 +493,7 @@ export const en = {
       codeadd: "← core: commands, skills, scripts",
       web: "← this website",
       scripts: "← build and release scripts",
-      docs: "← project documentation",
+      docs: "← the Code Addiction outputs (docs branch)",
     },
     ecosystem: {
       heading: "Ecosystem Map",

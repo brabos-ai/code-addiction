@@ -64,8 +64,8 @@ Development tools that build and maintain the framework itself. **It has a provi
 | Pipeline stages | `workbench/skills/add-framework--<stage>/SKILL.md` — the same namespace, as skills, so each stage can load the next |
 | Skills | `workbench/skills/<name>/SKILL.md`, subdocs in `references/` |
 | Agents | `workbench/agents/*.md` |
-| Plans | `docs/plans/` — gitignored working artefacts, local only |
-| Deliveries | `docs/deliveries/<plan-basename>/` — tracked. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
+| Plans | `.codeadd/docs/plans/` — on the `codeadd-docs` branch, untracked there (local working artefacts) |
+| Deliveries | `.codeadd/docs/deliveries/<plan-basename>/` — tracked on `codeadd-docs`, with the changelog and the delivery index. A closed-out plan's documents, archived by `add-framework--done` STEP 6 |
 
 ### The internal pipeline — four skills
 
@@ -77,7 +77,7 @@ as `/<name>` and declares the next with `handoff:`.
 | `add-framework--brainstorm` | Collaborative ideation; its one approval can deliver automatically up to the build's PR question | Both layers |
 | `add-framework--plan` | Strategic consultant; generates one plan for both layers | Both layers |
 | `add-framework--build` | Executes a plan; each F-block's layer tag selects the rules. Dispatches a cold readback before the first F-block and one adversarial audit after the last | Both layers |
-| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Never reached unattended | Branches, PRs, `docs/delivered.jsonl` |
+| `add-framework--done` | Close-out — gates, `gh pr merge --merge`, index entry, cleanup. Commits and pushes the `codeadd-docs` branch. Never reached unattended | Branches, PRs, `.codeadd/docs/delivered.jsonl` |
 
 ### Internal commands
 
@@ -240,6 +240,8 @@ Auto-updated by `add-framework--sync` before releases (4 analyzer agents in para
 ## Shell Calls
 
 Content longer than about 3 lines, or holding any quote, backslash, backtick or `${}`, is written with the file-write tool to `.codeadd/.temp/<random-slug>.<ext>`, passed by path and deleted in the same step after use; short one-liners stay inline. Authoring side: `building-commands`.
+
+When searching docs with rg, Grep or Glob, always pass `.codeadd/docs/` explicitly — they skip git-ignored paths and the docs worktree is one.
 
 ## Where the details live
 
