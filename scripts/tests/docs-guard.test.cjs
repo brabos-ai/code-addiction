@@ -19,7 +19,7 @@ function fixture() {
 const inRoot = (r, ...p) => path.join(r.repo, ...ROOT_PARTS, ...p);
 const inCode = (r, ...p) => path.join(r.repo, ...p);
 const guard = (r) => runScript('docs-guard', [], { cwd: r.repo });
-const typed = (type, extra = '') => `---\ntype: ${type}\n${extra}---\n\n# Title\n`;
+const typed = (type, extra = '') => `---\nid: ID-${type}\ntype: ${type}\n${extra}---\n\n# Title\n`;
 
 test('every typed doc with a sub-path lands in the place of its type', () => {
   const r = fixture();
@@ -219,5 +219,32 @@ test('a JSONL line is detected with or without v', () => {
     write(inCode(r, 'a.jsonl'), '{"ts":"2026-01-01T00:00:00Z","agent":"x","type":"fix"}\n');
     write(inCode(r, 'b.jsonl'), '{"v":1,"ts":"2026-01-01T00:00:00Z","agent":"x","type":"fix"}\n');
     assert.equal(guard(r).stdout.trim(), 'DOCS_GUARD=moved:2');
+  } finally { r.cleanup(); }
+});
+
+test('the framework\'s own files are never moved: templates, provider dirs, fixtures and .codeadd tooling', () => {
+  const r = fixture();
+  try {
+    // a template carries a registered type: and no id; a skill or fixture may carry one too
+    write(inCode(r, 'framwork', '.codeadd', 'templates', 'about-template.md'), '---\ntype: feature\nschema: 1\n---\n\n# T\n');
+    write(inCode(r, '.codeadd', 'templates', 'hotfix.md'), '---\ntype: hotfix\nschema: 1\n---\n\n# T\n');
+    write(inCode(r, '.claude', 'skills', 'x', 'SKILL.md'), typed('feature'));
+    write(inCode(r, 'cli', 'tests', 'fixtures', 'legacy', 'a.md'), typed('feature'));
+    write(inCode(r, 'node_modules', 'pkg', 'b.md'), typed('feature'));
+    assert.equal(guard(r).stdout.trim(), 'DOCS_GUARD=clean');
+    for (const rel of [['framwork', '.codeadd', 'templates', 'about-template.md'], ['.codeadd', 'templates', 'hotfix.md'], ['.claude', 'skills', 'x', 'SKILL.md']]) {
+      assert.ok(fs.existsSync(inCode(r, ...rel)), rel.join('/'));
+    }
+  } finally { r.cleanup(); }
+});
+
+test('a registered type without an id is not an output; the old project folder is still looked into', () => {
+  const r = fixture();
+  try {
+    write(inCode(r, 'notes', 'example.md'), '---\ntype: feature\n---\n\n# an example\n');
+    write(inCode(r, '.codeadd', 'project', 'decisions.jsonl'), '{"ts":"2026-01-01T00:00:00Z","agent":"x","type":"d"}\n');
+    assert.equal(guard(r).stdout.trim(), 'DOCS_GUARD=moved:1');
+    assert.ok(fs.existsSync(inCode(r, 'notes', 'example.md')));
+    assert.ok(fs.existsSync(inRoot(r, 'decisions.jsonl')));
   } finally { r.cleanup(); }
 });

@@ -57,6 +57,29 @@ const { spawnSync } = require('node:child_process');
 const { DOCS_ROOT, DOCS_LAYOUT, docsPath, repoTop, toPosix } = require('./docs-root.cjs');
 
 const FEATURE_DIR_RE = /^[0-9]{4}[A-Z]-[A-Za-z0-9][A-Za-z0-9._-]*$/;
+// The framework's own files are never outputs: its installed tooling (`.codeadd/` — only the old
+// project folder holding a decisions log is looked into), every provider directory, dependencies,
+// and test fixtures. A template or a skill that carries a `type:` line is not a misplaced document.
+const OWN_TOP_DIRS = new Set([
+  '.codeadd', '.claude', '.agents', '.agent', '.codex', '.cursor', '.opencode', '.gemini', '.zcode',
+  '.github', '.augment', '.bob', '.kilocode', '.kiro', '.qwen', '.roo', '.shai', '.windsurf', 'node_modules',
+]);
+const OWN_ANYWHERE = new Set(['node_modules', 'fixtures', '.git']);
+function isOwnFile(rel) {
+  const parts = rel.split('/');
+  if (parts.some((seg) => OWN_ANYWHERE.has(seg))) return true;
+  if (parts[0] === '.codeadd') return parts[1] !== 'project';
+  return OWN_TOP_DIRS.has(parts[0]);
+}
+
+// Types whose minimal frontmatter is type + schema; every other output document carries an `id:`,
+// and a file with a registered `type:` but no `id:` (a template, an example) is not one.
+const ID_LESS_TYPES = new Set(['iterations', 'build-ledger', 'tasks', 'health-check', 'design-system', 'code-quality-review']);
+function hasFrontmatterId(text) {
+  const m = FRONTMATTER_RE.exec(text);
+  return !!m && /^id:[ \t]*\S/m.test(m[1]);
+}
+
 const FOLDER_FILE_TYPES = new Set(['iterations', 'build-ledger', 'tasks']);
 const STAMPED_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}-.+?(-intent)?\.md$/;
 const FRONTMATTER_RE = /^﻿?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
@@ -103,7 +126,7 @@ function candidates(top, main) {
   add(git(top, ['diff', '-z', '--name-only', '--cached', '--diff-filter=ACMR']).stdout);
   add(git(top, ['ls-files', '-z', '-o', '--exclude-standard']).stdout);
   const prefix = DOCS_ROOT + '/';
-  return [...found].filter((p) => p !== DOCS_ROOT && !p.startsWith(prefix) && fs.existsSync(path.join(top, ...p.split('/'))));
+  return [...found].filter((p) => p !== DOCS_ROOT && !p.startsWith(prefix) && !isOwnFile(p) && fs.existsSync(path.join(top, ...p.split('/'))));
 }
 
 function readText(abs) {
@@ -176,7 +199,7 @@ function classify(top, rel) {
   const text = readText(abs);
   if (text === null) return null;
   const type = frontmatterType(text);
-  if (type && Object.prototype.hasOwnProperty.call(DOCS_LAYOUT.types, type)) {
+  if (type && Object.prototype.hasOwnProperty.call(DOCS_LAYOUT.types, type) && (ID_LESS_TYPES.has(type) || hasFrontmatterId(text))) {
     const sub = DOCS_LAYOUT.types[type];
     if (sub !== null) return { dest: sub.endsWith('.md') ? sub : `${sub}/${base}` };
     // A feature-folder file (iterations, build-ledger, tasks) has no place of its own; its type
