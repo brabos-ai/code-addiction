@@ -7,16 +7,17 @@
  * stdout/stderr and never calls process.exit: every operation returns a plain
  * result object, and the entry owns the KEY=VALUE/JSONL protocol.
  *
- * It DOES read and append `docs/delivered.jsonl` — that is the domain, not a
- * boundary violation — and it runs one binary, git, through argument arrays
- * with shell:false for the corpus and the `touched` commit derivation.
+ * It DOES read and append the delivery index — `delivered.jsonl` under the docs
+ * root, resolved by the one module that owns the root — that is the domain, not
+ * a boundary violation, and it runs one binary, git, through argument arrays
+ * with shell:false for the corpus and the `touched` commit lookups.
  *
  * CONTRACT (preserved from delivered.sh):
  *   - The corpus is every file git does not ignore
- *     (`git ls-files --cached --others --exclude-standard`) minus `docs/`,
- *     which also removes the index. A filesystem walk would report build output
- *     and stale deleted copies alive; a tracked-only scan would report fresh
- *     uncommitted work dead.
+ *     (`git ls-files --cached --others --exclude-standard`). The docs root is a
+ *     worktree of another branch, excluded from the code tree, so nothing is
+ *     subtracted. A filesystem walk would report build output and stale deleted
+ *     copies alive; a tracked-only scan would report fresh uncommitted work dead.
  *   - `write` appends ONE minified line per call, generating `v` and `ts`; it
  *     never rewrites an existing line. Hard bans refuse with a `REFUSED=` name.
  *   - `read` matches PER TERM over id/name/words/node/items[].what/items[].find
@@ -25,17 +26,27 @@
  *     with NO backfill. `--no-verify` returns the stored status.
  *   - `verify` reports each entry; only `--repair` writes, and a repair is a
  *     NEW line (`by=verify`, `status=changed`) that points at a UNIQUE match.
- *   - `touched` answers in TWO layers: `complete` from the derived commit (the
- *     first-parent commit that introduced the entry's line and touched
- *     something outside docs/) and `curated` from the item anchors. The answer
- *     field is `answer`, never `layer`, so the record's own layer survives.
+ *   - `write` also accepts two optional, additive fields — `code_sha` (the code
+ *     commit that delivered the entry) and `pr` (its pull request number, or
+ *     null) — without bumping `v`. `stamp` appends a NEW line carrying them for
+ *     an entry already recorded; the recorded line is never rewritten.
+ *   - `touched` answers in TWO layers: `complete` from the entry's recorded
+ *     `code_sha` (the files that commit changed — a merge commit against its
+ *     first parent) and `curated` from the item anchors. An entry without a
+ *     `code_sha` that git can resolve yields NO `complete` answer: the index
+ *     lives on another branch, so there is no history to derive one from and
+ *     the core never guesses. The answer field is `answer`, never `layer`, so
+ *     the record's own layer survives.
  *   - A corrupt index line is skipped and REPORTED by number, never fatal; an
  *     absent index is an empty result, never an error.
  *
  * Exports operations returning structured results:
  *   resolveRoot(cwd)                     -> { ok, root } | { ok:false, error }
- *   createContext({ root, index })       -> context for the operations below
+ *   createContext({ root, index })       -> context for the operations below; a
+ *                                           missing docs root yields `index: null`
+ *                                           (reads are empty, writes say why)
  *   performWrite(ctx, raw)               -> refused | cannot-write-index | summary
+ *   performStamp(ctx, opts)              -> the same, for one recorded id
  *   performRead(ctx, opts)               -> counts, skipped, entries
  *   performVerify(ctx, opts)             -> results, repaired, skipped | error
  *   performTouched(ctx, opts)            -> complete, curated, curatedOnly, ...
@@ -48,6 +59,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
 
 const STATUSES = ['live', 'changed', 'gone', 'superseded'];
 const RANK = { live: 0, changed: 1, superseded: 2, gone: 3 };
@@ -73,6 +85,10 @@ function norm(p) {
 /** Second-precision UTC timestamp, the format the index records. */
 function nowTs() {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function isSha(v) {
+  return typeof v === 'string' && /^[0-9a-f]{7,40}$/.test(v);
 }
 
 function refused(name) {
@@ -101,9 +117,19 @@ function resolveRoot(cwd) {
  * computed once and cached, because every item check walks it.
  */
 function createContext({ root, index } = {}) {
+  let resolved = index || null;
+  if (!resolved) {
+    try {
+      resolved = docsPath(root, DOCS_LAYOUT.delivered);
+    } catch (e) {
+      // DOCS_ROOT_MISSING: there is no index to read and none to write. A
+      // second location is never tried; this runs in the MCP server too.
+      resolved = null;
+    }
+  }
   return {
     root,
-    index: index || path.join(root, 'docs', 'delivered.jsonl'),
+    index: resolved,
     _corpus: null,
     _corpusSet: null,
   };
@@ -132,10 +158,8 @@ function corpus(ctx) {
   if (ctx._corpus) return ctx._corpus;
   const raw = git(ctx, ['-c', 'core.quotePath=false', 'ls-files', '--cached', '--others', '--exclude-standard']);
   const text = raw === null ? '' : raw;
-  // `docs/` is subtracted before normalisation, matching the shell's grep: the
-  // index lives under docs/, so this removes it too.
   ctx._corpus = text.split(/\r?\n/)
-    .filter((l) => l && !l.startsWith('docs/'))
+    .filter(Boolean)
     .map(norm)
     .filter(Boolean);
   ctx._corpusSet = new Set(ctx._corpus);
@@ -188,6 +212,7 @@ function loadIndex(ctx) {
   const byId = new Map();
   const skipped = [];
   let raw;
+  if (!ctx.index) return { byId, skipped };
   try {
     raw = fs.readFileSync(ctx.index, 'utf8');
   } catch (e) {
@@ -230,11 +255,14 @@ function serialize(rec) {
   };
   if (rec.status === 'superseded') o.superseded_by = rec.superseded_by;
   if (rec.node) o.node = rec.node;
+  if (rec.code_sha) o.code_sha = rec.code_sha;
+  if (rec.pr !== undefined) o.pr = rec.pr;
   return JSON.stringify(o);
 }
 
 /** Append lines; a write the filesystem refuses is the one exit-1 case. */
 function append(ctx, lines) {
+  if (!ctx.index) return { ok: false, error: 'docs-root-missing' };
   try {
     fs.mkdirSync(path.dirname(ctx.index), { recursive: true });
     fs.appendFileSync(ctx.index, lines.map((l) => l + '\n').join(''));
@@ -245,6 +273,7 @@ function append(ctx, lines) {
 }
 
 function countLines(ctx) {
+  if (!ctx.index) return 0;
   try {
     return fs.readFileSync(ctx.index, 'utf8').split('\n').filter((l) => l.trim()).length;
   } catch (e) {
@@ -305,6 +334,7 @@ function performWrite(ctx, raw) {
     return refused('invalid-json');
   }
   if (!rec || typeof rec !== 'object' || Array.isArray(rec)) return refused('invalid-json');
+  if (!ctx.index) return { ok: false, exit: 2, error: 'docs-root-missing' };
 
   for (const f of REQUIRED) {
     const v = rec[f];
@@ -315,6 +345,8 @@ function performWrite(ctx, raw) {
   if (!Array.isArray(rec.commits) || rec.commits.length < 1) return refused('no-commits');
   if (STATUSES.indexOf(rec.status) === -1) return refused('bad-status');
   if (rec.status === 'superseded' && !rec.superseded_by) return refused('superseded-without-by');
+  if (rec.code_sha !== undefined && !isSha(rec.code_sha)) return refused('bad-code-sha');
+  if (rec.pr !== undefined && rec.pr !== null && !(Number.isInteger(rec.pr) && rec.pr > 0)) return refused('bad-pr');
 
   // A superseded line is declared AFTER its replacement deleted its files, so
   // the anchor checks below cannot apply to it. Its pointer is what it carries.
@@ -333,7 +365,7 @@ function performWrite(ctx, raw) {
     if (/\s/.test(it.find)) return refused('find-whitespace');
 
     const at = norm(it.at);
-    if (at === 'docs' || at.indexOf('docs/') === 0) return refused('item-in-docs');
+    if (at === DOCS_ROOT || at.indexOf(DOCS_ROOT + '/') === 0) return refused('item-in-docs');
     // "Exists but excluded" is what `ignored` means. A superseded line stops
     // here: item-ignored and the anchor search both read the repository NOW.
     if (superseded) continue;
@@ -351,6 +383,34 @@ function performWrite(ctx, raw) {
   if (!appended.ok) return { ok: false, exit: 1, error: appended.error };
 
   return { ok: true, entry: rec.id, created, lines: countLines(ctx), loose };
+}
+
+// ─── stamp ───────────────────────────────────────────────────────────────────
+
+/**
+ * Record the delivery's code commit on an entry that is already in the index.
+ * The index is append-only, so this is a NEW line: the entry as it stands (last
+ * line wins) plus `code_sha` and `pr`, with a fresh `ts`. Re-stamping with the
+ * same values appends nothing.
+ */
+function performStamp(ctx, opts = {}) {
+  if (!ctx.index) return { ok: false, exit: 2, error: 'docs-root-missing' };
+  const id = String(opts.id === undefined ? '' : opts.id);
+  if (!id) return refused('missing-field');
+  if (!isSha(opts.codeSha)) return refused('bad-code-sha');
+  const pr = opts.pr === undefined ? null : opts.pr;
+  if (pr !== null && !(Number.isInteger(pr) && pr > 0)) return refused('bad-pr');
+
+  const current = loadIndex(ctx).byId.get(id);
+  if (!current) return { ok: false, exit: 2, error: 'entry-absent' };
+  if (current.code_sha === opts.codeSha && (current.pr === undefined ? null : current.pr) === pr) {
+    return { ok: true, entry: id, created: false, lines: countLines(ctx), loose: [], stamped: false };
+  }
+
+  const rec = Object.assign({}, current, { code_sha: opts.codeSha, pr, ts: nowTs() });
+  const appended = append(ctx, [serialize(rec)]);
+  if (!appended.ok) return { ok: false, exit: 1, error: appended.error };
+  return { ok: true, entry: id, created: false, lines: countLines(ctx), loose: [], stamped: true };
 }
 
 // ─── read ────────────────────────────────────────────────────────────────────
@@ -477,44 +537,13 @@ function performVerify(ctx, opts = {}) {
 // ─── touched ─────────────────────────────────────────────────────────────────
 
 /**
- * Every delivery's commit, in ONE git walk. `-p` over the index gives each
- * commit with its added lines; an id first seen on a `+` line going backwards
- * is the commit that introduced it.
- *
- * FIRST PARENT: a merge commit is what delivers. `--first-parent -m` reads the
- * merge diffed against its first parent, which is the whole delivery, instead
- * of naming the branch commit that touched only docs/. Newest first, so the
- * LAST assignment for an id is its oldest commit — the introducing one.
+ * The files one commit changed — a merge commit against its FIRST parent, which
+ * is the whole delivery. `null` when git cannot resolve the commit.
  */
-function deliveryCommits(ctx) {
-  const log = git(ctx, ['log', '--first-parent', '-m', '--format=C %h', '-p', '--', 'docs/delivered.jsonl']);
-  if (log === null) return null;
-  const owner = new Map();
-  let sha = null;
-  for (const line of log.split('\n')) {
-    if (line.startsWith('C ')) {
-      sha = line.slice(2).trim();
-      continue;
-    }
-    if (!sha || line.charAt(0) !== '+') continue;
-    const m = line.match(/"id":"([^"]+)"/);
-    if (m) owner.set(m[1], sha);
-  }
-  return owner;
-}
-
-/** First-parent commits that touched anything outside `docs/`. `null` when git cannot answer. */
-function nonDocsCommits(ctx) {
-  const res = git(ctx, ['log', '--first-parent', '--format=%h', '--', '.', ':(exclude)docs']);
+function filesOfCommit(ctx, sha) {
+  const res = git(ctx, ['log', '-1', '--first-parent', '-m', '--no-renames', '--format=', '--name-only', '--end-of-options', sha]);
   if (res === null) return null;
-  return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
-}
-
-/** First-parent commits touching one path. `null` when git cannot answer. */
-function commitsTouching(ctx, p) {
-  const res = git(ctx, ['log', '--first-parent', '--format=%h', '--', p]);
-  if (res === null) return null;
-  return new Set(res.split('\n').map((x) => x.trim()).filter(Boolean));
+  return new Set(res.split('\n').map((x) => norm(x.trim())).filter(Boolean));
 }
 
 function performTouched(ctx, opts = {}) {
@@ -523,29 +552,23 @@ function performTouched(ctx, opts = {}) {
     .filter(Boolean);
   const { byId, skipped } = loadIndex(ctx);
 
-  const owners = deliveryCommits(ctx);
-  const nonDocs = nonDocsCommits(ctx);
-  const touching = new Map();
-  for (const w of wanted) touching.set(w, commitsTouching(ctx, w));
+  const filesBySha = new Map();
+  const filesOf = (sha) => {
+    if (!filesBySha.has(sha)) filesBySha.set(sha, filesOfCommit(ctx, sha));
+    return filesBySha.get(sha);
+  };
 
   const complete = [];
   const curated = [];
   let curatedOnly = 0;
 
   for (const e of Array.from(byId.values())) {
-    const sha = owners ? owners.get(e.id) || null : null;
-
-    // A commit that changed nothing outside docs/ describes the recording, not
-    // the delivery. A history git cannot walk lands here too. Both mean the
-    // same to a caller: the commit cannot answer, the anchors can.
-    const usable = sha !== null && nonDocs !== null && nonDocs.has(sha);
-
-    const hitComplete = usable
-      ? wanted.filter((w) => {
-        const s = touching.get(w);
-        return s !== null && s !== undefined && s.has(sha);
-      })
-      : [];
+    // The commit is what the entry RECORDED. No code_sha, or one git cannot
+    // resolve, means the commit cannot answer; the anchors can.
+    const sha = isSha(e.code_sha) ? e.code_sha : null;
+    const files = sha === null ? null : filesOf(sha);
+    const usable = files !== null;
+    const hitComplete = usable ? wanted.filter((w) => files.has(w)) : [];
     if (hitComplete.length) {
       complete.push(Object.assign({}, e, { answer: 'complete', commit: sha, matched: hitComplete }));
       continue;
@@ -602,8 +625,7 @@ module.exports = {
   performWrite,
   performRead,
   performVerify,
+  performStamp,
   performTouched,
-  deliveryCommits,
-  nonDocsCommits,
-  commitsTouching,
+  filesOfCommit,
 };

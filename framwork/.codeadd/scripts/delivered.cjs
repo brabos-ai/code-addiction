@@ -9,6 +9,12 @@
  *        node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N] [--no-verify]
  *        node .codeadd/scripts/delivered.cjs verify [<id>] [--repair]
  *        node .codeadd/scripts/delivered.cjs touched <path> [<path>...]
+ *        node .codeadd/scripts/delivered.cjs stamp <id> --code-sha <sha> [--pr <n>]
+ *
+ * `stamp` records the delivery's code commit (and pull request number) on an entry
+ * the index already holds, as a NEW line — the index is append-only. The index is
+ * `delivered.jsonl` under the docs root; with no docs root `write` and `stamp` print
+ * ERROR=docs-root-missing (exit 2) and the readers answer empty.
  *
  * Dependencies: Node >= 22.19.0 built-ins and git. No bash, no WSL. The entry IS a
  * Node program, so the shell's separate `node` lookup (`ERROR=node-missing`) is
@@ -35,6 +41,7 @@ const USAGE = [
   '       node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N] [--no-verify]',
   '       node .codeadd/scripts/delivered.cjs verify [<id>] [--repair]',
   '       node .codeadd/scripts/delivered.cjs touched <path> [<path>...]',
+  '       node .codeadd/scripts/delivered.cjs stamp <id> --code-sha <sha> [--pr <n>]',
 ].join('\n') + '\n';
 
 function usage() {
@@ -112,6 +119,29 @@ function parseInvocation(argv) {
     return { ok: true, mode, paths: args };
   }
 
+  if (mode === 'stamp') {
+    const id = args.shift() || '';
+    if (!id || id.startsWith('--')) return { ok: false };
+    let codeSha = '';
+    let pr = null;
+    while (args.length > 0) {
+      const a = args[0];
+      if (a === '--code-sha') {
+        codeSha = args[1] === undefined ? '' : args[1];
+        args.splice(0, 2);
+      } else if (a === '--pr') {
+        const v = args[1] === undefined ? '' : args[1];
+        if (!/^[0-9]+$/.test(v)) return { ok: false };
+        pr = parseInt(v, 10);
+        args.splice(0, 2);
+      } else {
+        return { ok: false };
+      }
+    }
+    if (!codeSha) return { ok: false };
+    return { ok: true, mode, id, codeSha, pr };
+  }
+
   return { ok: false };
 }
 
@@ -159,6 +189,20 @@ function main(argv) {
     process.exit(0);
   }
 
+  if (inv.mode === 'stamp') {
+    const r = core.performStamp(ctx, inv);
+    if (!r.ok) {
+      if (r.refused) {
+        write('REFUSED=' + r.refused + '\n');
+        process.exit(2);
+      }
+      write('ERROR=' + r.error + '\n');
+      process.exit(r.exit || 1);
+    }
+    write('ENTRY=' + r.entry + '\nSTAMPED=' + String(r.stamped) + '\nLINES=' + String(r.lines) + '\n');
+    process.exit(0);
+  }
+
   if (inv.mode === 'read') {
     const r = core.performRead(ctx, inv);
     let out = 'MATCHED_LIVE=' + String(r.matchedLive) + '\n';
@@ -201,7 +245,7 @@ function main(argv) {
     process.exit(0);
   }
 
-  // parseInvocation admits only the four modes above.
+  // parseInvocation admits only the five modes above.
   usage();
   process.exit(2);
 }
