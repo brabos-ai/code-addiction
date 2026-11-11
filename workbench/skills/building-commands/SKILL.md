@@ -247,12 +247,12 @@ Why: nothing programmatically consumes `## Spec` (build.js, CLI, runtime all ign
 ❌ DO NOT — top-of-file metadata block:
 ## Spec
 ```json
-{"outputs":{"plan":"docs/features/${FEATURE_ID}/plan.md"},"schema":"feature-plan"}
+{"outputs":{"plan":".codeadd/docs/features/${FEATURE_ID}/plan.md"},"schema":"feature-plan"}
 ```
 
 ✅ DO — state output and schema in prose where they're used:
 ## STEP 9: Write plan.md
-Write to `docs/features/${FEATURE_ID}/plan.md` per the `feature-plan` schema.
+Write to `.codeadd/docs/features/${FEATURE_ID}/plan.md` per the `feature-plan` schema.
 ```
 
 If a JSON example genuinely helps (e.g., showing the shape of an output document), put it under a heading that names what it is — `## Output Format`, `## Output Template` — inside the section that explains the output. Not as a metadata block at the top.

@@ -75,7 +75,7 @@ IF USER ASKS OPEN-ENDED QUESTION DURING STEP 4:
   ✅ DO: Continue asking until every section is 100% clear and validated
 
 IF DESIGN DOCUMENT IS INCOMPLETE:
-  ⛔ DO NOT WRITE TO docs/brainstorming/
+  ⛔ DO NOT WRITE TO .codeadd/docs/brainstorming/
   ⛔ DO NOT SUGGEST /add-framework--plan
   ⛔ DO NOT MARK AS ready-for-implementation
   ✅ DO: Return to STEP 4, identify missing sections, continue exploration
@@ -106,8 +106,8 @@ Inspect the user's invocation string:
 - IF input matches pattern `vamos refinar [topic] -> ref: [path-to-umbrella.md]` (or English equivalent `refine [topic] -> ref: [path]`):
   - Extract `[topic]` and `[path]`
   - IF `[path]` missing → STOP and ask user to provide the umbrella path, in the SET form STEP 5.1 declares
-  - **Resolve `[path]`:** the full basename always works; otherwise match it as a **substring** of the basenames in `docs/brainstorming/` (a 24-character timestamp prefix is not typeable). Both naming forms resolve — the timestamped one and the legacy `YYYY-MM-DD-[topic]` one. Exactly one match → use it. More than one → ⛔ STOP, print every candidate and ask which. **NEVER guess.** No match → list `docs/brainstorming/` and STOP.
-  - Verify file exists at `docs/brainstorming/[resolved path]`
+  - **Resolve `[path]`:** the full basename always works; otherwise match it as a **substring** of the basenames in `.codeadd/docs/brainstorming/` (a 24-character timestamp prefix is not typeable; pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob, which skip git-ignored paths — the code branch ignores the docs root). Both naming forms resolve — the timestamped one and the legacy `YYYY-MM-DD-[topic]` one. Exactly one match → use it. More than one → ⛔ STOP, print every candidate and ask which. **NEVER guess.** No match → list `.codeadd/docs/brainstorming/` and STOP.
+  - Verify file exists at `.codeadd/docs/brainstorming/[resolved path]`
   - → JUMP to **STEP 8 (Continue Mode)**
 - ELSE (new idea) → proceed to STEP 1.1
 
@@ -299,8 +299,8 @@ Continue to STEP 3.
 
 | Path | STEPS 3 and 4 | STEPS 5 and 6 | STEP 7 |
 |------|---------------|---------------|--------|
-| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | 7.1 reports the recommendation, 7.2 omits the document path, 7.3 does NOT route to the planner, 7.4 does not apply. |
-| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `docs/brainstorming/`. | Runs in full. 7.1 reports the design, 7.2 omits the document path, 7.4 does not apply. |
+| **spike** | Skip STEP 3. Present the question and the probe in **2-3 sentences**, get a nod, then investigate — `### 1.2`'s `@framework-discovery-agent` dispatch stays available and is the right probe tool. Report a recommendation. Anything built is labelled **throwaway**. | **Skipped entirely.** Nothing is written to `.codeadd/docs/brainstorming/`. | 7.1 reports the recommendation, 7.2 omits the document path, 7.3 does NOT route to the planner, 7.4 does not apply. |
+| **bounded** | Skip STEP 3. In STEP 4, ask only the clarifying questions that matter, then present a **short design in chat**: which artefacts change, what changes in each, and how it is proved. STOP until the user approves. | **Skipped entirely.** Nothing is written to `.codeadd/docs/brainstorming/`. | Runs in full. 7.1 reports the design, 7.2 omits the document path, 7.4 does not apply. |
 | **architectural** | Everything written below and in STEP 4, unchanged — including the decomposition offer. | Run as written. | Runs in full, as written. |
 
 ⛔ **`7.1` runs on all three paths.** `add-final-report` reports the WORK, not a file — a spike's
@@ -467,7 +467,7 @@ enough, and carries the standing list of what no query reaches. ⛔ DO NOT pick 
 
 ```
 IF AN ARTEFACT IN THE DESIGN HAS NO ANSWER TO BOTH HALVES:
-  ⛔ DO NOT USE: Write on docs/brainstorming/
+  ⛔ DO NOT USE: Write on .codeadd/docs/brainstorming/
   ⛔ DO NOT: Present the design in chat as ready for approval
   ⛔ DO NOT: Fill the caller column from filenames, grep or recollection
   ✅ DO: Ask the graph, and fill it from the answer
@@ -491,27 +491,27 @@ recommendation, and STEP 3's table already says it writes nothing.
 
 ### 5.1 Determine Output Path
 
-- Simple idea → `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
+- Simple idea → `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md`
 - Umbrella spec → the SET form declared below, whose umbrella member ends `-000-umbrella.md`
 
 Timestamp format: `YYYY-MM-DDTHHMMSS`, **local time**, `T` between the date and the time, **no separators inside `HHMMSS`** — Windows forbids `:` in a filename. Lexicographic sort equals chronological sort, so two brainstorms written the same day no longer sort arbitrarily. Topic slug: kebab-case from idea.
 
 **Brainstorms carry NO kind marker** — unlike plans, which keep `PLAN` (and the legacy `SELF-PLAN` on
-files already written). Internal brainstorms live in `docs/brainstorming/` of this repo, product ones in `docs/brainstorm/` of the user's repo: different directories in different repositories, so a marker would carry no information.
+files already written). Internal brainstorms live in `.codeadd/docs/brainstorming/` of this repo, product ones in the docs root of the user's project: different directories in different repositories, so a marker would carry no information.
 
 **A brainstorm SET allocates its timestamp once, at the umbrella, and every subtopic reuses it
 verbatim — and every member carries an `NNN` ordinal. THIS IS THE ONE DECLARATION; every other site
 in this file points here rather than repeating the pattern.**
 
 ```
-docs/brainstorming/2026-09-07T005046-[topic]-000-umbrella.md
-docs/brainstorming/2026-09-07T005046-[topic]-001-[subtopic].md
-docs/brainstorming/2026-09-07T005046-[topic]-002-[subtopic].md
+.codeadd/docs/brainstorming/2026-09-07T005046-[topic]-000-umbrella.md
+.codeadd/docs/brainstorming/2026-09-07T005046-[topic]-001-[subtopic].md
+.codeadd/docs/brainstorming/2026-09-07T005046-[topic]-002-[subtopic].md
 ```
 
 **The ordinal carries refinement order** — `000` is the umbrella, `001` onward are the subtopics in
 the order they will be planned. It is the same convention `add-plan-authoring` already documents for a
-plan set, and the files already on disk in `docs/brainstorming/` use it.
+plan set, and the files already on disk in `.codeadd/docs/brainstorming/` use it.
 
 ⛔ **A STANDALONE brainstorm takes NO ordinal.** `YYYY-MM-DDTHHMMSS-[topic].md` is complete as it
 stands: there is no set, so there is nothing to order. Only a set member is numbered, and a blind
@@ -604,7 +604,7 @@ write NOT VERIFIED where the question could not be asked.]
 
 ## Next Steps
 
-Run: `/add-framework--plan docs/brainstorming/<this design document's own filename>`
+Run: `/add-framework--plan .codeadd/docs/brainstorming/<this design document's own filename>`
 ```
 
 **For umbrella specs:**
@@ -633,7 +633,7 @@ cheaper to find out here than at `8.1`, after the refinement.]
 
 ### 5.3 Write to File
 
-Create file in `docs/brainstorming/` with content from 5.2. Do NOT commit — wait for explicit user request. DO NOT announce the path as delivered — proceed immediately to STEP 6.
+Create file in `.codeadd/docs/brainstorming/` with content from 5.2. Do NOT commit — wait for explicit user request. DO NOT announce the path as delivered — proceed immediately to STEP 6.
 
 ---
 
@@ -697,7 +697,7 @@ IF THIS RUN TOOK THE spike OR bounded PATH:
 
 ### 7.2 Metadata, After the Report
 
-- The design document path: `docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` — **omitted on `spike`
+- The design document path: `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-[topic].md` — **omitted on `spike`
   and `bounded`**, which write no file. Omit the line; never print a path that resolves to nothing.
 - The review verdict and the fixes applied, one line each, if any
 - The 3-5 key validated decisions — from the design document, or from the conversation that settled
@@ -735,7 +735,7 @@ prints what it would have shown.
 
 ```
 IF THE USER HAS NOT CHOSEN ONE OF THE THREE OPTIONS:
-  ⛔ DO NOT USE: Write on docs/brainstorming/ for the intent file
+  ⛔ DO NOT USE: Write on .codeadd/docs/brainstorming/ for the intent file
   ⛔ DO NOT: Load /add-framework--plan, by whatever mechanism this provider offers
   ✅ DO: Ask, and WAIT
 
@@ -746,7 +746,7 @@ IF THE ANSWER IS "Keep discussing":
 
 #### Write the intent file — `bounded` and `architectural`
 
-Write `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` once the user has approved, before any
+Write `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` once the user has approved, before any
 handoff. Its shape, its naming, the `delivery:` field and the `## Open` convention are owned by
 `add-plan-authoring` — read **The Intent File** there rather than restating it here.
 
@@ -768,7 +768,7 @@ is a recommendation, and keeping it is a new request with its own classification
 #### Then route
 
 **Name the intent file as the command's argument, and the design as a reference**, verbatim, whichever
-this path wrote. The planning stage reads `docs/brainstorming/` and needs to know which file — a
+this path wrote. The planning stage reads `.codeadd/docs/brainstorming/` and needs to know which file — a
 handoff naming only the idea leaves it matching a topic against a directory of timestamped basenames,
 and in Continue Mode that directory holds a whole set sharing one timestamp.
 
@@ -778,9 +778,9 @@ when it exists. On `delivery: confirm` and `architectural`, print this and STOP:
 
 ```
 Idea is ready to formalize.
-Design: docs/brainstorming/<the file written at 5.3>
+Design: .codeadd/docs/brainstorming/<the file written at 5.3>
 (brainstorm stops here — it does not run the next stage for you.)
-/add-framework--plan docs/brainstorming/<the intent file written above>
+/add-framework--plan .codeadd/docs/brainstorming/<the intent file written above>
 ```
 
 The command is the last line, spelled for the provider as **The Continuation Line** says. The `Design:`
@@ -912,7 +912,7 @@ ALWAYS:
 - Put every open question of a stop in one numbered batch, each with a recommendation (`add-interaction`); brainstorm 8.1 is the one stated exception
 - Validate every section 100% before writing design doc
 - Write design documents in Markdown (100% English)
-- Store outputs in `docs/brainstorming/` only
+- Store outputs in `.codeadd/docs/brainstorming/` only
 - Confirm no open questions before printing the next-command suggestion
 - Dispatch `@plan-review-agent` before any design delivery, including Continue Mode
 - Record each affected artefact's layer in the design doc, for the planner's F-block tags
@@ -923,7 +923,7 @@ NEVER:
 - Dump a full artefact landscape before the user has shared their topic
 - Leave open questions in design documents
 - Create umbrella specs without explicit decomposition
-- Write documents outside `docs/brainstorming/`
+- Write documents outside `.codeadd/docs/brainstorming/`
 - Proceed to `/add-framework--build` or implementation (brainstorm's output is design only)
 - Load any command or skill on its own initiative, by whatever mechanism this provider offers — handoff is text-only on every path except the one `Approve, deliver automatically` authorises
 - Downgrade an effort path mid-conversation — the ratchet only goes up

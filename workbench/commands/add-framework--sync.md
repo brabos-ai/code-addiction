@@ -219,7 +219,7 @@ is erased by the next run. The closing report in STEP 6 lists both files, each a
 
 Regenerate `ecosystem.md` at the repository root from STEP 1.3 scan data. Reuses the same scan — no additional filesystem read.
 
-This file is the human-facing integration map. Contains 3 Mermaid graphs only — orphaned-skill / gap analysis is intentionally NOT regenerated here (lives in `docs/plans/0022-PLAN--ecosystem-master-map.md`).
+This file is the human-facing integration map. Contains 3 Mermaid graphs only — orphaned-skill / gap analysis is intentionally NOT regenerated here (lives in `.codeadd/docs/plans/0022-PLAN--ecosystem-master-map.md`).
 
 **Three graphs to emit:**
 

@@ -38,26 +38,26 @@ Closes out a delivered plan in **either layer** — or, with `--fix`, a plan-les
 **STEPS IN ORDER:**
 STEP 1: Collect context           → branch, plan (the fix record with --fix), ledger, diff, `gh auth status`
 STEP 2: Gates                     → ledger complete (the fix gate with --fix) + test-loss guard + CI green on THIS sha [HARD STOP]
-STEP 3: Author the index entry    → docs/delivered.jsonl, working tree only
-STEP 4: Generate the changelog    → docs/changelog/, filename owned by add-plan-authoring
+STEP 3: Author the index entry    → .codeadd/docs/delivered.jsonl, in the docs worktree, not yet committed
+STEP 4: Generate the changelog    → .codeadd/docs/changelog/, filename owned by add-plan-authoring
 STEP 5: Preview                   → INFORMATIVE ONLY, never a stop
-STEP 6: Archive, commit and push  → docs/deliveries/<id>/ (fix.md with --fix) + entry + changelog, one commit
-STEP 7: Merge via gh              → re-check CI on the docs commit, then gh pr merge --merge (deliberate — STEP 7 says why)
+STEP 6: Archive, commit and push  → .codeadd/docs/deliveries/<id>/ (fix.md with --fix) + entry + changelog, one commit on `codeadd-docs`, pushed
+STEP 7: Merge via gh              → gh pr merge --merge (deliberate — STEP 7 says why), then stamp the entry with the merged commit and the PR
 STEP 8: Cleanup                   → worktree, branch, this plan's archived originals — in that order, non-fatal
 STEP 9: Completion                → what was written, merged, removed and skipped
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
 IF `gh auth status` FAILED (STEP 1 not complete):
-  ⛔ DO NOT USE: Write on docs/delivered.jsonl
-  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on .codeadd/docs/changelog/
   ⛔ DO NOT USE: Bash to run git commit
   ⛔ DO NOT: Author an entry that STEP 7 cannot merge
   ✅ DO: Report the auth failure and STOP before anything is written
 
 IF ANY GATE AT STEP 2 FAILED:
-  ⛔ DO NOT USE: Write on docs/delivered.jsonl
-  ⛔ DO NOT USE: Write on docs/changelog/
+  ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on .codeadd/docs/changelog/
   ⛔ DO NOT USE: Bash to run gh pr merge
   ⛔ DO NOT: Re-run the failing gate with different arguments to make it pass
   ⛔ DO NOT: Push another commit to make CI green without saying what it fixed
@@ -86,14 +86,14 @@ IF A FILE'S ONLY COPY IS THE LOCAL ONE:
   ✅ DO: Report it and leave it — "it's all in git" is false for a file nothing committed
 
   This is what STEP 6 changes and why it runs before STEP 8. The plan, the ledger, the design doc and
-  this plan's evidence are gitignored, so they qualify — until STEP 6 copies them into
-  `docs/deliveries/<id>/` and STEP 7 merges that copy. Any other untracked file never qualifies.
+  this plan's evidence are untracked on the docs branch, so they qualify — until STEP 6 copies them into
+  `.codeadd/docs/deliveries/<id>/` and pushes that copy to `codeadd-docs`. Any other untracked file never qualifies.
 
 ALWAYS — THIS SKILL ENDS WORK IT DID NOT START:
   ⛔ DO NOT USE: Bash to run node scripts/build.js as a fix — it is a gate, not a repair step
   ⛔ DO NOT: Audit the delivery here — `/add-framework--build` STEP 7 does that once, inside the build
-  ⛔ DO NOT: Delete anything under docs/changelog/ or docs/deliveries/
-  ⛔ DO NOT: Delete another plan's files under docs/plans/, docs/brainstorming/ or docs/evidence/ — only the closed-out plan's own
+  ⛔ DO NOT: Delete anything under .codeadd/docs/changelog/ or .codeadd/docs/deliveries/
+  ⛔ DO NOT: Delete another plan's files under .codeadd/docs/plans/, .codeadd/docs/brainstorming/ or .codeadd/docs/evidence/ — only the closed-out plan's own
   ⛔ DO NOT: Create the branch or the worktree — the operator owns both
 
 **Stop kind — every stop in this skill is deciding, in every state.** The close-out is never reached
@@ -111,7 +111,7 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 **Examples:**
 /add-framework--done 2026-09-07T162415-SELF-PLAN--delivery-index-internal
 /add-framework--done delivery-index-internal
-/add-framework--done docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
+/add-framework--done .codeadd/docs/plans/2026-09-07T162415-SELF-PLAN--delivery-index-internal.md
 /add-framework--done --fix test-transport-tar
 
 **The fix track.** Without `--fix`, this skill behaves exactly as written below, including its stop when no plan resolves. With `--fix`, "the plan" in this skill reads "the fix record", there is no ledger, and only the steps marked `--fix` or "on the fix track" differ. Every step this skill does not mark runs on both tracks unchanged.
@@ -124,7 +124,7 @@ its stops wait. `add-plan-authoring` owns the rule, under **The Delivery Mode**.
 
 Run `gh auth status`. If it fails → report it and STOP. Nothing below is written.
 
-`gh` is a hard dependency here, not a degradation. Probing it now rather than at STEP 7 is the difference between stopping cleanly and stranding a branch with an entry committed on it and no PR.
+`gh` is a hard dependency here, not a degradation. Probing it now rather than at STEP 7 is the difference between stopping cleanly and stranding an entry on `codeadd-docs` with no PR behind it.
 
 ### 1.2 Resolve the branch and the plan
 
@@ -154,7 +154,7 @@ Resolve `<slug>` by the `--fix <slug>` clause of `add-plan-authoring`'s Argument
 - **The header** — `> **Kind:** fix`, `> **Branch:**` the current branch, `> **Head:**` the output of `git rev-parse HEAD`, `> **PR:**` the PR when one exists and `none yet` otherwise.
 - **`## What changed`** — the branch's commits from `git log --oneline main..HEAD` and its diff from `git diff --name-status main...HEAD`, with one sentence per commit drawn from its message.
 
-**On the resume path (2.5) the record is the committed one and is not rebuilt** — it was archived at STEP 6.1 and is never edited after.
+**On the resume path (2.5) the record is the archived one and is not rebuilt** — it was archived at STEP 6.1 and is never edited after.
 
 The second move is `## Validation`, written at 2.3. The record is never edited after STEP 6.1 copies it.
 
@@ -179,7 +179,7 @@ Collect, and carry forward to STEP 3:
 
 ### 2.1 Already closed out, or merged without a close-out?
 
-Run `gh pr view --json state,mergedAt` for the current branch, then check whether `docs/delivered.jsonl` already carries an entry whose `id` is this plan's basename.
+Run `gh pr view --json state,mergedAt` for the current branch, then check whether `.codeadd/docs/delivered.jsonl` (read with the docs root passed explicitly — the code branch ignores it) already carries an entry whose `id` is this plan's basename.
 
 **Cross the two facts. All four combinations are reachable, and each routes differently:**
 
@@ -187,23 +187,23 @@ Run `gh pr view --json state,mergedAt` for the current branch, then check whethe
 |---|---|---|
 | Open | no | Normal path. Continue |
 | Open | **yes** | **Resume path — 2.5.** STEP 3, STEP 4 and STEP 6 already ran. Continue, and skip them |
-| Merged | yes | Nothing to close out. Report and STOP |
+| Merged | yes | Nothing to close out. Report and STOP — unless the entry carries no `code_sha`, in which case a crash fell between the merge and the stamp: run STEP 7's stamp, commit and push, and nothing else |
 | Merged | **no** | **Recovery path — 2.4.** Continue |
 
 ```
 IF AN ENTRY FOR THIS PLAN IS ALREADY IN THE INDEX AND THE PR IS STILL OPEN:
-  ⛔ DO NOT USE: Write on docs/delivered.jsonl
-  ⛔ DO NOT USE: Write on docs/changelog/
-  ⛔ DO NOT USE: Bash to run cp into docs/deliveries/<id>/
+  ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on .codeadd/docs/changelog/
+  ⛔ DO NOT USE: Bash to run cp into .codeadd/docs/deliveries/<id>/
   ⛔ DO NOT: Re-run STEP 3, STEP 4 or STEP 6 to confirm what is already committed
   ✅ DO: Confirm the committed entry's `id` is this plan's basename, then continue THROUGH 2.2 and
          2.3 — 2.5 lists which STEPs are skipped, and the gates are not among them
 ```
 
 **The second row is the state a refused merge leaves behind, and it is not rare.** STEP 6 commits the
-entry, the changelog and the archive in one commit, and STEP 7 can then be refused — a review thread
-still unresolved, an approval dismissed by the push, an unattributed change. The branch is left holding
-a complete and correct entry. Falling through to the normal path writes a **second** entry for one
+entry, the changelog and the archive in one commit on `codeadd-docs`, and STEP 7 can then be refused — a review thread
+still unresolved, an approval dismissed by a push, an unattributed change. The docs branch is left holding
+a complete and correct entry, with no `code_sha` yet. Falling through to the normal path writes a **second** entry for one
 delivery, which is exactly what a three-row table did on PR #49.
 
 **The third row is what makes a second run on the same branch safe:** the gates below would all still
@@ -233,7 +233,7 @@ IF `--fix` WAS GIVEN:
 
 - The fix record has a non-empty `## What changed`.
 - The branch has at least one commit.
-- The record's `> **Head:**` SHA **equals** `git rev-parse HEAD`. A non-empty SHA is not enough: a record rebuilt for another head describes other work. **On the resume path (2.5) the record is the archived one and HEAD is the docs commit after it**, so the check there is that `> **Head:**` is an ancestor of HEAD (`git merge-base --is-ancestor`).
+- The record's `> **Head:**` SHA **equals** `git rev-parse HEAD`. A non-empty SHA is not enough: a record rebuilt for another head describes other work. **On the resume path (2.5) the record is the archived one**, read from `.codeadd/docs/deliveries/<id>/fix.md`; the docs commit lives on `codeadd-docs`, so HEAD has not moved and the equality check stands unchanged.
 
 A fix is what its commits are, so the gate asks only that there is something to close out, and that the record is about this head; CI at 2.3 is its real validation.
 
@@ -311,8 +311,8 @@ left to do:
 | 2.2 | The test-loss gate | Skipped — the work is merged and no branch is left to compare |
 | 2.3 item 1 | Sync, commit and push the block on the branch | Same, on `main` — the block is still owed even when the merge came first |
 | 2.3 | Read the PR's checks | Read the run on the **merge commit**, `gh run list --commit <sha>` |
-| 6 | Commit on the branch, push | Commit on `main`, push |
-| 7 | Merge the PR | **Skipped.** Already merged |
+| 6 | Commit and push `codeadd-docs` | Same — the docs branch is not the code branch, so nothing changes |
+| 7 | Merge the PR | The merge is **skipped** — already merged. 7.1's stamp still runs |
 | 8 | Cleanup | The merged branch is still there to delete. Check 2 reads the merge commit resolved at 1.3, not a PR |
 
 ⛔ **Never `git show` on the merge commit.** A merge commit has two parents, so `git show` prints a
@@ -323,12 +323,12 @@ and it gives the same answer on a squash commit, whose only parent is `^1`.
 
 ```
 IF THE MERGE COMMIT CANNOT BE RESOLVED:
-  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
   ⛔ DO NOT: Reconstruct the diff from the plan instead of from git
   ✅ DO: Report it and STOP — an entry derived from a plan rather than a diff records intent, not delivery
 ```
 
-⛔ **The ledger is local and gitignored.** A recovery run on a machine that did not execute the build
+⛔ **The ledger is local — the docs branch's `.gitignore` keeps `plans/` untracked.** A recovery run on a machine that did not execute the build
 has no ledger to read, so gate 2.2 cannot pass and this path is unavailable there. That is correct:
 without the ledger there is no evidence the plan was finished, only that something merged.
 
@@ -340,7 +340,7 @@ that hides how it got there is not.
 
 ```
 IF `--fix` AND 2.1 ROUTED TO THE RECOVERY PATH:
-  ⛔ DO NOT USE: Write on docs/delivered.jsonl
+  ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
   ⛔ DO NOT: Reconstruct a fix record from the merge commit
   ✅ DO: Report that the recovery path is unavailable for a fix, and STOP
 ```
@@ -352,30 +352,30 @@ the recovery path. What changes is that three STEPs already ran and must not run
 
 | Step | Normal | Resume |
 |---|---|---|
-| 2.3 | Sync, push, wait for CI | Unchanged. The run to read is the one on the docs commit STEP 6 already pushed |
-| 3 | Author the index entry | **Skipped.** The entry is committed on the branch |
-| 4 | Generate the changelog | **Skipped.** Committed by the same STEP 6 commit |
+| 2.3 | Sync, push, wait for CI | Unchanged. The run to read is the one on the branch head — STEP 6 commits to `codeadd-docs` and put nothing on the branch |
+| 3 | Author the index entry | **Skipped.** The entry is committed on `codeadd-docs` |
+| 4 | Generate the changelog | **Skipped.** Committed by the same STEP 6 commit on `codeadd-docs` |
 | 5 | Preview | Shows what is already committed, so nothing is proposed |
-| 6 | Archive, commit and push | **Skipped.** `docs/deliveries/<id>/` is assembled and committed |
+| 6 | Archive, commit and push | **Skipped.** `.codeadd/docs/deliveries/<id>/` is assembled and committed on `codeadd-docs` |
 | 7 | Merge the PR | The only work left |
 | 8 | Cleanup | Unchanged |
 
 ⛔ **STEP 4 is skipped with the other two, and the reason is not symmetry.** The changelog filename
 carries a timestamp, so a second STEP 4 does not overwrite the first — it writes a **second file** for
-one delivery, and both then reach `main`. STEP 3's duplicate is at least visible as two lines sharing
+one delivery, and both then reach `codeadd-docs`. STEP 3's duplicate is at least visible as two lines sharing
 an `id`; this one reads as two separate deliveries.
 
-**What is left to do is find out why the merge was refused.** The branch state is correct and nothing
+**What is left to do is find out why the merge was refused.** The docs branch state is correct and nothing
 here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
 9, alongside which STEPs this run skipped.
 
-**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `docs/deliveries/<id>/fix.md` on the branch, for the fix gate at 2.2. The `id` is the committed entry's.
+**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `.codeadd/docs/deliveries/<id>/fix.md` in the docs worktree (run `node .codeadd/scripts/docs-branch.cjs prepare` first when it is absent), for the fix gate at 2.2. The `id` is the committed entry's.
 
 ---
 
 ## STEP 3: Author the Index Entry
 
-Write **one** entry to `docs/delivered.jsonl` via `delivered.cjs`. The record shape, the four statuses, the corpus rule and the hard bans are owned by `add-doc-schemas/references/delivery-index.md` — read it rather than re-deriving them.
+Write **one** entry to `.codeadd/docs/delivered.jsonl` via `delivered.cjs`. The file is in the docs worktree and STEP 6 commits it; nothing here stages it. The record shape, the four statuses, the corpus rule and the hard bans are owned by `add-doc-schemas/references/delivery-index.md` — read it rather than re-deriving them.
 
 The internal layer runs the product's own script here. That is dogfooding, not a layering breach: it is the only arrangement where the two layers cannot disagree about what a line in the index means.
 
@@ -428,7 +428,7 @@ Entry fields:
   a third value.
 - `by`: `"done"`
 - `id`: the plan's basename without extension, **verbatim** — never a slug
-- `origin`: `docs/deliveries/<id>/` — the tracked directory STEP 6 assembles, **never** the gitignored `docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
+- `origin`: `.codeadd/docs/deliveries/<id>/` — the tracked directory STEP 6 assembles and commits on `codeadd-docs`, **never** the untracked `.codeadd/docs/plans/<id>.md`. The schema allows either a directory or a plan path; the internal layer narrows that to the directory, because only the directory survives STEP 8. The old value resolves to nothing in a fresh clone, which is the whole reason the directory exists. Entries already on disk keep whatever they were written with; the index never rewrites a line
 - `node`: **on the ENTRY, set to this delivery's primary graph node** — the one artefact a reader would look this delivery up by
 
 ⛔ **`node` belongs to the ENTRY. An item is exactly `{what, at, find}`.** That is the schema — `add-doc-schemas/references/delivery-index.md` lists `node` in its record table and defines the item as those three fields — and `delivered.cjs` implements it: a `node` submitted inside an item is normalised away, because it is not part of the shape. This is correct behaviour, not a writer defect, and **must not be "fixed"**: a build once read an internal design note as the authority here and reported the script as losing data. Tests in `scripts/tests/delivered.test.cjs` now pin both directions.
@@ -464,19 +464,19 @@ points at is refused with `REFUSED=superseded-by-unknown`.
 
 It rejects a record that breaks a hard ban with `REFUSED=<name>` and exit 2 — **a refusal is a real finding, not something to work around by loosening the anchor.** Fix the record, or report and STOP.
 
-⛔ **`find` is one contiguous token, byte-exact, and never anchored into `docs/` or into a path the project ignores.** A multi-word anchor is what a formatter wraps, and a wrapped anchor silently flips a live item to `gone`. **A `superseded` line copies its old items as they are**: the script skips the checks that read the repository for it — `find` absent, over-matched, or `at` now ignored — and keeps the `docs/` and whitespace checks.
+⛔ **`find` is one contiguous token, byte-exact, and never anchored into `.codeadd/docs/` or into a path the project ignores.** A multi-word anchor is what a formatter wraps, and a wrapped anchor silently flips a live item to `gone`. **A `superseded` line copies its old items as they are**: the script skips the checks that read the repository for it — `find` absent, over-matched, or `at` now ignored — and keeps the docs-path and whitespace checks.
 
 ---
 
 ## STEP 4: Generate the Changelog
 
-Write the human narrative record into `docs/changelog/`, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
+Write the human narrative record into `.codeadd/docs/changelog/`, in prose, matching the existing files in that directory. It carries **why**, which the index deliberately does not.
 
 **The filename and the one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than re-deriving them here.
 
-⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `main` for one delivery, each telling part of its story.
+⛔ **`/add-framework--build` STEP 8 normally wrote one already.** Look for this delivery's changelog before writing anything: when one exists, EDIT it and keep its filename. Allocating a second timestamp puts two files on `codeadd-docs` for one delivery, each telling part of its story.
 
-**On the fix track, look for `docs/changelog/*-fix-<slug>.md` instead** — there is no plan slug to key on. Normally no build wrote one, so write it here with verb `fix`; the filename and the one-per-delivery rule stay `add-plan-authoring`'s.
+**On the fix track, look for `.codeadd/docs/changelog/*-fix-<slug>.md` instead** — there is no plan slug to key on. Normally no build wrote one, so write it here with verb `fix`; the filename and the one-per-delivery rule stay `add-plan-authoring`'s.
 
 The index entry and the changelog are not redundant: one is a machine-readable claim about what exists, the other is the reasoning a future reader needs.
 
@@ -490,32 +490,32 @@ Show the user, before committing: the entry as it will be written, any `LOOSE=` 
 
 ---
 
-## STEP 6: Archive the Working Documents, Commit and Push
+## STEP 6: Archive the Working Documents, Commit and Push the Docs Branch
 
-### 6.1 Assemble `docs/deliveries/<id>/`
+### 6.1 Assemble `.codeadd/docs/deliveries/<id>/`
 
-**The working documents move BEFORE the commit, so the merge carries them to `main`.** The directory name, its members and which are load-bearing are owned by `add-plan-authoring` — read **The Delivered Home** rather than re-deriving them here.
+**The working documents are copied BEFORE the commit, so the archive is on the pushed docs branch before the merge.** The directory name, its members and which are load-bearing are owned by `add-plan-authoring` — read **The Delivered Home** rather than re-deriving them here.
 
 Copy, never move: the originals stay on disk until STEP 8 removes them, and STEP 8 runs only after the merge.
 
 **Every member is produced by a file copy. Nothing here is authored.**
 
 ```
-IF PRODUCING ANY FILE UNDER docs/deliveries/<id>/:
+IF PRODUCING ANY FILE UNDER .codeadd/docs/deliveries/<id>/:
   ⛔ DO NOT USE: Write on it
   ⛔ DO NOT USE: Edit on it
   ⛔ DO NOT: Summarise, trim, reformat, re-order, translate or tidy a document on the way in
   ⛔ DO NOT: Reconstruct a document from what you remember of it, from the plan's own text, or from this session
-  ✅ DO: Copy the bytes — `cp <source> docs/deliveries/<id>/<member>` — and copy nothing you were not asked to
+  ✅ DO: Copy the bytes — `cp <source> .codeadd/docs/deliveries/<id>/<member>` — and copy nothing you were not asked to
 ```
 
 **Prove each copy, before staging anything:**
 
 ```bash
-cmp "<source>" "docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
+cmp "<source>" ".codeadd/docs/deliveries/<id>/<member>"   # silent = identical; ANY output → STOP
 ```
 
-⛔ **A paraphrase that reaches `main` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename, which **The Delivered Home** maps member by member. Contents never change.
+⛔ **A paraphrase that reaches `codeadd-docs` is worse than an empty directory.** The archive's whole value is that it is the document, not an account of it — a reader years from now cannot tell a faithful copy from a confident rewrite, and will trust either. An empty directory is at least honestly empty. The one place a difference is allowed is the filename, which **The Delivered Home** maps member by member. Contents never change.
 
 ```
 IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
@@ -524,7 +524,7 @@ IF THE PLAN OR THE LEDGER CANNOT BE READ FROM THIS WORKING TREE:
   ✅ DO: Report which document is missing and STOP — a delivery archived without its ledger loses every ruling it made
 ```
 
-**On the fix track the archive holds `fix.md`** — a byte copy of the fix record at `docs/plans/<id>.md`, proved with `cmp` like every other member — and nothing else is required. `plan.md` and `ledger.md` do not exist for a fix, and their absence is not a defect. There is no design, intent or evidence member to look for.
+**On the fix track the archive holds `fix.md`** — a byte copy of the fix record at `.codeadd/docs/plans/<id>.md`, proved with `cmp` like every other member — and nothing else is required. `plan.md` and `ledger.md` do not exist for a fix, and their absence is not a defect. There is no design, intent or evidence member to look for.
 
 ```
 IF `--fix` AND THE FIX RECORD CANNOT BE READ FROM THIS WORKING TREE:
@@ -535,45 +535,61 @@ IF `--fix` AND THE FIX RECORD CANNOT BE READ FROM THIS WORKING TREE:
 
 With `--fix`, the plan + ledger stop above does not apply; this one replaces it. The paragraphs below about the design, intent and evidence sources read for a plan and are skipped on the fix track.
 
-The design source is **the `docs/brainstorming/` file the plan's Context document table names**, and nothing else. **The intent source is the `-intent.md` file that same table names**, resolved the same way. `docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing neither gets neither member, and that is not a defect.
+The design source is **the `.codeadd/docs/brainstorming/` file the plan's Context document table names**, and nothing else. **The intent source is the `-intent.md` file that same table names**, resolved the same way. `.codeadd/docs/brainstorming/` allocates its own timestamp, unrelated to the plan's, so that table cell is the only link between the two. A plan citing neither gets neither member, and that is not a defect.
 
 ⛔ **A `bounded` delivery cites an intent file and no design document.** `add-plan-authoring`'s Delivered Home says why that member is load-bearing there — read it rather than a copy kept here.
 
-⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
+⛔ **Attribute an evidence file by its id prefix, and report what you cannot attribute.** `.codeadd/docs/evidence/` holds files from several plans at once. Sweeping the whole directory into one delivery files another plan's evidence as this one's — worse than leaving it behind, because it then reads as this delivery's own record.
 
-⛔ **Nothing writes to the ledger after this point in the same run.** 6.1 assembles the archive last, immediately before 6.2's commit — a ruling recorded after this step would exist on disk but never reach `main`, which is the exact gap the check this replaced used to catch after the fact instead of before it.
+⛔ **Nothing writes to the ledger after this point in the same run.** 6.1 assembles the archive last, immediately before 6.2's commit — a ruling recorded after this step would exist on disk but never reach `codeadd-docs`, which is the exact gap the check this replaced used to catch after the fact instead of before it.
 
 ### 6.2 Commit and push
 
-Stage `docs/deliveries/<id>/` together with the entry and the changelog, and commit them as **one commit on the branch**, message per `{{skill:add-commit/SKILL.md}}`. Then push. **On the recovery path the branch is `main`.**
+The archive, the entry and the changelog are already in the docs worktree. Save them as **one commit on `codeadd-docs`** and push it, from any code worktree:
 
-⛔ **Stage those three paths, never `-A`.** An unrelated edit swept into this commit reaches `main` with the merge, inside a commit whose message does not describe it.
+```bash
+node .codeadd/scripts/docs-branch.cjs commit "<what this delivery archived, per {{skill:add-commit/SKILL.md}}>"
+node .codeadd/scripts/docs-branch.cjs push
+```
 
-The push re-triggers CI on the new commit. STEP 7 waits for that run before merging.
+Nothing is committed to `main` or to the code branch — the docs branch is a separate history, so this step triggers no CI and needs no staging of paths on the code side. The docs branch's own `.gitignore` keeps `plans/`, `brainstorming/` and `evidence/` untracked, so the commit carries the deliveries, the changelog and the index and nothing of this plan's working files. **The same two commands run on the recovery path.**
 
-**The entry is committed before the merge, never after.** If the PR is never merged, the branch dies and the entry dies with it — which is correct. `main` must not acquire an entry for work that did not land, and writing the entry afterwards would need a pull and an extra commit on `main`.
+```
+IF `DOCS_COMMIT=failed`, OR `DOCS_PUSH` IS ANYTHING BUT `pushed`:
+  ⛔ DO NOT USE: Bash to run gh pr merge
+  ⛔ DO NOT: Retry with a force flag, or write the files into the code branch instead
+  ✅ DO: Report the value and its `DOCS_PUSH_NOTE=` line and STOP — a merge whose archive exists only on this machine leaves STEP 8 with nothing durable to rely on
+```
+
+**The entry is committed before the merge, and stamped after it.** The merge commit does not exist yet, so the entry carries no `code_sha`; STEP 7 appends it. If the PR is never merged the entry stays unstamped on `codeadd-docs`, which is the visible mark of a delivery that did not land.
 
 ---
 
 ## STEP 7: Merge via `gh`
 
-**Recovery path: skip this STEP entirely.** The merge already happened; go to STEP 8.
+**Recovery path: skip the merge, not the stamp.** The merge already happened; run 7.1 against the merge commit 2.4 resolved, then go to STEP 8.
 
 The PR already exists — STEP 2.3 created it, because CI cannot run without one.
 
-**STEP 6 pushed a commit CI has not tested.** The gate at 2.3 ran on the code; the entry and the changelog landed after it. Wait for the run on the new SHA before merging, applying the same SHA comparison 2.3 applies:
-
-```bash
-gh pr checks --watch --fail-fast
-```
-
-Then `gh pr merge --merge`.
+**STEP 6 put nothing on the branch**, so the green run 2.3 read is still the run on the branch head and no second wait is owed. Re-apply 2.3's SHA comparison (`gh pr view --json headRefOid` against `git rev-parse HEAD`) and run `gh pr merge --merge`.
 
 ⛔ **The method is deliberate, and it is never simply dropped.** `--merge` keeps every F-block commit the build made readable on `main`, each carrying what was validated and what was ruled; a squash flattened them into one line. Run non-interactively, `gh pr merge` with no method flag errors and asks for one.
 
-Waiting again costs about a minute and closes the one hole a CI-read gate would otherwise leave: a delivery whose final commit was never tested. Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open. The method flag is the same deliberate one.
+Where the repository has auto-merge enabled, `gh pr merge --merge --auto` is the same guarantee and is preferable — it lets the merge happen without holding the session open. The method flag is the same deliberate one.
 
-If the merge is refused → report it and STOP. The entry and the changelog stay on the branch, absent from `main`, which is the honest state. **DO NOT** proceed to STEP 8.
+If the merge is refused → report it and STOP. The entry and the changelog stay on `codeadd-docs` unstamped, and the code stays off `main`, which is the honest state. **DO NOT** proceed to STEP 8.
+
+### 7.1 Stamp the entry with the merged commit
+
+Once the PR reads `MERGED` (`gh pr view --json state,mergeCommit,number`), record the merge commit and the PR number on this delivery's entry, then save and push the docs branch:
+
+```bash
+node framwork/.codeadd/scripts/delivered.cjs stamp <id> --code-sha <mergeCommit.oid> --pr <number>
+node .codeadd/scripts/docs-branch.cjs commit "stamp <id> with its merged code commit"
+node .codeadd/scripts/docs-branch.cjs push
+```
+
+`stamp` appends a NEW line — the index is append-only — and `delivered.cjs` owns its output and exit codes in its header. With `--auto` the PR may not read `MERGED` yet: do not stamp a commit that does not exist; say so in STEP 9, skip STEP 8's deletions with the other refused checks, and tell the operator to run the close-out again, which 2.1 routes to this stamp alone. A stamp or push that fails is reported and does not undo the merge. **On the recovery path the merge commit is the one 2.4 resolved, and the PR number is read from that commit's PR.**
 
 ---
 
@@ -581,27 +597,27 @@ If the merge is refused → report it and STOP. The entry and the changelog stay
 
 **Run only if the index carries this plan's entry and the delivery is on `main`.** On the normal and
 resume paths STEP 7's merge put it there; on the recovery path at 2.4 it was merged before this run and
-STEP 7 was skipped. **The condition is the delivery being on `main`, never which STEP merged it** — the
+STEP 7's merge was skipped. **The condition is the delivery being on `main`, never which STEP merged it** — the
 same carve-out the entry's existence already has at the top of this file.
 
-By STEP 8 the entry is already on `main`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
+By STEP 8 the entry is already pushed on `codeadd-docs`, so nothing here can invalidate the delivery. **Any sub-step that fails is reported and skipped — never rolled back, and never a reason to undo a completed merge.**
 
 ```
-IF A PATH HAS NO DURABLE COPY UNDER docs/deliveries/<id>/ ON main:
+IF A PATH HAS NO DURABLE COPY UNDER .codeadd/docs/deliveries/<id>/ ON THE PUSHED `codeadd-docs`:
   ⛔ DO NOT USE: Bash to run rm on it
-  ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and STEP 7 merged that copy
+  ✅ DO: Report it and leave it — every deletion below is safe only because STEP 6 copied first and pushed that copy
 ```
 
 ### The post-merge checks — BEFORE any deletion
 
 That prohibition is the whole safety condition for the three deletions below. STEP 6 commits the
-archive under `docs/deliveries/<id>/`, the index entry and the changelog together, in one commit, and
-STEP 7 merges that same commit — a successful merge cannot exist without the archive existing, so the
-gate confirms the merge happened and asks nothing more. **Run both, then decide once.**
+archive under `.codeadd/docs/deliveries/<id>/`, the index entry and the changelog together, in one commit on `codeadd-docs`, and
+pushes it before STEP 7 merges the code — the gate confirms the merge happened and that the push reached the remote. **Run all three, then decide once.**
 
 ```bash
 git fetch origin main                                               # 1. the ref check 2 reads
 gh pr view --json state,mergeCommit                                 # 2. MERGED, with a merge commit
+git -C .codeadd/docs status -sb                                     # 3. `codeadd-docs` not ahead of its remote
 ```
 
 ⛔ **The fetch is check 1, not a preamble, and its failure refuses the deletions like any other.**
@@ -614,12 +630,12 @@ so `gh pr view` resolves nothing. Prove the merge from the merge commit 2.4 alre
 and say in STEP 9 which of the two proved it.
 
 ```
-IF EITHER CHECK FAILED:
+IF ANY CHECK FAILED:
   ⛔ DO NOT USE: Bash to run rm on anything
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
   ⛔ DO NOT USE: Bash to run git worktree remove
-  ⛔ DO NOT: Re-copy the file and delete the original in the same run — the archive on main is what
-             the index entry points at, and repairing it is a change main has to receive
+  ⛔ DO NOT: Re-copy the file and delete the original in the same run — - the archive on `codeadd-docs` is what
+             the index entry points at, and repairing it is a change that branch has to receive
   ✅ DO: Name the failing check and the path it failed on, print the suggestion below, and go to
          STEP 9 with every deletion skipped
 ```
@@ -633,23 +649,23 @@ IF EITHER CHECK FAILED:
 a skipped cleanup into work nobody asked for, on a branch that is already merged.
 
 **A refused deletion is not a failed delivery.** The entry, the changelog and the archive are on
-`main`; what is left behind is a local file and possibly a branch, and STEP 9 says so.
+`codeadd-docs`; what is left behind is a local file and possibly a branch, and STEP 9 says so.
 
 **Order is forced**, because a branch checked out in a worktree cannot be deleted:
 
 1. **The worktree**, if one exists. **Its absence is the normal case, not an error** — work done on a branch in the main clone has none, and STEP 8 skips this silently.
 2. **The branch**, local and remote.
-3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `docs/plans/`, the design doc in `docs/brainstorming/`, and this plan's files in `docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**
+3. **The local originals this delivery archived** — the plan, its ledger and any `--review-v*` companion in `.codeadd/docs/plans/`, the design doc in `.codeadd/docs/brainstorming/`, and this plan's files in `.codeadd/docs/evidence/`. **Every member `add-plan-authoring` lists, and nothing else.**
 
 | Removed | Kept | Why |
 |---|---|---|
-| The worktree, if one exists | `docs/deliveries/<id>/` | The durable copy. It is on `main` and is never removed here |
-| The merged branch, local and remote | `docs/changelog/` | The human narrative record; its retirement is out of scope |
-| This plan's local originals in `docs/plans/`, `docs/brainstorming/` and `docs/evidence/` | `docs/plans/` files belonging to OTHER plans | Still in flight. Only the closed-out plan's own files go |
+| The worktree, if one exists | `.codeadd/docs/deliveries/<id>/` | The durable copy. It is on `codeadd-docs` and is never removed here |
+| The merged branch, local and remote | `.codeadd/docs/changelog/` | The human narrative record; its retirement is out of scope |
+| This plan's local originals in `.codeadd/docs/plans/`, `.codeadd/docs/brainstorming/` and `.codeadd/docs/evidence/` | `.codeadd/docs/plans/` files belonging to OTHER plans | Still in flight. Only the closed-out plan's own files go |
 
-**No class survives close-out on a table cell alone.** These three directories are gitignored working artefacts, so this removes local files and touches no commit — which is exactly why the removal is safe only after STEP 6 archived them and STEP 7 merged that archive. `docs/changelog/`, `docs/delivered.jsonl` and `docs/deliveries/` are tracked and are never removed here.
+**No class survives close-out on a table cell alone.** These three directories are untracked on the docs branch — its own `.gitignore` ignores them — so this removes local files and touches no commit, which is exactly why the removal is safe only after STEP 6 archived them and pushed that archive. `.codeadd/docs/changelog/`, `.codeadd/docs/delivered.jsonl` and `.codeadd/docs/deliveries/` are tracked and are never removed here.
 
-**On the fix track the third removal's member list is the local fix record** — `docs/plans/<id>.md` — and nothing else. A fix has no ledger, review companion, design, intent or evidence. The durable copy is `docs/deliveries/<id>/fix.md`, which is never removed.
+**On the fix track the third removal's member list is the local fix record** — `.codeadd/docs/plans/<id>.md` — and nothing else. A fix has no ledger, review companion, design, intent or evidence. The durable copy is `.codeadd/docs/deliveries/<id>/fix.md`, which is never removed.
 
 ### 8.1 When this skill is running inside the worktree it would remove
 
@@ -667,7 +683,7 @@ IF THE CURRENT WORKING DIRECTORY IS INSIDE THE WORKTREE TO BE REMOVED:
 
 **The branch is skipped with the worktree, not attempted after it.** `git branch -d` refuses a branch checked out in a live worktree — `error: cannot delete branch '<name>' used by worktree at '<path>'`, exit 1 — even when it is fully merged. Both are reported as skipped, with the two commands the operator runs from the primary checkout to finish by hand.
 
-**Nothing here is a failure of the delivery.** By STEP 8 the entry, the changelog and `docs/deliveries/<id>/` are already on `main`. A worktree left behind costs one manual `git worktree remove` from the primary checkout; it costs no document, which is the whole point of STEP 6 running before this.
+**Nothing here is a failure of the delivery.** By STEP 8 the entry, the changelog and `.codeadd/docs/deliveries/<id>/` are already pushed on `codeadd-docs`. A worktree left behind costs one manual `git worktree remove` from the primary checkout; it costs no document, which is the whole point of STEP 6 running before this.
 
 ---
 
@@ -692,7 +708,8 @@ Then, after the seven blocks and before the metadata, report always:
 - Any supersessions declared, and which answer was given
 - The changelog path
 - The PR number and its merge state
-- **The archive** — `docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
+- **The docs branch** — the `DOCS_COMMIT=` and `DOCS_PUSH=` values of STEP 6 and of the stamp at 7.1, and the `code_sha` and PR number stamped
+- **The archive** — `.codeadd/docs/deliveries/<id>/` and which members it holds, plus any evidence file STEP 6.1 could not attribute to a plan
 - **The post-merge checks and their results, one line each**, whether they passed or refused the
   deletions, and whether check 2 read the PR or the merge commit. When one failed, name it, name the path, and print the `/add-framework--plan` suggestion
   STEP 8 composed — as text the operator runs, never as something this skill ran

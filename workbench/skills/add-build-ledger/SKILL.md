@@ -37,17 +37,17 @@ Legacy plans on disk using `S<n>` keep their ids — read them, do not renumber 
 
 ## The Ledger
 
-**Path:** `docs/plans/<plan-basename>--ledger.md` — the plan's basename with `--ledger.md` appended.
+**Path:** `.codeadd/docs/plans/<plan-basename>--ledger.md` — the plan's basename with `--ledger.md` appended.
 
 **Why it is mandatory:** it carries the rulings, and a diff cannot show a decision.
 
-**During the build the ledger reaches nobody on its own.** `docs/plans/` is gitignored, so every
+**During the build the ledger reaches nobody on its own.** `.codeadd/docs/plans/` is ignored by the docs branch's own `.gitignore`, so every
 `Ruling:` line must be carried out of it and into the completion report — that report is how a
 decision reaches a human while the work is still changeable, and nothing later replaces it.
 
 **After close-out the ledger itself survives.** `/add-framework--done` copies it to
-`docs/deliveries/<plan-basename>/ledger.md` and commits it with the delivery-index entry, so the raw
-rulings reach `main` before anything removes the worktree. The two are not redundant: the report is
+`.codeadd/docs/deliveries/<plan-basename>/ledger.md` and commits it on `codeadd-docs` with the delivery-index entry, so the raw
+rulings reach the pushed docs branch before anything removes the worktree. The two are not redundant: the report is
 the decision read at the time it mattered, the archived ledger is the record read years later.
 
 **Append-only. Identity on the first line, written once, never rewritten.** A ledger whose identity
@@ -55,7 +55,7 @@ changes mid-build cannot be trusted. It is a **log, not a set** — the same lin
 There is no `build-ledger.cjs` for this ledger — the product entry owns feature build ledgers, not the plan ledger; append the line yourself.
 
 ```markdown
-# Build ledger — plan: docs/plans/<plan-basename>.md
+# Build ledger — plan: .codeadd/docs/plans/<plan-basename>.md
 
 F1: complete (commits a1b2c3d..a1b2c3d, build.js clean)
 F2: Ruling: kept the existing key name — the plan names both — costs a rename in F4 if wrong

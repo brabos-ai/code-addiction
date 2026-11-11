@@ -39,11 +39,11 @@ Three documents are named here — the plan, the changelog and the intent file. 
 
 | Document | Path |
 |---|---|
-| The plan | `docs/plans/YYYY-MM-DDTHHMMSS-PLAN--<slug>.md` |
-| The changelog | `docs/changelog/YYYY-MM-DDTHHMMSS-<verb>-<slug>.md` |
-| The fix record | `docs/plans/YYYY-MM-DDTHHMMSS-FIX--<slug>.md` — written only by `/add-framework--done --fix`, never by hand |
+| The plan | `.codeadd/docs/plans/YYYY-MM-DDTHHMMSS-PLAN--<slug>.md` |
+| The changelog | `.codeadd/docs/changelog/YYYY-MM-DDTHHMMSS-<verb>-<slug>.md` |
+| The fix record | `.codeadd/docs/plans/YYYY-MM-DDTHHMMSS-FIX--<slug>.md` — written only by `/add-framework--done --fix`, never by hand |
 
-**The fix record is not a plan.** `/add-framework--done --fix` generates it for work that never had a plan, and it is gitignored like one. Its changelog carries the verb `fix`, so that delivery's changelog is found by the key `-fix-<slug>` in `docs/changelog/` — there is no plan slug to look for. `/add-framework--plan` and `/add-framework--build` never create or resolve one.
+**The fix record is not a plan.** `/add-framework--done --fix` generates it for work that never had a plan, and it is untracked like one. Its changelog carries the verb `fix`, so that delivery's changelog is found by the key `-fix-<slug>` in `.codeadd/docs/changelog/` — there is no plan slug to look for. `/add-framework--plan` and `/add-framework--build` never create or resolve one.
 
 Timestamp in **local time**, `T` between date and time, **no separators inside `HHMMSS`** — Windows
 forbids `:` in a filename. Lexicographic sort therefore equals chronological sort.
@@ -62,7 +62,7 @@ its STEP 8, `/add-framework--done` at its STEP 4. Two stages declaring one forma
 ```
 ⛔ ONE CHANGELOG PER DELIVERY:
   ⛔ DO NOT: Allocate a timestamp for a delivery that already has a changelog
-  ⛔ DO NOT USE: Write on a new path when a file in docs/changelog/ already covers this delivery
+  ⛔ DO NOT USE: Write on a new path when a file in .codeadd/docs/changelog/ already covers this delivery
   ✅ DO: Find that file, EDIT it in place, and keep the filename it already has
 ```
 
@@ -73,7 +73,7 @@ above, one delivery reaches `main` as two files that each tell half of its story
 
 ```
 ⛔ THERE IS NOTHING TO LOOK UP:
-  ⛔ DO NOT USE: Read or ls on docs/plans/ to find a next number
+  ⛔ DO NOT USE: Read or ls on .codeadd/docs/plans/ to find a next number
   ⛔ DO NOT: Allocate a sequential NNNN
   ✅ DO: Take the timestamp from the clock
 ```
@@ -82,8 +82,8 @@ above, one delivery reaches `main` as two files that each tell half of its story
 that is what keeps a set grouped in the directory now that a shared number no longer does:
 
 ```
-docs/plans/2026-09-07T005046-PLAN--<slug>-000-umbrella.md
-docs/plans/2026-09-07T005046-PLAN--<slug>-001-<topic>.md
+.codeadd/docs/plans/2026-09-07T005046-PLAN--<slug>-000-umbrella.md
+.codeadd/docs/plans/2026-09-07T005046-PLAN--<slug>-001-<topic>.md
 ```
 
 **Companions suffix the plan basename:** `--evidence-v01.md`, `--review-v01.md`, `--ledger.md`.
@@ -95,7 +95,7 @@ two set conventions would otherwise find the rule for one and not the other, whi
 
 ### The Intent File
 
-`/add-framework--brainstorm` writes `docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its
+`/add-framework--brainstorm` writes `.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` at its
 handoff, on the `bounded` and `architectural` paths. **Never on `spike`.**
 
 | Path | What exists afterwards |
@@ -234,24 +234,24 @@ ones** — the sections that prove correctness are not the optional ones.
 
 ## The Delivered Home
 
-**A plan in flight lives in `docs/plans/`, gitignored and local. A plan that has been closed out lives
-in `docs/deliveries/<plan-basename>/`, tracked.** `/add-framework--done` assembles that directory in
-its STEP 6 and commits it with the delivery-index entry, so the documents reach `main` before anything
+**A plan in flight lives in `.codeadd/docs/plans/`, untracked and local — the docs branch's own `.gitignore` ignores it. A plan that has been closed out lives
+in `.codeadd/docs/deliveries/<plan-basename>/`, tracked.** `/add-framework--done` assembles that directory in
+its STEP 6 and commits it with the delivery-index entry on `codeadd-docs`, so the documents reach the pushed docs branch before anything
 removes the worktree that held them.
 
 **The directory name is the plan's basename without `.md`, verbatim** — the same string
-`docs/delivered.jsonl` carries as the entry's `id`. Index line and documents join on one string, with
+`.codeadd/docs/delivered.jsonl` carries as the entry's `id`. Index line and documents join on one string, with
 no lookup table between them.
 
 | Member | Sourced from | Present when |
 |---|---|---|
-| `plan.md` | `docs/plans/<basename>.md` | always |
-| `ledger.md` | `docs/plans/<basename>--ledger.md` | always |
-| `design.md` | the `docs/brainstorming/` file the plan's **Context** document table names | the plan cites one |
-| `intent.md` | the `docs/brainstorming/` **intent file** the plan's **Context** document table names, resolved the same way | the plan cites one |
-| `review.md` | the highest-numbered `docs/plans/<basename>--review-v*.md` | a legacy companion is on disk |
-| `evidences/` | `docs/evidence/` files for this plan, original names kept | such files are on disk |
-| `fix.md` | `docs/plans/<basename>.md` — the fix record | the delivery went through `--fix`, in place of `plan.md` and `ledger.md` |
+| `plan.md` | `.codeadd/docs/plans/<basename>.md` | always |
+| `ledger.md` | `.codeadd/docs/plans/<basename>--ledger.md` | always |
+| `design.md` | the `.codeadd/docs/brainstorming/` file the plan's **Context** document table names | the plan cites one |
+| `intent.md` | the `.codeadd/docs/brainstorming/` **intent file** the plan's **Context** document table names, resolved the same way | the plan cites one |
+| `review.md` | the highest-numbered `.codeadd/docs/plans/<basename>--review-v*.md` | a legacy companion is on disk |
+| `evidences/` | `.codeadd/docs/evidence/` files for this plan, original names kept | such files are on disk |
+| `fix.md` | `.codeadd/docs/plans/<basename>.md` — the fix record | the delivery went through `--fix`, in place of `plan.md` and `ledger.md` |
 
 **The first two are load-bearing; their absence is a defect, not a variation.** The plan carries the
 reasoning and the ledger carries the rulings, and neither has a second copy anywhere.
@@ -261,31 +261,31 @@ An archive is worth keeping only because it IS the document — a reader years f
 faithful copy from a confident rewrite, and will trust either. Summarising, trimming, reformatting or
 reconstructing a document on the way in produces something that reads as the record and is not, which
 is worse than an empty directory. The command that assembles it copies the bytes and proves each copy
-matches before staging.
+matches before committing.
 
 ⛔ **On a `bounded` delivery the intent file is the ONLY record of what was decided and why**, because
-no design document exists. `docs/brainstorming/` is gitignored exactly as `docs/plans/` is, so without
-this member that delivery reaches `main` carrying a plan whose reasoning points at a file nobody else
+no design document exists. `.codeadd/docs/brainstorming/` is untracked exactly as `.codeadd/docs/plans/` is, so without
+this member that delivery reaches `codeadd-docs` carrying a plan whose reasoning points at a file nobody else
 will ever have.
 
 **On the fix track `fix.md` is the one load-bearing member, in place of `plan.md` and `ledger.md`.** A fix has no plan and no ledger, so their absence there is not a defect, and the "always" in their rows reads for a delivery that had a plan. `fix.md` follows the same byte-for-byte rule as every other member.
 
 **The last four are conditional, and a directory holding none of them is the normal case.** No
-command writes a `--review-v*` companion or anything under `docs/evidence/` any more, so both members
+command writes a `--review-v*` companion or anything under `.codeadd/docs/evidence/` any more, so both members
 exist to carry what is already on disk from before. `design.md` is absent whenever the plan carried
 its decisions inline, which most do.
 
-⛔ **`evidences/` sources from the `docs/evidence/` DIRECTORY, not from the `--evidence-v01.md`
+⛔ **`evidences/` sources from the `.codeadd/docs/evidence/` DIRECTORY, not from the `--evidence-v01.md`
 companion named under File Naming above.** The two names read alike and are different things.
 
-⛔ **`docs/evidence/` holds files from several plans at once, matched by an id prefix** — a file is
+⛔ **`.codeadd/docs/evidence/` holds files from several plans at once, matched by an id prefix** — a file is
 this plan's when its name begins with the plan's id. **A file that cannot be attributed to a plan is
 left where it is and reported.** Never sweep the whole directory into one delivery: the wrong plan's
 evidence filed under this one is worse than evidence left behind, because it reads as this delivery's
 own record.
 
-**What does NOT move:** `docs/changelog/` and `docs/delivered.jsonl` are already tracked and stay
-where they are. A plan that was never closed out is never archived — it stays in `docs/plans/` and is
+**What does NOT move:** `.codeadd/docs/changelog/` and `.codeadd/docs/delivered.jsonl` are already tracked on `codeadd-docs` and stay
+where they are. A plan that was never closed out is never archived — it stays in `.codeadd/docs/plans/` and is
 removed by hand if abandoned.
 
 ---
@@ -353,7 +353,7 @@ IF TEMPTED TO PASTE THE CONTENT A FILE WILL RECEIVE:
 | The order of work and its dependencies | The conversation that produced the decision |
 | How each F-block is proven correct | — |
 
-If a design doc exists in `docs/brainstorming/`, the plan **references it and does not restate it**.
+If a design doc exists in `.codeadd/docs/brainstorming/`, the plan **references it and does not restate it**.
 With no design doc the plan carries the decision inline — still the decision, never the file content.
 
 **`## Objective` is the one section that is COPIED rather than referenced.**
@@ -363,14 +363,14 @@ IF WRITING OR REVISING A PLAN:
   ⛔ DO NOT: Re-derive the objective from the design — you will write a better sentence, and a better
              sentence is a different objective
   ⛔ DO NOT: Point at the design for it, the way every other section does — the reviewer, the build
-             and the close-out all read the plan, and `docs/brainstorming/` is gitignored
+             and the close-out all read the plan, and `.codeadd/docs/brainstorming/` is untracked
   ⛔ DO NOT: Widen it to cover scope the design did not have
   ✅ DO: Copy the design's `## Objective` byte for byte, then add what is true once the build is done
 ```
 
 **It is copied because it is the one thing everything downstream is checked against.** Every other
 section can point at the design; this one is read by the reviewer's `Objective fit` dimension, and a
-pointer into a gitignored directory is not something a reviewer can read.
+pointer into an untracked directory is not something a reviewer can read.
 
 ⛔ **A plan with NO design document still states an objective**, drawn from the conversation and marked
 as such — `[from conversation, no design document]`. Otherwise the `bounded` path, which writes no
@@ -439,32 +439,32 @@ owns their form.
 
 ## Argument Resolution
 
-**Resolve BEFORE loading anything.** Match the argument as a **substring** of the basenames of
-`docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*` and `--ledger` companions. A
+**Resolve BEFORE loading anything.** Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. Match the argument as a **substring** of the basenames of
+`.codeadd/docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*` and `--ledger` companions. A
 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the
 full basename always works.
 
 **A plain relative path resolves the same way.** Before the match, strip any directory part and a
 trailing `.md` from the argument, then run the substring match above on what is left. A bare slug has
 neither, so it passes through unchanged. This is what lets the continuation line a closing prints
-(`/add-framework--build docs/plans/<basename>.md`) resolve on arrival instead of falling into "No match".
+(`/add-framework--build .codeadd/docs/plans/<basename>.md`) resolve on arrival instead of falling into "No match".
 
 - **Exactly one match** → that is the plan.
 - **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**
-- **No match** → list `docs/plans/` and STOP.
+- **No match** → list `.codeadd/docs/plans/` and STOP.
 
 The question "which" goes out as one numbered item with a RECOMMENDED line (`add-interaction`), in the same
 message as any other open question.
 
 **`--fix <slug>` resolves `*-FIX--<slug>` through three sources, in this order, and stops at the first that answers:**
 
-1. `docs/delivered.jsonl` on the current branch — an entry whose `id` ends `-FIX--<slug>`. Tracked, so it survives a fresh clone or another worktree.
-2. `docs/deliveries/*-FIX--<slug>/` on the current branch — tracked, for the same reason.
-3. `docs/plans/*-FIX--<slug>.md` — the local, gitignored record.
+1. `.codeadd/docs/delivered.jsonl` in the docs worktree — an entry whose `id` ends `-FIX--<slug>`. Tracked on `codeadd-docs`, so it survives a fresh clone or another worktree.
+2. `.codeadd/docs/deliveries/*-FIX--<slug>/` in the docs worktree — tracked, for the same reason.
+3. `.codeadd/docs/plans/*-FIX--<slug>.md` — the local, untracked record.
 
 One match reuses that `id`, and the local record when source 3 holds it. A reused record keeps only its `id`: the caller rebuilds `## What changed` and the head SHA on every run. None anywhere means the caller allocates a timestamp from the clock and writes the record. More than one → ⛔ STOP, print every candidate and ask which; never guess.
 
-When source 1 or 2 answered and no local record exists — a resume on a fresh clone or in another worktree — the record to read is the tracked `docs/deliveries/<id>/fix.md` on the branch.
+When source 1 or 2 answered and no local record exists — a resume on a fresh clone or in another worktree — the record to read is the tracked `.codeadd/docs/deliveries/<id>/fix.md` in the docs worktree.
 
 **A plan argument keeps matching `*PLAN--*` only.** A fix record never resolves as a plan, in build, plan or List Mode.
 
@@ -480,7 +480,7 @@ with a RECOMMENDED line (`add-interaction`).
 
 | Excuse | Reality |
 |--------|---------|
-| "I'll check docs/plans/ for the next number" | Timestamps. Nothing to look up |
+| "I'll check .codeadd/docs/plans/ for the next number" | Timestamps. Nothing to look up |
 | "Pasting the file body makes the build easier" | It makes the plan unreviewable. Name the change |
 | "Global Constraints is empty, I'll drop it" | Write `None`. Absent is a question |
 | "This F-block obviously doesn't need a test" | No proof, no coverage, reviewer blind |
