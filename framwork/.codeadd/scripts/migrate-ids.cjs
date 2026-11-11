@@ -1,9 +1,9 @@
 /**
  * migrate-ids.cjs — Migrate the old work-id directory format to the unified
- * `docs/features/<NNNN><L>-slug` layout.
+ * `<NNNN><L>-slug` layout inside the docs root's features folder.
  *
- * Old: docs/features/F0001-slug/  docs/hotfixes/H0002-slug/  …
- * New: docs/features/0001F-slug/  docs/features/0002H-slug/ …
+ * Old: features/F0001-slug/  hotfixes/H0002-slug/  …   (under the docs root)
+ * New: features/0001F-slug/  features/0002H-slug/ …
  *
  * F17 audit outcome: PRESERVED, not retired. `migrate-ids.sh` has no dedicated
  * Bats suite, so F1 recorded it `audit-deferred`; the plan required mode
@@ -20,18 +20,22 @@
  *   --dry-run  reports the moves and the rewritten references without
  *              touching the tree; conflicts raise an error and set the exit.
  *   --apply    renames each old dir, rewrites every `old-name` reference found
- *              under docs/, then removes hotfixes/refactors/chores when empty.
- *   --validate fails when any old-format dir remains or `docs/features` is
+ *              under the docs root, then removes hotfixes/refactors/chores
+ *              when empty.
+ *   --validate fails when any old-format dir remains or the features folder is
  *              missing; dangling references and leftover type dirs only warn.
  *
  * Exit code equals the accumulated error count (0 on success), except the
- * explicit `exit 1` paths: missing docs/, missing docs/features for --validate,
- * and an unknown mode (which prints usage).
+ * explicit `exit 1` paths: an absent docs root (DOCS_ROOT_MISSING), a missing
+ * features folder for --validate, and an unknown mode (which prints usage).
  *
- * Paths are emitted POSIX-style (`docs/features/F0001-auth`) on every
+ * THE ROOT IS NOT HERE. The docs root, the features folder and the hotfixes
+ * folder come from the resolver module beside this file (docs-root.cjs); the
+ * two remaining legacy type folders are the only names this entry owns.
+ * Paths are emitted POSIX-style, relative to the working directory, on every
  * platform, matching the shell's output and the tests' assertions.
  *
- * Dependencies: Node built-ins only. No shell, no git.
+ * Dependencies: Node built-ins and the resolver. No shell, no git.
  */
 
 'use strict';
@@ -39,9 +43,22 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DOCS_BASE = 'docs';
-const TARGET_DIR = 'docs/features';
-const TYPE_SUBDIRS = ['hotfixes', 'refactors', 'chores'];
+const { DOCS_LAYOUT, docsPath, toPosix } = require('./docs-root.cjs');
+
+// The legacy type folders that fold into the features folder. Only the hotfixes
+// folder has a place in the layout; the other two are legacy names owned here.
+const TYPE_SUBDIRS = [DOCS_LAYOUT.hotfixes, 'refactors', 'chores'];
+
+// Resolved once in main(), after the docs root is known to exist: absolute,
+// forward-slash paths, so every string join below works on every platform.
+let DOCS_BASE = '';
+let TARGET_DIR = '';
+let CWD = '';
+
+/** A path as the output prints it: relative to the working directory, POSIX. */
+function rel(p) {
+  return toPosix(path.relative(CWD, p));
+}
 
 const USAGE = `Usage: node .codeadd/scripts/migrate-ids.cjs [--dry-run|--apply|--validate]
 
@@ -58,7 +75,7 @@ function ok(msg) { process.stdout.write(`[OK] ${msg}\n`); }
 function warn(msg) { process.stdout.write(`[WARN] ${msg}\n`); }
 function error(msg) { process.stdout.write(`[ERROR] ${msg}\n`); errors += 1; }
 function move(from, to) {
-  process.stdout.write(`  ${from} -> ${to}\n`);
+  process.stdout.write(`  ${rel(from)} -> ${rel(to)}\n`);
   changes += 1;
 }
 
@@ -85,12 +102,12 @@ function childDirs(p, re) {
 
 /**
  * Every old-format directory, deduplicated and sorted exactly as the shell's
- * `find … | sort -u`. Searches the known type subdirs (plus a nested
- * `docs/docs`, as the shell does) and the `docs` root at depth 1.
+ * `find … | sort -u`. Searches the features folder, the known type subdirs and
+ * the docs root at depth 1.
  */
 function collectOldDirs() {
   const found = new Set();
-  for (const sub of ['features', 'hotfixes', 'refactors', 'chores', 'docs']) {
+  for (const sub of [DOCS_LAYOUT.featureFolder, ...TYPE_SUBDIRS]) {
     const base = `${DOCS_BASE}/${sub}`;
     if (!isDir(base)) continue;
     for (const dir of childDirs(base, /^[A-Z][0-9]{4}-/)) found.add(dir);
@@ -99,7 +116,7 @@ function collectOldDirs() {
   return [...found].sort();
 }
 
-/** `docs/hotfixes/H0002-crash` -> `docs/features/0002H-crash`. */
+/** `<root>/hotfixes/H0002-crash` -> `<root>/features/0002H-crash`. */
 function convertPath(oldPath) {
   const dirname = path.posix.basename(oldPath);
   const letter = dirname.charAt(0);
@@ -127,7 +144,7 @@ function walkFiles(dir, out) {
   }
 }
 
-/** Files under docs/ whose text contains `oldName`, sorted. */
+/** Files under the docs root whose text contains `oldName`, sorted. */
 function filesReferencing(oldName) {
   const all = [];
   walkFiles(DOCS_BASE, all);
@@ -150,9 +167,9 @@ function updateReferences(oldName, newName, apply) {
     if (apply) {
       const content = fs.readFileSync(file, 'utf8');
       fs.writeFileSync(file, content.split(oldName).join(newName));
-      info(`  Updated references in ${file}`);
+      info(`  Updated references in ${rel(file)}`);
     } else {
-      info(`  Would update references in ${file}`);
+      info(`  Would update references in ${rel(file)}`);
     }
   }
 }
@@ -161,11 +178,6 @@ function doDryRun() {
   process.stdout.write('\n');
   info('=== DRY-RUN: Showing what would change ===');
   process.stdout.write('\n');
-
-  if (!isDir(DOCS_BASE)) {
-    error('docs/ directory not found. Run from project root.');
-    return 1;
-  }
 
   const oldDirs = collectOldDirs();
   if (oldDirs.length === 0) {
@@ -178,7 +190,7 @@ function doDryRun() {
     const newDir = convertPath(oldDir);
     move(oldDir, newDir);
     updateReferences(baseName(oldDir), baseName(newDir), false);
-    if (isDir(newDir)) error(`CONFLICT: ${newDir} already exists!`);
+    if (isDir(newDir)) error(`CONFLICT: ${rel(newDir)} already exists!`);
   }
 
   process.stdout.write('\n');
@@ -193,11 +205,6 @@ function doApply() {
   info('=== APPLYING MIGRATION ===');
   process.stdout.write('\n');
 
-  if (!isDir(DOCS_BASE)) {
-    error('docs/ directory not found. Run from project root.');
-    return 1;
-  }
-
   const oldDirs = collectOldDirs();
   if (oldDirs.length === 0) {
     ok('No old-format directories found. Nothing to migrate.');
@@ -209,7 +216,7 @@ function doApply() {
   for (const oldDir of oldDirs) {
     const newDir = convertPath(oldDir);
     if (isDir(newDir)) {
-      error(`CONFLICT: ${newDir} already exists! Skipping ${oldDir}`);
+      error(`CONFLICT: ${rel(newDir)} already exists! Skipping ${rel(oldDir)}`);
       continue;
     }
 
@@ -227,12 +234,12 @@ function doApply() {
     if (remaining === 0) {
       try {
         fs.rmdirSync(p);
-        ok(`Removed empty directory: ${p}`);
+        ok(`Removed empty directory: ${rel(p)}`);
       } catch (e) {
         // Non-empty for a reason other than a child directory: leave it.
       }
     } else {
-      warn(`${p} still has ${remaining} items, not removing`);
+      warn(`${rel(p)} still has ${remaining} items, not removing`);
     }
   }
 
@@ -260,7 +267,7 @@ function danglingReferences() {
       const line = lines[i];
       if (!/[^0-9][FHRCDE][0-9]{4}-/.test(line)) continue;
       if (/(PRD[0-9]|prd\/)/.test(line)) continue;
-      matches.push(`${file}:${i + 1}:${line}`);
+      matches.push(`${rel(file)}:${i + 1}:${line}`);
     }
   }
   return matches;
@@ -272,14 +279,14 @@ function doValidate() {
   process.stdout.write('\n');
 
   if (!isDir(TARGET_DIR)) {
-    error(`${TARGET_DIR} not found`);
+    error(`${rel(TARGET_DIR)} not found`);
     return 1;
   }
 
   const oldRemaining = collectOldDirs();
   if (oldRemaining.length > 0) {
     error('Old-format directories still exist:');
-    for (const d of oldRemaining) process.stdout.write(`  ${d}\n`);
+    for (const d of oldRemaining) process.stdout.write(`  ${rel(d)}\n`);
   } else {
     ok('No old-format directories remain');
   }
@@ -289,7 +296,7 @@ function doValidate() {
     ok('New-format directories found:');
     for (const d of newDirs) process.stdout.write(`  ${baseName(d)}\n`);
   } else {
-    warn(`No new-format directories found in ${TARGET_DIR}`);
+    warn(`No new-format directories found in ${rel(TARGET_DIR)}`);
   }
 
   const oldRefs = danglingReferences();
@@ -297,12 +304,12 @@ function doValidate() {
     warn('Possible old-format references found:');
     for (const row of oldRefs.slice(0, 20)) process.stdout.write(row + '\n');
   } else {
-    ok('No old-format references found in docs');
+    ok('No old-format references found in the docs root');
   }
 
   for (const subdir of TYPE_SUBDIRS) {
     const p = `${DOCS_BASE}/${subdir}`;
-    if (isDir(p)) warn(`${p} still exists (can be removed if empty)`);
+    if (isDir(p)) warn(`${rel(p)} still exists (can be removed if empty)`);
   }
 
   process.stdout.write('\n');
@@ -316,17 +323,31 @@ function doValidate() {
 }
 
 function main(argv) {
+  CWD = process.cwd();
   const first = argv[0];
   const mode = first === undefined || first === '' ? '--dry-run' : first;
+
+  if (mode !== '--dry-run' && mode !== '--apply' && mode !== '--validate') {
+    process.stdout.write(USAGE);
+    process.exit(1);
+  }
+
+  // The docs root belongs to the docs branch and is never created here.
+  try {
+    DOCS_BASE = toPosix(docsPath(CWD));
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') {
+      error(e.message);
+      process.exit(1);
+    }
+    throw e;
+  }
+  TARGET_DIR = `${DOCS_BASE}/${DOCS_LAYOUT.featureFolder}`;
 
   let code;
   if (mode === '--dry-run') code = doDryRun();
   else if (mode === '--apply') code = doApply();
-  else if (mode === '--validate') code = doValidate();
-  else {
-    process.stdout.write(USAGE);
-    process.exit(1);
-  }
+  else code = doValidate();
   process.exit(code);
 }
 
