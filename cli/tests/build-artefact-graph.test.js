@@ -1025,7 +1025,9 @@ describe('node inventory snapshot', () => {
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
-      template: 4,
+      // template 4 -> 5: docs-migrate-prompt.md, the one home of the prompt `codeadd docs migrate`
+      // prints (0078F, F27). Like the others it ships in the ZIP and nothing names it by a path.
+      template: 5,
       // feature 0 -> 3, plugin 0 -> 2: container nodes, one per directory under
       // .codeadd/fragments/ and .codeadd/plugins/. Entry points, so they are
       // never reported as orphans; they own their members through CONTAINS.

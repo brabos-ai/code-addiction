@@ -28,7 +28,10 @@ import { loadDocsRoot, loadDocsBranch, loadDocsGuard } from './docs-root.js';
  * current format is the printed prompt's job, run by the user's own agent. It spawns
  * nothing but `git`.
  *
- * Output: `MIGRATED=moved:<n>` | `MIGRATED=already` | `MIGRATED=nothing`.
+ * Output: `MIGRATED=moved:<n>` | `MIGRATED=already` | `MIGRATED=nothing`; after moved or already,
+ * `DOCS_LEGACY=<n>` (documents with no schema, counted by the installed resolver) and — when n is
+ * above zero — the prompt template, printed between `--- AGENT PROMPT ---` and
+ * `--- END AGENT PROMPT ---`. `--dry-run` and `nothing` print no prompt.
  */
 
 /**
@@ -367,6 +370,30 @@ function removeCodeSide(cwd, files) {
   }
 }
 
+/** Markdown files under the docs root with no schema (or an unreadable one) — schema 0, legacy. */
+function countLegacyDocs(root, docSchemaOf) {
+  return walkFiles(root).filter((f) => f.endsWith('.md') && docSchemaOf(fs.readFileSync(f, 'utf8')) === 0).length;
+}
+
+const PROMPT_BEGIN = '--- AGENT PROMPT ---';
+const PROMPT_END = '--- END AGENT PROMPT ---';
+
+/**
+ * Print the installed template verbatim between the two fixed marker lines. The template
+ * file is the prompt's only home, and the build has already resolved its schema number.
+ */
+function printPrompt(cwd) {
+  const file = path.join(cwd, '.codeadd', 'templates', 'docs-migrate-prompt.md');
+  if (!fs.existsSync(file)) {
+    say('DOCS_PROMPT=missing');
+    return;
+  }
+  const text = fs.readFileSync(file, 'utf8');
+  say(PROMPT_BEGIN);
+  process.stdout.write(text.endsWith('\n') ? text : `${text}\n`);
+  say(PROMPT_END);
+}
+
 /**
  * @param {string} cwd  the project (a project-scope install)
  * @param {string[]} args  `--dry-run`
@@ -437,11 +464,21 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
   // 5. the code side: remove and stage, never commit
   removeCodeSide(cwd, moved);
 
+  let outcome;
   if (total > 0) {
+    outcome = 'moved';
     say(`MIGRATED=moved:${total}`);
     say(`The moved files are committed on ${docsRootMod.DOCS_BRANCH} (not pushed) and staged as deleted in this checkout for you to review — nothing was committed here.`);
   } else {
-    say(alreadyMigrated() ? 'MIGRATED=already' : 'MIGRATED=nothing');
+    outcome = alreadyMigrated() ? 'already' : 'nothing';
+    say(`MIGRATED=${outcome}`);
   }
-  return { migrated: total > 0 ? 'moved' : 'done', count: total };
+
+  // The prompt for the user's own agent. This command only PRINTS it — it never runs an agent.
+  const legacy = outcome === 'nothing' ? 0 : countLegacyDocs(root, docsRootMod.docSchemaOf);
+  if (outcome !== 'nothing') {
+    say(`DOCS_LEGACY=${legacy}`);
+    if (legacy > 0) printPrompt(cwd);
+  }
+  return { migrated: outcome, count: total, legacy };
 }

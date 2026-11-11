@@ -134,7 +134,9 @@ Commands:
   migrate --list               List applied and pending migrations
   migrate --dry-run            Show what migrate would do, write nothing
   docs migrate                 Move the Code Addiction outputs in your code branch to the codeadd-docs
-                               branch (optional, safe to re-run; nothing is committed on the code side)
+                               branch (optional, safe to re-run; nothing is committed on the code side).
+                               It ends by printing a prompt to paste into your own agent, which brings
+                               older documents to the current format; the command itself runs no agent
   docs migrate --dry-run       List what would move, write nothing
   config show                  Display installation configuration
   config show --verbose         Display config + check for updates

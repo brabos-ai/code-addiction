@@ -10,6 +10,23 @@ import { docsMigrate, collectLegacy, migrateQaSettings } from '../src/docs-migra
 import { MIGRATIONS, runMigrations } from '../src/migrations.js';
 import { installDocsRoot } from './helpers/brownfield-fixture.js';
 
+// Every child process the migrate module starts is recorded by name.
+const spawned = vi.hoisted(() => []);
+vi.mock('node:child_process', async (importOriginal) => {
+  const real = await importOriginal();
+  return {
+    ...real,
+    spawnSync: (cmd, ...rest) => {
+      spawned.push(String(cmd));
+      return real.spawnSync(cmd, ...rest);
+    },
+    spawn: (cmd, ...rest) => {
+      spawned.push(String(cmd));
+      return real.spawn(cmd, ...rest);
+    },
+  };
+});
+
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
@@ -468,5 +485,144 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
     const status = spawnSync(process.execPath, [path.join(scripts, 'status.cjs')], { cwd: tmpDir, encoding: 'utf8' });
     expect(status.stdout).toContain('SETUP_QA:present');
     expect(status.stdout).not.toContain('SETUP_QA_STALE');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F27 — the printed prompt (D20) and the legacy count (D21)
+// ---------------------------------------------------------------------------
+
+describe('F27 — the migrate prompt', () => {
+  const TEMPLATE_SRC = path.join(ROOT, 'framwork', '.codeadd', 'templates', 'docs-migrate-prompt.md');
+  const { resolveDocSchema } = require(path.join(ROOT, 'scripts', 'build.js'));
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+
+  /** What a release install writes: the template with the build's one variable resolved. */
+  function installTemplate(repo) {
+    const dest = path.join(repo, '.codeadd', 'templates');
+    fs.mkdirSync(dest, { recursive: true });
+    const text = resolveDocSchema(fs.readFileSync(TEMPLATE_SRC, 'utf8'));
+    fs.writeFileSync(path.join(dest, 'docs-migrate-prompt.md'), text);
+    return text;
+  }
+  const block = () => {
+    const m = /--- AGENT PROMPT ---\n([\s\S]*?)--- END AGENT PROMPT ---/.exec(stdout());
+    return m ? m[1] : null;
+  };
+
+  it('prints DOCS_LEGACY equal to the planted schema-less docs, then the template byte for byte', async () => {
+    p = makeLegacyProject();
+    const template = installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    const text = stdout();
+    // schema-less markdown planted: about, iterations, plan, brainstorm intent, diagnose, audit,
+    // health check, changelog, design system — the signup about.md already carries schema 1
+    expect(text).toContain('DOCS_LEGACY=9');
+    expect(text.indexOf('MIGRATED=moved:')).toBeLessThan(text.indexOf('DOCS_LEGACY='));
+    expect(text.indexOf('DOCS_LEGACY=')).toBeLessThan(text.indexOf('--- AGENT PROMPT ---'));
+    expect(block()).toBe(template);
+    expect(block()).not.toContain('{{');
+  });
+
+  it('runs no agent: only git is ever started by the command', async () => {
+    p = makeLegacyProject();
+    installTemplate(p.repo);
+    spawned.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(spawned.length).toBeGreaterThan(0);
+    expect([...new Set(spawned)]).toEqual(['git']);
+  });
+
+  it('adds no schema to any moved file, so DOCS_LEGACY counts every one of them', async () => {
+    p = makeLegacyProject();
+    installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    const stamped = [];
+    const walk = (d) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.name === '.git') continue;
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (e.name.endsWith('.md') && docSchemaOf(fs.readFileSync(full, 'utf8')) > 0) stamped.push(path.relative(p.docsRoot, full));
+      }
+    };
+    walk(p.docsRoot);
+    expect(stamped).toEqual(['features/0002F-signup/about.md']);
+  });
+
+  it('the re-run answers already and prints the prompt again while legacy docs remain', async () => {
+    p = makeLegacyProject();
+    const template = installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=already');
+    expect(stdout()).toContain('DOCS_LEGACY=9');
+    expect(block()).toBe(template);
+  });
+
+  it('--dry-run and nothing-to-move print no prompt', async () => {
+    p = makeLegacyProject();
+    installTemplate(p.repo);
+    await docsMigrate(p.repo, ['--dry-run']);
+    expect(stdout()).not.toContain('AGENT PROMPT');
+    out.length = 0;
+    fs.rmSync(p.base, { recursive: true, force: true });
+    p = makeLegacyProject({ legacy: false });
+    installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=nothing');
+    expect(stdout()).not.toContain('AGENT PROMPT');
+    expect(stdout()).not.toContain('DOCS_LEGACY');
+  });
+
+  it('a project with no legacy docs left prints the count 0 and no prompt', async () => {
+    p = makeLegacyProject();
+    installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    // the user's agent stamped everything
+    const walk = (d) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.name === '.git') continue;
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (e.name.endsWith('.md')) {
+          const t = fs.readFileSync(full, 'utf8');
+          if (docSchemaOf(t) === 0) fs.writeFileSync(full, t.startsWith('---') ? t.replace(/^---\n/, '---\nschema: 1\n') : `---\nschema: 1\n---\n${t}`);
+        }
+      }
+    };
+    walk(p.docsRoot);
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('DOCS_LEGACY=0');
+    expect(stdout()).not.toContain('AGENT PROMPT');
+  });
+
+  it('the template exists once, names the standard and the stamp, and names no provider or slash command', () => {
+    const text = fs.readFileSync(TEMPLATE_SRC, 'utf8');
+    expect(text).toContain('.codeadd/docs/');
+    expect(text).toContain('add--doc-schemas');
+    expect(text).toContain('references');
+    expect(text).toContain('schema: {{doc-schema}}');
+    expect(text).toMatch(/file by file/);
+    expect(text).not.toMatch(/claude|codex|cursor|opencode|antigravity|zcode|gemini/i);
+    expect(text).not.toMatch(/(^|\s)\/add-/);
+  });
+
+  it('a distinctive sentence of the template occurs in exactly one source file', () => {
+    const sentence = 'Do not stamp a file you did not adjust.';
+    const roots = [path.join(ROOT, 'framwork', '.codeadd'), path.join(ROOT, 'cli', 'src'), path.join(ROOT, 'mcp')];
+    const holders = [];
+    const walk = (d) => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (/\.(md|js|cjs|mjs)$/.test(e.name) && fs.readFileSync(full, 'utf8').includes(sentence)) holders.push(path.relative(ROOT, full));
+      }
+    };
+    roots.forEach((r) => fs.existsSync(r) && walk(r));
+    expect(holders).toEqual(['framwork/.codeadd/templates/docs-migrate-prompt.md']);
   });
 });
