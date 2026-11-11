@@ -52,12 +52,13 @@ const BRANCH_PREFIX = new RegExp(`${D}/(\\[NNNN\\]D-|NNNND-|[0-9]{4}D-)`, 'g');
 
 // Explicit {file, regex} exclusions for the MCP corpus NAME and the rename
 // tool's scope name (pattern 3 only). An exclusion that matches nothing fails.
+// A line is about the MCP corpus NAME when it says so: a corpus, a CORPORA entry, a --corpus flag.
+// Anything else on the line carrying a quoted path element still counts as a hit.
+const CORPUS_LINE = new RegExp(`(corpus|CORPORA|--corpus|loadCorpus|resolveCorpus|serverInfo|probe\\()[^\\n]*['"]${D}['"]|['"]${D}['"][^\\n]*(corpus|CORPORA)|\\bname:\\s*['"]${D}['"]`, 'i');
 const LITERAL_EXCLUSIONS = [
-  { file: /^mcp\/corpora\.mjs$/, regex: new RegExp(`['"]${D}['"]`) },
-  { file: /^mcp\/engine\.mjs$/, regex: new RegExp(`['"]${D}['"]`) },
-  { file: /^mcp\/server\.mjs$/, regex: new RegExp(`['"]${D}['"]`) },
-  { file: /^cli\/src\/mcp-registration\.js$/, regex: new RegExp(`['"]${D}['"]`) },
-  { file: /^cli\/tests\/mcp-[a-z-]+\.test\.js$/, regex: new RegExp(`['"]${D}['"]`) },
+  { file: /^mcp\/(corpora|engine|server)\.mjs$/, regex: CORPUS_LINE },
+  { file: /^cli\/src\/mcp-registration\.js$/, regex: CORPUS_LINE },
+  { file: /^cli\/tests\/mcp-[a-z-]+\.test\.js$/, regex: CORPUS_LINE },
   { file: /^cli\/tests\/install\.e2e\.test\.js$/, regex: new RegExp(`loadCorpus\\(['"]${D}['"]`) },
   { file: /^scripts\/rename-product-artefacts\.js$/, regex: new RegExp(`['"]${D}['"]`) },
 ];
@@ -138,7 +139,7 @@ describe('docs-no-legacy — tracked files', () => {
 
 describe('docs-no-legacy — built provider trees', () => {
   const TREES = [
-    'framwork/.claude', 'framwork/.agents', 'framwork/.cursor', 'framwork/.opencode', 'framwork/.codex',
+    'framwork/.claude', 'framwork/.agents', 'framwork/.agent', 'framwork/.cursor', 'framwork/.opencode', 'framwork/.codex', 'framwork/.zcode',
     '.claude/commands', '.claude/skills', '.claude/agents', '.opencode', '.agents', '.codex',
   ];
   it('built output carries no previous docs location', () => {
