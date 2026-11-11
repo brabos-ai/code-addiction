@@ -218,8 +218,10 @@ describe('F7 — setup drops the smoke review and its correction loop', () => {
 
   it('21. guard: the Materializes shape is unchanged', () => {
     // 0066B moved the contract onto .codeadd/settings.json#qa, so the shape moved on purpose;
-    // sha256:25b937ee17628d6b is the last pre-refactor shape, now held by migration 0005.
-    expect(read(P.setup)).toContain('shape: sha256:5a8b5405851bf4d8');
+    // sha256:25b937ee17628d6b is the last pre-refactor shape, now held by the docs migrate command.
+    // 0078F moved the QA run-output ignore onto the docs branch, so the shape moved again on
+    // purpose (changed-in 1.9.0): every QA user re-runs /add-qa-setup.
+    expect(read(P.setup)).toContain('shape: sha256:7e9e973468b6b777');
   });
 });
 

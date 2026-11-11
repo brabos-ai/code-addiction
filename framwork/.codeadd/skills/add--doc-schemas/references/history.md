@@ -32,8 +32,8 @@ Breaking changes are **never** omitted to make the release look smoother. If uns
 ### changelog
 
 **Location:** `<feature-dir>/changelog.md` — one per delivery, in the feature's own
-directory, on an epic as well as on a simple feature. `docs/changelog/` is the
-framework repository's own directory and does not exist in a user's project.
+directory, on an epic as well as on a simple feature. `.codeadd/docs/changelog/` is the
+framework repository's own directory, not where a user's project writes this file.
 
 **Written first by `{{cmd:add-pull-request}}` STEP add-pull-request.changelog** when a PR is opened
 mid-build, **otherwise by `{{cmd:add-done}}` STEP add-done.complement-changelog.** Two writers, one document.
@@ -69,7 +69,7 @@ immutable. **`date:` is the day the changelog was FIRST written and never moves;
 kinds of statement. A bullet is a fact about one change and stays true; a summary
 is a claim about the whole delivery and stops being true the moment it grows.
 
-- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `date:`, `updated:` (added on the first complement, absent until then), `related: [[NNNN]F | [NNNN]H]`
+- **Frontmatter:** `id: CHG[NNNN]`, `type: changelog`, `schema: {{doc-schema}}`, `date:`, `updated:` (added on the first complement, absent until then), `related: [[NNNN]F | [NNNN]H]`
 - **Sections:** TL;DR · Changes · Breaking · Migration · Relations
 - **Depth floor:**
   - **Changes** — every merged change as `type(scope): summary — {{doc:<ID>}}` when applicable. Granular enough that a reader can locate the relevant PR/commit.

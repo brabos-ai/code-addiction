@@ -7,7 +7,7 @@ STEP add-review.spec-audit: Test Spec Coverage    → Validate plan-test-spec.md
 ### STEP tdd-pipeline.spec-audit Test Specification Coverage (TDD)
 
 IF `plan-test-spec.md` exists in feature directory:
-1. READ `docs/features/${FEATURE_ID}/plan-test-spec.md`
+1. READ `.codeadd/docs/features/${FEATURE_ID}/plan-test-spec.md`
 2. EXTRACT test case table (ID, Area, RF/RN mapping)
 3. For EACH test case ID:
    a. SEARCH for corresponding test file (from Test File Mapping table)

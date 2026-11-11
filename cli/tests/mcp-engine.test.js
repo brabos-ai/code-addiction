@@ -278,7 +278,7 @@ describe('scenario — "what was already built near this"', () => {
 
   it('an in-flight work item is visible, and filtering is the consumer choice', () => {
     const inFlight = makeDocsCorpus({
-      'docs/features/0077F-draft/about.md': `---
+      '.codeadd/docs/features/0077F-draft/about.md': `---
 id: 0077F
 type: feature
 status: in_progress
@@ -352,9 +352,9 @@ describe('scenario — "what breaks if I change this"', () => {
 
   it('a relation cycle terminates instead of hanging', () => {
     const cyclic = makeDocsCorpus({
-      'docs/features/0001F-a/about.md':
+      '.codeadd/docs/features/0001F-a/about.md':
         '---\nid: 0001F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nA.\n\n## Relations\n- depends_on [[0002F]]\n',
-      'docs/features/0002F-b/about.md':
+      '.codeadd/docs/features/0002F-b/about.md':
         '---\nid: 0002F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nB.\n\n## Relations\n- depends_on [[0001F]]\n',
     });
     try {
@@ -419,9 +419,9 @@ describe('scenario — "what do these files belong to"', () => {
 describe('scenario — "what is the migration still missing"', () => {
   it('orphans reports a node with no relation and one with no TL;DR, with the reason', () => {
     const gappy = makeDocsCorpus({
-      'docs/features/0080F-lonely/about.md':
+      '.codeadd/docs/features/0080F-lonely/about.md':
         '---\nid: 0080F\ntype: feature\nrelated: []\n---\n\n## TL;DR\nStands alone.\n',
-      'docs/features/0081F-empty/about.md':
+      '.codeadd/docs/features/0081F-empty/about.md':
         '---\nid: 0081F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- links_to [[0009F]]\n',
     });
     try {
@@ -441,7 +441,7 @@ describe('scenario — "what is the migration still missing"', () => {
     // Decision 21: the gate's whole point is that the TL;DR is the rejection
     // surface, and a heading with nothing under it rejects nothing.
     const blank = makeDocsCorpus({
-      'docs/features/0082F-blank/about.md':
+      '.codeadd/docs/features/0082F-blank/about.md':
         '---\nid: 0082F\ntype: feature\nrelated: []\n---\n\n## TL;DR\n\n## Relations\n- part_of [[0042F]]\n',
     });
     try {
@@ -483,7 +483,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
     const live = makeDocsCorpus();
     try {
       expect(run('search', { terms: 'brand new' }, { corpus: 'docs', root: live }).hits).toEqual([]);
-      const added = path.join(live, 'docs/features/0090F-new/about.md');
+      const added = path.join(live, '.codeadd/docs/features/0090F-new/about.md');
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,
@@ -519,8 +519,7 @@ describe('scenario — the index is a cache and the markdown is the truth', () =
   it('answers a read-only tree without failing on the cache write', () => {
     const tree = makeDocsCorpus();
     try {
-      fs.rmSync(path.join(tree, '.codeadd'), { recursive: true, force: true });
-      fs.mkdirSync(path.join(tree, '.codeadd'), { recursive: true });
+      fs.rmSync(path.join(tree, '.codeadd', 'docs-index.json'), { force: true });
       fs.writeFileSync(path.join(tree, '.codeadd', 'docs-index.json'), '{}', { mode: 0o444 });
       expect(() => run('stats', {}, { corpus: 'docs', root: tree })).not.toThrow();
     } finally {

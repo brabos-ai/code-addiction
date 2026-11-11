@@ -87,21 +87,21 @@ describe('L1.4 -- Argument Resolution normalises a path and keeps its STOPs', ()
 
   it('keeps both STOP bullets verbatim', () => {
     expect(resolution).toContain('- **More than one** → ⛔ STOP. Print every candidate basename and ask which. **NEVER guess.**');
-    expect(resolution).toContain('- **No match** → list `docs/plans/` and STOP.');
+    expect(resolution).toContain('- **No match** → list `.codeadd/docs/plans/` and STOP.');
   });
 });
 
 describe('L1.5 -- the Operation Mode blocks show a plain path', () => {
-  it('plan shows a path under docs/', () => {
-    expect(section(read(PLAN), '## Operation Mode')).toContain('/add-framework--plan docs/');
+  it('plan shows a path under .codeadd/docs/', () => {
+    expect(section(read(PLAN), '## Operation Mode')).toContain('/add-framework--plan .codeadd/docs/');
   });
 
   it('build shows a plan path', () => {
-    expect(section(read(BUILD), '## Operation Mode')).toContain('/add-framework--build docs/plans/');
+    expect(section(read(BUILD), '## Operation Mode')).toContain('/add-framework--build .codeadd/docs/plans/');
   });
 
   it('done shows a plan path', () => {
-    expect(section(read(DONE), '## Operation Mode')).toContain('/add-framework--done docs/plans/');
+    expect(section(read(DONE), '## Operation Mode')).toContain('/add-framework--done .codeadd/docs/plans/');
   });
 });
 
@@ -132,12 +132,12 @@ describe('L1.8 -- plan routes a non-plan path before it resolves the argument', 
   // Line breaks in the source are wrapping, not content: compare on collapsed whitespace.
   const mode = section(read(PLAN), '## Operation Mode').replace(/\s+/g, ' ');
 
-  it('states the docs/plans/ distinction', () => {
-    expect(mode).toMatch(/outside `docs\/plans\/`/);
+  it('states the .codeadd/docs/plans/ distinction', () => {
+    expect(mode).toMatch(/outside `\.codeadd\/docs\/plans\/`/);
   });
 
   it('states it before the resolve-first sentence', () => {
-    const rule = mode.search(/outside `docs\/plans\/`/);
+    const rule = mode.search(/outside `\.codeadd\/docs\/plans\/`/);
     const resolveFirst = mode.indexOf('resolve the argument BEFORE reading anything else');
     expect(resolveFirst).toBeGreaterThan(-1);
     expect(rule).toBeGreaterThan(-1);

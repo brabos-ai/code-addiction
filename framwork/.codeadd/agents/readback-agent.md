@@ -47,7 +47,7 @@ Your blindness is the mechanism, not a limitation. You do not have the tools to 
 
 | `scope` | Target | You enumerate |
 |---|---|---|
-| `feature` (default) | a feature folder, or a feature ID under `docs/features/` | `Glob <folder>/**/*.md` — the whole folder, recursively |
+| `feature` (default) | a feature folder, or a feature ID under `.codeadd/docs/features/` | `Glob <folder>/**/*.md` — the whole folder, recursively |
 | `subfeature` | a feature folder plus the subfeature id being worked on | `Glob <folder>/*.md` plus `Glob <folder>/subfeatures/<SF>/**/*.md` — **and no sibling subfeature** |
 | `document` | one file path | that file. No glob at all |
 

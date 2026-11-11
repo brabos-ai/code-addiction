@@ -29,12 +29,12 @@ Execute BEFORE any other action:
 1. Run: node .codeadd/scripts/status.cjs
 2. Parse FEATURE_ID from output
 3. Read feature docs IN ORDER:
-   - docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)
-   - docs/features/${FEATURE_ID}/discovery.md
+   - .codeadd/docs/features/${FEATURE_ID}/about.md (PRIMARY — RFs, RNs, RNFs)
+   - .codeadd/docs/features/${FEATURE_ID}/discovery.md
 4. Read area planning outputs (contracts):
-   - docs/features/${FEATURE_ID}/plan-database.md (if exists — entities, tables)
-   - docs/features/${FEATURE_ID}/plan-backend.md (if exists — endpoints, DTOs, commands)
-   - docs/features/${FEATURE_ID}/plan-frontend.md (if exists — pages, components)
+   - .codeadd/docs/features/${FEATURE_ID}/plan-database.md (if exists — entities, tables)
+   - .codeadd/docs/features/${FEATURE_ID}/plan-backend.md (if exists — endpoints, DTOs, commands)
+   - .codeadd/docs/features/${FEATURE_ID}/plan-frontend.md (if exists — pages, components)
 
 ## Your Task
 Generate contract test cases derived from RFs/RNs in about.md + technical contracts from plan-*.md files.
@@ -47,7 +47,7 @@ Rules:
 - Map test cases to test files
 
 ## Output Format
-Write to: docs/features/${FEATURE_ID}/plan-test-spec.md
+Write to: .codeadd/docs/features/${FEATURE_ID}/plan-test-spec.md
 
 Use the EXACT format from the {{skill:add--test-specification/SKILL.md}} skill:
 

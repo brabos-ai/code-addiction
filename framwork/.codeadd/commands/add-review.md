@@ -20,6 +20,7 @@
 - command: /add-plan
 - command: /add-qa-setup
 - command: /add-wiki
+- script: docs-branch.cjs
 - script: qa-evidence.cjs
 - script: status.cjs
 -->
@@ -103,8 +104,8 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Condition | Required | Status |
 |-----------|----------|--------|
 | Feature code exists | Committed, staged, or unstaged | Check working directory |
-| `docs/features/${FEATURE_ID}/about.md` | Yes | Validate exists |
-| `docs/features/${FEATURE_ID}/plan.md` | Recommended | Warn if missing (non-blocking) |
+| `.codeadd/docs/features/${FEATURE_ID}/about.md` | Yes | Validate exists |
+| `.codeadd/docs/features/${FEATURE_ID}/plan.md` | Recommended | Warn if missing (non-blocking) |
 
 **Success Criteria:** about.md exists.
 **Failure:** STOP. Inform user to complete implementation first.
@@ -116,7 +117,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Context | Source | Status |
 |---------|--------|--------|
 | Feature metadata | `node .codeadd/scripts/status.cjs` | FEATURE_ID, CURRENT_PHASE, FILES_TO_REVIEW |
-| Feature docs | `docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
+| Feature docs | `.codeadd/docs/features/${FEATURE_ID}/*` (+ `subfeatures/${SFxx}-*/` on an epic) | about.md, discovery.md, plan.md, design.md (opt, SF-scoped — see 2.2), iterations.jsonl, decisions.jsonl |
 | Knowledge base | via `{{skill:add--knowledge-discovery/SKILL.md}}`: hub + relevant area pages (if `WIKI:present`) | patterns, conventions to review against |
 | Architecture reference | wiki `conventions.md` (+ area pages), `AGENTS.md` fallback | Config, DI, repo, naming, tenancy, security, structure — as the project defines them |
 | Changed files | `git diff --name-only` + read each file | ALL files from FILES_TO_REVIEW |
@@ -131,7 +132,7 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 | Audit Phase | Checklist |
 |-------------|-----------|
 | Load contracts | Extract routes, services, DTOs, guards, queues from plan.md prose |
-| Load acceptance checklist | Read `docs/features/${FEATURE_ID}/tasks.md` → `## Acceptance Checklist` with tick state `[ ]/[x]/[!]` |
+| Load acceptance checklist | Read `.codeadd/docs/features/${FEATURE_ID}/tasks.md` → `## Acceptance Checklist` with tick state `[ ]/[x]/[!]` |
 | Validate requirements coverage | `## Requirements Coverage` section must exist mapping RF/RN to checklist items |
 | Execute audit | For each checklist item: locate impl (file:line), validate behavior, compare vs about.md (RF/RN), record status |
 | Cross-reference | All RF/RN from about.md appear in coverage section; all RF/RN have ≥1 checklist item |
@@ -212,8 +213,8 @@ All gates must be checked sequentially before proceeding to the next step. Gate 
 |------|--------|-----------|
 | Collect data | Build: STEP add-review.build. Spec: STEP add-review.spec-audit. Scores: STEP add-review.consolidate. Gates: STEP add-review.gates. QA: the `qa-pipeline` judgement step, when that feature is enabled. |
 | Build table | Quality Gate Report (see STEP add-review.report) |
-| Resolve NNN | Highest existing `docs/features/${FEATURE_ID}/review-NNN.md` + 1; `001` when none. **One sequence per feature**, flat at the feature-directory root |
-| Write report | `docs/features/${FEATURE_ID}/review-NNN.md` per the `review` schema, with all consolidated findings and the `## Fix Routing` union |
+| Resolve NNN | Highest existing `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md` + 1; `001` when none. **One sequence per feature**, flat at the feature-directory root |
+| Write report | `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md` per the `review` schema, with all consolidated findings and the `## Fix Routing` union |
 | QA baseline | The `> **QA baseline:**` line is MANDATORY — `${QA_BASELINE}` from STEP add-review.baseline item 4b, resolved from the filesystem this run. Emit `none` when no run exists; NEVER omit the line. `/add-done` BLOCKS a review without it |
 | Idempotency | Numbering replaces backup. Never overwrite an existing `review-NNN.md`; allocate the next number |
 
@@ -262,11 +263,10 @@ Check working directory for unstaged/untracked changes.
 
 **If user agrees (Yes):**
 
-Resolve the current feature first (`node .codeadd/scripts/status.cjs` → `FEATURE_ID`), then stage feature-scoped — all code changes plus ONLY this feature's docs; other features' untracked docs stay untracked (see `{{skill:add--commit/SKILL.md}}` Staging Rules):
+Stage code only (see `{{skill:add--commit/SKILL.md}}` Staging Rules) — docs live on `codeadd-docs` and are saved by the end-of-command rule, never by staging:
 
 ```bash
-git add -A -- . ':(exclude)docs/features/*'
-[ -n "${FEATURE_ID}" ] && [ -d "docs/features/${FEATURE_ID}" ] && git add -A -- "docs/features/${FEATURE_ID}"
+git add -A
 ```
 Save `STAGED_CHANGES=true` for tracking.
 
@@ -279,8 +279,8 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 ### STEP add-review.gate-complete Validate Implementation Complete (Gate 1)
 
 - Feature code exists (committed, staged, or unstaged)
-- `docs/features/${FEATURE_ID}/about.md` exists
-- `docs/features/${FEATURE_ID}/plan.md` exists (recommended)
+- `.codeadd/docs/features/${FEATURE_ID}/about.md` exists
+- `.codeadd/docs/features/${FEATURE_ID}/plan.md` exists (recommended)
 
 **IF implementation is NOT complete:** Inform user and STOP.
 
@@ -356,13 +356,13 @@ From `status.cjs` output, read ALL files in `FILES_TO_REVIEW`.
 
 Decide `BUILD_REVIEW_COVERS` (`yes` | `no`) once, here, before the spec audit. The build's Final review already ran
 the spec audit and the OWASP pass on the finished unit; repeating them on the same code costs two dispatches and finds
-nothing new. It is `yes` only when, for EVERY in-scope ledger — `docs/features/${FEATURE_ID}/build-ledger.md`, or each
+nothing new. It is `yes` only when, for EVERY in-scope ledger — `.codeadd/docs/features/${FEATURE_ID}/build-ledger.md`, or each
 `build-ledger.md` of `REVIEW_SCOPE` on an epic — all four hold:
 
 1. The last `Final review:` line reads `passed` or `ruled N` (`blocked N` never skips anything).
 2. A `Final review head: <sha>` line follows it.
-3. `git diff --name-only <sha>..HEAD` prints nothing once `docs/features/${FEATURE_ID}` is left out.
-4. `git status --porcelain` prints nothing once the same folder is left out.
+3. `git diff --name-only <sha>..HEAD` prints nothing.
+4. `git status --porcelain` prints nothing.
 
 ```
 IF ANY LEDGER IS MISSING, HAS NO HEAD LINE, OR ANY CONDITION FAILS:
@@ -385,7 +385,7 @@ The area reviewers, the build, the validation gates, the test-spec coverage slot
 ### STEP add-review.load-contracts-acceptance Load Contracts and Acceptance Checklist
 
 ```
-READ docs/features/${FEATURE_ID}/plan.md
+READ .codeadd/docs/features/${FEATURE_ID}/plan.md
   → Extract contracts from prose:
     - Routes: POST/GET/PUT/DELETE + path patterns
     - Services: Service/Handler/Adapter class definitions
@@ -393,11 +393,11 @@ READ docs/features/${FEATURE_ID}/plan.md
     - Guards: Guard class definitions
     - Queues: queue/processor/worker references
 
-READ docs/features/${FEATURE_ID}/tasks.md → section `## Acceptance Checklist`
+READ .codeadd/docs/features/${FEATURE_ID}/tasks.md → section `## Acceptance Checklist`
   → Each item ends with `(RFNN/RNNN)` reference and carries [ ]/[x]/[!] tick state
   → Use as deterministic audit source — pairs each contract with its RF/RN coverage and tick state
 
-READ docs/features/${FEATURE_ID}/tasks.md → section `## Requirements Coverage`
+READ .codeadd/docs/features/${FEATURE_ID}/tasks.md → section `## Requirements Coverage`
   → Derived RF/RN tick state — used in cross-reference
 ```
 
@@ -728,7 +728,7 @@ Apply the **Validation Gates Procedure (review variant)** from `{{skill:add--tas
 ### STEP add-review.log-iteration Log Iteration
 
 ```bash
-node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
+node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/${FEATURE_ID}/iterations.jsonl" "review" "/add-review" '"slug":"code-review","what":"Reviewed and routed findings","files":[]'
 ```
 
 `files` is always empty: this command modifies no code.
@@ -840,12 +840,12 @@ off, because no judge ran to author one.
 
 ### STEP add-review.write-report Write `review-NNN.md` (Gate 7)
 
-Resolve `NNN` as the highest existing `docs/features/${FEATURE_ID}/review-NNN.md`
+Resolve `NNN` as the highest existing `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md`
 plus one (`001` when none). One sequence per feature, flat at the feature
 directory root.
 
 ```
-WRITE docs/features/${FEATURE_ID}/review-NNN.md   (per the `review` schema)
+WRITE .codeadd/docs/features/${FEATURE_ID}/review-NNN.md   (per the `review` schema)
 
 ---
 id: ${FEATURE_NUMBER}-review-NNN
@@ -905,6 +905,8 @@ single-file backup rule; the sequence is what lets a loop compare rounds.
 
 ### STEP add-review.console-output Console Output
 
+`review-NNN.md` and the iteration log are committed once, as the last step before the report — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
+
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the gate table and the routing come after it, whole.
 
@@ -952,8 +954,8 @@ so.
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/features/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
-| `docs/features/${FEATURE_ID}/plan.md` | The requirements the findings are judged against |
+| `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md` | This review's findings and the `## Fix Routing` the build consumes |
+| `.codeadd/docs/features/${FEATURE_ID}/plan.md` | The requirements the findings are judged against |
 | {{skill:add--delivery-mode/SKILL.md}} | Which stops the next command waits at |
 
 ---

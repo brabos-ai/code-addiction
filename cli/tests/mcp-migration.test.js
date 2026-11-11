@@ -136,7 +136,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     // shortcut as the likeliest way this level leaks, and the first draft took
     // it: one literal expected line plus `docRefs > 0`. The fixture's 0042F
     // body now names three resolving documents, and all three must appear.
-    const targets = targetsIn('docs/features/0042F-itemised-purchase/about.md');
+    const targets = targetsIn('.codeadd/docs/features/0042F-itemised-purchase/about.md');
     for (const id of ['0009F', '0003F', '0012F']) {
       expect(targets, `no relation recovered for {{doc:${id}}}`).toContain(id);
     }
@@ -147,7 +147,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     // wrapped paragraph, so the second and third reference end up carrying a
     // reason that names the first document. Found by thickening the fixture,
     // not by reading the code.
-    const doc = fs.readFileSync(path.join(cwd, 'docs/features/0042F-itemised-purchase/about.md'), 'utf8');
+    const doc = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0042F-itemised-purchase/about.md'), 'utf8');
     const byTarget = Object.fromEntries(
       doc.split('\n')
         .filter((l) => l.startsWith('- links_to'))
@@ -161,7 +161,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
 
   it('L3.3 recovers a relation for EVERY related: id that resolves', () => {
     // 0051H carries `related: [0042F, 0012F]`. Both, not the first.
-    const targets = targetsIn('docs/features/0051H-token-refresh/about.md');
+    const targets = targetsIn('.codeadd/docs/features/0051H-token-refresh/about.md');
     expect(targets).toContain('0042F');
     expect(targets).toContain('0012F');
   });
@@ -169,7 +169,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
   it("L3.3 recovers every related.md Follow-up carrying a {{doc:}}", () => {
     // The fixture's related.md carries TWO Follow-ups, and each one's sentence
     // is the `why` — recovered with no model.
-    const hotfix = fs.readFileSync(path.join(cwd, 'docs/features/0051H-token-refresh/about.md'), 'utf8');
+    const hotfix = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0051H-token-refresh/about.md'), 'utf8');
     expect(hotfix).toContain('introduced the second refresh call');
     expect(hotfix).toContain('still logs the gap as a silent write failure');
     expect(outcome.harvest.followUps).toBe(2);
@@ -180,7 +180,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
     // frontmatter, and is not duplicated into ## Relations. Writing it there
     // would put a type outside the closed vocabulary into a section the schema
     // gate rejects as malformed.
-    const old = fs.readFileSync(path.join(cwd, 'docs/features/0003F-old-import/about.md'), 'utf8');
+    const old = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0003F-old-import/about.md'), 'utf8');
     expect(old).not.toContain('superseded_by [[');
     expect(old).toContain('superseded_by: 0042F');
     expect(outcome.harvest.superseded).toBe(1);
@@ -210,7 +210,7 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
   });
 
   it('L3.4 an id resolving to nothing produces NO line and is reported', () => {
-    const about = fs.readFileSync(path.join(cwd, 'docs/features/0042F-itemised-purchase/about.md'), 'utf8');
+    const about = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0042F-itemised-purchase/about.md'), 'utf8');
     expect(about).not.toContain('[[0099F]]');
     expect(outcome.unresolved).toContainEqual({ from: '0042F', id: '0099F' });
   });
@@ -224,15 +224,15 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
   it('L3.6 and L4.5 a file with no type: is untouched and counted as skipped', async () => {
     const { snapshot } = await import('./helpers/brownfield-fixture.js');
     const after = snapshot(cwd);
-    expect(after['docs/chat-gpt/transcript.md']).toBe(before['docs/chat-gpt/transcript.md']);
-    expect(after['docs/critical-findings.md']).toBe(before['docs/critical-findings.md']);
+    expect(after['.codeadd/docs/chat-gpt/transcript.md']).toBe(before['.codeadd/docs/chat-gpt/transcript.md']);
+    expect(after['.codeadd/docs/critical-findings.md']).toBe(before['.codeadd/docs/critical-findings.md']);
     expect(outcome.skipped).toBe(2);
   });
 
   it("L4.5 a user file's related: and {{doc:}} produce no edge anywhere", () => {
     // critical-findings.md carries `related: [0042F]` and the transcript names
     // {{doc:0042F}}. Neither is codeadd's, so neither becomes an edge.
-    const about = fs.readFileSync(path.join(cwd, 'docs/features/0042F-itemised-purchase/about.md'), 'utf8');
+    const about = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0042F-itemised-purchase/about.md'), 'utf8');
     const inbound = about.split('\n').filter((l) => l.startsWith('- '));
     expect(inbound.every((l) => !l.includes('critical-findings'))).toBe(true);
     expect(outcome.harvest.docRefs + outcome.harvest.related).toBeLessThan(10);
@@ -241,14 +241,14 @@ describe('F18 — L3 the harvest over a brownfield tree', () => {
   it('does NOT invent a TL;DR where the document has none', () => {
     // Decision 21: an empty skeleton satisfies the close-out gate while
     // carrying nothing, and the TL;DR is the rejection surface.
-    const blank = fs.readFileSync(path.join(cwd, 'docs/features/0060F-blank/about.md'), 'utf8');
+    const blank = fs.readFileSync(path.join(cwd, '.codeadd/docs/features/0060F-blank/about.md'), 'utf8');
     const tldr = blank.slice(blank.indexOf('## TL;DR') + 8, blank.indexOf('## Problem'));
     expect(tldr.trim()).toBe('');
   });
 
   it('touches no attachment — a relation belongs to the work item', () => {
-    const changelog = path.join(cwd, 'docs/features/0042F-itemised-purchase/changelog.md');
-    expect(fs.readFileSync(changelog, 'utf8')).toBe(before['docs/features/0042F-itemised-purchase/changelog.md']);
+    const changelog = path.join(cwd, '.codeadd/docs/features/0042F-itemised-purchase/changelog.md');
+    expect(fs.readFileSync(changelog, 'utf8')).toBe(before['.codeadd/docs/features/0042F-itemised-purchase/changelog.md']);
   });
 
   it('never throws, and reports what it could not do', () => {

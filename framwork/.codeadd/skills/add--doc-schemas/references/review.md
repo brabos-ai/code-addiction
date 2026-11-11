@@ -28,9 +28,9 @@ A hypothesis without a test is speculation.
 
 ### audit-report
 
-For `/add-audit` (creates `docs/audit/<date>.md`).
+For `/add-audit` (creates `.codeadd/docs/audits/<date>.md`).
 
-- **Frontmatter:** `id: AUDIT-<date>`, `type: audit-report`, `related: []` (link to relevant feature/product/PRD if applicable)
+- **Frontmatter:** `id: AUDIT-<date>`, `type: audit-report`, `schema: {{doc-schema}}`, `related: []` (link to relevant feature/product/PRD if applicable)
 - **Sections:** TL;DR · Findings · Risks · Recommendations
 - **Depth floor:**
   - **Findings** — per finding: area, severity, observation, evidence (file:line or metric). No finding without evidence per Finding & Evidence Discipline above.
@@ -41,9 +41,9 @@ For `/add-audit` (creates `docs/audit/<date>.md`).
 
 ### diagnose-report
 
-For `/add-diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
+For `/add-diagnose` (creates `.codeadd/docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 
-- **Frontmatter:** `id: DIAG-<slug>`, `type: diagnose-report`, `related: []`
+- **Frontmatter:** `id: DIAG-<slug>`, `type: diagnose-report`, `schema: {{doc-schema}}`, `related: []`
 - **Sections:** TL;DR · Symptom · Hypotheses · Evidence · Recommended Route · Hotfix Handoff (hotfix route only)
 - **Depth floor:**
   - **Symptom** — same shape as the Symptom Notation in `references/fix.md`: when / where / impact / detection.
@@ -68,7 +68,7 @@ For `/add-diagnose` (creates `docs/diagnose/YYYY-MM-DDTHHMMSS-<slug>.md`).
 ### review
 
 For `/add-review` — the **feature-level aggregate** written at
-`docs/features/<feature-id>/review-NNN.md`, flat at the feature-directory root.
+`.codeadd/docs/features/<feature-id>/review-NNN.md`, flat at the feature-directory root.
 It is one of two verdicts `/add-done` STEP 4.0 can gate on — the other is
 `/add-build`'s `Final review:` ledger line. `converge-gates.cjs` reads the
 **highest-numbered** review only when no line written after it exists
@@ -82,7 +82,7 @@ reports — `qa-evidence.cjs validate` / `working-baseline` / `previous` and
 `/add-done` all bind to those.
 
 - **ID:** `<feature-id>-review-NNN` — a **per-feature sequence**, starting `001`, allocated as the highest existing `review-NNN.md` in the feature directory plus one. Per feature, NOT per scope: a round produces one consolidated document, so mirroring `qa-validation`'s per-scope sequences would leave "the highest" undefined across independent sequences and force `/add-done` into a loop. See `{{skill:add--id-convention/SKILL.md}}`.
-- **Frontmatter:** `id: <feature-id>-review-NNN`, `type: review`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]` (mirrors the field `qa-validation` already carries — every in-scope `SFxx` this round covers; on a simple feature the value is the feature scope, `[feature]`). ⛔ **Mandatory in every review document, including one written with `qa-pipeline` disabled** — `/add-review` resolves it in its ungated bootstrap step, never in a QA step, precisely so this field is always available, `branch`, `status: open | finalized`. `status` starts `open` and is set to `finalized` by `/add-build` exactly once, when it has appended its resolution annex.
+- **Frontmatter:** `id: <feature-id>-review-NNN`, `type: review`, `schema: {{doc-schema}}`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]` (mirrors the field `qa-validation` already carries — every in-scope `SFxx` this round covers; on a simple feature the value is the feature scope, `[feature]`). ⛔ **Mandatory in every review document, including one written with `qa-pipeline` disabled** — `/add-review` resolves it in its ungated bootstrap step, never in a QA step, precisely so this field is always available, `branch`, `status: open | finalized`. `status` starts `open` and is set to `finalized` by `/add-build` exactly once, when it has appended its resolution annex.
 - **Sections:** TOC · Quality Gate Report · Spec Compliance Audit · Code Review Summary · Product Validation · QA Judgement · Fix Routing · Resolution Annex. **`## TOC` is required** — 7 H2 sections, so the universal >3-H2 TOC rule applies.
 - **Mandatory line:** `> **QA baseline:** <value>` immediately under the date/branch header. Emit `none` when no working run exists; NEVER omit it. `/add-done` BLOCKS on its absence and never infers a baseline. **Format:** `<value>` is `none`, or one or more `<scope>:<run>` entries — `scope` is `feature` or `SFxx`, `run` is `run-NNN` — with multiple entries separated exactly as `qa-evidence.cjs` accepts (comma-joined, e.g. `feature:run-001,SF02:run-003`). `qa-evidence.cjs` is the sole authority for this shape: `<value>` is its stdout, verbatim, never authored, reformatted, or hand-assembled.
 - **Depth floor:**
@@ -98,7 +98,7 @@ reports — `qa-evidence.cjs validate` / `working-baseline` / `previous` and
 For `/add-review`'s QA judgement (creates working evidence at `<scope>/_tests/run-NNN/qa-validation-NNN.md` + sibling assets). `/add-done` may copy the complete schema-valid run unchanged to immutable delivery evidence at `<scope>/_tests/final/run-NNN/`. Final placement preserves the original report ID, run identity, findings, and relative links; it is reviewed evidence, not a pass certificate. Agent-judged, **dual-judge** QA audit — two specialist judges per subfeature (`@ux-agent` review mode owns the judgement axes; `@qa-agent` owns functional delivery + deterministic conformance + ALL a11y + failure forensics), read-PNG by default; the `playwright` plugin adds live browser driving. It is an **audit, not a gate** — it documents findings, it never fixes. Full rubric/template live in the default-shipped `add--qa` skill; this is the doc-schema contract.
 
 - **ID:** `<feature-id>-qa-validation-NNN` — a **per-scope sequence**, NOT a global prefix. Numbering starts `001`; allocation uses the union of working `_tests/run-NNN/` and final `_tests/final/run-NNN/` IDs for that scope. The complete run shares the same `NNN`. See `{{skill:add--id-convention/SKILL.md}}` (per-scope sequence IDs).
-- **Frontmatter:** `id: <feature-id>-qa-validation-NNN`, `type: qa-validation`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]`, `method`, `specs: { about, design }`, `viewports: [...]`, `judged-contract: sha256:<design.md provenance hash>` (the contract hash the run judged against — lets the next run detect an amended contract), `judged-tree: sha256:<working-tree fingerprint>` (the fingerprint of the tree that produced this evidence — the next invocation compares its own fingerprint against it to decide whether evidence capture can be SKIPPED; a report without it forces a recapture). (`updated`/`related` optional — reports are append-only per run, not edited.)
+- **Frontmatter:** `id: <feature-id>-qa-validation-NNN`, `type: qa-validation`, `schema: {{doc-schema}}`, `created`, `feature: <feature-id>`, `scope: [<SFxx>, ...]`, `method`, `specs: { about, design }`, `viewports: [...]`, `judged-contract: sha256:<design.md provenance hash>` (the contract hash the run judged against — lets the next run detect an amended contract), `judged-tree: sha256:<working-tree fingerprint>` (the fingerprint of the tree that produced this evidence — the next invocation compares its own fingerprint against it to decide whether evidence capture can be SKIPPED; a report without it forces a recapture). (`updated`/`related` optional — reports are append-only per run, not edited.)
 - **Sections:** TOC · TL;DR · Summary · Coverage (contract-anchored, vs design.md) · Functional delivery (vs about.md) · Findings · Responsiveness · Accessibility · Fix Routing · Clean screens · Not covered / caveats. **`## TOC` is required** — the report carries 9+ H2 sections, so the universal >3-H2 TOC rule applies.
 - **Depth floor:**
   - **Summary** — severity counts (blocker / major / minor / polish) plus per-judge counts (`@ux-agent` / `@qa-agent` / coordinator coverage).

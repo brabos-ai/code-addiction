@@ -19,8 +19,8 @@ const path = require('node:path');
 
 const h = require('./helpers.cjs');
 
-const TASKS = 'docs/features/0003F-signup/tasks.md';
-const OUT = 'docs/features/0003F-signup/_build';
+const TASKS = h.DOCS_ROOT + '/features/0003F-signup/tasks.md';
+const OUT = h.DOCS_ROOT + '/features/0003F-signup/_build';
 
 const TASKS_CONTENT = `# Tasks: Signup
 
@@ -152,7 +152,7 @@ test('task-brief#006 a nested OUT_DIR that does not exist is created', () => {
   const { repo, cleanup } = h.makeRepo();
   try {
     writeTasks(repo);
-    const deep = 'docs/features/0003F-signup/subfeatures/SF01-auth/_build';
+    const deep = h.DOCS_ROOT + '/features/0003F-signup/subfeatures/SF01-auth/_build';
     const res = h.runScript('task-brief', [TASKS, 'T01', deep], { cwd: repo });
     assert.equal(res.status, 0, res.output);
     assert.equal(fs.existsSync(abs(repo, deep)), true);
@@ -258,7 +258,7 @@ test('task-brief#013 misuse: two arguments -> exit 2', () => {
 test('task-brief#014 misuse: TASKS_FILE does not exist -> exit 2', () => {
   const { repo, cleanup } = h.makeRepo();
   try {
-    const res = h.runScript('task-brief', ['docs/features/nope/tasks.md', 'T01', OUT], { cwd: repo });
+    const res = h.runScript('task-brief', [h.DOCS_ROOT + '/features/nope/tasks.md', 'T01', OUT], { cwd: repo });
     assert.equal(res.status, 2, res.output);
   } finally {
     cleanup();

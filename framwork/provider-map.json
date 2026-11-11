@@ -6,7 +6,7 @@
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
       "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": true },
-      "docs": [
+      "links": [
         "https://docs.anthropic.com/en/docs/claude-code/hooks",
         "https://docs.anthropic.com/en/docs/claude-code/mcp",
         "https://docs.anthropic.com/en/docs/claude-code/slash-commands"
@@ -20,7 +20,7 @@
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.toml",
       "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": false, "structuredQuestions": false },
-      "docs": [
+      "links": [
         "https://developers.openai.com/codex/config-advanced",
         "https://developers.openai.com/codex/mcp",
         "https://developers.openai.com/codex/subagents",
@@ -33,7 +33,7 @@
       "commands": "skills/{name}/SKILL.md",
       "skills": "skills/{name}/SKILL.md",
       "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
-      "docs": [
+      "links": [
         "https://antigravity.google/docs/rules-workflows",
         "https://antigravity.google/docs/mcp",
         "https://antigravity.google/docs/skills"
@@ -45,7 +45,7 @@
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
       "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
-      "docs": [
+      "links": [
         "https://opencode.ai/docs/plugins/",
         "https://opencode.ai/docs/mcp-servers/",
         "https://opencode.ai/docs/agents/",
@@ -58,7 +58,7 @@
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
       "capabilities": { "hooks": true, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": false },
-      "docs": [
+      "links": [
         "https://cursor.com/docs/hooks",
         "https://docs.cursor.com/context/model-context-protocol",
         "https://cursor.com/changelog/2-0",
@@ -73,7 +73,7 @@
       "skills": "skills/{name}/SKILL.md",
       "agents": "agents/{name}.md",
       "capabilities": { "hooks": false, "agentDispatch": true, "mcp": true, "nativeFormat": "md", "slashCommands": true, "structuredQuestions": true },
-      "docs": [
+      "links": [
         "https://zcode.z.ai/en/docs/commands",
         "https://zcode.z.ai/en/docs/skill",
         "https://zcode.z.ai/en/docs/subagents",
@@ -157,7 +157,7 @@
     "plan-reviewer-agent": { "description": "Pre-delivery executability reviewer for about.md, brainstorm docs, and plan.md — fresh context, returns a verdict (ok / fix-then-ok / blocked) with required fixes, not questions (read-only)" },
     "readback-agent":      { "description": "Cold-read comprehension reporter for a closed doc set — reads only the docs it is given and says back what it understood would be built, marking every gap it filled in on its own. Issues no verdict and asks no questions; the divergence between its restatement and what was decided is the signal (read-only)" },
     "consistency-agent":     { "description": "Cross-subfeature consistency judge for an epic — compares contracts declared across subfeature plan.md / about.md / design.md, document against document and never code, on exactly five dimensions (API contracts, data schema, requirements, design tokens when HAS_DESIGN, auth/permission model); anything outside them is informational and never blocks (read-only)" },
-    "feature-history-agent": { "description": "Feature history archaeologist — scans docs/features/ to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, docs/ only)" },
+    "feature-history-agent": { "description": "Feature history archaeologist — scans the features folder of the docs root, .codeadd/docs/features/, to find feature docs (about/changelog/plan) relevant to a symptom predicate (read-only, .codeadd/docs/ only)" },
     "git-history-agent":     { "description": "Git history correlator — surfaces recent commits (log/show/diff/branch) plausibly related to a symptom predicate (read-only git)" },
     "qa-agent":              { "description": "Deterministic + forensic QA judge — the half of the dual panel paired with @ux-agent (review mode). Reads persisted run evidence to validate functional delivery vs about.md acceptance criteria, deterministic Design Contract conformance from measured computed styles, and ALL accessibility (axe-core), diagnosing every failed assertion to a root cause. Declines the judgement axes (UX quality, judgement conformance, responsiveness) — those belong to @ux-agent. With the playwright plugin it additionally drives the app live. Read-only on the codebase." },
     "test-agent":            { "description": "Unit + integration test generator for ONE area (database, backend, frontend, workers). Reads the area's target files and the feature docs, generates tests at the project's conventional location, runs them, and ends in one of three declared states — green, BLOCKED on a real bug in the source, or out of attempts. The attempt cap is supplied by the caller. Read-write on test files only — never application source. Leaf agent." },

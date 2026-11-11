@@ -143,7 +143,7 @@ can disagree, which is the whole reason `converge-gates.cjs` exists.
 ```
 IF ROUTING THIS RUN:
   ⛔ DO NOT USE: Bash for gh pr view — PR_STATE, PR_URL and PR_MERGE_COMMIT are already parsed
-  ⛔ DO NOT USE: Read on docs/delivered.jsonl to decide whether an entry exists — INDEX_ENTRY says
+  ⛔ DO NOT USE: Read on .codeadd/docs/delivered.jsonl to decide whether an entry exists — INDEX_ENTRY says
   ✅ DO: Route on the probe's values
 ```
 
@@ -226,7 +226,7 @@ mode needs a `[NNNN][L]` in the branch name and its merge mode refuses to run on
 `main`.
 
 1. **Resolve the feature from the merge commit's own diff**, matching
-   `docs/features/[NNNN][L]-*/`. This is the resolution STEP add-done.resolve-dir already applies to
+   `.codeadd/docs/features/[NNNN][L]-*/`. This is the resolution STEP add-done.resolve-dir already applies to
    `CHANGED_FILES`, pointed at a commit instead of a branch.
 2. **Take the delivery facts from the merge commit**, not from a branch diff:
 
@@ -242,7 +242,7 @@ git diff --name-status <merge-commit>^1 <merge-commit>
 3. Write the entry and the changelog, commit them on `main`, and push.
 
 ```
-IF THE DIFF NAMES MORE THAN ONE docs/features/[NNNN][L]-*/ DIRECTORY:
+IF THE DIFF NAMES MORE THAN ONE .codeadd/docs/features/[NNNN][L]-*/ DIRECTORY:
   ⛔ DO NOT: Pick one and continue
   ⛔ DO NOT: Write an entry for the first match
   ✅ DO: Print every candidate and ask which delivery this is, then STOP
@@ -273,10 +273,10 @@ delivery it describes is fine; one that hides how it got there is not.
 
 **DO NOT USE Glob first.** Extract directory from CHANGED_FILES paths:
 
-- **feature / hotfix / refactor / chore / docs:** Find path matching `docs/features/[NNNN][L]-*/` in CHANGED_FILES. Extract the directory part.
-  - Example: `docs/features/0007F-calendar-view/iterations.md` -> DIR = `docs/features/0007F-calendar-view`
+- **feature / hotfix / refactor / chore / docs:** Find path matching `.codeadd/docs/features/[NNNN][L]-*/` in CHANGED_FILES. Extract the directory part.
+  - Example: `.codeadd/docs/features/0007F-calendar-view/iterations.md` -> DIR = `.codeadd/docs/features/0007F-calendar-view`
 
-**Fallback ONLY if no docs path found in CHANGED_FILES:** Use Glob `docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/`.
+**Docs live on `codeadd-docs`, not in the code diff, so CHANGED_FILES may carry no docs path. Then:** Use Glob `.codeadd/docs/features/[0-9][0-9][0-9][0-9][A-Z]-*/`.
 
 **IF directory not resolved:** Show error. DO NOT proceed to merge.
 
@@ -377,7 +377,7 @@ Never send a hotfix to `/add-review`.
 - ⛔ DO NOT USE: Write to create changelog.md
 - ⛔ DO NOT USE: Bash for done.cjs --merge
 - ⛔ DO NOT USE: Bash for gh pr merge — the PR route is a merge too
-- ⛔ DO NOT USE: Write on docs/delivered.jsonl
+- ⛔ DO NOT USE: Write on .codeadd/docs/delivered.jsonl
 - ✅ DO: Show `HOTFIX_REVIEW` and `DETAIL`, then STOP
 
 ---
@@ -684,11 +684,11 @@ IF out-of-scope detected, append to about.md:
 
 ### STEP add-done.consolidate-decisions-jsonl Consolidate decisions.jsonl
 
-Append feature-level `decisions.jsonl` entries into the project-central `.codeadd/project/decisions.jsonl`, deduplicating by `ts`.
+Append feature-level `decisions.jsonl` entries into the project-central `.codeadd/docs/decisions.jsonl`, deduplicating by `ts`.
 
 ```bash
 FEAT_DECISIONS="${DIR}/decisions.jsonl"
-CENTRAL=".codeadd/project/decisions.jsonl"
+CENTRAL=".codeadd/docs/decisions.jsonl"
 
 if [ -f "$FEAT_DECISIONS" ]; then
   mkdir -p "$(dirname "$CENTRAL")"
@@ -719,7 +719,7 @@ IF 2.1 ROUTED THIS RUN TO **Resume**:
 
 Load skill `{{skill:add--wiki-maintenance/SKILL.md}}` and execute its update discipline. Evidence = `CHANGED_FILES` from `done.cjs` (STEP add-done.collect) + the feature context already loaded in this session (about.md from STEP add-done.load-feature-context, the changelog just generated in STEP add-done.complement-changelog).
 
-Wiki edits stay in the working tree — do NOT commit them here. `done.cjs --merge` (STEP add-done.merge) commits wiki edits together with the changelog. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
+Wiki edits stay in the working tree — do NOT commit them here. `done.cjs --merge` (STEP add-done.merge) commits the wiki edits with the code; the changelog goes to `codeadd-docs`. Report pages touched (or explicit no-op "wiki already current") in the final summary after merge.
 
 **ELSE:** Skip silently — no wiki step runs. Add ONE line to the final summary after merge: "Project wiki not found — run /add-wiki to generate the knowledge base."
 
@@ -780,7 +780,7 @@ IF 2.1 ROUTED THIS RUN TO **Resume**:
 ```
 
 
-Record what this branch delivered in `docs/delivered.jsonl`, the per-project delivery index. `delivered.cjs` is its only writer; nothing here edits the file directly. The entry is authored HERE and **left in the working tree** — the same path the changelog and the wiki edits already take. `done.cjs --merge` (STEP add-done.merge) commits it with everything else.
+Record what this branch delivered in `.codeadd/docs/delivered.jsonl`, the per-project delivery index. `delivered.cjs` is its only writer; nothing here edits the file directly. The entry is authored HERE, in the docs worktree (`.codeadd/docs/`, the `codeadd-docs` branch). `done.cjs --merge` (STEP add-done.merge) commits and pushes `codeadd-docs` and records `code_sha` and `pr` on the entry; the code branch carries none of it.
 
 Load `{{skill:add--doc-schemas/references/delivery-index.md}}` for the record shape, the `{what, at, find}` anchor and the hard bans. Do not restate them here; the reference is the contract.
 
@@ -870,7 +870,7 @@ Show a preview with: branch type, ID, summary, file count, top HIGH priority fil
 
 `INDEX_ENTRY=none` (a `docs` branch) prints one line saying no entry was owed. A refused write never reaches here — STEP add-done.write-delivery-index stops.
 
-⛔ **On the Resume route STEP add-done.write-delivery-index did not run, so there is nothing in hand to render.** Read the entry back from `docs/delivered.jsonl` on the branch — it is already committed there — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
+⛔ **On the Resume route STEP add-done.write-delivery-index did not run, so there is nothing in hand to render.** Read the entry back from `.codeadd/docs/delivered.jsonl` — it is already committed on `codeadd-docs` — and print THAT, labelled as the entry a previous run wrote. Never re-compose one: a second composition is how two lines for one delivery get written, which is the defect 2.1 exists to stop.
 
 ```
 IF RENDERING THE ENTRY:
@@ -1025,6 +1025,9 @@ node .codeadd/scripts/done.cjs --merge
 | `PUSH_MAIN=REFUSED`, exit 1 | `main` refuses a push — protection, a stale local main, or auth | Report it verbatim. Nothing local was written. Suggest the PR route: `{{cmd:add-pull-request}}`, then re-run |
 | `CLEANUP=SKIPPED` with `CHECK=1` or `CHECK=2`, exit 0 | The merge LANDED; the post-merge proof failed, so nothing was deleted | Continue to STEP add-done.complete and report the branch left behind, naming the check. This is not a failed delivery |
 | `DIRTY_UNRELATED=<path>` lines, exit 1 | Files outside this delivery are uncommitted; nothing was staged | Report the list and STOP — the user commits or stashes them, then re-runs |
+| `DOCS_PUSH=rejected`, `offline` or `failed` | The code merge LANDED; `codeadd-docs` did not reach the remote | Report the `DOCS_PUSH=` line and that the docs stay local until the next push. Not a stop, not a failed delivery |
+
+On success it also commits and pushes `codeadd-docs` — it prints `DOCS_GUARD=`, `DOCS_COMMIT=` and `DOCS_PUSH=` lines; report the `DOCS_PUSH=` line in STEP add-done.complete.
 
 On success it also handles: It also deletes all `checkpoint/*` tags for the feature (local + remote) — `/add-build`'s Checkpoint Sequence creates each one on the checkpoint commit at a subfeature boundary, and only on an epic. `/add-build` commits per task otherwise — one per `tasks.md` task, or one per area dispatch outside TASKS MODE — so the branch reaching this step normally carries a history, not a single dirty tree; `done.cjs --merge` commits whatever is still pending on top of it. Tag creation is scoped to that Checkpoint Sequence, not to every commit `/add-build` makes.
 
@@ -1088,8 +1091,8 @@ Then, after the seven blocks, state:
 
 | Document | Role in the next activity |
 |---|---|
-| `docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
-| `docs/features/<id>-<slug>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
+| `.codeadd/docs/delivered.jsonl` | The delivery this run recorded, and what the index already holds |
+| `.codeadd/docs/features/<id>-<slug>/about.md` | What the shipped feature is for, on the epic and hotfix routes |
 | {{skill:add--ecosystem/SKILL.md}} | Main Flows, for the routing the branch type takes next |
 
 ---
@@ -1109,6 +1112,6 @@ NEVER:
 | No `[NNNN][L]` ID in branch | Show error: branch must contain a valid feature/hotfix ID. NEVER suggest renaming |
 | about.md not found | Degrade: changelog without scope context |
 | iterations.jsonl not found | Degrade: use only about.md |
-| Dir not in CHANGED_FILES | Fallback: Glob `docs/features/${FEATURE_NUMBER}-*/` |
+| Dir not in CHANGED_FILES | Fallback: Glob `.codeadd/docs/features/${FEATURE_NUMBER}-*/` |
 | >50 files | Analyze top 20 HIGH + count rest |
 | Merge conflict | Abort, suggest /add-hotfix |

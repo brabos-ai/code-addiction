@@ -10,8 +10,7 @@ const read = (name) =>
 describe('legacy command document paths', () => {
   it('add-review points the next step at the directory it writes review-NNN.md to', () => {
     const src = read('add-review');
-    expect(src).not.toContain('docs/reviews/');
-    expect(src).toContain('| `docs/features/${FEATURE_ID}/review-NNN.md` |');
+    expect(src).toContain('| `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md` |');
   });
 
   it('add-hotfix does not offer a fix-report.md no step writes', () => {

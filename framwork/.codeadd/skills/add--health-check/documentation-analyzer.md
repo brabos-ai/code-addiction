@@ -4,7 +4,7 @@
 
 **Objective:** Verify whether the project documentation exists, is up to date, and follows the expected standards.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/documentation-report.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/documentation-report.md`
 
 **Criticality:** 🔴 CRITICAL - Documentation directly impacts the quality of future AI-assisted development.
 
@@ -32,7 +32,7 @@ ls AGENTS.md 2>/dev/null
 ls CLAUDE.md .claude/CLAUDE.md GEMINI.md 2>/dev/null
 
 # Feature documentation
-ls docs/features/ 2>/dev/null
+ls .codeadd/docs/features/ 2>/dev/null
 
 # Documentation skills
 ls {{skill:add--doc-schemas/SKILL.md}} 2>/dev/null
@@ -45,7 +45,7 @@ ls {{skill:add--agents-md-style/SKILL.md}} 2>/dev/null
 |----------|--------|-------------|
 | AGENTS.md | Exists/Does not exist | 🔴 Critical |
 | CLAUDE.md, .claude/CLAUDE.md, GEMINI.md | Left/Absent | 🟠 High when left |
-| docs/features/* | Exists/Does not exist | 🟡 Medium |
+| .codeadd/docs/features/* | Exists/Does not exist | 🟡 Medium |
 
 **A legacy context file left at the root is a finding, never a second source to check.** Claude Code
 reads AGENTS.md only when no CLAUDE.md exists, and Antigravity lets GEMINI.md override it — so a
@@ -113,10 +113,10 @@ grep -oP '`[^`]+/`' AGENTS.md 2>/dev/null | sort -u
 
 ```bash
 # List documented features
-ls docs/features/ 2>/dev/null
+ls .codeadd/docs/features/ 2>/dev/null
 
 # For each feature, check structure
-for dir in docs/features/*/; do
+for dir in .codeadd/docs/features/*/; do
   echo "=== $dir ==="
   ls "$dir" 2>/dev/null
 done
@@ -155,9 +155,14 @@ ls libs/domain/src/entities/ 2>/dev/null
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/documentation-report.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/documentation-report.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Documentation Report
 
 **Generated on:** [date]
@@ -177,7 +182,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 | Document | Status | Compliance |
 |----------|--------|------------|
 | AGENTS.md | ✅/❌ | [X%] |
-| docs/features/* | ✅/❌ | [X features documented] |
+| .codeadd/docs/features/* | ✅/❌ | [X features documented] |
 
 ---
 
@@ -225,7 +230,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 ### 🟡 Medium
 
 #### [DOC-006] Feature without complete documentation
-**Feature:** docs/features/[feature]/
+**Feature:** .codeadd/docs/features/[feature]/
 **Missing:** [about.md/discovery.md/plan.md]
 **Fix:** Complete the feature documentation
 
@@ -252,7 +257,7 @@ ls libs/domain/src/entities/ 2>/dev/null
 - [ ] Language: English
 
 ### Features
-- [ ] docs/features/ folder exists
+- [ ] .codeadd/docs/features/ folder exists
 - [ ] Features with complete structure
 
 ---

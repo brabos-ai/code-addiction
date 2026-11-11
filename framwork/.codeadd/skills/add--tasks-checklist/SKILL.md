@@ -12,6 +12,7 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 - mention: /add-plan
 - command: /add-wiki
 - mention: /add-done
+- mention: add--doc-schemas
 -->
 
 ## Overview
@@ -36,7 +37,14 @@ description: Schema and tick rules for tasks.md across plan/build/review.
 
 `tasks.md` has **6 sections in this exact order with these exact headings** (validators parse by exact text). The 6th section (`## Validation Gates`) is **conditional** — present only when AGENTS.md exposes a `validation_gates` block.
 
+The file opens with a minimal frontmatter — `type: tasks` and `schema: {{doc-schema}}` — above the `# Tasks:` heading. **This skill owns it**: every writer of a new `tasks.md` carries the block from here, and a command that updates an existing file never rewrites it (see `add--doc-schemas` → Schema Version).
+
 ```markdown
+---
+type: tasks
+schema: {{doc-schema}}
+---
+
 # Tasks: [feature or SF name]
 
 ## Metadata
@@ -229,7 +237,7 @@ You are the ARCHITECT for feature ${FEATURE_ID} (subfeature ${EPIC_CURRENT_SF} i
 Read these files in order:
 1. ${PLAN_DIR}/plan.md  — PRIMARY: technical contracts (prose)
 2. ${PLAN_DIR}/about.md — Scope, RF/RN, acceptance criteria
-3. docs/features/${FEATURE_ID}/discovery.md — Constraints
+3. .codeadd/docs/features/${FEATURE_ID}/discovery.md — Constraints
 4. ${PLAN_DIR}/plan-test-spec.md — Test specifications (if exists)
 5. {{addpath:wiki/workflows.md}}, its Test Workflow section — ONLY if WIKI:present. Names which
    tests are local (unit) vs CI-tier (integration/e2e) vs manual. Skip silently if the wiki, or that

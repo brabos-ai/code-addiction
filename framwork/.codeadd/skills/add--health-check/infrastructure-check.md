@@ -4,7 +4,7 @@
 
 **Objective:** Verify whether infrastructure and analysis tools are configured.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ---
 
@@ -146,9 +146,14 @@ cat docker-compose.yml infra/docker-compose.yml 2>/dev/null | grep "image:"
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Infrastructure Report
 
 **Generated on:** [date]

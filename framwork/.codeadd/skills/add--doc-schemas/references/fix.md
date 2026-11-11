@@ -33,9 +33,9 @@ Skipping the third point is the most common failure mode of a hotfix postmortem.
 
 ### hotfix
 
-For `/add-hotfix` (creates `docs/features/[NNNN]H-<slug>/about.md`).
+For `/add-hotfix` (creates `.codeadd/docs/features/[NNNN]H-<slug>/about.md`).
 
-- **Frontmatter:** `id: [NNNN]H`, `type: hotfix`, `severity:`, `related: []`, `tags: []`
+- **Frontmatter:** `id: [NNNN]H`, `type: hotfix`, `schema: {{doc-schema}}`, `severity:`, `related: []`, `tags: []`
 - **Sections:** TL;DR · Symptom · Root Cause · Fix · Verification · Review · Relations · Observations
 - **Depth floor:**
   - **Symptom** — when it occurs, where (component/endpoint/file), observable impact, affected users or scope, detection signal. Use Symptom Notation above.

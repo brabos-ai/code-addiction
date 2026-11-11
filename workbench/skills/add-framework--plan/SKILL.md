@@ -1,6 +1,6 @@
 ---
 name: add-framework--plan
-description: "Use when a framework change needs a plan document — analyses both layers against the artefact graph and the delivery index, questions the user, writes docs/plans/<ts>-PLAN--<slug>.md and has it reviewed. Second stage of brainstorm → plan → build → done."
+description: "Use when a framework change needs a plan document — analyses both layers against the artefact graph and the delivery index, questions the user, writes .codeadd/docs/plans/<ts>-PLAN--<slug>.md and has it reviewed. Second stage of brainstorm → plan → build → done."
 ---
 
 # ADD Plan — Ecosystem Strategic Consultant
@@ -50,8 +50,8 @@ STEP 7: Completion            → [HARD STOP] the report in the shape, then meta
 
 ```
 ALWAYS — THIS SKILL DOES NOT EXECUTE:
-  ⛔ DO NOT USE: Write outside docs/plans/
-  ⛔ DO NOT USE: Edit outside docs/plans/
+  ⛔ DO NOT USE: Write outside .codeadd/docs/plans/
+  ⛔ DO NOT USE: Edit outside .codeadd/docs/plans/
   ⛔ DO NOT USE: Bash for implementations, builds, tests or scripts
   ⛔ DO NOT: Create branches, commits or PRs
   ⛔ DO NOT: Implement ANYTHING discussed — that is /add-framework--build's job
@@ -63,7 +63,7 @@ IF CONTEXT NOT LOADED (STEP 1 incomplete):
   ✅ DO: Read the strategy docs and AGENTS.md first
 
 IF STEP 4 HAS NOT BEEN ANSWERED:
-  ⛔ DO NOT USE: Write on docs/plans/
+  ⛔ DO NOT USE: Write on .codeadd/docs/plans/
   ⛔ DO NOT: Invent a decision the user has not made
   ✅ DO: Present the analysis — questionnaire or confirmation, per 4.0 — and WAIT
 
@@ -118,7 +118,7 @@ IF THE IDEA IS BAD OR UNNECESSARY:
 ```
 /add-framework--plan [idea]   → New strategic analysis (STEP 1-7)
 /add-framework--plan [plan]   → Continue an existing plan (full basename, unique slug substring, or a plain path)
-/add-framework--plan docs/brainstorming/<file>.md   → New analysis, the idea read from that file
+/add-framework--plan .codeadd/docs/brainstorming/<file>.md   → New analysis, the idea read from that file
 /add-framework--plan          → List plans in draft
 ```
 
@@ -126,12 +126,12 @@ IF THE IDEA IS BAD OR UNNECESSARY:
 
 | The argument | Goes to |
 |---|---|
-| A bare slug, or a path under `docs/plans/` | Argument Resolution — Continue Mode |
-| A path outside `docs/plans/` | Never Argument Resolution — it is the new-idea input, read from that file |
+| A bare slug, or a path under `.codeadd/docs/plans/` | Argument Resolution — Continue Mode |
+| A path outside `.codeadd/docs/plans/` | Never Argument Resolution — it is the new-idea input, read from that file |
 | Anything else — not a bare slug, not an existing file | A free-text idea |
 
-For a path outside `docs/plans/`: a file whose name ends in `-intent.md` is the **intent file**, read at
-STEP 1.2. Any other file under `docs/brainstorming/` is a **design document**, read as the design. Its
+For a path outside `.codeadd/docs/plans/`: a file whose name ends in `-intent.md` is the **intent file**, read at
+STEP 1.2. Any other file under `.codeadd/docs/brainstorming/` is a **design document**, read as the design. Its
 intent file is the `*-intent.md` in the same folder that shares its `YYYY-MM-DDTHHMMSS` prefix — the
 architectural pair, and an umbrella set, share one timestamp even though an umbrella design is named
 `<timestamp>-<slug>-000-umbrella.md` and its intent `<timestamp>-<slug>-intent.md`. When `test -f` finds
@@ -155,8 +155,8 @@ The plan may end up touching one layer or both, and that is not known yet. Read 
 AGENTS.md                                                     # internal layer + project anatomy
 framwork/.codeadd/skills/add-ecosystem/SKILL.md               # product ecosystem map
 framwork/.codeadd/skills/add-resource-path-convention/SKILL.md
-docs/strategy/ADD-ECOSYSTEM-STRATEGY.md                       # if present
-docs/strategy/ADD-MASTER-DOCUMENT-v4.md                       # if present
+.codeadd/docs/strategy/ADD-ECOSYSTEM-STRATEGY.md                       # if present
+.codeadd/docs/strategy/ADD-MASTER-DOCUMENT-v4.md                       # if present
 ```
 
 Missing strategy docs → say so and proceed with limited context. `AGENTS.md` is never optional.
@@ -166,7 +166,7 @@ Missing strategy docs → say so and proceed with limited context. `AGENTS.md` i
 Whatever the idea points at: `framwork/.codeadd/commands|skills|agents|scripts/`, `cli/src/`,
 `workbench/commands|skills|agents/`, `scripts/`.
 
-**Read `docs/brainstorming/` too, whenever the idea came from a design.** That directory holds the
+**Read `.codeadd/docs/brainstorming/` too, whenever the idea came from a design.** Prepare the docs root first — `node framwork/.codeadd/scripts/docs-branch.cjs prepare` — and stop on `DOCS=missing`, naming its `DOCS_REASON=` line. Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. That directory holds the
 design documents `/add-framework--brainstorm` writes, and a plan is expected to reference the design
 it formalizes. A design the planner never opened is a set of decisions re-made from scratch, and the
 two can disagree.
@@ -178,7 +178,7 @@ IF THE INVOCATION NAMES A DESIGN FILE, OR THE IDEA RESTATES ONE:
 ```
 
 **Read the intent file too, and read it FIRST.** `/add-framework--brainstorm` writes
-`docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` on the `bounded` and `architectural` paths;
+`.codeadd/docs/brainstorming/YYYY-MM-DDTHHMMSS-<slug>-intent.md` on the `bounded` and `architectural` paths;
 `add-plan-authoring` owns its shape. It carries the path that conversation classified, every decision
 it closed, and whatever it could not.
 
@@ -295,7 +295,7 @@ agent runs once and stops at, which is how a depth-1 caller went unseen.
 
 ```
 IF AN ARTEFACT IN THE CHANGE HAS NO ANSWER TO QUESTION 1:
-  ⛔ DO NOT USE: Write on docs/plans/
+  ⛔ DO NOT USE: Write on .codeadd/docs/plans/
   ⛔ DO NOT: Grade its risk, or fill the Ecosystem Impact table from grep or recollection
   ✅ DO: Ask the graph, and grade from the answer
 
@@ -501,8 +501,8 @@ A plan proposes rather than executes, so block 2 is titled `What will be done` a
 future tense. `add-plan-authoring` carries that one adjustment and nothing else.
 
 Metadata: plan path, status `draft`, review verdict, fixes applied, and the two next commands, in the
-form `add-final-report` owns under **The Continuation Line** — `/add-framework--plan docs/plans/<basename>.md`
-to revise, then `/add-framework--build docs/plans/<basename>.md` to implement as the last line. A plan
+form `add-final-report` owns under **The Continuation Line** — `/add-framework--plan .codeadd/docs/plans/<basename>.md`
+to revise, then `/add-framework--build .codeadd/docs/plans/<basename>.md` to implement as the last line. A plan
 set prints one build line per plan that has F-blocks, in set order.
 
 ⛔ DO NOT proceed with implementation. DO NOT edit code. DO NOT create branches.
@@ -515,7 +515,7 @@ set prints one build line per plan that has F-blocks, in set order.
 | `automatic` | Print the report and the same build line, then load `/add-framework--build` with this plan's basename and continue there |
 
 Loading the build is a handoff, not implementation: this skill still writes nothing outside
-`docs/plans/`, and the build runs under its own gates.
+`.codeadd/docs/plans/`, and the build runs under its own gates.
 
 ---
 

@@ -236,7 +236,7 @@ describe('agent capability — no read-only agent is dispatched to write', () =>
 
   it('ignores a file Output: handed to an agent that is not read-only', () => {
     const { graph, read } = fixture({
-      'rw.md': ['**Dispatch:** @rw-agent', '- **Output:** `docs/design.md`'].join('\n'),
+      'rw.md': ['**Dispatch:** @rw-agent', '- **Output:** `out/design.md`'].join('\n'),
     });
     expect(writeDispatches(graph, read)).toEqual([]);
   });
@@ -247,9 +247,9 @@ describe('agent capability — no read-only agent is dispatched to write', () =>
         '**Dispatch:** @ro-agent',
         '',
         '### Next section',
-        '- **Output:** `docs/out.md`',
+        '- **Output:** `out/out.md`',
       ].join('\n'),
-      'far.md': ['**Dispatch:** @ro-agent', ...Array(8).fill(''), '- **Output:** `docs/out.md`'].join('\n'),
+      'far.md': ['**Dispatch:** @ro-agent', ...Array(8).fill(''), '- **Output:** `out/out.md`'].join('\n'),
     });
     expect(writeDispatches(graph, read)).toEqual([]);
   });

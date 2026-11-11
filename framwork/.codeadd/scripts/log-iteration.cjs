@@ -1,6 +1,6 @@
 /**
  * log-iteration.cjs — Append one iteration entry to a feature's
- * `docs/features/<id>/iterations.md` (token-optimized).
+ * `<id>/iterations.md` in the features folder of the docs root (token-optimized).
  *
  * F17 audit outcome: PRESERVED, not retired. `log-iteration.sh` is the shell
  * source of record; this native entry is its behavioural port and keeps every
@@ -23,12 +23,13 @@
  *
  * The feature id is discovered from the current branch
  * (`feature/0001F-name` or `fix/0001H-name`) via
- * `git rev-parse --abbrev-ref HEAD`. The feature directory must already exist.
+ * `git rev-parse --abbrev-ref HEAD`. The feature directory must already exist, and so must the docs
+ * root: an absent root is `ERROR:docs_root_missing`, never a second location.
  *
  * Output:
  *   LOGGED:I<N>
  *   FEATURE:<id>
- *   FILE:docs/features/<id>/iterations.md
+ *   FILE:<docs root>/features/<id>/iterations.md   (relative to the repository top)
  *   ENTRY:<type>:<slug>|<what-60>
  *   FEATURE_COMPLETE:<N>        (only with --feature N)
  *   EPIC:<name>                 (only with --epic name)
@@ -36,7 +37,9 @@
  * Exit codes: 0 success, 1 any caller/environment error (`ERROR:<slug>`).
  * Errors are printed to stdout, matching the shell's `echo` stream.
  *
- * Dependencies: Node built-ins + the `git` executable. No shell.
+ * The location comes from the docs root resolver beside this file (docs-root.cjs).
+ *
+ * Dependencies: Node built-ins, the resolver and the `git` executable. No shell.
  */
 
 'use strict';
@@ -44,10 +47,15 @@
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
 
+const { DOCS_ROOT, DOCS_LAYOUT, DOC_SCHEMA_VERSION, docsPath } = require('./docs-root.cjs');
+
 const TYPES = ['fix', 'enhance', 'refactor', 'add', 'remove', 'config'];
 const USAGE = 'USAGE: node .codeadd/scripts/log-iteration.cjs <type> <slug> <what> <files> [cmd] [--feature N] [--epic name]';
 
-const HEADER = '# Iterations\n'
+// A new file starts with the minimal frontmatter every generated document carries. An existing
+// file's frontmatter is never rewritten — only a file this script creates gets one.
+const HEADER = `---\ntype: iterations\nschema: ${DOC_SCHEMA_VERSION}\n---\n\n`
+  + '# Iterations\n'
   + '\n'
   + '> AI agent context. Token-optimized format.\n'
   + '> Format: ## I{n}|{date}|{cmd}|{type} \\n {slug}|{what}|{files}\n'
@@ -174,16 +182,24 @@ function main() {
   }
 
   const { featureId } = detectFeature();
-  const featureDir = `docs/features/${featureId}`;
+  let featureDir;
+  try {
+    featureDir = docsPath(process.cwd(), DOCS_LAYOUT.features, featureId);
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') fail(['ERROR:docs_root_missing', e.message]);
+    throw e;
+  }
   const iterationsFile = `${featureDir}/iterations.md`;
+  // What the stream prints: relative to the repository top, forward slashes.
+  const shownFeatureDir = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${featureId}`;
 
   if (!fs.existsSync(featureDir) || !fs.statSync(featureDir).isDirectory()) {
-    fail(['ERROR:feature_dir_not_found', `PATH:${featureDir}`]);
+    fail(['ERROR:feature_dir_not_found', `PATH:${shownFeatureDir}`]);
   }
   try {
     fs.accessSync(featureDir, fs.constants.W_OK);
   } catch (e) {
-    fail(['ERROR:no_write_permission', `PATH:${featureDir}`]);
+    fail(['ERROR:no_write_permission', `PATH:${shownFeatureDir}`]);
   }
 
   const dateToday = today();
@@ -213,7 +229,7 @@ function main() {
   const stdout = [
     `LOGGED:I${num}`,
     `FEATURE:${featureId}`,
-    `FILE:${iterationsFile}`,
+    `FILE:${shownFeatureDir}/iterations.md`,
     `ENTRY:${type}:${slug}|${whatTruncated}`,
   ];
   if (featureNum !== '') stdout.push(`FEATURE_COMPLETE:${featureNum}`);

@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- The docs branch. Every output Code Addiction writes (plans, feature docs, wiki, QA reports, changelog, the delivery index) now lives in `.codeadd/docs/`, a git worktree of the orphan `codeadd-docs` branch in your own remote. Code pull requests no longer carry any Code Addiction document. `status.cjs` prepares the worktree and prints one `DOCS=` line (it never fails on this step), code worktrees see the docs through a link, and `/add-done` commits and pushes the branch. Nothing deletes `codeadd-docs`.
+- The docs-guard: an output written outside `.codeadd/docs/` is moved there silently at close-out, so it never reaches a code PR.
+- `codeadd docs migrate [--dry-run]`: an optional, idempotent command for a project that kept its Code Addiction outputs in the code branch. It moves them into the docs branch in one commit there, stages the deletions in your code branch without committing them, and ends by printing `DOCS_LEGACY=<n>` and a ready-to-paste, provider-agnostic prompt (between `--- AGENT PROMPT ---` and `--- END AGENT PROMPT ---`) for your own agent. The command runs no agent and stamps no version; the prompt brings legacy documents to the current standard and stamps them. `codeadd update` does not run it.
+- `schema:` on every generated markdown document: the version of the document format (currently 1), not the package version. A document without it is schema 0, a legacy document; JSONL outputs carry a per-line `v` instead.
+
+### Changed
+- **Re-run `/add-qa-setup` in every project that uses QA.** The ignore for the QA run output moved to the docs branch, so the setup contract changed and `SETUP_QA_STALE` is expected once.
+- Agents searching the docs with `rg`, Grep or Glob must pass `.codeadd/docs/` explicitly, because those tools skip git-ignored paths.
+
 ## [1.8.1] - 2026-10-30
 
 ### Fixed
@@ -31,7 +41,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - `/add-wiki` writes a fixed `## Stack Conventions` table (tenancy, DI, barrels, layering, validation, ORM / data access, entity language) in the wiki's `conventions.md`, with detection defined once in `add--architecture-discovery`. `/add-wiki update` backfills it once into an older wiki and never overwrites a `decided` row. The AGENTS.md `Multi-tenancy:` line appears only after a full `/add-wiki` run, since `update` never regenerates the Architecture Contract
 - `/add-brainstorm` on a repo with no code and no `AGENTS.md` takes a greenfield path: one five-item foundations question (stack, tenancy, layering, validation, ORM) with recommendations, then writes `conventions.md` (`## Stack Conventions`, rows `decided`), a minimal wiki `index.md` and `.meta.json`, and a minimal `AGENTS.md`. "Keep discussing" writes nothing and a repo with no commit no longer stops at `status.cjs`. Other repos are unchanged. After it, make a first commit before `/add-new`; the next `/add-wiki` run confirms or flags the `decided` rows against code
 
-- `.codeadd/settings.json`: one project settings file, committed, with one section per command (new skill `add--settings`). `/add-qa-setup` now keeps its values, receipt and decision log in the `qa` section and writes nothing under `docs/qa/`; `qa-preflight.cjs` and `status.cjs` read it. Migration `0005-qa-settings` converts an existing project on `codeadd update` without making it STALE; commit the new file afterwards
+- `.codeadd/settings.json`: one project settings file, committed, with one section per command (new skill `add--settings`). `/add-qa-setup` now keeps its values, receipt and decision log in the `qa` section and no longer writes a separate QA config or receipt file; `qa-preflight.cjs` and `status.cjs` read it. Migration `0005-qa-settings` converts an existing project on `codeadd update` without making it STALE; commit the new file afterwards
 - `/add-setup`: guided onboarding. It checks the project, offers each feature and plugin with its benefit in one numbered list, and runs the setup pieces (tool installs, one `codeadd modify`, `/add-qa-setup`, `/add-wiki`) for the accepted items only. Decisions and reasons go in the `setup` section of `.codeadd/settings.json`. The install and update outros now point to it. Run it once after `codeadd update`.
 
 ### Removed

@@ -86,7 +86,10 @@ jobs:
 
       - name: Build framework
         working-directory: .
-        run: node scripts/build.js
+        # --package also resolves {{doc-schema}} in the trees that ship unbuilt
+        # (templates, fragments, plugins, fallbacks, agent-mode). Safe here only
+        # because this checkout is thrown away.
+        run: node scripts/build.js --package
 
       - name: Run tests
         if: steps.cli_changes.outputs.changed == 'true'

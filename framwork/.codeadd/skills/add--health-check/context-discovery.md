@@ -4,7 +4,7 @@
 
 **Objective:** Understand the architecture, multi-tenancy, and features of the project to provide context to the other subagents.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/context-discovery.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/context-discovery.md`
 
 ---
 
@@ -173,9 +173,14 @@ ls apps/frontend/src/lib/api* apps/frontend/src/services/api* 2>/dev/null
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/context-discovery.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/context-discovery.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Context Discovery
 
 **Generated on:** [date]

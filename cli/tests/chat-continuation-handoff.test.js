@@ -250,7 +250,7 @@ describe('optional chat continuation handoff', () => {
     });
 
     it('keeps the diagnosis-to-hotfix handoff interface', () => {
-      // The interface is the `@docs/diagnose/<file>.md` argument the diagnosis
+      // The interface is the `@.codeadd/docs/diagnose/<file>.md` argument the diagnosis
       // routes to and the hotfix parses into DIAGNOSE_REPORT. It is NOT a literal
       // `@report` token -- that spelling belongs to the ecosystem routing table,
       // and asserting it here tested a string the tree never carried.
@@ -268,10 +268,10 @@ describe('optional chat continuation handoff', () => {
         diagnose.indexOf('STEP add-diagnose.carry-these-step'),
         diagnose.indexOf('STEP add-diagnose.validate'),
       );
-      expect(carry).not.toContain('/add-hotfix @docs/diagnose/');
+      expect(carry).not.toContain('/add-hotfix @.codeadd/docs/diagnose/');
 
       const handoff = diagnose.slice(diagnose.indexOf('STEP add-diagnose.handoff'));
-      expect(handoff).toContain('/add-hotfix @docs/diagnose/');
+      expect(handoff).toContain('/add-hotfix @.codeadd/docs/diagnose/');
     });
 
     it('a review inside an automatic delivery does not gain a manual offer', () => {

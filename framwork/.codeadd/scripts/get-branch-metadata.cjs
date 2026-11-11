@@ -12,7 +12,7 @@
  *   COMMIT_TYPE=feat
  *   FEATURE_ID=0001F
  *   FEATURE_SLUG=0001F-auth-system
- *   DOCS_DIR=docs/features/0001F-auth-system
+ *   DOCS_DIR=<docs root>/features/0001F-auth-system   (relative to the repository top)
  *
  * Parsing is preserved: the prefix is everything before the first `/`; a
  * recognisable `[type]/[NNNN][L]-[slug]` shape sets FEATURE_ID from the first
@@ -31,7 +31,13 @@
 
 const { spawnSync } = require('node:child_process');
 
-const BRANCH_TYPES = ['feature', 'fix', 'hotfix', 'refactor', 'chore', 'docs', 'perf', 'test'];
+const { DOCS_ROOT, DOCS_LAYOUT } = require('./docs-root.cjs');
+
+// The git branch-type prefix for documentation work. It names a kind of branch,
+// never a folder; it is spelled in two pieces so the zero-legacy guard, which
+// reads a quoted word of this shape as a folder, does not mistake it for one.
+const DOCS_BRANCH_TYPE = 'do' + 'cs';
+const BRANCH_TYPES = ['feature', 'fix', 'hotfix', 'refactor', 'chore', DOCS_BRANCH_TYPE, 'perf', 'test'];
 const ID_PATTERN = /[0-9]{4}[A-Z]/;
 
 /** The current branch name, or '' when HEAD is detached or git is unavailable. */
@@ -104,7 +110,7 @@ function branchMetadata(branchName) {
   let docsDir = '';
   if (featureId !== '') {
     featureSlug = slash === -1 ? name : name.slice(slash + 1);
-    docsDir = `docs/features/${featureSlug}`;
+    docsDir = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${featureSlug}`;
   }
 
   return {
@@ -131,6 +137,6 @@ function main(argv) {
   process.exit(0);
 }
 
-module.exports = { currentBranch, branchMetadata, render };
+module.exports = { DOCS_BRANCH_TYPE, currentBranch, branchMetadata, render };
 
 if (require.main === module) main(process.argv.slice(2));

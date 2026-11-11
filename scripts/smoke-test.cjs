@@ -75,6 +75,9 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const SCRIPTS = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
 const CONVERGE_GATES = path.join(SCRIPTS, 'converge-gates.cjs');
 const STATUS = path.join(SCRIPTS, 'status.cjs');
+// The features folder of the docs root, from the one module that owns it.
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(SCRIPTS, 'docs-root.cjs'));
+const FEATURES_REL = `${DOCS_ROOT}/${DOCS_LAYOUT.features}`;
 
 const WORK = fs.mkdtempSync(path.join(os.tmpdir(), 'codeadd-smoke-'));
 let PASS = 0;
@@ -167,7 +170,7 @@ function coverageTable(id, requirement, covered) {
  * feature dir relative to the repo root.
  */
 function buildEpic(repo, id, sfStatus, covered) {
-  const fd = `docs/features/${id}`;
+  const fd = `${FEATURES_REL}/${id}`;
   const abs = (...parts) => path.join(repo, ...parts);
   writeFile(abs(fd, 'epic.md'), [
     '# Epic',
@@ -237,7 +240,7 @@ function remoteRefs(remote) {
 function resolveGlob(repo, rel) {
   if (!rel.includes('*')) return fs.existsSync(path.join(repo, rel)) ? [rel] : [];
   const dir = path.dirname(rel);
-  const prefix = path.basename(rel).replace('*', '');
+  const prefix = path.basename(rel).replace(/\*$/, '');
   const abs = path.join(repo, dir);
   if (!fs.existsSync(abs)) return [];
   return fs
@@ -259,7 +262,7 @@ function s1() {
   git(repo, ['commit', '-qm', 'seed']);
 
   // The BROKEN form: one add, four pathspecs, one of them absent on an epic.
-  git(repo, ['add', '-A', '--', '.', ':(exclude)docs/features/*']);
+  git(repo, ['add', '-A', '--', '.', `:(exclude)${FEATURES_REL}/*`]);
   const broken = git(repo, [
     'add', '-A', '--',
     `${fd}/subfeatures/SF02-*`,
@@ -278,7 +281,7 @@ function s1() {
 
   // The FIXED form: one add per path, absent paths skipped, present-path failure fatal.
   flipSf02ToDone(repo, fd);
-  git(repo, ['add', '-A', '--', '.', ':(exclude)docs/features/*']);
+  git(repo, ['add', '-A', '--', '.', `:(exclude)${FEATURES_REL}/*`]);
   let rc = 0;
   for (const rel of [
     `${fd}/subfeatures/SF02-*`,

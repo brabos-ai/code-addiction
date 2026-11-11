@@ -18,7 +18,7 @@ const path = require('node:path');
 
 const h = require('./helpers.cjs');
 
-const OUT = 'docs/features/0003F-signup/_build';
+const OUT = h.DOCS_ROOT + '/features/0003F-signup/_build';
 
 test('review-package includes the final hunk of a diff larger than the default spawn buffer', (t) => {
   const r = h.makeRepo();

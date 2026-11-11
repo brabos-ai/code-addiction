@@ -84,7 +84,7 @@ Load nothing.
 contract: ${contract}
 shape: ${shape}
 ${yamlExtra}paths:
-  - path: docs/qa/config.json
+  - path: qa/config.json
     owner: ${owner}
     step: 7
   - path: <provider skills dir>/qa-project/SKILL.md
@@ -148,7 +148,7 @@ describe('contract extraction', () => {
     expect(c.recipes).toBeUndefined();
     expect(c.paths).toHaveLength(3);
     expect(c.paths.map((p) => p.owner)).toEqual(['setup', 'setup', 'shared']);
-    expect(c.paths[0].path).toBe('docs/qa/config.json');
+    expect(c.paths[0].path).toBe('qa/config.json');
   });
 
   it('case 13 — a missing "contract" or a missing "shape" fails loud', () => {
@@ -298,7 +298,7 @@ describe('I7/I8 — sidecar output', () => {
     expect(Object.keys(parsed.contracts)).toEqual(['a.first', 'z.last']);
     const entry = parsed.contracts['a.first'];
     expect(Object.keys(entry).sort()).toEqual(['paths', 'shape']);
-    expect(entry.paths[0]).toMatchObject({ path: 'docs/qa/config.json', owner: 'setup' });
+    expect(entry.paths[0]).toMatchObject({ path: 'qa/config.json', owner: 'setup' });
     expect(entry.version).toBeUndefined();
     expect(entry.recipes).toBeUndefined();
 
@@ -351,7 +351,7 @@ describe('the shipped add-qa-setup contract', () => {
       '.codeadd/settings.json#qa',
       '<provider skills dir>/qa-project/SKILL.md',
       'FEATURE_DIR/_tests/screens.json',
-      '.gitignore',
+      '.codeadd/docs/.gitignore',
     ]);
     expect(c.paths.map((p) => p.owner)).toEqual(['shared', 'setup', 'shared', 'shared']);
   });
@@ -420,11 +420,12 @@ describe('the shipped add-qa-setup changed-in', () => {
     // The shape moved with the settings file: the last pre-refactor shape is sha256:25b937ee17628d6b.
     expect(c.shape).toMatch(/^sha256:[0-9a-f]{16}$/);
     expect(c.shape).not.toBe('sha256:25b937ee17628d6b');
-    expect(c.changed_in).toBe('1.7.0');
+    // 0078F moved the QA run-output ignore onto the docs branch: the shape moved again, in 1.9.0.
+    expect(c.changed_in).toBe('1.9.0');
     expect(fs.existsSync(sidecar), 'sidecar missing — run `node scripts/build.js` first').toBe(true);
     const built = JSON.parse(fs.readFileSync(sidecar, 'utf8')).contracts['add-qa-setup'];
     expect(built.shape).toBe(c.shape);
-    expect(built.changed_in).toBe('1.7.0');
+    expect(built.changed_in).toBe('1.9.0');
     expect(built.paths[0]).toMatchObject({ path: '.codeadd/settings.json#qa', owner: 'shared' });
   });
 });

@@ -42,10 +42,9 @@ const receiptPath = path.join(
 );
 
 describe('receipt.md pointer (L1.5, F5)', () => {
-  it('points to add--settings and no longer names docs/qa/', () => {
+  it('points to add--settings', () => {
     const text = read(receiptPath);
     expect(text).toContain('add--settings');
     expect(text).toContain('.codeadd/settings.json');
-    expect(text).not.toContain('docs/qa/');
   });
 });

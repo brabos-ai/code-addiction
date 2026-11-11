@@ -9,7 +9,7 @@
  *   - on success it prints %04d + letter (e.g. 0001F) on stdout, exit 0.
  *
  * THE ALLOCATION IS NOT HERE. The global counter over
- * `docs/features/[NNNN][L]-*` directories lives in `feature-id.cjs`; this
+ * the docs root's `[NNNN][L]-*` feature directories lives in `feature-id.cjs`; this
  * entry only validates its own argument and renders the result.
  * `status next-id` has its own named-prefix contract (F|H|PRD|CHG, exit 2 on
  * a bad prefix) and delegates to the same core. There is one allocator,
@@ -34,8 +34,14 @@ const TYPE_LETTER_RE = /^[A-Z]$/;
 /** One human-readable stderr line per canonical-core refusal. */
 const REFUSAL_MESSAGE = {
   'id-exhausted': 'ERROR: ID sequence exhausted (no number above 9999)',
-  'features-unreadable': 'ERROR: docs/features is unreadable',
+  'features-unreadable': 'ERROR: the features folder of the docs root is unreadable',
 };
+
+/** The refusal line for a failed allocation; a missing docs root names itself. */
+function refusal(result) {
+  if (result.reason === 'docs-root-missing') return `ERROR: ${result.message}`;
+  return REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed';
+}
 
 /**
  * Run the entry. argv is the full process argv; argv[2] is the type letter.
@@ -62,7 +68,7 @@ function main(argv) {
   // No board option: the allocator counts under the code root.
   const result = idc.calculate(process.cwd(), typeLetter, { allowOverflow: true });
   if (!result.ok) {
-    process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);
+    process.stderr.write(`${refusal(result)}\n`);
     return 1;
   }
 
@@ -70,7 +76,7 @@ function main(argv) {
   return 0;
 }
 
-module.exports = { main };
+module.exports = { main, refusal };
 
 if (require.main === module) {
   process.exitCode = main(process.argv);

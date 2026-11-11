@@ -108,7 +108,7 @@ Never hand-roll IDs. Never reuse an ID from another namespace.
 ### One counter, one source, one implementation
 
 The number is global across every letter. It is the max over the
-`docs/features/[NNNN][L]-*/` directories of the code repository — nothing else is counted.
+`.codeadd/docs/features/[NNNN][L]-*/` directories of the docs root — nothing else is counted.
 
 **`feature-id.cjs` is the one allocator, and it is native.** Every route delegates to it:
 `next-id.cjs` (one uppercase A-Z letter, exit 1 on a bad argument), `status.cjs next-id` (named
@@ -126,7 +126,7 @@ IF CHANGING HOW AN ID IS ALLOCATED:
          canonical core, and `scripts/tests/status.test.cjs` pins `status next-id` against it
 ```
 
-An absent `docs/features` is a no-op: a fresh project gets `0001`. An existing one that cannot be read
+An absent `.codeadd/docs/features` is a no-op: a fresh project gets `0001`. An existing one that cannot be read
 is an explicit failure.
 
 ## Per-Scope Sequence IDs (qa-validation-NNN)
@@ -141,7 +141,7 @@ Distinct from `[NNNN][L]`: `NNN` is a 3-digit per-scope run number, no letter su
 
 ## SF-Qualified IDs (subfeature-scoped docs)
 
-An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add-plan` STEP 7.1 writes into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
+An epic feature holds N subfeatures, and some docs are written **per subfeature** — notably `design.md`, which `/add-plan` STEP 7.1 writes into `${FEATURE_DIR}/subfeatures/SFxx-<slug>/`. All N files would otherwise carry the same `id: [NNNN]F`, so single-path ID resolution (`grep -rE "^id: <ID>$" .codeadd/docs/`, the validation gate's `{{doc:}}` reverse lookup) returns N hits and cannot name one document.
 
 - **Format:** `[NNNN]F-SFxx` (e.g. `0042F-SF03`) — the feature ID, a hyphen, then the subfeature key exactly as `epic.md` spells it (`SF` + 2-digit zero-padded).
 - **When:** the doc lives under `subfeatures/SFxx-*/`. A feature-level `design.md` (non-epic feature) keeps the plain `[NNNN]F`.
@@ -149,7 +149,7 @@ An epic feature holds N subfeatures, and some docs are written **per subfeature*
 - **Not a new namespace:** `-SFxx` is a qualifier on an existing ID, never allocated via `status.cjs next-id`.
 
 ```yaml
-id: 0042F-SF03         # docs/features/0042F-billing/subfeatures/SF03-invoices/design.md
+id: 0042F-SF03         # .codeadd/docs/features/0042F-billing/subfeatures/SF03-invoices/design.md
 type: feature-design
 related: [0042F]
 ```

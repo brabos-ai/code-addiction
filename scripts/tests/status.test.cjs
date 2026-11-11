@@ -15,6 +15,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 function has(res, needle) {
   assert.ok(
@@ -41,7 +42,10 @@ const status = (r, args = []) => h.runScript('status', args, { cwd: r.repo });
 const writeIn = (r, rel, content) => h.write(path.join(r.repo, rel), content);
 const mkdirIn = (r, rel) => fs.mkdirSync(path.join(r.repo, rel), { recursive: true });
 const onBranch = (r, name) => r.git('checkout', '-b', name, '-q');
-const featurePath = (...parts) => path.join('docs', 'features', ...parts);
+const DOCS_REL = path.join(...DOCS_ROOT.split('/'));
+const featurePath = (...parts) => path.join(DOCS_REL, DOCS_LAYOUT.features, ...parts);
+/** The docs root as a plain directory — the cheap stand-in for a prepared worktree. */
+const withDocsRoot = (r) => fs.mkdirSync(path.join(r.repo, DOCS_REL), { recursive: true });
 
 // ─── Branch detection ───────────────────────────────────────────────
 
@@ -788,6 +792,7 @@ test('status#062 SETUP_QA: .codeadd/settings.json without a qa section is absent
 
 test('status next-id: allocates the next id for a single-letter prefix', (t) => {
   const r = repo(t);
+  withDocsRoot(r);
   const res = status(r, ['next-id', 'F']);
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0001F');
@@ -795,6 +800,7 @@ test('status next-id: allocates the next id for a single-letter prefix', (t) => 
 
 test('status next-id: accepts the named prefix PRD', (t) => {
   const r = repo(t);
+  withDocsRoot(r);
   const res = status(r, ['next-id', 'PRD']);
   assert.equal(res.status, 0);
   assert.equal(res.stdout.trim(), '0001PRD');
@@ -844,7 +850,7 @@ const boardRow = (id) => JSON.stringify({
 
 /** A board fixture (remote + code repo + clone path) holding the given ticket ids. */
 function boardFixture(t, ids) {
-  const b = h.makeBoard({ files: { 'docs/backlog.jsonl': ids.map(boardRow).join('\n') + (ids.length ? '\n' : '') } });
+  const b = h.makeBoard({ files: { 'backlog.jsonl': ids.map(boardRow).join('\n') + (ids.length ? '\n' : '') } });
   t.after(b.cleanup);
   return b;
 }
@@ -873,6 +879,7 @@ test('status#058 prints no BOARD= line in any state and keeps exit 0', (t) => {
 
 test('status#059 a ticket that exists only in a board clone does not raise the next number', (t) => {
   const b = boardFixture(t, ['0007B']);
+  fs.mkdirSync(path.join(b.repo, DOCS_REL), { recursive: true });
   const viaNextId = h.runScript('next-id', ['F'], { cwd: b.repo, env: b.env });
   assert.equal(viaNextId.status, 0, viaNextId.output);
   assert.equal(viaNextId.stdout.trim(), '0001F');
@@ -884,9 +891,61 @@ test('status#059 a ticket that exists only in a board clone does not raise the n
 
 test('status#060 allocation counts feature directories only — a checkout backlog file is never read', (t) => {
   const old = repo(t);
-  writeIn(old, 'docs/backlog.jsonl', boardRow('0050B') + '\n');
+  writeIn(old, path.join(DOCS_REL, 'backlog.jsonl'), boardRow('0050B') + '\n');
   mkdirIn(old, featurePath('0003F-thing'));
   const res = h.runScript('status', ['next-id', 'F'], { cwd: old.repo, env: { CODEADD_BOARD_DIR: '' } });
   assert.equal(res.status, 0, res.output);
   assert.equal(res.stdout.trim(), '0004F', 'the checkout file is never read');
+});
+
+test('status next-id: an absent docs root fails with DOCS_ROOT_MISSING and exit 1', (t) => {
+  const r = repo(t);
+  const res = status(r, ['next-id', 'F']);
+  assert.equal(res.status, 1, res.output);
+  assert.match(res.stderr, /DOCS_ROOT_MISSING/);
+});
+
+// ─── 0078F — the docs step ──────────────────────────────────────────
+
+const docsLines = (res) => res.stdout.split('\n').filter((l) => l.startsWith('DOCS='));
+
+test('status#061 prints exactly one DOCS= line and exits 0 when prepare returns missing', (t) => {
+  // A repository with no remote: prepare has nowhere to fetch from or push to.
+  const r = repo(t);
+  const res = status(r);
+  assert.equal(res.status, 0, res.output);
+  assert.deepEqual(docsLines(res), ['DOCS=missing']);
+  assert.equal(res.stdout.split('\n').filter((l) => l.startsWith('DOCS_REASON=')).length, 1, res.output);
+  has(res, 'BRANCH:main TYPE:main MAIN:main');
+});
+
+test('status#062 prints exactly one DOCS= line on a project whose docs worktree is prepared', (t) => {
+  const p = h.makeProject();
+  t.after(p.cleanup);
+  for (let i = 0; i < 2; i++) {
+    const res = h.runScript('status', [], { cwd: p.repo });
+    assert.equal(res.status, 0, res.output);
+    assert.deepEqual(docsLines(res), ['DOCS=ready'], res.output);
+  }
+});
+
+test('status#063 a missing docs root never fails a feature branch run', (t) => {
+  const r = repo(t);
+  onBranch(r, 'feature/0001F-test');
+  const res = status(r);
+  assert.equal(res.status, 0, res.output);
+  has(res, 'FEATURE:0001F-test PHASE:none');
+  has(res, 'not found');
+  assert.deepEqual(docsLines(res), ['DOCS=missing']);
+});
+
+test('status#064 reads the feature phase from the docs root of a prepared project', (t) => {
+  const p = h.makeProject();
+  t.after(p.cleanup);
+  h.write(path.join(p.docs, DOCS_LAYOUT.features, '0001F-test', 'plan.md'), '# Plan\n');
+  p.git('checkout', '-b', 'feature/0001F-test', '-q');
+  const res = h.runScript('status', [], { cwd: p.repo });
+  assert.equal(res.status, 0, res.output);
+  has(res, 'PHASE:planned');
+  has(res, `DIR:${DOCS_ROOT}/${DOCS_LAYOUT.features}/0001F-test`);
 });

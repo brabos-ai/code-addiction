@@ -189,7 +189,7 @@ describe('Plan 0049B — build gates aligned with done', () => {
     const step1 = loopEnd.split('\n').find((l) => l.startsWith('1. '));
     expect(step1).toBeDefined();
     const block = loopEnd.slice(loopEnd.indexOf(step1), loopEnd.indexOf('\n2. '));
-    expect(block).toMatch(/converge-gates\.cjs "docs\/features\/\$\{FEATURE_ID\}"/);
+    expect(block).toMatch(/converge-gates\.cjs \\?"\.codeadd\/docs\/features\/\$\{FEATURE_ID\}\\?"/);
     expect(block).not.toMatch(/converge-gates\.cjs[^\n]*SFxx|EPIC_CURRENT_SF/);
     expect(block).toMatch(/5\/5/);
     expect(block).toMatch(/exit BLOCKED naming each gate that is not `ok`/);

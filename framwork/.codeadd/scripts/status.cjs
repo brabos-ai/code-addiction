@@ -32,6 +32,10 @@
  * leak into the recorded value. A file that does not parse counts as QA state
  * without a current receipt (STALE) and never crashes the script.
  *
+ * THE DOCS STEP. Every run prepares the docs worktree and prints one `DOCS=` line
+ * (plus `DOCS_REASON=` when there is one). `missing` is a normal outcome and is
+ * never an error exit. The guard that files misplaced outputs is not run here.
+ *
  * Dependencies: Node >= 22.19.0 built-ins and `git`. No bash, no WSL, and no
  * import-time I/O in the sibling modules it requires.
  */
@@ -65,14 +69,38 @@ try {
   branchMetaMod = null;
 }
 
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath, docsRoot } = require('./docs-root.cjs');
+const { prepareDocs } = require('./docs-branch.cjs');
+
 const PREFIXES = ['F', 'H', 'PRD', 'CHG'];
-const DOCS_FEATURES = path.join('docs', 'features');
+// The features folder relative to the repository top, as the stream prints it.
+const FEATURES_REL = `${DOCS_ROOT}/${DOCS_LAYOUT.features}`;
 
 /** One human-readable stderr line per canonical-core refusal. */
 const REFUSAL_MESSAGE = {
   'id-exhausted': 'ERROR: ID sequence exhausted (no number above 9999)',
-  'features-unreadable': 'ERROR: docs/features is unreadable',
+  'features-unreadable': 'ERROR: the features folder of the docs root is unreadable',
 };
+
+/** The refusal line for a failed allocation; a missing docs root names itself. */
+function refusalLine(result) {
+  if (result.reason === 'docs-root-missing') return `ERROR: ${result.message}`;
+  return REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed';
+}
+
+/**
+ * The absolute features folder of the docs root. A missing docs root is a normal
+ * state here — status never fails on it — so the folder is then reported at the
+ * same resolved location, which does not exist, and every reader sees it as absent.
+ */
+function featuresAbs(cwd) {
+  try {
+    return docsPath(cwd, DOCS_LAYOUT.features);
+  } catch (e) {
+    if (e && e.code === 'DOCS_ROOT_MISSING') return path.join(docsRoot(cwd), DOCS_LAYOUT.features);
+    throw e;
+  }
+}
 
 // ─── Small filesystem/git helpers ────────────────────────────────────────────
 
@@ -308,7 +336,7 @@ function findSubfeatureDir(featureDir, sf) {
 
 // ─── Changelog helpers ───────────────────────────────────────────────────────
 
-/** Every changelog.md under docs/features, newest mtime first, capped at 5. */
+/** Every changelog.md under the features folder, newest mtime first, capped at 5. */
 function recentChangelogs(featuresDir) {
   const found = [];
   const walk = (dir) => {
@@ -499,7 +527,7 @@ function main(argv) {
     // No board option: the allocator counts under the code root.
     const result = idc.calculate(cwd, prefix, { allowOverflow: true });
     if (!result.ok) {
-      process.stderr.write(`${REFUSAL_MESSAGE[result.reason] || 'ERROR: id-allocation-failed'}\n`);
+      process.stderr.write(`${refusalLine(result)}\n`);
       return 1;
     }
     process.stdout.write(result.id + '\n');
@@ -540,12 +568,19 @@ function main(argv) {
   const currentBranchName = meta.BRANCH_NAME;
   const branchType = meta.BRANCH_TYPE;
   const featureId = meta.FEATURE_SLUG;
-  const featureDir = meta.DOCS_DIR || path.join(DOCS_FEATURES, meta.FEATURE_SLUG);
+  const featureDir = meta.DOCS_DIR || `${FEATURES_REL}/${meta.FEATURE_SLUG}`;
+  const featuresRoot = featuresAbs(cwd);
 
   const out = [];
   const say = (line) => out.push(line);
 
   say(`BRANCH:${currentBranchName} TYPE:${branchType} MAIN:${mainBranch}`);
+
+  // DOCS — the docs worktree is prepared at the start of every run. `missing` is a
+  // normal outcome (no remote, offline) and never changes the exit code.
+  const docs = prepareDocs(cwd);
+  say(`DOCS=${docs.status}`);
+  if (docs.reason) say(`DOCS_REASON=${String(docs.reason).split('\n')[0]}`);
 
   let phase = 'none';
   let pendingFirstId = '';
@@ -553,7 +588,7 @@ function main(argv) {
 
   // FEATURE — only on a branch that carries an id.
   if (featureId) {
-    const absFeatureDir = path.join(cwd, featureDir);
+    const absFeatureDir = path.join(featuresRoot, featureId);
 
     if (isDir(absFeatureDir)) {
       const hasDesignNow = hasDesign(absFeatureDir);
@@ -696,7 +731,6 @@ function main(argv) {
   }
 
   // RECENT_CHANGELOGS — the last five completed features, cross-feature context.
-  const featuresRoot = path.join(cwd, DOCS_FEATURES);
   if (isDir(featuresRoot)) {
     const changelogs = recentChangelogs(featuresRoot);
     if (changelogs.length) {
@@ -710,7 +744,7 @@ function main(argv) {
         if (!summary) summary = firstHeading(cl).slice(0, 80);
         if (summary) say(`  ${feat}|${summary}`);
       }
-      say('CHANGELOGS_PATH:docs/features/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md');
+      say(`CHANGELOGS_PATH:${FEATURES_REL}/{[0-9][0-9][0-9][0-9][A-Z]-*}/changelog.md`);
     }
   }
 
@@ -785,7 +819,7 @@ function main(argv) {
       }
       const files = [...set]
         .sort()
-        .filter((f) => !f.startsWith('.') && !/^[^/]*\.md$/.test(f) && !f.startsWith('docs/'));
+        .filter((f) => !f.startsWith('.') && !/^[^/]*\.md$/.test(f));
       if (files.length) {
         say(`FILES:${files.length}`);
         say(`CHANGED:${globOutput(files)}`);
@@ -871,7 +905,7 @@ function main(argv) {
   } else if (branchType === 'hotfix') {
     recs = '/add-done';
   } else if (featureId) {
-    if (!isDir(path.join(cwd, featureDir))) recs = '/add-new to setup';
+    if (!isDir(path.join(featuresRoot, featureId))) recs = '/add-new to setup';
     else if (phase === 'created' || phase === 'documented') recs = '/add-new to complete discovery';
     else if (phase === 'discovered' || phase === 'designed') recs = '/add-plan to create plan';
     else if (phase === 'planned') recs = '/add-build to implement';

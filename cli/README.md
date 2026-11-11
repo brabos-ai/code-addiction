@@ -59,6 +59,36 @@ npx codeadd uninstall --force
 
 The `board` feature is gone. Migration `0006-retire-board` drops the `board` flag from an installed project on `update` and leaves `.codeadd/board.json`, the `board` branch and the clone under `~/.codeadd` untouched.
 
+## Docs branch
+
+Every output Code Addiction writes (plans, feature docs, wiki, QA reports, changelog, delivery index) lives in `.codeadd/docs/`, a git worktree of the orphan `codeadd-docs` branch in your project's own remote. Code PRs carry no Code Addiction document.
+
+- `status.cjs` prepares the worktree and prints one `DOCS=` line with the outcome. It never fails on this step: with no remote or no network, work continues locally. Code worktrees see the docs through a link.
+- `/add-done` commits and pushes `codeadd-docs`. No command, uninstall or migration deletes the branch.
+- The docs-guard moves an output written outside `.codeadd/docs/` into it, silently, at close-out.
+- `rg`, Grep and Glob skip git-ignored paths: pass `.codeadd/docs/` explicitly when you search the docs.
+- The ignore for the QA run output lives on the docs branch, so re-run `/add-qa-setup` once in a project that uses QA.
+
+### `schema:`
+
+Every generated markdown document carries `schema: 1` in its frontmatter. It is the version of the document format, not the package version, and it moves only when the format changes. A document without it is schema 0 (legacy). JSONL outputs carry a per-line `v` instead.
+
+### Migrating a project
+
+For a project that still keeps its Code Addiction outputs in the code branch. It is optional, idempotent, and `update` never runs it.
+
+```bash
+# see what would move, change nothing
+npx codeadd docs migrate --dry-run
+# move it
+npx codeadd docs migrate
+```
+
+- It prepares the docs worktree, copies the outputs into it and makes one commit on `codeadd-docs`. It never pushes.
+- On the code side it stages the deletions and stops. It never commits: review and commit them yourself.
+- It ends with `DOCS_LEGACY=<n>` and, when `n` is above zero, a prompt between `--- AGENT PROMPT ---` and `--- END AGENT PROMPT ---`. Paste it into your own agent: it brings every document without `schema:` to the current standard and stamps the version. The command runs no agent and stamps nothing itself.
+- Running it again prints `MIGRATED=already`.
+
 ## Without a terminal
 
 When stdin is not a TTY, nothing is ever asked: the command finishes, or exits 1 with a message

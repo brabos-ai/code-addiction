@@ -20,14 +20,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, DOC_SCHEMA_VERSION, docSchemaOf } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
-const LEDGER = 'docs/features/0003F-signup/build-ledger.md';
+/** A path under the docs root's features folder, as the commands pass it. */
+const F = (sub) => `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${sub}`;
+
+const LEDGER = F('0003F-signup/build-ledger.md');
 const FEATURE_ID = '0003F';
-const PLAN_PATH = 'docs/features/0003F-signup/plan.md';
-const HEADER = '# Build ledger — feature: 0003F — plan: docs/features/0003F-signup/plan.md';
+const PLAN_PATH = F('0003F-signup/plan.md');
+const HEADER = `# Build ledger — feature: 0003F — plan: ${PLAN_PATH}`;
 
 const abs = (repo, rel) => path.join(repo, rel);
-const ledgerLines = (repo) => h.read(abs(repo, LEDGER)).split('\n');
+// The ledger body, after the minimal frontmatter a created file starts with.
+const FRONTMATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n\r?\n/;
+const ledgerBody = (repo) => h.read(abs(repo, LEDGER)).replace(FRONTMATTER, '');
+const ledgerLines = (repo) => ledgerBody(repo).split('\n');
 
 test('build-ledger#001 L2.1: a missing ledger is created with its identity header', () => {
   const { repo, cleanup } = h.makeRepo();
@@ -137,10 +144,10 @@ test('build-ledger#007 a line starting with a dash is an entry, not an option', 
 test('build-ledger#008 the parent directory is created when absent', () => {
   const { repo, cleanup } = h.makeRepo();
   try {
-    const deep = 'docs/features/0004F-epic/subfeatures/SF02-billing/build-ledger.md';
+    const deep = F('0004F-epic/subfeatures/SF02-billing/build-ledger.md');
     const res = h.runScript(
       'build-ledger',
-      [deep, 'T01: complete', '0004F', 'docs/features/0004F-epic/subfeatures/SF02-billing/plan.md'],
+      [deep, 'T01: complete', '0004F', F('0004F-epic/subfeatures/SF02-billing/plan.md')],
       { cwd: repo },
     );
     assert.equal(res.status, 0, res.output);
@@ -157,7 +164,7 @@ test('build-ledger#009 FEATURE_ID and PLAN_PATH omitted: the header is derived f
     assert.equal(res.status, 0, res.output);
     assert.equal(
       ledgerLines(repo)[0],
-      '# Build ledger — feature: 0003F-signup — plan: docs/features/0003F-signup/plan.md',
+      `# Build ledger — feature: 0003F-signup — plan: ${PLAN_PATH}`,
     );
   } finally {
     cleanup();
@@ -170,7 +177,7 @@ test('build-ledger#010 identity arguments are ignored once the ledger exists —
     h.runScript('build-ledger', [LEDGER, 'T01: complete', FEATURE_ID, PLAN_PATH], { cwd: repo });
     const res = h.runScript('build-ledger', [LEDGER, 'T02: complete', 'WRONG', 'wrong/path.md'], { cwd: repo });
     assert.equal(res.status, 0, res.output);
-    const body = h.read(abs(repo, LEDGER));
+    const body = ledgerBody(repo);
     assert.equal(body.split('\n')[0], HEADER, 'creation-only identity');
     assert.equal(body.includes('WRONG'), false, 'a later identity argument is ignored');
   } finally {
@@ -311,6 +318,44 @@ test('build-ledger#020 0049B L1.6: well-formed Final review lines and Final revi
       assert.equal(res.status, 0, `${line}\n${res.output}`);
       assert.ok(ledgerLines(repo).includes(line), `${line} appended`);
     }
+  } finally {
+    cleanup();
+  }
+});
+
+test('build-ledger#012 a created ledger starts with type + schema frontmatter from DOC_SCHEMA_VERSION', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    h.runScript('build-ledger', [LEDGER, 'T01: complete', FEATURE_ID, PLAN_PATH], { cwd: repo });
+    const text = h.read(abs(repo, LEDGER));
+    assert.ok(text.startsWith(`---\ntype: build-ledger\nschema: ${DOC_SCHEMA_VERSION}\n---\n`), text.slice(0, 80));
+    assert.equal(docSchemaOf(text), DOC_SCHEMA_VERSION);
+  } finally {
+    cleanup();
+  }
+});
+
+test('build-ledger#013 appending never rewrites an existing ledger — a legacy one stays without frontmatter', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    const legacy = `# Build ledger — feature: 0003F — plan: ${PLAN_PATH}\n\nT01: complete\n`;
+    h.write(abs(repo, LEDGER), legacy);
+    const res = h.runScript('build-ledger', [LEDGER, 'T02: complete', FEATURE_ID, PLAN_PATH], { cwd: repo });
+    assert.equal(res.status, 0, res.output);
+    assert.equal(h.read(abs(repo, LEDGER)), `${legacy}T02: complete\n`);
+    assert.equal(docSchemaOf(h.read(abs(repo, LEDGER))), 0);
+    assert.equal(h.parseKV(res.stdout).LINES, '2');
+  } finally {
+    cleanup();
+  }
+});
+
+test('build-ledger#014 LINES counts entries only, frontmatter excluded', () => {
+  const { repo, cleanup } = h.makeRepo();
+  try {
+    h.runScript('build-ledger', [LEDGER, 'one', FEATURE_ID, PLAN_PATH], { cwd: repo });
+    const res = h.runScript('build-ledger', [LEDGER, 'two', FEATURE_ID, PLAN_PATH], { cwd: repo });
+    assert.equal(h.parseKV(res.stdout).LINES, '2');
   } finally {
     cleanup();
   }

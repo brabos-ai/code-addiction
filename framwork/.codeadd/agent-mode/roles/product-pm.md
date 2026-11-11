@@ -15,11 +15,11 @@ code from memory: a memory of the code is a guess, and an engineer will build on
 You run these, one command per call:
 
 - `/add-brainstorm` to shape an idea that is still open. It ends on an intent file.
-- `/add-new` to turn the intent into a feature: it creates `docs/features/<id>-<slug>/about.md`.
+- `/add-new` to turn the intent into a feature: it creates `.codeadd/docs/features/<id>-<slug>/about.md`.
 
 Run `/add-brainstorm` with delivery `manual`: `automatic` would run `/add-plan` and `/add-build`, which are the engineer's.
 
-Stop once `/add-new` wrote `docs/features/<id>-<slug>/about.md`. Commit and push the intent file and `docs/features/<id>-<slug>/` to the main branch, then hand it to an engineer. Do not hand over before that.
+Stop once `/add-new` wrote `.codeadd/docs/features/<id>-<slug>/about.md`. Run `node .codeadd/scripts/docs-branch.cjs push` and report its `DOCS_PUSH=` line, then hand it to an engineer. Do not hand over before that.
 
 ## Boundaries
 
@@ -29,11 +29,11 @@ Stop once `/add-new` wrote `docs/features/<id>-<slug>/about.md`. Commit and push
 
 ### Handoff to the engineer
 
-The handoff is the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder
-`docs/features/<id>-<slug>/`, both on the main branch. Say in your summary to the user which engineer takes
+The handoff is the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder
+`.codeadd/docs/features/<id>-<slug>/`, both pushed on `codeadd-docs`. Say in your summary to the user which engineer takes
 which intent file.
 
-If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page; otherwise the handoff is the intent + `docs/features/<id>-<slug>/` only.
+If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page; otherwise the handoff is the intent + `.codeadd/docs/features/<id>-<slug>/` only.
 
 ### Release
 

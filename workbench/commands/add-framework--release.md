@@ -189,12 +189,13 @@ Use file changes to enrich terse commit messages. Provider dirs (`framwork/.clau
 Read the delivered plans, bounded by the tag:
 
 ```bash
-git diff --name-status [LATEST_TAG]..main -- docs/deliveries/
+git log -1 --format=%cI [LATEST_TAG]
+git -C .codeadd/docs log --diff-filter=A --name-only --format= --since=<the date the first command printed> -- deliveries/
 ```
 
-Each `docs/deliveries/<plan-basename>/` added since the tag is one delivery. Read its `plan.md` for what shipped and its `ledger.md` for the decisions made along the way.
+The deliveries live on `codeadd-docs`, not on `main`, so the diff reads that worktree. Each `.codeadd/docs/deliveries/<plan-basename>/` it lists as added since the tag's date is one delivery. Read its `plan.md` for what shipped and its `ledger.md` for the decisions made along the way.
 
-⛔ **DO NOT source release notes from `docs/plans/`.** It is gitignored and local, so on a release machine it holds whatever that machine happened to work on — usually nothing. A scan of it renders an empty section and says nothing about why.
+⛔ **DO NOT source release notes from `.codeadd/docs/plans/`.** It is ignored by the docs branch's own `.gitignore` and local, so on a release machine it holds whatever that machine happened to work on — usually nothing. A scan of it renders an empty section and says nothing about why.
 
 ### Assemble release notes
 

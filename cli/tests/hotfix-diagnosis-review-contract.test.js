@@ -49,7 +49,7 @@ describe('hotfix diagnosis and review contracts', () => {
     expect(cmd).toMatch(/rejected diagnosis is not written/i);
     expect(cmd).not.toMatch(/route = no-action \| Write \| Conversational response only/);
     expect(cmd).not.toMatch(/Persist a report when the route is no-action/);
-    expect(cmd).toContain('/add-hotfix @docs/diagnose/');
+    expect(cmd).toContain('/add-hotfix @.codeadd/docs/diagnose/');
     expect(cmd).toMatch(/only for an accepted hotfix route|only when the accepted route is hotfix/i);
     expect(cmd).toMatch(/never invoke/i);
 
@@ -64,16 +64,16 @@ describe('hotfix diagnosis and review contracts', () => {
       cmd.indexOf('STEP add-diagnose.carry-these-step'),
       cmd.indexOf('STEP add-diagnose.validate'),
     );
-    expect(carry).not.toContain('/add-hotfix @docs/diagnose/');
+    expect(carry).not.toContain('/add-hotfix @.codeadd/docs/diagnose/');
     expect(cmd.slice(cmd.indexOf('STEP add-diagnose.handoff'))).toContain(
-      '/add-hotfix @docs/diagnose/',
+      '/add-hotfix @.codeadd/docs/diagnose/',
     );
   });
 
   it('hotfix reuses a valid diagnose report and reviews with one correction wave', () => {
     const cmd = read('commands', 'add-hotfix.md');
     expect(cmd).toMatch(/script: hotfix-gates\.cjs/);
-    expect(cmd).toContain('@docs/diagnose/');
+    expect(cmd).toContain('@.codeadd/docs/diagnose/');
     expect(cmd).toContain('diagnosis-check');
     expect(cmd).toMatch(/STEPS 4-6/);
     expect(cmd).toMatch(/second root-cause confirmation/i);

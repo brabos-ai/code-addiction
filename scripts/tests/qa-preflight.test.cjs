@@ -17,6 +17,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+
+const DOCS_SEGMENTS = DOCS_ROOT.split('/');
+/** The feature folder argument phase b takes, relative to the project. */
+const FEATURE_X = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/0001F-x`;
 
 /** A throwaway project root used as the child's cwd; cleaned via t.after. */
 function project(t) {
@@ -217,16 +222,16 @@ test('qa-preflight#016 — qa-project skill absent → missing', (t) => {
 
 test('qa-preflight#017 — phase b: screens.json missing → QA_SCREENS=missing', (t) => {
   const base = project(t);
-  fs.mkdirSync(path.join(base, 'docs', 'features', '0001F-x'), { recursive: true });
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x'], { cwd: base });
+  fs.mkdirSync(path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x'), { recursive: true });
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SCREENS=missing/);
 });
 
 test('qa-preflight#018 — phase b: screens.json invalid JSON → QA_SCREENS=broken', (t) => {
   const base = project(t);
-  h.write(path.join(base, 'docs', 'features', '0001F-x', '_tests', 'screens.json'), '{broken');
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x'], { cwd: base });
+  h.write(path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x', '_tests', 'screens.json'), '{broken');
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SCREENS=broken/);
 });
@@ -234,36 +239,36 @@ test('qa-preflight#018 — phase b: screens.json invalid JSON → QA_SCREENS=bro
 test('qa-preflight#019 — phase b: valid screens.json → QA_SCREENS=ok', (t) => {
   const base = project(t);
   h.write(
-    path.join(base, 'docs', 'features', '0001F-x', '_tests', 'screens.json'),
+    path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x', '_tests', 'screens.json'),
     '{"feature":"0001F","screens":[]}',
   );
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x'], { cwd: base });
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SCREENS=ok/);
 });
 
 test('qa-preflight#020 — phase b: no spec glob arg → QA_SPECS=not-probed', (t) => {
   const base = project(t);
-  fs.mkdirSync(path.join(base, 'docs', 'features', '0001F-x'), { recursive: true });
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x'], { cwd: base });
+  fs.mkdirSync(path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x'), { recursive: true });
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SPECS=not-probed/);
 });
 
 test('qa-preflight#021 — phase b: spec glob with a match → QA_SPECS=ok', (t) => {
   const base = project(t);
-  fs.mkdirSync(path.join(base, 'docs', 'features', '0001F-x'), { recursive: true });
+  fs.mkdirSync(path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x'), { recursive: true });
   h.write(path.join(base, 'e2e', 'login.qa.spec.ts'), '');
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x', 'e2e/*.qa.spec.*'], { cwd: base });
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X, 'e2e/*.qa.spec.*'], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SPECS=ok/);
 });
 
 test('qa-preflight#022 — phase b: spec glob without match → QA_SPECS=missing', (t) => {
   const base = project(t);
-  fs.mkdirSync(path.join(base, 'docs', 'features', '0001F-x'), { recursive: true });
+  fs.mkdirSync(path.join(base, ...DOCS_SEGMENTS, DOCS_LAYOUT.features, '0001F-x'), { recursive: true });
   fs.mkdirSync(path.join(base, 'e2e'), { recursive: true });
-  const res = h.runScript('qa-preflight', ['b', 'docs/features/0001F-x', 'e2e/*.qa.spec.*'], { cwd: base });
+  const res = h.runScript('qa-preflight', ['b', FEATURE_X, 'e2e/*.qa.spec.*'], { cwd: base });
   assert.equal(res.status, 0, res.output);
   assert.match(res.output, /QA_SPECS=missing/);
 });

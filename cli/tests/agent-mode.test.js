@@ -203,7 +203,7 @@ describe('agent team roles', () => {
 
   it.each(ROLES)('T1.5 roles/%s.md carries the intent file and feature folder handoff, with no board branch', (name) => {
     const text = roleText(name);
-    for (const anchor of ['-intent.md', 'about.md', 'docs/features/<id>-<slug>/']) expect(text, `${name}.md names ${anchor}`).toContain(anchor);
+    for (const anchor of ['-intent.md', 'about.md', '.codeadd/docs/features/<id>-<slug>/']) expect(text, `${name}.md names ${anchor}`).toContain(anchor);
     expect(text).not.toMatch(/board|backlog-(cli|commit)|shaped|ticket/i);
   });
 

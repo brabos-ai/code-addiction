@@ -22,7 +22,7 @@
  *
  * THE IDENTITY HEADER is written once, on creation only. FEATURE_ID and
  * PLAN_PATH are optional; when omitted they are derived from the ledger's own
- * directory (`docs/features/<ID>/build-ledger.md` → id `0003F-signup`, plan
+ * directory (`<docs root>/features/<ID>/build-ledger.md` → id `0003F-signup`, plan
  * `<dir>/plan.md`). Once the file exists they are IGNORED: the header is never
  * rewritten, because a ledger whose identity changes mid-build is a ledger
  * that cannot be trusted.
@@ -38,13 +38,14 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { DOC_SCHEMA_VERSION } = require('./docs-root.cjs');
 
 const FINAL_REVIEW_GRAMMAR = 'Final review: passed|ruled N|blocked N (after review-NNN)';
 const FINAL_REVIEW_LINE = /^Final review: (passed|ruled [0-9]+|blocked [0-9]+) \(after review-[0-9]{3}\)$/;
 
 const USAGE = [
   'Usage: build-ledger.cjs <LEDGER_FILE> <LINE> [FEATURE_ID] [PLAN_PATH]',
-  '  LEDGER_FILE  docs/features/<ID>/build-ledger.md, or <SF_DIR>/build-ledger.md on an epic',
+  '  LEDGER_FILE  <docs root>/features/<ID>/build-ledger.md, or <SF_DIR>/build-ledger.md on an epic',
   '  LINE         one event, one line — must not be empty and must not contain a newline',
   '  FEATURE_ID   optional; defaults to the ledger directory\'s name',
   '  PLAN_PATH    optional; defaults to <ledger directory>/plan.md',
@@ -80,7 +81,9 @@ function posixBasename(p) {
  * file yields 0 rather than a failure (the shell swallowed awk's stderr too).
  */
 function countEntries(content) {
-  const lines = String(content).split('\n');
+  // A leading frontmatter block is not part of the entries (and a legacy file has none).
+  const body = String(content).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+  const lines = body.split('\n');
   let n = 0;
   for (let i = 2; i < lines.length; i += 1) {
     if (lines[i] !== '') n += 1;
@@ -134,7 +137,11 @@ function run(argv) {
     const plan = PLAN_PATH !== '' ? PLAN_PATH : `${LEDGER_DIR}/plan.md`;
 
     try {
-      fs.writeFileSync(LEDGER_FILE, `# Build ledger — feature: ${id} — plan: ${plan}\n\n`);
+      // A file this script creates starts with the minimal frontmatter; one that exists is never rewritten.
+      fs.writeFileSync(
+        LEDGER_FILE,
+        `---\ntype: build-ledger\nschema: ${DOC_SCHEMA_VERSION}\n---\n\n# Build ledger — feature: ${id} — plan: ${plan}\n\n`,
+      );
     } catch (err) {
       fail(`Cannot write ${LEDGER_FILE}`);
     }

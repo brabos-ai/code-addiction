@@ -11,7 +11,9 @@
 - command: /add-plan
 - command: /add-review
 - command: /add-setup
+- script: docs-branch.cjs
 - script: status.cjs
+- skill: add--doc-schemas
 - skill: add--dev-environment-setup
 - skill: add--ecosystem
 -->
@@ -20,7 +22,7 @@
 
 Help guide for the add-pro ecosystem. Answers which command to use and in what order, what each feature and plugin is and whether it is on, how to run the framework from a bot, and how the CLI works. Suggests the next command.
 
-**IMPORTANT:** This command is READ-ONLY for project code. May create analysis documentation in `docs/analysis/` when the response is complex or the user requests it.
+**IMPORTANT:** This command is READ-ONLY for project code. May create analysis documentation in `.codeadd/docs/analysis/` when the response is complex or the user requests it; an analysis written is closed per {{skill:add--doc-schemas/SKILL.md}} → Docs Branch with `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
 
 **STEPS IN ORDER:**
 ```
@@ -43,7 +45,7 @@ READ-ONLY FOR CODE:
   DO NOT MODIFY: Existing project files, `.codeadd/manifest.json` included
 
 ALLOWED - CREATE DOCUMENTATION:
-  MAY CREATE: docs/analysis/*.md (on-demand analyses)
+  MAY CREATE: .codeadd/docs/analysis/*.md (on-demand analyses)
 
 IF ECOSYSTEM-MAP NOT LOADED:
   ⛔ DO NOT RESPOND: About commands, skills, features or plugins
@@ -129,7 +131,7 @@ Include: what the command does, when to use it, which skills it loads, the flow 
 
 **RULE:** Changelog BEFORE code.
 
-1. Identify feature directory under `docs/features/`
+1. Identify feature directory under `.codeadd/docs/features/` (pass that root explicitly when searching)
 2. Read `changelog.md` first (executive summary)
 3. Read `about.md` for context/spec
 4. Only check code if previous levels don't answer the question

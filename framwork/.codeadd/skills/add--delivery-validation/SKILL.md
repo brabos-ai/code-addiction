@@ -48,9 +48,9 @@ Skill for PRODUCT validation — checks whether requirements were 100% implement
 FEATURE_ID=$(node .codeadd/scripts/status.cjs)
 
 # Load specification
-cat docs/features/${FEATURE_ID}/about.md
-cat docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Contracts (prose)
-cat docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance Checklist)
+cat .codeadd/docs/features/${FEATURE_ID}/about.md
+cat .codeadd/docs/features/${FEATURE_ID}/plan.md 2>/dev/null  # Contracts (prose)
+cat .codeadd/docs/features/${FEATURE_ID}/tasks.md 2>/dev/null # Tick state (## Acceptance Checklist)
 ```
 
 **Extract from about.md:**

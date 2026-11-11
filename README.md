@@ -172,8 +172,8 @@ Commands and skills install to every provider you select. Subagents install to C
 - `framwork/`: framework payload copied into target projects by the installer
   - `framwork/.codeadd/plugins/`: plugin asset source tree (fragments and skills per plugin)
 - `workbench/`: internal-layer source for the framework's own commands, skills and agents, with its own build pipeline (compiles to `.claude/`, `.opencode/`, `.agents/` and `.codex/` at the repo root, gitignored)
-- `docs/deliveries/`: durable delivery history — closed-out plan archives
-- `docs/delivered.jsonl`: the delivery index every close-out appends to
+- `.codeadd/docs/`: every Code Addiction output, a git worktree of the `codeadd-docs` branch (kept out of code PRs); `deliveries/` holds closed-out plan archives and `delivered.jsonl` is the delivery index every close-out appends to
+- Projects that still keep these outputs in their code branch can move them with `npx codeadd docs migrate` (run `--dry-run` first)
 
 ## Compatibility
 

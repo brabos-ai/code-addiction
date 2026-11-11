@@ -1,7 +1,8 @@
 /**
  * feature-id.test.js — the native global allocator (L2).
  *
- * The allocator counts docs/features/[NNNN][L]-* folders and nothing else. Each
+ * The allocator counts the [NNNN][L]-* folders of the docs root's features
+ * directory and nothing else; an absent docs root is an explicit failure. Each
  * fixture runs three ways: the native calculate(), and BOTH native public
  * entries (`next-id.cjs` and `status.cjs next-id`). One allocator, two public
  * adapters, one answer.
@@ -17,6 +18,11 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(__dirname, '..', '..');
 const idc = require(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'feature-id.cjs'));
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'docs-root.cjs'));
+
+/** The docs root and its features folder inside a fixture, built from the one owner. */
+const docsRootOf = (root) => path.join(root, ...DOCS_ROOT.split('/'));
+const featuresOf = (root) => path.join(docsRootOf(root), DOCS_LAYOUT.features);
 
 const NEXT_ID = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'next-id.cjs');
 const STATUS = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'status.cjs');
@@ -27,16 +33,17 @@ afterEach(() => {
   for (const dir of ROOTS.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
-const fixture = (name) => {
+const fixture = (name, { docsRoot = true } = {}) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`));
   ROOTS.push(dir);
   execFileSync('git', ['init', '-q'], { cwd: dir });
+  if (docsRoot) fs.mkdirSync(docsRootOf(dir), { recursive: true });
   return dir;
 };
 
 const featureDir = (root, slug) => {
-  fs.mkdirSync(path.join(root, 'docs', 'features', slug), { recursive: true });
-  fs.writeFileSync(path.join(root, 'docs', 'features', slug, 'about.md'), `# ${slug}\n`);
+  fs.mkdirSync(path.join(featuresOf(root), slug), { recursive: true });
+  fs.writeFileSync(path.join(featuresOf(root), slug, 'about.md'), `# ${slug}\n`);
 };
 
 /** The two native public entries, in the fixture root. */
@@ -58,9 +65,9 @@ describe('L2 — calculate: absent and empty sources', () => {
     }
   });
 
-  it('an EMPTY docs/features dir is also absent', () => {
+  it('an EMPTY features dir is also absent', () => {
     const root = fixture('id-empty-');
-    fs.mkdirSync(path.join(root, 'docs', 'features'), { recursive: true });
+    fs.mkdirSync(featuresOf(root), { recursive: true });
     for (const letter of ['F', 'H']) {
       expect(idc.calculate(root, letter)).toEqual({ ok: true, id: `0001${letter}` });
     }
@@ -68,7 +75,7 @@ describe('L2 — calculate: absent and empty sources', () => {
 });
 
 describe('L2 — calculate: what counts and what does not', () => {
-  it('only docs/features/[NNNN][L]-* folders are counted, across letters', () => {
+  it('only [NNNN][L]-* directories of the features folder are counted, across letters', () => {
     const root = fixture('id-mixed-');
     featureDir(root, '0042F-login');
     featureDir(root, '0015H-fix');
@@ -84,27 +91,27 @@ describe('L2 — calculate: what counts and what does not', () => {
     expectAllThree(root, 'F', '0008F');
   });
 
-  it('a docs/backlog.jsonl holding a higher id than any folder does NOT raise the number', () => {
+  it('a backlog.jsonl in the docs root holding a higher id than any folder does NOT raise the number', () => {
     const root = fixture('id-backlog-ignored-');
     featureDir(root, '0002F-a');
-    fs.writeFileSync(path.join(root, 'docs', 'backlog.jsonl'), '{"id":"0050F","title":"t"}\n');
+    fs.writeFileSync(path.join(docsRootOf(root), 'backlog.jsonl'), '{"id":"0050F","title":"t"}\n');
     expectAllThree(root, 'F', '0003F');
   });
 
-  it('a FILE under docs/features is not a directory — can never count', () => {
+  it('a FILE under the features folder is not a directory — can never count', () => {
     const root = fixture('id-file-');
-    fs.mkdirSync(path.join(root, 'docs', 'features'), { recursive: true });
-    fs.writeFileSync(path.join(root, 'docs', 'features', '0009F-article.md'), '# x');
+    fs.mkdirSync(featuresOf(root), { recursive: true });
+    fs.writeFileSync(path.join(featuresOf(root), '0009F-article.md'), '# x');
     expectAllThree(root, 'F', '0001F');
   });
 
   it('immediate directories only: a nested one level down does not count', () => {
     const root = fixture('id-nested-');
-    fs.mkdirSync(path.join(root, 'docs', 'features', 'sub', '0012F-x'), { recursive: true });
+    fs.mkdirSync(path.join(featuresOf(root), 'sub', '0012F-x'), { recursive: true });
     expectAllThree(root, 'F', '0001F');
   });
 
-  it('digits in the temp path above docs/ never count', () => {
+  it('digits in the temp path above the docs root never count', () => {
     const root = fixture('id-0421-parent-');
     featureDir(root, '0001F-x');
     expectAllThree(root, 'F', '0002F');
@@ -156,18 +163,51 @@ describe('L2 — calculate: exhaustion and unreadable sources', () => {
     expect(idc.calculate(root, 'F')).toEqual({ ok: true, id: '9999F' });
   });
 
-  it('an UNREADABLE docs/features is an explicit failure', () => {
+  it('an UNREADABLE features folder is an explicit failure', () => {
     const root = fixture('id-featunread-');
-    fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
-    fs.writeFileSync(path.join(root, 'docs', 'features'), 'a file, not a directory\n');
+    fs.writeFileSync(featuresOf(root), 'a file, not a directory\n');
     expect(idc.calculate(root, 'F')).toEqual({ ok: false, reason: 'features-unreadable' });
+  });
+});
+
+describe('L1.7 — the docs root is the only place ids come from', () => {
+  it('an ABSENT docs root fails with DOCS_ROOT_MISSING from the core and from both entries', () => {
+    const root = fixture('id-noroot-', { docsRoot: false });
+    const refused = idc.calculate(root, 'F');
+    expect(refused.ok).toBe(false);
+    expect(refused.reason).toBe('docs-root-missing');
+    expect(refused.message).toMatch(/DOCS_ROOT_MISSING/);
+    for (const [entry, args] of [[NEXT_ID, ['F']], [STATUS, ['next-id', 'F']]]) {
+      let err = null;
+      try {
+        nodeNextId(entry, args, root);
+      } catch (e) {
+        err = e;
+      }
+      expect(err, 'the entry must fail').not.toBeNull();
+      expect(err.status).toBe(1);
+      expect(String(err.stderr)).toMatch(/DOCS_ROOT_MISSING/);
+    }
+  });
+
+  it('a docs root with no features folder yet allocates 0001', () => {
+    const root = fixture('id-rootonly-');
+    expectAllThree(root, 'F', '0001F');
+  });
+
+  it('a same-shaped folder anywhere outside the features folder never counts', () => {
+    const root = fixture('id-outside-');
+    featureDir(root, '0002F-real');
+    fs.mkdirSync(path.join(root, 'features', '0090F-stray'), { recursive: true });
+    fs.mkdirSync(path.join(docsRootOf(root), 'brainstorm', '0095F-stray'), { recursive: true });
+    expectAllThree(root, 'F', '0003F');
   });
 });
 
 describe('L2 — the allocator requires no import-time I/O', () => {
   it('requiring the module changes nothing anywhere on disk', () => {
     const snapshot = () => {
-      const file = path.join(ROOT, 'docs', 'backlog.jsonl');
+      const file = path.join(docsRootOf(ROOT), 'backlog.jsonl');
       return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : null;
     };
     const before = snapshot();

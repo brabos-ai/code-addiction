@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import AdmZip from 'adm-zip';
+import { SCRIPTS } from './helpers/docs-project.js';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
@@ -37,6 +38,8 @@ import { update } from '../src/updater.js';
 function buildZip() {
   const zip = new AdmZip();
   zip.addFile(`framwork/.codeadd/scripts/health.sh`, Buffer.from('echo ok\r\n'));
+  // the install writes the resolver module; the migrations walk the docs root through it
+  zip.addFile('framwork/.codeadd/scripts/docs-root.cjs', fs.readFileSync(path.join(SCRIPTS, 'docs-root.cjs')));
   return zip.toBuffer();
 }
 

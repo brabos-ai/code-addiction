@@ -48,6 +48,10 @@ function out() {
   for (const f of ['build.js', 'build-workbench.js']) {
     fs.copyFileSync(path.join(ROOT, 'scripts', f), path.join(dir, 'scripts', f));
   }
+  // build.js reads the doc format version from the resolver module, one constant
+  const resolver = path.join('framwork', '.codeadd', 'scripts', 'docs-root.cjs');
+  fs.mkdirSync(path.join(dir, path.dirname(resolver)), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, resolver), path.join(dir, resolver));
   const res = spawnSync(process.execPath, [path.join(dir, 'scripts', 'build-workbench.js')], {
     cwd: dir,
     encoding: 'utf8',

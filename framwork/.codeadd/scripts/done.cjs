@@ -21,13 +21,26 @@
  *
  * Staging is scoped to the delivery. A pending path (modified, staged, deleted,
  * untracked) is in scope when the branch already touches it (diff against the
- * merge base with main), sits untracked beside one that it touches, lies under
- * the delivery folder, or is a close-out output (CLOSE_OUT_PATHS). Anything
- * else is reported as DIRTY_UNRELATED=<path> with DIRTY_UNRELATED_COUNT=<n>;
- * --commit-push then stops with STATUS=ERROR before staging a single file, and
- * context reports the same list and still exits 0. Another feature's folder
- * under docs/features/ is neither staged nor reported. With no merge base,
- * context prints DIRTY_UNRELATED_COUNT=unknown and --commit-push stops.
+ * merge base with main), sits untracked beside one that it touches, or is a
+ * close-out output (CLOSE_OUT_PATHS). Anything else is reported as
+ * DIRTY_UNRELATED=<path> with DIRTY_UNRELATED_COUNT=<n>; --commit-push then stops
+ * with STATUS=ERROR before staging a single file, and context reports the same
+ * list and still exits 0. With no merge base, context prints
+ * DIRTY_UNRELATED_COUNT=unknown and --commit-push stops.
+ *
+ * The docs root is NOT part of the code tree: it is a worktree of the docs branch,
+ * excluded locally, so a code commit can never stage it. --commit-push therefore
+ *   1. runs docs-guard.cjs first, which files any misplaced Code Addiction output
+ *      under the docs root                                   -> DOCS_GUARD=clean|moved:<n>
+ *   2. refuses a changed or ignored final QA snapshot in the docs worktree
+ *   3. commits and pushes the CODE branch as before
+ *   4. records the code commit (and PR number) on the delivery-index entry through
+ *      delivery-index-core.cjs                                -> INDEX_STAMP=<outcome>
+ *   5. commits the docs worktree and pushes the docs branch with docs-branch.cjs
+ *                                         -> DOCS_COMMIT=committed|clean|failed
+ *                                         -> DOCS_PUSH=pushed|rejected|offline|failed
+ * A rejected, offline or failed docs push never fails the close-out: the line is
+ * reported, the local docs commit is kept, and the run goes on.
  *
  * --cleanup REQUIRES the merge commit it proves against. A squash creates a new
  * commit, so the branch tip is never an ancestor of main and nothing can derive
@@ -41,15 +54,16 @@
  *
  * Exit codes:
  *   0  success (context always; commit-push/merge/cleanup when the work lands)
- *   1  caller/guard failure, an unstaged immutable snapshot, an unpushable main,
- *      a merge conflict, or a failed commit/push/checkout
+ *   1  caller/guard failure, a changed or ignored immutable snapshot, an unpushable
+ *      main, a merge conflict, or a failed commit/push/checkout of the code branch
  *
  * Mutation boundary: commits, pushes, checks out, merges and deletes branches
  * and tags in the current repository. Nothing is rolled back after the work has
  * landed; a refused cleanup reports CLEANUP=SKIPPED and still exits 0.
  *
  * Dependencies: Node >= 22.19.0 built-ins, git, and the sibling native helpers
- * get-main-branch.cjs / get-branch-metadata.cjs. No shell, no WSL, no stdin.
+ * get-main-branch.cjs, get-branch-metadata.cjs, docs-root.cjs, docs-guard.cjs,
+ * docs-branch.cjs and delivery-index-core.cjs. No shell, no WSL, no stdin.
  */
 
 'use strict';
@@ -60,6 +74,10 @@ const path = require('node:path');
 
 const { discoverMainBranch } = require('./get-main-branch.cjs');
 const { branchMetadata } = require('./get-branch-metadata.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath, repoTop } = require('./docs-root.cjs');
+const { runDocsGuard } = require('./docs-guard.cjs');
+const { commitDocs, pushDocs } = require('./docs-branch.cjs');
+const deliveryIndex = require('./delivery-index-core.cjs');
 
 const CWD = process.cwd();
 const GH_BIN = process.env.GH_BIN || '';
@@ -101,7 +119,7 @@ function fail(lines) {
 
 function git(args, opts = {}) {
   const res = spawnSync('git', args, {
-    cwd: CWD,
+    cwd: opts.cwd || CWD,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
     windowsHide: true,
@@ -228,17 +246,12 @@ function physicalGitPath(flag) {
 // --- scoped staging ---------------------------------------------------------
 
 /**
- * What /add-done writes itself before commit-push. `docs/features` is listed
- * whole because runMerge's trees compare excludes the whole folder; the
- * classifier narrows it to DOCS_DIR. runMerge builds both its pathspec lists
- * from this one constant so the lists cannot drift from the classifier.
+ * What /add-done writes into the CODE tree itself before commit-push: the wiki,
+ * which describes the code and so stays with it. Every other output lives under
+ * the docs root, on the docs branch. runMerge builds both its pathspec lists from
+ * this one constant so the lists cannot drift from the classifier.
  */
-const CLOSE_OUT_PATHS = [
-  'docs/features',
-  'docs/delivered.jsonl',
-  '.codeadd/wiki',
-  '.codeadd/project/decisions.jsonl',
-];
+const CLOSE_OUT_PATHS = ['.codeadd/wiki'];
 
 /** NUL-separated git output (`-z`) as a list of raw paths. */
 function nulList(text) {
@@ -284,25 +297,15 @@ function classifyPending() {
     if (i > 0) touchedDirs.push(p.slice(0, i));
   }
   const pending = pendingPaths();
-  const staged = new Set(pending.staged);
   const stagedDeleted = new Set(pending.stagedDeleted);
   const untracked = new Set(pending.untracked);
   const stage = [];
   const unrelated = [];
   for (const p of pending.all) {
-    if (underPath(p, 'docs/features')) {
-      // Only the current delivery folder is ever in scope here. Another
-      // feature's folder stays out of the commit and out of the report — unless
-      // it was staged by hand, which git commit would carry anyway.
-      if (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) { if (!stagedDeleted.has(p)) stage.push(p); }
-      else if (staged.has(p)) unrelated.push(p);
-      continue;
-    }
     const inScope =
       branchSet.has(p) ||
       (untracked.has(p) && touchedDirs.some((d) => underPath(p, d))) ||
-      (DOCS_DIR !== '' && underPath(p, DOCS_DIR)) ||
-      CLOSE_OUT_PATHS.some((c) => c !== 'docs/features' && underPath(p, c));
+      CLOSE_OUT_PATHS.some((c) => underPath(p, c));
     if (inScope) { if (!stagedDeleted.has(p)) stage.push(p); }
     else unrelated.push(p);
   }
@@ -321,40 +324,102 @@ function dirtyUnrelatedLines(unrelated) {
 // --- immutable final snapshots ----------------------------------------------
 
 /**
- * A promoted final snapshot is permanent delivery evidence. Refuse before
- * commit if an ignore rule or staging regression would silently omit it. Only
- * feature branches carry the convention. Errors exit 1 (the shell returned 1
- * from the function into a `set -e` body).
+ * A promoted final snapshot is permanent delivery evidence, and it lives in the
+ * docs worktree. Refuse before any commit if the docs branch already holds a
+ * snapshot this run changed, or an ignore rule would silently omit one. Only
+ * feature branches carry the convention. Errors exit 1.
  */
 function verifyFinalSnapshots() {
-  if (BRANCH_TYPE !== 'feature') return;
-  if (DOCS_DIR === '' || !isDir(path.join(CWD, DOCS_DIR))) return;
+  if (BRANCH_TYPE !== 'feature' || DOCS_DIR === '') return;
+  let root;
+  try {
+    root = docsPath(CWD);
+  } catch {
+    return; // no docs root: nothing was recorded there to protect
+  }
+  const rel = `${DOCS_LAYOUT.features}/${path.posix.basename(DOCS_DIR)}`;
+  if (!isDir(path.join(root, ...rel.split('/')))) return;
+  const dgit = (args) => git(args, { cwd: root });
 
-  const tree = git(['ls-tree', '-r', '--name-only', 'HEAD', '--', DOCS_DIR]).stdout;
+  const tree = dgit(['ls-tree', '-r', '--name-only', 'HEAD', '--', rel]).stdout;
   const snapshots = new Set();
   for (const raw of tree.split('\n')) {
-    const line = raw.replace(/\r$/, '');
-    const m = /^(.*\/_tests\/final\/run-[0-9]{3})\/.*$/.exec(line);
+    const m = /^(.*\/_tests\/final\/run-[0-9]{3})\/.*$/.exec(raw.replace(/\r$/, ''));
     if (m) snapshots.add(m[1]);
   }
   for (const snapshot of snapshots) {
-    const staged = git(['diff', '--cached', '--quiet', 'HEAD', '--', snapshot]).status !== 0;
-    const worktree = git(['diff', '--quiet', '--', snapshot]).status !== 0;
+    const staged = dgit(['diff', '--cached', '--quiet', 'HEAD', '--', snapshot]).status !== 0;
+    const worktree = dgit(['diff', '--quiet', '--', snapshot]).status !== 0;
     if (staged || worktree) {
-      fail(['STATUS=ERROR', `ERROR=Immutable final QA snapshot differs from HEAD: ${snapshot}`]);
+      fail(['STATUS=ERROR', `ERROR=Immutable final QA snapshot differs from HEAD: ${DOCS_ROOT}/${snapshot}`]);
     }
   }
 
-  for (const file of walkFiles(path.join(CWD, DOCS_DIR))) {
-    const rel = path.relative(CWD, file).split(path.sep).join('/');
-    if (!/_tests\/final\/run-[0-9]{3}\//.test(rel)) continue;
-    if (git(['check-ignore', '-q', '--', rel]).status === 0) {
-      fail(['STATUS=ERROR', `ERROR=Final QA snapshot is ignored and cannot enter finalization: ${rel}`]);
-    }
-    if (git(['ls-files', '--error-unmatch', '--', rel]).status !== 0) {
-      fail(['STATUS=ERROR', `ERROR=Final QA snapshot was not staged for finalization: ${rel}`]);
+  for (const file of walkFiles(path.join(root, ...rel.split('/')))) {
+    const inDocs = path.relative(root, file).split(path.sep).join('/');
+    if (!/_tests\/final\/run-[0-9]{3}\//.test(inDocs)) continue;
+    if (dgit(['check-ignore', '-q', '--', inDocs]).status === 0) {
+      fail(['STATUS=ERROR', `ERROR=Final QA snapshot is ignored and cannot enter finalization: ${DOCS_ROOT}/${inDocs}`]);
     }
   }
+}
+
+/** The pull request number of the current branch, or null (no gh, no PR, no auth). */
+function currentPrNumber() {
+  const view = runGh(['pr', 'view', '--json', 'number']);
+  if (view.status !== 0) return null;
+  try {
+    const n = JSON.parse(view.stdout).number;
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Close the docs side after the code commit: record the delivery's code commit on
+ * its index entry, then commit the docs worktree. Nothing here can fail the run.
+ */
+function closeDocsCommit() {
+  const sha = git(['rev-parse', 'HEAD']).stdout.trim();
+  const ctx = deliveryIndex.createContext({ root: repoTop(CWD) });
+  const stamped = deliveryIndex.performStamp(ctx, { id: FEATURE_NUMBER, codeSha: sha, pr: currentPrNumber() });
+  let outcome = 'failed';
+  if (stamped.ok) outcome = stamped.stamped ? 'stamped' : 'current';
+  else if (stamped.error === 'entry-absent') outcome = 'absent';
+  else if (stamped.error === 'docs-root-missing') outcome = 'skipped';
+  out(`INDEX_STAMP=${outcome}`);
+
+  const committed = commitDocs(CWD, `docs(${FEATURE_NUMBER}): close-out of ${CURRENT_BRANCH}\n\n${CREDITS}\n\n${COAUTHOR}`);
+  out(`DOCS_COMMIT=${committed.status}`);
+  if (committed.reason) out(`DOCS_REASON=${printable(committed.reason)}`);
+}
+
+/**
+ * The merge is proven: the delivery's code commit is the commit that put it on the default
+ * branch, not the branch tip stamped at commit-push (a merge or a squash makes a new commit).
+ * Re-stamp the entry with it, then commit and push the docs. Never fails the run.
+ */
+function stampMergeCommit() {
+  const ctx = deliveryIndex.createContext({ root: repoTop(CWD) });
+  const n = currentPrNumber();
+  const stamped = deliveryIndex.performStamp(ctx, { id: FEATURE_NUMBER, codeSha: CLEANUP_SHA, pr: n === null ? undefined : n });
+  let outcome = 'failed';
+  if (stamped.ok) outcome = stamped.stamped ? 'stamped' : 'current';
+  else if (stamped.error === 'entry-absent') outcome = 'absent';
+  else if (stamped.error === 'docs-root-missing') outcome = 'skipped';
+  out(`INDEX_STAMP_MERGE=${outcome}`);
+  if (outcome !== 'stamped') return;
+  const committed = commitDocs(CWD, `docs(${FEATURE_NUMBER}): record the merge commit\n\n${CREDITS}\n\n${COAUTHOR}`);
+  out(`DOCS_COMMIT=${committed.status}`);
+  if (committed.reason) out(`DOCS_REASON=${printable(committed.reason)}`);
+  closeDocsPush();
+}
+
+function closeDocsPush() {
+  const pushed = pushDocs(CWD);
+  out(`DOCS_PUSH=${pushed.status}`);
+  if (pushed.reason) out(`DOCS_PUSH_NOTE=${printable(pushed.reason)}`);
 }
 
 // --- mode bodies (extracted from --merge; never re-implemented beside it) ----
@@ -381,6 +446,16 @@ function mergeGuards() {
 }
 
 function doCommitPush() {
+  // Misplaced outputs are filed under the docs root BEFORE anything is judged or
+  // staged, so none of them can reach the code commit.
+  try {
+    const guard = runDocsGuard(CWD);
+    out(`DOCS_GUARD=${guard.moved > 0 ? `moved:${guard.moved}` : 'clean'}`);
+  } catch (e) {
+    fail(['STATUS=ERROR', `ERROR=${printable(e.message)}`, 'HINT=Prepare the docs root, then re-run: node .codeadd/scripts/docs-branch.cjs prepare']);
+  }
+  verifyFinalSnapshots();
+
   const pending = pendingPaths();
   let hasUncommitted = pending.all.length > 0;
 
@@ -415,8 +490,6 @@ function doCommitPush() {
     }
   }
 
-  verifyFinalSnapshots();
-
   if (hasUncommitted) {
     gitOrFail(['commit', '-m', `${COMMIT_TYPE}(${FEATURE_NUMBER}): finalize before merge\n\n${CREDITS}\n\n${COAUTHOR}`]);
     out('COMMIT=OK');
@@ -424,9 +497,13 @@ function doCommitPush() {
     out('COMMIT=SKIPPED');
   }
 
+  closeDocsCommit();
+
   out('STEP=Pushing to branch...');
   gitOrFail(['push', '-u', 'origin', CURRENT_BRANCH]);
   out('PUSH_BRANCH=OK');
+
+  closeDocsPush();
 }
 
 function doCleanup() {
@@ -455,6 +532,9 @@ function doCleanup() {
     return;
   }
   out(`CHECK=2 ok (origin/${MAIN_BRANCH} contains ${CLEANUP_SHA})`);
+
+  // Runs before anything is deleted and from the branch the PR came from (gh answers for it).
+  stampMergeCommit();
 
   // Standalone, this runs from the feature branch: gh merged server-side and
   // nothing moved the local HEAD. Inside --merge it runs already on main, where
@@ -622,9 +702,14 @@ function runContext() {
 
   // The FILE, committed or not: the duplicate this probe catches is born in the
   // working tree, so a check reading only commits would be blind to it.
-  const indexFile = path.join(CWD, 'docs/delivered.jsonl');
+  let indexFile = '';
+  try {
+    indexFile = docsPath(CWD, DOCS_LAYOUT.delivered);
+  } catch {
+    indexFile = ''; // no docs root, no index
+  }
   let indexEntry;
-  if (!isFile(indexFile)) indexEntry = 'no-index';
+  if (indexFile === '' || !isFile(indexFile)) indexEntry = 'no-index';
   else if (fs.readFileSync(indexFile, 'utf8').includes(`"id":"${FEATURE_NUMBER}"`)) indexEntry = 'present';
   else indexEntry = 'absent';
   out(`INDEX_ENTRY=${indexEntry}`);
@@ -643,8 +728,9 @@ function runContext() {
   // The LAST Publish line wins. The ledger is a log, not a set.
   let publishRecord = 'none';
   let publishUrl = '';
-  if (ledgerPath !== '' && isFile(path.join(CWD, ledgerPath))) {
-    const raw = fs.readFileSync(path.join(CWD, ledgerPath), 'utf8');
+  const ledgerFile = ledgerPath === '' ? '' : path.join(repoTop(CWD), ...ledgerPath.split('/'));
+  if (ledgerFile !== '' && isFile(ledgerFile)) {
+    const raw = fs.readFileSync(ledgerFile, 'utf8');
     const publishLines = raw
       .split('\n')
       .map((l) => l.replace(/\r$/, ''))
