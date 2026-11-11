@@ -12,7 +12,7 @@ import path from 'node:path';
  * unresolved path not at all.
  */
 const FILES = {
-  'docs/features/0009F-ledger/about.md': `---
+  '.codeadd/docs/features/0009F-ledger/about.md': `---
 id: 0009F
 type: feature
 slug: ledger
@@ -29,7 +29,7 @@ The ledger stores one row per transaction.
 Every feature needs one place to write a transaction.
 `,
 
-  'docs/features/0042F-itemised-purchase/about.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/about.md': `---
 id: 0042F
 type: feature
 slug: itemised-purchase
@@ -52,7 +52,7 @@ scope {{doc:0012F}} defines.
 - {{doc:0099F}} was the earlier attempt and does not exist any more.
 `,
 
-  'docs/features/0042F-itemised-purchase/changelog.md': `---
+  '.codeadd/docs/features/0042F-itemised-purchase/changelog.md': `---
 id: CHG0001
 type: changelog
 date: 2026-08-20
@@ -63,7 +63,7 @@ related: [0042F]
 Shipped the split.
 `,
 
-  'docs/features/0051H-token-refresh/about.md': `---
+  '.codeadd/docs/features/0051H-token-refresh/about.md': `---
 id: 0051H
 type: hotfix
 slug: token-refresh
@@ -81,7 +81,7 @@ The refresh shipped without an expiry test.
 Sessions ended at 60 minutes.
 `,
 
-  'docs/features/0051H-token-refresh/related.md': `---
+  '.codeadd/docs/features/0051H-token-refresh/related.md': `---
 id: 0051H-related
 type: hotfix-related
 created: 2026-09-01
@@ -104,7 +104,7 @@ Assets this hotfix touched.
 - {{doc:0009F}} still logs the gap as a silent write failure and should raise instead
 `,
 
-  'docs/features/0012F-session-store/about.md': `---
+  '.codeadd/docs/features/0012F-session-store/about.md': `---
 id: 0012F
 type: feature
 slug: session-store
@@ -119,7 +119,7 @@ Sessions live in their own store.
 `,
 
   // A document superseded by another, the fifth source.
-  'docs/features/0003F-old-import/about.md': `---
+  '.codeadd/docs/features/0003F-old-import/about.md': `---
 id: 0003F
 type: feature
 slug: old-import
@@ -135,7 +135,7 @@ The first import, replaced by the itemised split.
 `,
 
   // A work item with no TL;DR content at all. The migration must NOT invent one.
-  'docs/features/0060F-blank/about.md': `---
+  '.codeadd/docs/features/0060F-blank/about.md': `---
 id: 0060F
 type: feature
 slug: blank
@@ -152,12 +152,12 @@ Nobody wrote the summary.
 `,
 
   // The user's own material. Untouched, unindexed, unreported except as skipped.
-  'docs/chat-gpt/transcript.md': `# A chat transcript
+  '.codeadd/docs/chat-gpt/transcript.md': `# A chat transcript
 
 No frontmatter at all. {{doc:0042F}} appears here and must produce no edge.
 `,
 
-  'docs/critical-findings.md': `---
+  '.codeadd/docs/critical-findings.md': `---
 author: someone
 updated: 2026-09-02
 related: [0042F]
@@ -176,7 +176,20 @@ export function makeBrownfield(extra = {}) {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, body, 'utf8');
   }
+  installDocsRoot(root);
   return root;
+}
+
+/**
+ * The install writes the resolver module into `.codeadd/scripts/`, and the CLI
+ * loads it from there — it keeps no root of its own. A fixture standing in for an
+ * installed project carries the same file, copied from the one source.
+ */
+export function installDocsRoot(root) {
+  const src = path.resolve(import.meta.dirname, '..', '..', '..', 'framwork', '.codeadd', 'scripts', 'docs-root.cjs');
+  const dest = path.join(root, '.codeadd', 'scripts', 'docs-root.cjs');
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(src, dest);
 }
 
 export function removeTree(root) {

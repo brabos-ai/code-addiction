@@ -5,6 +5,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { installDocsRoot } from './helpers/brownfield-fixture.js';
 
 vi.mock('@clack/prompts', () => ({
   intro: vi.fn(),
@@ -29,6 +30,7 @@ let tmpDir;
 /** Minimal installed project: .codeadd plus the given provider dests. */
 function seedProject(dests = ['.claude', '.opencode']) {
   fs.mkdirSync(path.join(tmpDir, '.codeadd'), { recursive: true });
+  installDocsRoot(tmpDir);
   return dests.map((dest, i) => ({ key: `p${i}`, dest }));
 }
 

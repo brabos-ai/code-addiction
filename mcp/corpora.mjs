@@ -261,7 +261,7 @@ function walkMarkdown(root, rel = '', out = []) {
  * Membership is decided by the type REGISTRY, never by a path glob and never by
  * the shape of the type's name.
  *
- * A real `docs/` holds the user's own material beside codeadd's — `chat-gpt/`,
+ * A folder can hold a person's own material beside codeadd's — `chat-gpt/`,
  * `images/`, `critical-findings.md` — and a glob would need an exclusion list
  * somebody maintains forever. A file carrying no `type:` is the user's, and is
  * skipped and reported.
@@ -427,7 +427,7 @@ function loadDocsCorpus(root) {
     owner.attachments.push({ path: attachment.path, type: attachment.type });
     // Remember which work item this attachment belongs to. The edge pass below
     // needs the SAME answer, and deriving it there from the directory alone is
-    // what left a `docs/changelog/CHG[NNNN].md` contributing no edges: that
+    // what left a `changelog/CHG[NNNN].md` contributing no edges: that
     // layout has no *-about sibling, so only the part_of line resolves it.
     attachment.ownerId = owner.id;
   }
@@ -482,7 +482,7 @@ function buildDocsEdges(nodes, attachments, byId) {
   const sourcesFor = new Map(nodes.map((n) => [n.id, [{ content: n._content, fm: n._frontmatter }]]));
   for (const attachment of attachments) {
     // BOTH CHANGELOG LAYOUTS ARE READ, per design decision 30. The in-feature
-    // one resolves by directory and the `docs/changelog/` one resolves through
+    // one resolves by directory and the `changelog/` one resolves through
     // its own `part_of` line — the attachment pass settled that already, and
     // this reads its answer rather than re-deriving a narrower one.
     const owner = attachment.ownerId ? byId.get(attachment.ownerId) : null;
@@ -566,6 +566,15 @@ function loadArtefactCorpus(root) {
 // The registry
 // ---------------------------------------------------------------------------
 
+/**
+ * The root the docs corpus reads: the git worktree of the docs branch. `mcp/`
+ * takes no dependency and runs where `.codeadd/scripts/` is off its path, so it
+ * holds its own constant — `cli/tests/mcp-corpora.test.js` asserts it equals
+ * `DOCS_ROOT` in the resolver module, the way the graph query and this engine
+ * are held equal.
+ */
+export const DOCS_CORPUS_ROOT = '.codeadd/docs';
+
 export const CORPORA = {
   artefacts: {
     name: 'artefacts',
@@ -602,8 +611,8 @@ export const CORPORA = {
   },
   docs: {
     name: 'docs',
-    roots: ['docs', '.codeadd/wiki'],
-    probe: 'docs',
+    roots: [DOCS_CORPUS_ROOT, '.codeadd/wiki'],
+    probe: DOCS_CORPUS_ROOT,
     membership: 'the `type:` key resolves in the type registry (mcp/types.mjs), or the document declares its own `kind:`',
     nodeRule: 'the `id:` value, declared in frontmatter on every kind including a page',
     edgeSources: ['## Relations', '{{doc:ID}}', 'related:', 'superseded_by', 'sources globs'],

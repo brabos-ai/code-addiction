@@ -313,7 +313,7 @@ describe('F8 — every action answers over the wire', () => {
       child.stdin.write(`${JSON.stringify(call(1, 'stats'))}\n`);
       await new Promise((r) => setTimeout(r, 400));
 
-      const added = path.join(tree, 'docs/features/0091F-late/about.md');
+      const added = path.join(tree, '.codeadd/docs/features/0091F-late/about.md');
       fs.mkdirSync(path.dirname(added), { recursive: true });
       fs.writeFileSync(
         added,

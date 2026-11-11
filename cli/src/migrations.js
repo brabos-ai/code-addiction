@@ -5,6 +5,7 @@ import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
 import { resolveSelected } from './providers.js';
 import { parse as parseYaml } from 'yaml';
+import { docsRootOf } from './docs-root.js';
 
 /**
  * Files that releases up to v0.7.1 shipped and v0.7.2+ does not.
@@ -164,11 +165,11 @@ function appendRelations(content, lines) {
  * Harvest the relationships a project already wrote, into the format that reads
  * them.
  *
- * WHAT IT SCANS, AND HOW IT TELLS ONE DOCUMENT FROM ANOTHER: it walks `docs/`
+ * WHAT IT SCANS, AND HOW IT TELLS ONE DOCUMENT FROM ANOTHER: it walks the docs root
  * and reads the FRONTMATTER of each `.md` to decide what the file is. A
  * recognised `type:` key means codeadd wrote it; no `type:` key means the file
  * belongs to the user and is skipped and reported. That is the rule that
- * survives a `docs/` tree holding the user's own material beside codeadd's,
+ * survives a tree holding the user's own material beside codeadd's,
  * which is what every real installation looks like. A path glob would need an
  * exclusion list somebody maintains forever.
  *
@@ -186,7 +187,7 @@ function appendRelations(content, lines) {
  * @param {{cwd: string}} ctx
  */
 function harvestRelations(ctx) {
-  const docsRoot = path.join(ctx.cwd, 'docs');
+  const docsRoot = docsRootOf(ctx.cwd);
   const changes = [];
   const notes = [];
   const unresolved = [];
@@ -292,7 +293,7 @@ function harvestRelations(ctx) {
     // BOTH LAYOUTS, per design decision 30. A sibling in the same directory
     // belongs to this item; so does an attachment anywhere that names this item
     // in its own `## Relations` or `related:` — which is how a
-    // `docs/changelog/CHG[NNNN].md` reaches the work item it delivered, having
+    // `changelog/CHG[NNNN].md` reaches the work item it delivered, having
     // no *-about sibling of its own.
     const dir = path.dirname(item.full);
     const belongsToItem = (sibling) => {
@@ -400,7 +401,7 @@ function retireAboutSuffix(ctx) {
   const notes = [];
   const failed = [];
 
-  const roots = [path.join(ctx.cwd, 'docs'), path.join(ctx.cwd, '.codeadd', 'wiki')];
+  const roots = [docsRootOf(ctx.cwd), path.join(ctx.cwd, '.codeadd', 'wiki')];
   const files = [];
   const walk = (dir) => {
     if (!fs.existsSync(dir)) return;
@@ -702,7 +703,7 @@ export const MIGRATIONS = [
   },
   {
     id: '0002-harvest-relations',
-    description: 'Harvest the relationships docs/ already carries into ## Relations — additive only, no commit',
+    description: 'Harvest the relationships the docs root already carries into ## Relations — additive only, no commit',
     run: harvestRelations,
   },
   {
