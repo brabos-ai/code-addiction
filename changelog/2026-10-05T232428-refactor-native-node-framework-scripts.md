@@ -1,0 +1,85 @@
+# Refactor: native Node framework scripts
+
+**Date:** 2026-10-05
+**Plan:** `2026-10-05T152826-PLAN--native-node-framework-scripts`
+**Ticket:** 0022B
+
+## What changed
+
+Every framework-owned shell capability is now a native Node entry. The 19 shipped
+`framwork/.codeadd/scripts/*.sh` and the 3 root `scripts/*.sh` (smoke, release, tag) are gone,
+replaced by built-ins-only `.cjs` modules that preserve the public arguments, output fields,
+exit codes, persisted formats and failure behaviour of the shells they replace. The product Bats
+test transport is retired and every one of its 546 cases is ported to the built-in `node:test`
+runner under `scripts/tests/`, with a tracked case map that records each case's disposition.
+
+The delivery index is now read in-process. `scripts/graph.js` requires the side-effect-free
+`delivery-index-core.cjs` instead of spawning `bash`, and `mcp/engine.mjs` does the same for both
+`history` and `touched`. The graph and the MCP still answer identically because they read the same
+emitted index, asserted rather than shared.
+
+One shared allocator (`backlog-id.cjs`) sits under `next-id.cjs`, `status.cjs` and the init seed, so
+`NEXT_ID_AGREE` compares Node against Node. All 13 product commands, 17 product skills, 3 agents,
+4 fragments and the workbench guidance now invoke `node .codeadd/scripts/<entry>.cjs`.
+
+## Why
+
+Shell-mediated Node resolution and worktree path handling failed on Windows, and Bats process
+creation made Windows runs exceed thirty minutes; the root tooling defaulted to a Linux container.
+The migration removes Bash, WSL, Git-Bash and Docker as requirements for installing, running, and
+testing the framework on Windows, macOS and Linux.
+
+## How it is proven
+
+- Each native entry is pinned by the ported Bats cases, run through `node --test`.
+- `npm run test:scripts` is native. Final local guarded acceptance: 638 tests, 635 pass,
+  3 platform-conditional skips, 0 fail; the refined QA fixture suite separately passed 26/26.
+- `npm test` runs the CLI suite on the native runner. The six-job CI matrix is configured for
+  Windows/macOS/Linux × Node 22.19.0/24. All six jobs passed on commit `963169e` in
+  CI run `37467193563`; board and all CodeQL checks also passed.
+- `migration-acceptance.test.cjs` is fully green: no shipped or root `.sh`, no Bats tree, native
+  `test:scripts`, and no active `bash .codeadd/scripts/*.sh` invocation.
+- `scripts/no-bash-guard.js` shadows `bash` and preloads Node subprocess instrumentation for
+  the test children. Shell-based and direct/absolute Bash negative controls prove rejection
+  while native Git and npm transport still work, including shell:false on Windows.
+
+## Compatibility
+
+Node `>=22.19.0` becomes the unified floor (Node 24 recommended), declared in the root, `cli`,
+`board` and `web` manifests. Node 18/20 and older Node 22 are no longer supported. Per the user's
+review decision, `next-id`, `status next-id` and `init` retain the retired shell's five-digit
+output at `9999`. Backlog allocation retains its separate four-digit refusal policy; both
+policies use the same canonical scan and calculation.
+
+## Critical review corrections — 2026-10-06
+
+- Stop setup immediately after Git refuses a checkout or worktree creation; do not report success
+  or copy documents into an occupied destination.
+- Preserve complete review diffs beyond the subprocess default buffer and reject collection
+  failures rather than publishing a truncated package.
+- Probe the project's installed Playwright CLI with Node rather than executing `npx.cmd` as a
+  native Windows binary.
+- Honor alternate native core/entry readers consistently in graph and MCP; preserve invalid
+  layer/limit refusal and malformed-reader degradation.
+- Enforce the exact Node floor in the CLI doctor and align runtime/authoring documentation.
+- Preserve separate test-option values, include native CJS/MJS files in rename discovery, and
+  remove Bash from the optional Docker test route.
+- Assert that every baseline case ID resolves to its actual native suite.
+- Parse Git worktree registrations with NUL delimiters and compare canonical paths, including
+  macOS aliases and Windows short paths. Preserve the linked-worktree start guard in close-out.
+- Use platform-valid test filenames and account for Linux's portable and legacy temp paths
+  coinciding. Give the combined injection integration case an explicit timeout.
+
+## Close-out record
+
+The existing narrative completion records were normalized into the ledger's required per-block
+completion lines using their recorded commits and validation evidence. No implementation block was
+re-executed. The delivery archive preserves the plan, ledger, design and intent byte for byte.
+The operator approved recording the historical shell/Bats references as superseded by this migration.
+
+## Commits
+
+The delivery lands as one commit per F-block on `feat/native-node-framework-scripts`, from the
+test-foundation commits through the runtime entries, the caller cutover, shell retirement, the
+native runner, CI and documentation. The full range and every ruling are recorded in the plan's
+ledger.
