@@ -47,12 +47,15 @@
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
 
-const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, DOC_SCHEMA_VERSION, docsPath } = require('./docs-root.cjs');
 
 const TYPES = ['fix', 'enhance', 'refactor', 'add', 'remove', 'config'];
 const USAGE = 'USAGE: node .codeadd/scripts/log-iteration.cjs <type> <slug> <what> <files> [cmd] [--feature N] [--epic name]';
 
-const HEADER = '# Iterations\n'
+// A new file starts with the minimal frontmatter every generated document carries. An existing
+// file's frontmatter is never rewritten — only a file this script creates gets one.
+const HEADER = `---\ntype: iterations\nschema: ${DOC_SCHEMA_VERSION}\n---\n\n`
+  + '# Iterations\n'
   + '\n'
   + '> AI agent context. Token-optimized format.\n'
   + '> Format: ## I{n}|{date}|{cmd}|{type} \\n {slug}|{what}|{files}\n'

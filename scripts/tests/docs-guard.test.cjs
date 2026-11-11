@@ -30,7 +30,9 @@ test('every typed doc with a sub-path lands in the place of its type', () => {
     assert.equal(out.status, 0);
     assert.equal(out.stdout.trim(), `DOCS_GUARD=moved:${entries.length}`);
     for (const [type, sub] of entries) {
-      assert.ok(fs.existsSync(inRoot(r, ...sub.split('/'), `${type}.md`)), type);
+      // a sub-path ending in .md names the file itself (design-system, code-quality-review)
+      const dest = sub.endsWith('.md') ? inRoot(r, ...sub.split('/')) : inRoot(r, ...sub.split('/'), `${type}.md`);
+      assert.ok(fs.existsSync(dest), type);
       assert.ok(!fs.existsSync(inCode(r, 'somewhere', `${type}.md`)), type);
     }
   } finally { r.cleanup(); }
@@ -53,7 +55,7 @@ for (const stamped of [false, true]) {
       const dir = path.join('x', '0042F-thing');
       write(inCode(r, dir, 'tasks.md'), `${fm('tasks')}# Tasks: thing\n- [ ] a\n`);
       write(inCode(r, dir, 'iterations.md'), `${fm('iterations')}# Iterations\n`);
-      write(inCode(r, dir, 'build-ledger.md'), 'ledger\n');
+      write(inCode(r, dir, 'build-ledger.md'), `${fm('build-ledger')}# Build ledger — feature: 0042F — plan: x\n`);
       const out = guard(r);
       assert.equal(out.stdout.trim(), 'DOCS_GUARD=moved:3');
       for (const f of ['tasks.md', 'iterations.md', 'build-ledger.md']) {
@@ -192,4 +194,30 @@ test('the guard source never names a legacy docs directory', () => {
   const src = read(path.join(SCRIPTS_DIR, 'docs-guard.cjs'));
   assert.ok(!/['"`]docs['"`]/.test(src));
   assert.ok(!/docs\/(features|delivered|plans)/.test(src));
+});
+
+test('the six generated-document types: feature-folder ones need their folder, the others are placed alone', () => {
+  const r = fixture();
+  try {
+    // alone (no feature folder): iterations/build-ledger/tasks are untouched — nothing says whose they are
+    for (const t of ['iterations', 'build-ledger', 'tasks']) write(inCode(r, 'loose', `${t}.md`), typed(t, 'schema: 1\n'));
+    // alone: these three have a place of their own
+    write(inCode(r, 'loose', 'report.md'), typed('health-check', 'schema: 1\n'));
+    write(inCode(r, 'loose', 'ds.md'), typed('design-system', 'schema: 1\n'));
+    write(inCode(r, 'loose', 'cq.md'), typed('code-quality-review', 'schema: 1\n'));
+    assert.equal(guard(r).stdout.trim(), 'DOCS_GUARD=moved:3');
+    assert.ok(fs.existsSync(inRoot(r, 'health-checks', 'report.md')));
+    assert.ok(fs.existsSync(inRoot(r, 'design-system.md')));
+    assert.ok(fs.existsSync(inRoot(r, 'code-quality-review.md')));
+    for (const t of ['iterations', 'build-ledger', 'tasks']) assert.ok(fs.existsSync(inCode(r, 'loose', `${t}.md`)), t);
+  } finally { r.cleanup(); }
+});
+
+test('a JSONL line is detected with or without v', () => {
+  const r = fixture();
+  try {
+    write(inCode(r, 'a.jsonl'), '{"ts":"2026-01-01T00:00:00Z","agent":"x","type":"fix"}\n');
+    write(inCode(r, 'b.jsonl'), '{"v":1,"ts":"2026-01-01T00:00:00Z","agent":"x","type":"fix"}\n');
+    assert.equal(guard(r).stdout.trim(), 'DOCS_GUARD=moved:2');
+  } finally { r.cleanup(); }
 });

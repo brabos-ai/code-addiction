@@ -123,3 +123,18 @@ test('log-jsonl#007 fails with empty type argument', () => {
     h.rmrf(dir);
   }
 });
+
+test('log-jsonl#020 every line carries v from the writer\'s own LOG_LINE_VERSION', () => {
+  const dir = h.mkTmp('codeadd-logjsonl-');
+  try {
+    h.runScript('log-jsonl', ['v.jsonl', 'fix', '/dev', '"slug":"a"'], { cwd: dir });
+    h.runScript('log-jsonl', ['v.jsonl', 'add', '/dev', '"slug":"b"'], { cwd: dir });
+    const rows = h.readJsonl(abs(dir, 'v.jsonl'));
+    assert.equal(rows.length, 2);
+    for (const row of rows) assert.equal(row.v, 1);
+    // v is the FIRST key, so a reader that sniffs the head of a line finds it
+    assert.match(h.read(abs(dir, 'v.jsonl')), /^\{"v":1,"ts":/);
+  } finally {
+    h.rmrf(dir);
+  }
+});

@@ -57,6 +57,7 @@ const { spawnSync } = require('node:child_process');
 const { DOCS_ROOT, DOCS_LAYOUT, docsPath, repoTop, toPosix } = require('./docs-root.cjs');
 
 const FEATURE_DIR_RE = /^[0-9]{4}[A-Z]-[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const FOLDER_FILE_TYPES = new Set(['iterations', 'build-ledger', 'tasks']);
 const STAMPED_RE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}-.+?(-intent)?\.md$/;
 const FRONTMATTER_RE = /^﻿?---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 
@@ -177,7 +178,10 @@ function classify(top, rel) {
   const type = frontmatterType(text);
   if (type && Object.prototype.hasOwnProperty.call(DOCS_LAYOUT.types, type)) {
     const sub = DOCS_LAYOUT.types[type];
-    if (sub !== null) return { dest: `${sub}/${base}` };
+    if (sub !== null) return { dest: sub.endsWith('.md') ? sub : `${sub}/${base}` };
+    // A feature-folder file (iterations, build-ledger, tasks) has no place of its own; its type
+    // and its name together make it a Code Addiction file when it sits inside a feature folder.
+    if (inFolder && base === `${type}.md` && FOLDER_FILE_TYPES.has(type)) return { dest: base };
     return inFolder ? { dest: base, weak: true } : null;
   }
   if (inFolder) {

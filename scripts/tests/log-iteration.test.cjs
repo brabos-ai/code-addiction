@@ -20,7 +20,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
-const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+const { DOCS_ROOT, DOCS_LAYOUT, DOC_SCHEMA_VERSION, docSchemaOf } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 const FEATURE_ID = '0001F-test';
 const FEATURE_REL = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${FEATURE_ID}`;
@@ -250,6 +250,35 @@ test('log-iteration#017 an absent docs root is ERROR:docs_root_missing, exit 1, 
     assert.ok(res.stdout.includes('ERROR:docs_root_missing'), res.stdout);
     assert.ok(res.stdout.includes('DOCS_ROOT_MISSING'), res.stdout);
     assert.equal(fs.existsSync(abs(repo, DOCS_ROOT)), false);
+  } finally {
+    cleanup();
+  }
+});
+
+test('log-iteration#018 a created iterations.md starts with type + schema frontmatter', () => {
+  const { repo, cleanup } = featureRepo();
+  try {
+    h.runScript('log-iteration', ['fix', 'save-btn', 'fix validation', 'api/ctrl.ts'], { cwd: repo });
+    const text = iterationsText(repo);
+    assert.ok(text.startsWith(`---\ntype: iterations\nschema: ${DOC_SCHEMA_VERSION}\n---\n`), text.slice(0, 80));
+    assert.equal(docSchemaOf(text), DOC_SCHEMA_VERSION);
+    // the heading the guard and readers look for is still the first thing after the frontmatter
+    assert.match(text, /---\n\n# Iterations\n/);
+  } finally {
+    cleanup();
+  }
+});
+
+test('log-iteration#019 appending never rewrites an existing file — a legacy one stays unstamped', () => {
+  const { repo, cleanup } = featureRepo();
+  try {
+    const legacy = '# Iterations\n\n> AI agent context. Token-optimized format.\n\n';
+    h.write(abs(repo, ITERATIONS), legacy);
+    const res = h.runScript('log-iteration', ['fix', 'a', 'first', 'a.ts'], { cwd: repo });
+    assert.equal(res.status, 0, res.output);
+    const text = iterationsText(repo);
+    assert.ok(text.startsWith(legacy), 'the existing header is byte-identical');
+    assert.equal(docSchemaOf(text), 0);
   } finally {
     cleanup();
   }

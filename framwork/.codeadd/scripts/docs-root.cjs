@@ -76,6 +76,14 @@ const DOCS_LAYOUT = Object.freeze({
     review: 'features',
     'qa-validation': 'features',
     changelog: 'changelog',
+    // Feature-folder files: placed by the folder rule, never alone (null = no place of their own).
+    iterations: null,
+    'build-ledger': null,
+    tasks: null,
+    'health-check': 'health-checks',
+    // A sub-path ending in `.md` names the file itself, not a folder.
+    'design-system': 'design-system.md',
+    'code-quality-review': 'code-quality-review.md',
     // Wiki pages describe the code at a commit; they stay in the code branch.
     tutorial: null,
     'how-to': null,

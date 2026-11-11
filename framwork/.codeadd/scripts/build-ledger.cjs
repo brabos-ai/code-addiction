@@ -38,6 +38,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { DOC_SCHEMA_VERSION } = require('./docs-root.cjs');
 
 const FINAL_REVIEW_GRAMMAR = 'Final review: passed|ruled N|blocked N (after review-NNN)';
 const FINAL_REVIEW_LINE = /^Final review: (passed|ruled [0-9]+|blocked [0-9]+) \(after review-[0-9]{3}\)$/;
@@ -80,7 +81,9 @@ function posixBasename(p) {
  * file yields 0 rather than a failure (the shell swallowed awk's stderr too).
  */
 function countEntries(content) {
-  const lines = String(content).split('\n');
+  // A leading frontmatter block is not part of the entries (and a legacy file has none).
+  const body = String(content).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+  const lines = body.split('\n');
   let n = 0;
   for (let i = 2; i < lines.length; i += 1) {
     if (lines[i] !== '') n += 1;
@@ -134,7 +137,11 @@ function run(argv) {
     const plan = PLAN_PATH !== '' ? PLAN_PATH : `${LEDGER_DIR}/plan.md`;
 
     try {
-      fs.writeFileSync(LEDGER_FILE, `# Build ledger — feature: ${id} — plan: ${plan}\n\n`);
+      // A file this script creates starts with the minimal frontmatter; one that exists is never rewritten.
+      fs.writeFileSync(
+        LEDGER_FILE,
+        `---\ntype: build-ledger\nschema: ${DOC_SCHEMA_VERSION}\n---\n\n# Build ledger — feature: ${id} — plan: ${plan}\n\n`,
+      );
     } catch (err) {
       fail(`Cannot write ${LEDGER_FILE}`);
     }

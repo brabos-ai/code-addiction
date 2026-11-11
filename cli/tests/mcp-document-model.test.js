@@ -80,6 +80,37 @@ describe('L1 — the type registry decides, the suffix does not', () => {
     }
   });
 
+  it('L1.1b the six generated-document types of the doc schema are registered with the R13 kinds', async () => {
+    const { TYPES } = await import('../../mcp/types.mjs');
+    for (const type of ['iterations', 'build-ledger', 'tasks']) {
+      expect(TYPES[type], type).toMatchObject({ kind: 'attachment', owner: 'dir', requires: [] });
+    }
+    for (const type of ['health-check', 'design-system', 'code-quality-review']) {
+      expect(TYPES[type], type).toMatchObject({ kind: 'page', root: '.codeadd/docs', requires: [] });
+    }
+  });
+
+  it('L1.1c a stamped file of each new type indexes: attachments through their feature, pages from the docs root', async () => {
+    const stamp = (type) => `---\ntype: ${type}\nschema: 1\n---\n\n# ${type}\n`;
+    const root = makeTree({
+      '.codeadd/docs/features/0001F-login/about.md': fm({ id: '0001F', type: 'feature', slug: 'login', status: 'done' }),
+      '.codeadd/docs/features/0001F-login/iterations.md': stamp('iterations'),
+      '.codeadd/docs/features/0001F-login/build-ledger.md': stamp('build-ledger'),
+      '.codeadd/docs/features/0001F-login/tasks.md': stamp('tasks'),
+      '.codeadd/docs/health-checks/2026-01-01/report.md': stamp('health-check'),
+      '.codeadd/docs/design-system.md': stamp('design-system'),
+      '.codeadd/docs/code-quality-review.md': stamp('code-quality-review'),
+    });
+    const data = await load(root);
+    // A registered type is never reported as unknown. A page of the docs root may still be
+    // skipped for carrying no `id:` — a minimal frontmatter is type + schema, and that is a
+    // recorded reason, not an unrecognised type.
+    const unknown = data.skipped.filter((s) => /not (a )?(declared|registered|in the registry)|unknown type|unrecognised/i.test(String(s.reason)));
+    expect(unknown, JSON.stringify(unknown)).toEqual([]);
+    const attachments = data.nodes.flatMap((n) => (n.attachments || []).map((a) => a.type)).sort();
+    expect(attachments).toEqual(expect.arrayContaining(['build-ledger', 'iterations', 'tasks']));
+  });
+
   it('L1.2 an unknown type that declares `kind:` itself is honoured', async () => {
     const root = makeTree({
       '.codeadd/docs/custom/thing.md': fm({ id: 'X-1', type: 'their-own-type', kind: 'work-item' }),
@@ -207,8 +238,9 @@ describe('L2 — the corpus indexes what the registry declares', () => {
     // three of the four Diátaxis types names nothing retired, it is just
     // incomplete. `add--architecture-discovery` carried the three-value enum and
     // neither the plan, its review, nor the rename sweep surfaced it.
-    const { typesOfKind } = await import('../../mcp/types.mjs');
-    const pages = typesOfKind('page');
+    const { typesOfKind, TYPES, WIKI_ROOT } = await import('../../mcp/types.mjs');
+    // The four Diátaxis types — the pages rooted at the wiki. The docs-root pages are not part of that set.
+    const pages = typesOfKind('page').filter((t) => TYPES[t].root === WIKI_ROOT);
     const walk = (dir, out = []) => {
       for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
         const full = path.join(dir, e.name);
