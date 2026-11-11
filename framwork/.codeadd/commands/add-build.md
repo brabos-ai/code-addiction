@@ -1419,7 +1419,10 @@ BLOCKED naming each gate that is not `ok`: no row flip, no commit, no tag. STEP 
    `node .codeadd/scripts/docs-branch.cjs commit "<checkpoint message>"` and read
    its `DOCS_COMMIT=` line: `committed` or `clean` goes on; `failed` stops the
    checkpoint — exit BLOCKED and do NOT commit, or the epic silently never
-   progresses. The code commit then stages code only (`git add -A`).
+   progresses. The code commit then stages code only (`git add -A`) — every task
+   was already committed, so it carries nothing to stage: commit it with
+   `git commit --allow-empty`, because this commit exists to carry the gate lines
+   and the tag, not a diff.
 
 3. **Commit — gated on convergence.** A subfeature that did not converge
    produces NO row flip, NO checkpoint commit and NO tag — and **the absence of
@@ -1531,7 +1534,7 @@ already answered.
 
 ## STEP add-build.complete: Completion (Inform user based on mode)
 
-**Commit the docs first.** The ledger, `iterations.jsonl`, `tasks.md` and every other document this build wrote under `.codeadd/docs/` are committed once, before the report — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
+**Commit the docs first.** The ledger, `iterations.jsonl`, `tasks.md` and every other document this build wrote under `.codeadd/docs/` are committed once more, here at the end, before the report — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch: `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`.
 
 **LOAD `{{skill:add--final-report/SKILL.md}}`.** It owns the seven blocks, the banned phrasings and
 the self-check. Emit the report FIRST — the rulings table, the ledger path and the next command all

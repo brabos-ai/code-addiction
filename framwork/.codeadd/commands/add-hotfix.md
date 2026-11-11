@@ -571,7 +571,7 @@ node .codeadd/scripts/hotfix-gates.cjs review-validate .codeadd/docs/features/[N
 
 ## STEP add-hotfix.complete: Hotfix Complete
 
-⛔ **DO NOT commit** - branch ready for next phase.
+⛔ **DO NOT commit code** - branch ready for next phase (the docs commit above is the only commit this command makes).
 
 **Before the report, close the docs:** follow `add--doc-schemas` → Docs Branch (end-of-command rule) — `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"`. Name a `DOCS_COMMIT=failed` result in the report.
 

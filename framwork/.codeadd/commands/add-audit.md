@@ -55,7 +55,7 @@ STEP add-audit.complete: Inform user                → COMPLETE
 ```
 ALWAYS:
   ⛔ DO NOT: Make code corrections automatically
-  ⛔ DO NOT USE: Bash for git add/commit/push
+  ⛔ DO NOT USE: Bash for git add/commit/push on the code branch — the closing `docs-branch.cjs commit` of the audit report is the one allowed call
   ⛔ DO NOT: Execute analysis without project context
   ⛔ DO NOT: Skip discovery phase
   ⛔ DO NOT: Inline any doc template — schema is the only source of truth

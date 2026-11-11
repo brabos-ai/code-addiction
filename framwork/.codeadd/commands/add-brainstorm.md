@@ -133,7 +133,7 @@ IF GREENFIELD IS NOT yes AND status.cjs FAILS:
   ✅ DO: Handle the failure as before — this tolerance does not apply
 ```
 
-This command runs read-only git queries only (`git ls-files`, `git rev-parse`). It never runs `git init`, `git add` or `git commit`.
+This command runs read-only git queries only (`git ls-files`, `git rev-parse`). It never runs `git init`, `git add` or `git commit` on the code branch; the closing `docs-branch.cjs commit` of its own documents is the one exception.
 
 Then load:
 - **RECENT_CHANGELOGS:** Match keywords against brainstorm topic; if match found, read `.codeadd/docs/features/{FEAT_ID}/changelog.md` for context

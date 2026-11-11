@@ -69,7 +69,7 @@ STEP add-diagnose.complete: Completion           → report the diagnosis in the
 | **STEP add-diagnose.dispatch** | A.1 + A.2 outputs not received | Dispatch @architecture-agent, Grep/Read code | WAIT for both parallel agents to return |
 | **STEP add-diagnose.dispatch** | A outputs incomplete | Proceed to STEP add-diagnose.analyze, choose "light path", skip agents | Dispatch all three agents (no adaptive triage) |
 | **STEP add-diagnose.analyze** | Diagnosis incomplete | Recommend route, Write | Complete Phase 3 (3+ hypotheses) |
-| **READ-ONLY** | Always | Edit files, Bash (except status.cjs and hotfix-gates.cjs), Write outside .codeadd/docs/diagnose/, branches, commits, /add-new/hotfix/build | Suggest next steps |
+| **READ-ONLY** | Always | Edit files, Bash (except status.cjs, hotfix-gates.cjs and the closing `docs-branch.cjs commit`), Write outside .codeadd/docs/diagnose/, branches, code commits, /add-new/hotfix/build | Suggest next steps |
 | **STEP add-diagnose.persist** | User rejected diagnosis | Write | Resume investigation. A rejected diagnosis is not written |
 | **STEP add-diagnose.validate** | Diagnosis rejected, no doc | Skip validation gate | Run gate before complete |
 | **STEP add-diagnose.complete** | Always | Report before STEP add-diagnose.complete, or skip it on a no-action route | Emit the report in the shape, on every route |

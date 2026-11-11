@@ -102,7 +102,7 @@ file is never read a second time.
 **READ-ONLY GUARANTEE:**
 - ⛔ DO NOT MODIFY: src/, apps/, libs/, packages/, configs, commands, skills
 - ⛔ DO NOT: Run build/test/deploy, write code, implement features
-- ✅ MAY: Create `.codeadd/docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO git writes — branch is created later by /add-build)
+- ✅ MAY: Create `.codeadd/docs/features/[XXXX]F-[name]/**/*.md`, run init.cjs (NO code-branch git writes — branch is created later by /add-build)
 
 **Operation Modes:**
 - `/add-new [description]` — Create new feature
@@ -144,7 +144,7 @@ Parse RECENT_CHANGELOGS (feature history). Read `.codeadd/docs/product/product.m
 **Allocate ID** (e.g., `0042F`). Using ID/branch conventions from STEP add-new.load skills, infer branch type (`feature`|`fix`|`refactor`|`docs`) and name (kebab-case, 2-4 words).
 
 **Create structure:**
-1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO git writes — /add-build creates the branch)
+1. Record decision: add `branch: [type]/[NNNN]F-[name]` to the skeleton about.md frontmatter (NO code-branch git writes — /add-build creates the branch)
 2. `mkdir .codeadd/docs/features/[NNNN]F-[name]/`
 3. Create skeleton `about.md` with frontmatter (now including `branch:`; full content in STEP add-new.confirm)
 
