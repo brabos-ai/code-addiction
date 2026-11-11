@@ -77,3 +77,12 @@ test('every layout type maps to a sub-path or null', () => {
     assert.ok(sub === null || typeof sub === 'string', type);
   }
 });
+
+test('repoTop and docsPath answer for the project when called from inside the docs worktree', (t) => {
+  const dir = repo(t);
+  h.git(dir, ['-c', 'user.email=a@b.c', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'x']);
+  const root = path.join(dir, ...mod.DOCS_ROOT.split('/'));
+  h.git(dir, ['worktree', 'add', '-q', '--detach', root]);
+  assert.equal(mod.repoTop(root), dir);
+  assert.equal(mod.docsPath(root, 'features'), path.join(root, 'features'));
+});

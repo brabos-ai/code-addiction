@@ -104,7 +104,12 @@ function repoTop(cwd) {
       stdio: ['ignore', 'pipe', 'ignore'],
     });
     const top = out.trim();
-    if (top) return path.resolve(top);
+    if (top) {
+      const resolved = path.resolve(top);
+      // From inside the docs worktree git answers with ITS toplevel; the project is two levels up.
+      const suffix = path.join(...DOCS_ROOT.split('/'));
+      return resolved.endsWith(path.sep + suffix) ? resolved.slice(0, -(suffix.length + 1)) : resolved;
+    }
   } catch {
     // not a repository: the caller's directory is the project
   }

@@ -33,7 +33,7 @@
  * Exports: prepareDocs, linkDocs, commitDocs, pushDocs — each returns an object whose
  * `status` is the value after the `=` above.
  *
- * Environment: CODEADD_DOCS_NET_TIMEOUT_MS bounds each network git call (default 60000).
+ * Environment: CODEADD_DOCS_NET_TIMEOUT_MS bounds each network git call (default 20000).
  * Dependencies: Node >= 22.19.0 built-ins and git. Imports the resolver module only.
  */
 
@@ -44,12 +44,13 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { DOCS_ROOT, DOCS_BRANCH, repoTop, docsRoot } = require('./docs-root.cjs');
 
-const NET_TIMEOUT_MS = () => Number(process.env.CODEADD_DOCS_NET_TIMEOUT_MS) || 60000;
+const NET_TIMEOUT_MS = () => Number(process.env.CODEADD_DOCS_NET_TIMEOUT_MS) || 20000;
 const FALLBACK_IDENTITY = ['-c', 'user.name=Code Addiction', '-c', 'user.email=codeadd@users.noreply.invalid'];
 // The docs worktree never converts line endings, whatever the user's global config says.
 const NO_CRLF = ['-c', 'core.autocrlf=false'];
 
-const GITATTRIBUTES = '* text=auto eol=lf\n';
+// Append-only logs from two machines merge as a union of their lines instead of conflicting.
+const GITATTRIBUTES = '* text=auto eol=lf\ndelivered.jsonl merge=union\ndecisions.jsonl merge=union\n';
 // QA run outputs are evidence of one run, never part of the record.
 const GITIGNORE = 'features/**/_tests/run-*/\n';
 
@@ -106,6 +107,29 @@ function excludeDocsRoot(top) {
   }
 }
 
+/**
+ * Make sure the docs worktree carries the two files the branch is created with. A branch made
+ * before a line existed (or edited by hand) gets it appended; the change is left for the next
+ * docs commit to carry.
+ */
+function ensureBranchFiles(root) {
+  const want = [
+    ['.gitattributes', GITATTRIBUTES.split('\n').filter(Boolean)],
+    ['.gitignore', GITIGNORE.split('\n').filter(Boolean)],
+  ];
+  for (const [name, lines] of want) {
+    try {
+      const file = path.join(root, name);
+      const cur = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+      const have = new Set(cur.split(/\r?\n/).map((l) => l.trim()));
+      const missing = lines.filter((l) => !have.has(l));
+      if (missing.length) fs.appendFileSync(file, (cur && !cur.endsWith('\n') ? '\n' : '') + missing.join('\n') + '\n');
+    } catch {
+      // best effort: a read-only checkout simply keeps what it has
+    }
+  }
+}
+
 function commitArgs(cwd) {
   const name = git(cwd, ['config', 'user.name']);
   const email = git(cwd, ['config', 'user.email']);
@@ -144,6 +168,7 @@ function prepareInPrimary(top) {
   const root = path.join(top, ...DOCS_ROOT.split('/'));
   if (isWorktreeDir(root)) {
     excludeDocsRoot(top);
+    ensureBranchFiles(root);
     return { status: 'ready' };
   }
   if (fs.existsSync(root)) {
@@ -162,6 +187,7 @@ function prepareInPrimary(top) {
   if (hasLocal) {
     const add = git(top, ['worktree', 'add', root, DOCS_BRANCH]);
     if (!add.ok) return { status: 'missing', reason: `git worktree add failed: ${firstLine(add.err)}` };
+    ensureBranchFiles(root);
     return { status: 'ready' };
   }
   if (remote.hasBranch) {
@@ -169,6 +195,7 @@ function prepareInPrimary(top) {
     if (!fetch.ok) return { status: 'missing', reason: `fetch failed: ${firstLine(fetch.err)}` };
     const add = git(top, ['worktree', 'add', '--track', '-b', DOCS_BRANCH, root, `origin/${DOCS_BRANCH}`]);
     if (!add.ok) return { status: 'missing', reason: `git worktree add failed: ${firstLine(add.err)}` };
+    ensureBranchFiles(root);
     return { status: 'ready' };
   }
 
@@ -191,13 +218,13 @@ function prepareInPrimary(top) {
   fs.writeFileSync(path.join(root, '.gitignore'), GITIGNORE);
   const c = withLockRetry(root, [...NO_CRLF, ...commitArgs(root), 'add', '-A']);
   const k = c.ok
-    ? withLockRetry(root, [...NO_CRLF, ...commitArgs(root), 'commit', '-q', '-m', 'chore(docs): initialize codeadd-docs'])
+    ? withLockRetry(root, [...NO_CRLF, ...commitArgs(root), 'commit', '-q', '--no-verify', '-m', 'chore(docs): initialize codeadd-docs'])
     : c;
   if (!k.ok) {
     git(top, ['worktree', 'remove', '--force', root]);
     return { status: 'missing', reason: `root commit failed: ${firstLine(k.err)}` };
   }
-  const push = git(root, ['push', '-u', 'origin', DOCS_BRANCH], { timeout: NET_TIMEOUT_MS() });
+  const push = git(root, ['push', '--no-verify', '-u', 'origin', DOCS_BRANCH], { timeout: NET_TIMEOUT_MS() });
   return { status: 'created', push: push.ok ? 'pushed' : classifyPush(push) };
 }
 
@@ -253,7 +280,7 @@ function commitDocs(cwd, message) {
   const staged = git(root, [...NO_CRLF, 'diff', '--cached', '--quiet']);
   if (staged.ok) return { status: 'clean' };
   const msg = message && String(message).trim() ? String(message) : 'docs: update';
-  const c = withLockRetry(root, [...NO_CRLF, ...commitArgs(root), 'commit', '-q', '-m', msg]);
+  const c = withLockRetry(root, [...NO_CRLF, ...commitArgs(root), 'commit', '-q', '--no-verify', '-m', msg]);
   return c.ok ? { status: 'committed' } : { status: 'failed', reason: firstLine(c.err) };
 }
 
@@ -271,7 +298,7 @@ function pushDocs(cwd) {
   if (!isWorktreeDir(root)) return { status: 'failed', reason: 'DOCS_ROOT_MISSING: run .codeadd/scripts/docs-branch.cjs prepare' };
   if (!git(root, ['remote', 'get-url', 'origin']).ok) return { status: 'offline', reason: 'no remote named origin' };
   const net = { timeout: NET_TIMEOUT_MS() };
-  const attempt = () => git(root, [...NO_CRLF, 'push', '-u', 'origin', DOCS_BRANCH], net);
+  const attempt = () => git(root, [...NO_CRLF, 'push', '--no-verify', '-u', 'origin', DOCS_BRANCH], net);
   let r = attempt();
   if (r.ok) return { status: 'pushed' };
   if (classifyPush(r) === 'offline') return { status: 'offline', reason: firstLine(r.err) };

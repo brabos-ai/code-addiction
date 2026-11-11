@@ -262,3 +262,34 @@ test('the network calls are non-interactive and bounded in source', () => {
 test('usage error exits 2', () => {
   assert.equal(run(['bogus'], h.mkTmp('codeadd-usage-')).status, 2);
 });
+
+// ─── review follow-ups ────────────────────────────────────────────────────────
+
+test('a new docs branch merges the append-only logs as a union', (t) => {
+  const p = project(t);
+  run(['prepare'], p.repo);
+  const attrs = h.git(p.bare, ['show', `${DOCS_BRANCH}:.gitattributes`]).stdout;
+  assert.match(attrs, /^delivered\.jsonl merge=union$/m);
+  assert.match(attrs, /^decisions\.jsonl merge=union$/m);
+});
+
+test('prepare on an existing worktree restores a missing ignore or attributes line', (t) => {
+  const p = project(t);
+  run(['prepare'], p.repo);
+  fs.writeFileSync(path.join(rootOf(p.repo), '.gitignore'), '');
+  fs.writeFileSync(path.join(rootOf(p.repo), '.gitattributes'), '* text=auto eol=lf\n');
+  assert.deepEqual(lines(run(['prepare'], p.repo)), ['DOCS=ready']);
+  assert.match(h.read(path.join(rootOf(p.repo), '.gitignore')), /features\/\*\*\/_tests\/run-\*\//);
+  assert.match(h.read(path.join(rootOf(p.repo), '.gitattributes')), /delivered\.jsonl merge=union/);
+});
+
+test('the project\'s own commit and push hooks never run on the docs branch', (t) => {
+  const p = project(t);
+  run(['prepare'], p.repo);
+  const hooks = path.join(p.repo, '.git', 'hooks');
+  fs.mkdirSync(hooks, { recursive: true });
+  for (const name of ['pre-commit', 'pre-push']) fs.writeFileSync(path.join(hooks, name), '#!/bin/sh\necho "lint failed" >&2\nexit 1\n', { mode: 0o755 });
+  h.write(path.join(rootOf(p.repo), 'a.md'), 'a\n');
+  assert.deepEqual(lines(run(['commit', 'docs: a'], p.repo)), ['DOCS_COMMIT=committed']);
+  assert.deepEqual(lines(run(['push'], p.repo)), ['DOCS_PUSH=pushed']);
+});
