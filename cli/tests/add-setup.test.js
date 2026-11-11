@@ -109,9 +109,9 @@ describe('F3 — the two inline commands honor a Setup answers block', () => {
     });
   }
 
-  it('L1.4 the add-qa-setup contract shape did not move', () => {
+  it('L1.4 the add-qa-setup contract shape is the one 1.9.0 recorded (the QA ignore moved to the docs branch)', () => {
     const src = read(path.join(codeadd, 'commands/add-qa-setup.md'));
-    expect(src).toContain('shape: sha256:5a8b5405851bf4d8');
+    expect(src).toContain('shape: sha256:7e9e973468b6b777');
   });
 });
 

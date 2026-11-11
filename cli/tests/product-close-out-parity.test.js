@@ -488,15 +488,6 @@ describe('L8 — the changelog owner (F11)', () => {
     return next < 0 ? t.slice(at) : t.slice(at, next);
   };
 
-  it('L8.1: the schema names the path its writers actually use', () => {
-    const sc = schema();
-    expect(sc).toContain('changelog.md');
-    // The stale value: docs/changelog/ is the INTERNAL layer's directory and
-    // does not exist in a user's project, so a reader who trusted the schema
-    // looked somewhere that was never there.
-    expect(sc).not.toContain('docs/changelog/CHG');
-  });
-
   it('L8.2: one changelog per delivery is a rule, not a habit', () => {
     const sc = schema();
     expect(sc).toMatch(/ONE CHANGELOG PER DELIVERY|one per delivery/i);

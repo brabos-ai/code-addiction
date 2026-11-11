@@ -894,9 +894,9 @@ describe('node inventory snapshot', () => {
       // now carry a per-F-block layer tag instead of one layer each. The two
       // shared- commands were renamed, which moves no count.
       // command 23 -> 24: add-framework--roadmap, the internal writer for
-      // docs/roadmap/index.md. It carried no uses: block when it was added; it
+      // .codeadd/docs/roadmap/index.md. It carried no uses: block when it was added; it
       // declares one as of the final-report-shape plan. Since renamed
-      // add-framework--backlog, writing docs/backlog/index.md — a rename, so no
+      // add-framework--backlog, writing .codeadd/docs/backlog/index.md — a rename, so no
       // count moved. The name above is kept as it was when this line was true.
       // (plan 2026-09-20T222814-PLAN--project-backlog-skill-lifecycle-and-rename, F12 and F13.)
       // command 24 -> 23: add-framework--review deleted, its audit folded into
@@ -972,7 +972,7 @@ describe('node inventory snapshot', () => {
       // the one dispatch rule every dispatching command points at.
       // (plan 2026-09-17T132658-PLAN--opencode-dispatch-and-gitnexus-repo, F2 and F5.)
       // reference 70 -> 71: add--doc-schemas/references/backlog.md, the record
-      // format for docs/backlog.jsonl and docs/backlog.definitions.json.
+      // format for .codeadd/docs/backlog.jsonl and .codeadd/docs/backlog.definitions.json.
       // (plan 2026-09-20T111051-PLAN--project-backlog-001-format-and-script, F5.)
       // reference 71 -> 72: add--backlog/references/lifecycle.md, the one
       // procedure the five pipeline commands share for a ticket they carry.

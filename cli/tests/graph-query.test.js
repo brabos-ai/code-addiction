@@ -36,6 +36,11 @@ const {
   loadGraph,
 } = require('../../scripts/graph.js');
 
+const { DOCS_ROOT } = require('../../framwork/.codeadd/scripts/docs-root.cjs');
+const DOCS_SEGMENTS = DOCS_ROOT.split('/');
+// The docs root is a worktree of another branch, excluded from the code tree
+// locally (docs-branch prepare does it); the corpus must not read the index it verifies.
+const excludeDocsRoot = (repo) => fs.writeFileSync(path.join(repo, '.git', 'info', 'exclude'), `${DOCS_ROOT}\n`);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 it('history rejects invalid layer and limits at the native reader boundary', () => {
@@ -324,13 +329,13 @@ describe('the real emitted graph', () => {
     expect(n.kind).toBe('skill');
   });
 
-  it('L2.2 orphans filtered to kind:template is exactly the four shipped templates', () => {
+  it('L2.2 orphans filtered to kind:template is exactly the five shipped templates', () => {
     // Not the whole orphan list — two dozen pre-existing entries stand and are
     // not this delivery's to fix. Nothing in .codeadd/ names any template, so
-    // all four report, and that IS the finding rather than a defect to suppress.
+    // all five report, and that IS the finding rather than a defect to suppress.
     const t = orphans(real).filter((n) => n.kind === 'template').map((n) => n.name).sort();
     expect(t).toEqual([
-      'feature-about-template', 'feature-discovery-template', 'hotfix', 'hotfix-template',
+      'docs-migrate-prompt', 'feature-about-template', 'feature-discovery-template', 'hotfix', 'hotfix-template',
     ]);
   });
 
@@ -383,6 +388,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
   beforeAll(() => {
     repo = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-'));
     execFileSync('git', ['init', '-q'], { cwd: repo });
+    excludeDocsRoot(repo);
 
     // The corpus delivered.cjs verifies against: `git ls-files --cached --others
     // --exclude-standard`, so files on disk count without a commit.
@@ -390,22 +396,22 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     fs.writeFileSync(path.join(repo, 'y.md'), 'contains skillY_marker here\n');
     fs.writeFileSync(path.join(repo, 's.sh'), '# contains script_marker here\n');
 
-    fs.mkdirSync(path.join(repo, 'docs'), { recursive: true });
+    fs.mkdirSync(path.join(repo, ...DOCS_SEGMENTS), { recursive: true });
     fs.writeFileSync(
-      path.join(repo, 'docs', 'delivered.jsonl'),
+      path.join(repo, ...DOCS_SEGMENTS, 'delivered.jsonl'),
       // Written gone-first on purpose: if the verb preserved insertion order
       // instead of delivered.cjs's status ordering, this file would pass a
       // "live comes first" assertion by accident.
       line({
         v: 1, ts: '2026-01-01T00:00:00Z', id: 'E-gone', layer: 'internal', by: 'done',
         status: 'live', name: 'the old skillX', words: 'skillx old',
-        commits: ['aaaaaaa'], origin: 'docs/plans/E-gone.md',
+        commits: ['aaaaaaa'], origin: `${DOCS_ROOT}/plans/E-gone.md`,
         items: [{ what: 'skillX (old)', at: 'x.md', find: 'skillX_vanished', node: 'product/skill/skillX' }],
       }) +
       line({
         v: 1, ts: '2026-02-01T00:00:00Z', id: 'E-live', layer: 'internal', by: 'done',
         status: 'live', name: 'the current skillX', words: 'skillx current',
-        commits: ['bbbbbbb'], origin: 'docs/plans/E-live.md',
+        commits: ['bbbbbbb'], origin: `${DOCS_ROOT}/plans/E-live.md`,
         items: [
           { what: 'skillX', at: 'x.md', find: 'skillX_marker', node: 'product/skill/skillX' },
           // No `node`: a top-level script is not a graph node.
@@ -415,7 +421,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
       line({
         v: 1, ts: '2026-03-01T00:00:00Z', id: 'E-prose', layer: 'internal', by: 'done',
         status: 'live', name: 'mentions skillX in prose only', words: 'skillX incidental',
-        commits: ['ccccccc'], origin: 'docs/plans/E-prose.md',
+        commits: ['ccccccc'], origin: `${DOCS_ROOT}/plans/E-prose.md`,
         items: [{ what: 'skillY', at: 'y.md', find: 'skillY_marker', node: 'product/skill/skillY' }],
       }),
     );
@@ -447,14 +453,15 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     // what make the cut visible, and scripts/graph.js renders a note from them.
     const dead = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-deadcap-'));
     execFileSync('git', ['init', '-q'], { cwd: dead });
+    excludeDocsRoot(dead);
     fs.writeFileSync(path.join(dead, 'x.md'), 'contains skillX_marker here\n');
-    fs.mkdirSync(path.join(dead, 'docs'), { recursive: true });
+    fs.mkdirSync(path.join(dead, ...DOCS_SEGMENTS), { recursive: true });
     fs.writeFileSync(
-      path.join(dead, 'docs', 'delivered.jsonl'),
+      path.join(dead, ...DOCS_SEGMENTS, 'delivered.jsonl'),
       [1, 2, 3].map((n) => line({
         v: 1, ts: `2026-0${n}-01T00:00:00Z`, id: `D${n}`, layer: 'internal', by: 'done',
         status: 'superseded', superseded_by: 'D9', name: `dead ${n}`, words: 'skillx dead',
-        commits: ['ddddddd'], origin: `docs/plans/D${n}.md`,
+        commits: ['ddddddd'], origin: `${DOCS_ROOT}/plans/D${n}.md`,
         items: [{ what: 'skillX', at: 'x.md', find: 'skillX_marker', node: 'product/skill/skillX' }],
       })).join(''),
     );
@@ -512,6 +519,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
   it('reports an absent index as an empty answer, never an error', () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-empty-'));
     execFileSync('git', ['init', '-q'], { cwd: empty });
+    excludeDocsRoot(empty);
 
     const r = run('product/skill/skillX', { cwd: empty });
 
@@ -537,14 +545,15 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
     // because they emit JSONL no writer would.
     const repo2 = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-history-entry-'));
     execFileSync('git', ['init', '-q'], { cwd: repo2 });
+    excludeDocsRoot(repo2);
     fs.writeFileSync(path.join(repo2, 'x.md'), 'contains skillX_marker here');
-    fs.mkdirSync(path.join(repo2, 'docs'), { recursive: true });
+    fs.mkdirSync(path.join(repo2, ...DOCS_SEGMENTS), { recursive: true });
     fs.writeFileSync(
-      path.join(repo2, 'docs', 'delivered.jsonl'),
+      path.join(repo2, ...DOCS_SEGMENTS, 'delivered.jsonl'),
       line({
         v: 1, ts: '2026-04-01T00:00:00Z', id: 'E-entry-node', layer: 'internal', by: 'done',
         status: 'live', name: 'entry-level node', words: 'entry level',
-        commits: ['ddddddd'], origin: 'docs/plans/E-entry-node.md',
+        commits: ['ddddddd'], origin: `${DOCS_ROOT}/plans/E-entry-node.md`,
         node: 'product/skill/skillX',
         // Exactly what serialize() emits: no `node` anywhere in the items.
         items: [{ what: 'skillX', at: 'x.md', find: 'skillX_marker' }],
@@ -560,7 +569,7 @@ describe('history — when this arrived, and what it replaced', { timeout: 20_00
   });
 
   it('never writes — the index is byte-identical after a read', () => {
-    const index = path.join(repo, 'docs', 'delivered.jsonl');
+    const index = path.join(repo, ...DOCS_SEGMENTS, 'delivered.jsonl');
     const before = fs.readFileSync(index);
 
     run('product/skill/skillX');

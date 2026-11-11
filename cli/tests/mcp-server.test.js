@@ -294,7 +294,8 @@ describe('F8 — every action answers over the wire', () => {
     // add--backlog declares `skill: add--doc-schemas`, because it composes records
     // against the backlog.md reference that skill owns.
     // 22 -> 21: add--backlog, one of the dependents, was removed (0075B, F5).
-    expect(payload(frames[0]).dependents.length).toBe(21);
+    // 21 -> 27: six more artefacts point at add--doc-schemas for its Docs Branch section (0078F).
+    expect(payload(frames[0]).dependents.length).toBe(27);
   });
 
   it('a write between two calls in ONE session is visible to the second', async () => {

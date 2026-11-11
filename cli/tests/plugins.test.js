@@ -713,7 +713,7 @@ describe('design plugin (0065B)', () => {
         it('states the precedence in order', () => {
           const line = text(name).split('\n').find((l) => l.startsWith('**Precedence:**'));
           expect(line, 'a **Precedence:** line').toBeDefined();
-          const at = ['inspected', 'docs/design-system.md', 'ui-ux-pro-max', 'add--ux-design'].map((s) => line.indexOf(s));
+          const at = ['inspected', '.codeadd/docs/design-system.md', 'ui-ux-pro-max', 'add--ux-design'].map((s) => line.indexOf(s));
           expect(at.every((i) => i >= 0)).toBe(true);
           expect([...at].sort((a, b) => a - b)).toEqual(at);
         });

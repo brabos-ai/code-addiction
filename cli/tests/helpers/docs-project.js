@@ -2,9 +2,13 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..');
 export const SCRIPTS = path.join(ROOT, 'framwork', '.codeadd', 'scripts');
+// The one place the root is spelled — the installed module owns it; tests read it from there.
+const DOCS_ROOT = createRequire(import.meta.url)(path.join(SCRIPTS, 'docs-root.cjs')).DOCS_ROOT;
+export const docsRootSegments = DOCS_ROOT.split('/');
 export const DOCS_SCRIPTS = ['docs-root.cjs', 'docs-branch.cjs', 'docs-guard.cjs'];
 
 export const git = (cwd, ...args) =>
@@ -35,6 +39,6 @@ export function makeDocsProject({ remote = true, scripts = true } = {}) {
   git(repo, 'add', '-A');
   git(repo, 'commit', '-q', '-m', 'init');
   if (remote) git(repo, 'push', '-q', '-u', 'origin', 'main');
-  const docsRoot = path.join(repo, '.codeadd', 'docs');
+  const docsRoot = path.join(repo, ...DOCS_ROOT.split('/'));
   return { base, bare, repo, docsRoot, cleanup: () => fs.rmSync(base, { recursive: true, force: true }) };
 }

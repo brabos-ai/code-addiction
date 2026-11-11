@@ -5,7 +5,7 @@
  * committed skipped, with the F-block that makes it true in the title; that F-block removes the
  * `.skip` first, watches it fail, implements, and watches it pass. No skip survives the plan.
  *
- * History is never scanned: docs/changelog/ and docs/deliveries/ keep their old text on purpose.
+ * History is never scanned: .codeadd/docs/changelog/ and .codeadd/docs/deliveries/ keep their old text on purpose.
  */
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';

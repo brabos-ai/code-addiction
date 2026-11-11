@@ -233,7 +233,7 @@ describe('L3.5-3.6 the changelog filename', () => {
     const naming = section(read(P.authoring), 'File Naming');
     expect(naming).not.toBeNull();
 
-    expect(naming).toContain('docs/changelog/YYYY-MM-DDTHHMMSS-');
+    expect(naming).toContain('.codeadd/docs/changelog/YYYY-MM-DDTHHMMSS-');
     expect(naming).toMatch(/local time/i);
     expect(naming).toMatch(/no separators inside/i);
 

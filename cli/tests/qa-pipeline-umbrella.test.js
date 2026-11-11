@@ -152,13 +152,13 @@ describe('setup contract (0061)', () => {
   it('declares a ## Materializes block carrying every materialized shape', () => {
     expect(src).toMatch(/^## Materializes[ \t]*$/m);
     const block = sliceContractBlock(src);
-    for (const p of ['.codeadd/settings.json#qa', '_tests/screens.json', 'qa-project/SKILL.md', '.gitignore']) {
+    for (const p of ['.codeadd/settings.json#qa', '_tests/screens.json', 'qa-project/SKILL.md', '.codeadd/docs/.gitignore']) {
       expect(block).toContain(p);
     }
     expect(block).toMatch(/^shape:\s*sha256:[0-9a-f]{16}\s*$/m);
     expect(block).not.toMatch(/^version:/m);
     expect(block).not.toMatch(/^recipes:/m);
-    expect(block).toContain('docs/features/**/_tests/run-*/');
+    expect(block).toContain('features/**/_tests/run-*/');
   });
 
   it('carries no resolvable resource-path variable inside the contract block', () => {
@@ -223,16 +223,18 @@ describe('setup contract (0061)', () => {
     expect(handoff).toBeGreaterThan(gate);
   });
 
-  it('materializes a dedicated QA ignore block before migration and the setup proof', () => {
+  it('confirms the docs branch ignores the QA run outputs before migration and the setup proof', () => {
     const ignore = src.indexOf('## STEP add-qa-setup.ignore:');
     const migration = src.indexOf('## STEP add-qa-setup.migrate:');
     const proof = src.indexOf('## STEP add-qa-setup.proof:');
     expect(ignore).toBeGreaterThan(-1);
     expect(migration).toBeGreaterThan(ignore);
     expect(proof).toBeGreaterThan(migration);
-    expect(src).toContain('# ADD QA evidence - managed by add-qa-setup');
+    // the run-output ignore lives on the docs branch, which creates it; the step confirms it
+    expect(src).toContain('.codeadd/docs/.gitignore');
+    expect(src).toContain('.codeadd/scripts/docs-branch.cjs prepare');
     expect(src).not.toMatch(/^!final\/$/m);
-    expect(src).toContain('.codeadd/scripts/qa-evidence.cjs ensure-ignore');
+    expect(src).not.toContain('qa-evidence.cjs ensure-ignore');
   });
 
   it('a run with no screen catalog still proves the setup with preflight a and writes the receipt', () => {

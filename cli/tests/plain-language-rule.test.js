@@ -109,7 +109,7 @@ describe('L1 — Writing Style block content contract (add--agents-md-style)', (
     expect(text).toMatch(/describe the action[^.]*directly/i);
     expect(text).toMatch(/figure of speech/i);
     // 2 — its reach
-    for (const surface of ['chat', 'docs', 'commit messages', 'code comments', 'identifiers']) {
+    for (const surface of ['chat', `docs`, 'commit messages', 'code comments', 'identifiers']) {
       expect(text.toLowerCase(), `reach is missing "${surface}"`).toContain(surface);
     }
     // 3 — language independence

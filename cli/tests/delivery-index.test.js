@@ -9,7 +9,7 @@ import { TOTAL_POINTS } from './helpers/agent-mode-points.js';
 
 /**
  * Delivery index — the validation matrix for plan
- * `docs/plans/2026-09-07T160328-PLAN--delivery-index.md`.
+ * `.codeadd/docs/plans/2026-09-07T160328-PLAN--delivery-index.md`.
  *
  * RED FIRST. This file is authored and confirmed FAILING against the tree
  * before F1 lands, and stays red until F14. That is the plan's own discipline
@@ -346,7 +346,7 @@ describe('L3 — command integration', () => {
     expect(step1, 'about.md is not deep-read for matched entries').toContain('about.md');
     expect(
       step1,
-      'the unranked docs/features/ sweep is still there — the index REPLACES it',
+      'the unranked .codeadd/docs/features/ sweep is still there — the index REPLACES it',
     ).not.toMatch(/implemented features from `?docs\/features\//);
     expect(usesBlock(c)).toContain('- skill: add--knowledge-discovery');
   });

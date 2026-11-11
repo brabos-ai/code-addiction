@@ -3,7 +3,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { run } from '../../mcp/engine.mjs';
+
+const { DOCS_ROOT } = createRequire(import.meta.url)('../../framwork/.codeadd/scripts/docs-root.cjs');
+const DOCS_SEGMENTS = DOCS_ROOT.split('/');
+// The MCP corpus key for the docs root is the root's own folder name.
+const DOCS_CORPUS = DOCS_SEGMENTS[DOCS_SEGMENTS.length - 1];
+// The scripts the engine loads from beside it, copied into a fixture project.
+const SHIPPED = ['delivered.cjs', 'delivery-index-core.cjs', 'docs-root.cjs'];
 
 /**
  * Plan 2026-09-14T145149 — the impact question: which deliveries touched this
@@ -44,32 +52,25 @@ describe('L2.1 — the entry carries the new mode', () => {
   });
 });
 
-describe('L2.2 — the read contract documents the derivation', () => {
+describe('L2.2 — the read contract documents the recorded commit', () => {
   const contract = () => read(...CONTRACT);
 
-  it('states how a delivery commit is derived', () => {
-    // Scoped to the pickaxe itself. A bare /derive/ matched an unrelated
-    // sentence already in the file — "which no script can derive" — so the
-    // assertion names the mechanism, not the word.
-    expect(contract()).toMatch(/git log[^\n]*-S/);
-  });
-
-  it('states the derivation along the first parent, for both merge routes', () => {
-    // Replaced a grep for the word "squash", which stayed green whatever the
-    // paragraph claimed. The pickaxe must walk the first parent with -m, or a
-    // PR merged with --merge resolves to its docs-only branch commit. The
-    // behaviour itself is exercised in L2.3b below.
+  it('states that the delivery commit is recorded on the entry as code_sha, with the pr number', () => {
     const c = contract();
-    expect(c).toMatch(/git log --first-parent -m [^\n]*-S/);
-    expect(c).toMatch(/gh pr merge --merge/);
-    expect(c).toMatch(/git merge --squash/);
-    expect(c).not.toMatch(/the merge squashes that branch/);
+    expect(c).toMatch(/RECORDED, on the entry/);
+    expect(c).toMatch(/`code_sha`/);
+    expect(c).toMatch(/`pr`/);
+    expect(c).not.toMatch(/git log[^\n]*-S/);
   });
 
-  it('names the one case where it does not hold', () => {
-    // An index line recorded outside the normal flow resolves to a docs/-only
-    // commit. Documenting the exception is what keeps the rule honest.
-    expect(contract()).toMatch(/docs\/-only|only `docs\/`|only docs\//i);
+  it('states that an entry without code_sha answers curated only — never a guess, never a history walk', () => {
+    const c = contract();
+    expect(c).toMatch(/no `code_sha`[^\n]*answers `curated` only|answers `curated` only/);
+    expect(c).toMatch(/never falls back to walking history/);
+  });
+
+  it('documents the stamp verb that corrects a recorded sha', () => {
+    expect(contract()).toMatch(/delivered\.cjs stamp <id> --code-sha <sha>/);
   });
 
   it('records that `commits` holds branch shas, and why that is not the delivery on either route', () => {
@@ -150,7 +151,7 @@ describe('L3.2 — the migration knows nothing of the retired schema', () => {
       expect(outcome.harvest).not.toHaveProperty('impactedFiles');
       // The legacy file itself is a user's and is never touched — the additive
       // rule this migration has always had.
-      expect(fs.existsSync(path.join(cwd, 'docs/features/0051H-token-refresh/related.md'))).toBe(true);
+      expect(fs.existsSync(path.join(cwd, '.codeadd/docs/features/0051H-token-refresh/related.md'))).toBe(true);
     } finally {
       removeTree(cwd);
     }
@@ -252,37 +253,39 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     run(['config', 'user.name', 'test']);
 
     fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
-    for (const f of ['delivered.cjs', 'delivery-index-core.cjs']) {
+    for (const f of SHIPPED) {
       fs.copyFileSync(
         path.join(REPO, 'framwork', '.codeadd', 'scripts', f),
         path.join(tmp, '.codeadd', 'scripts', f),
       );
     }
+    // The docs root is a worktree of another branch: out of the code tree.
+    fs.writeFileSync(path.join(tmp, '.git', 'info', 'exclude'), '.codeadd/\n');
 
     fs.mkdirSync(path.join(tmp, 'src', 'auth'), { recursive: true });
     fs.writeFileSync(path.join(tmp, 'src', 'auth', 'token.ts'), 'export function refreshToken() { return 1; }\n');
     fs.writeFileSync(path.join(tmp, 'src', 'auth', 'login.ts'), 'export function loginHandler() { return 1; }\n');
 
-    fs.mkdirSync(path.join(tmp, 'docs', 'features', '0051F-refresh'), { recursive: true });
+    fs.mkdirSync(path.join(tmp, ...DOCS_SEGMENTS, 'features', '0051F-refresh'), { recursive: true });
     fs.writeFileSync(
-      path.join(tmp, 'docs', 'features', '0051F-refresh', 'about.md'),
+      path.join(tmp, ...DOCS_SEGMENTS, 'features', '0051F-refresh', 'about.md'),
       '---\nid: 0051F\ntype: feature\n---\n# Refresh\n## TL;DR\nRenews the token before it expires.\n## Relations\nNone\n',
     );
 
+    // ONE commit carrying the code, which is what a squashed branch looks like on
+    // the default branch; the index entry records that commit as `code_sha`, since
+    // the index lives on another branch. The merge-commit shape is L2.3b.
+    run(['add', '-A']);
+    run(['commit', '-q', '-m', 'squash: token refresh']);
+    const codeSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: tmp, encoding: 'utf8' }).trim();
     const entry = {
       v: 1, ts: '2026-09-01T00:00:00Z', id: '0051F', layer: 'product', by: 'done',
       status: 'live', name: 'token refresh', words: 'token refresh expiry',
-      commits: ['aaaaaaa'], origin: 'docs/features/0051F-refresh/',
+      commits: ['aaaaaaa'], origin: `${DOCS_ROOT}/features/0051F-refresh/`,
       items: [{ what: 'the refresh', at: 'src/auth/token.ts', find: 'refreshToken' }],
+      code_sha: codeSha, pr: null,
     };
-    fs.mkdirSync(path.join(tmp, 'docs'), { recursive: true });
-    fs.writeFileSync(path.join(tmp, 'docs', 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
-
-    // ONE commit: code and index line together, which is what a squashed branch
-    // looks like on the default branch. The merge-commit shape the PR route
-    // now produces is L2.3b.
-    run(['add', '-A']);
-    run(['commit', '-q', '-m', 'squash: token refresh']);
+    fs.writeFileSync(path.join(tmp, ...DOCS_SEGMENTS, 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
   });
 
   afterAll(() => {
@@ -290,7 +293,7 @@ describe('L2.3 — touched_by answers from a real project in the current format'
   });
 
   it('returns the delivery, in the complete layer, with its commit', () => {
-    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
     expect(result.unavailable).toBeUndefined();
     expect(result.workItems).toHaveLength(1);
     const hit = result.workItems[0];
@@ -304,13 +307,13 @@ describe('L2.3 — touched_by answers from a real project in the current format'
     // `login.ts` is in the commit and in no `items[].at`. The complete layer is
     // the whole diff, so it answers — which is the difference between the two
     // layers stated as a test rather than as a sentence.
-    const result = run('touched_by', { files: ['src/auth/login.ts'] }, { root: tmp, corpus: 'docs' });
+    const result = run('touched_by', { files: ['src/auth/login.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
     expect(result.workItems.map((w) => w.answer)).toEqual(['complete']);
     expect(result.workItems[0].matched).toEqual(['src/auth/login.ts']);
   });
 
   it('a path no delivery touched comes back empty, and is not an error', () => {
-    const result = run('touched_by', { files: ['src/nowhere.ts'] }, { root: tmp, corpus: 'docs' });
+    const result = run('touched_by', { files: ['src/nowhere.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
     expect(result.workItems).toEqual([]);
     expect(result.unavailable).toBeUndefined();
   });
@@ -318,7 +321,7 @@ describe('L2.3 — touched_by answers from a real project in the current format'
   it('L2.4 the answer carries the curated-only count', () => {
     // The plan named this level the mitigation for its one High-probability
     // risk — the two layers read as one. Nothing asserted it at engine level.
-    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    const result = run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
     expect(result).toHaveProperty('curatedOnly');
     expect(Number.isNaN(result.curatedOnly)).toBe(false);
     expect(result.curatedOnly).toBe(0);
@@ -326,7 +329,7 @@ describe('L2.3 — touched_by answers from a real project in the current format'
 
   it('L2.5 records what one query costs, rather than asserting a guessed threshold', () => {
     const started = Date.now();
-    run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: 'docs' });
+    run('touched_by', { files: ['src/auth/token.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
     const ms = Date.now() - started;
     // Printed, not asserted. The plan asked for the number in the output so it
     // is visible when it starts to matter; an earlier design cost 10.3s per
@@ -353,13 +356,14 @@ describe('L2.3b — the delivery commit is derived correctly after a merge AND a
     g(['config', 'user.email', 'test@example.com']);
     g(['config', 'user.name', 'test']);
     fs.mkdirSync(path.join(tmp, '.codeadd', 'scripts'), { recursive: true });
-    for (const f of ['delivered.cjs', 'delivery-index-core.cjs']) {
+    for (const f of SHIPPED) {
       fs.copyFileSync(
         path.join(REPO, 'framwork', '.codeadd', 'scripts', f),
         path.join(tmp, '.codeadd', 'scripts', f),
       );
     }
-    fs.mkdirSync(path.join(tmp, 'docs'), { recursive: true });
+    fs.writeFileSync(path.join(tmp, '.git', 'info', 'exclude'), '.codeadd/\n');
+    fs.mkdirSync(path.join(tmp, ...DOCS_SEGMENTS), { recursive: true });
     fs.writeFileSync(path.join(tmp, 'README.md'), 'base\n');
     g(['add', '-A']);
     g(['commit', '-q', '-m', 'base']);
@@ -370,15 +374,6 @@ describe('L2.3b — the delivery commit is derived correctly after a merge AND a
     fs.writeFileSync(path.join(tmp, 'src', 'pay.ts'), 'export const chargeCard = 1;\n');
     g(['add', '-A']);
     g(['commit', '-q', '-m', 'F1: code']);
-    const entry = {
-      v: 1, ts: '2026-09-16T00:00:00Z', id: 'PAY', layer: 'product', by: 'done',
-      status: 'live', name: 'payments', words: 'payments charge',
-      commits: ['aaaaaaa'], origin: 'docs/features/PAY/',
-      items: [{ what: 'the charge', at: 'src/pay.ts', find: 'chargeCard' }],
-    };
-    fs.writeFileSync(path.join(tmp, 'docs', 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
-    g(['add', '-A']);
-    g(['commit', '-q', '-m', 'docs: index entry']);
     g(['checkout', '-q', trunk]);
     if (shape === 'merge') {
       g(['merge', '-q', '--no-ff', 'feat', '-m', 'Merge pull request']);
@@ -386,13 +381,23 @@ describe('L2.3b — the delivery commit is derived correctly after a merge AND a
       g(['merge', '-q', '--squash', 'feat']);
       g(['commit', '-q', '-m', 'squash: payments']);
     }
-    return { tmp, head: g(['rev-parse', '--short', 'HEAD']) };
+    // The landed commit is what the close-out records on the entry.
+    const head = g(['rev-parse', 'HEAD']);
+    const entry = {
+      v: 1, ts: '2026-09-16T00:00:00Z', id: 'PAY', layer: 'product', by: 'done',
+      status: 'live', name: 'payments', words: 'payments charge',
+      commits: ['aaaaaaa'], origin: `${DOCS_ROOT}/features/PAY/`,
+      items: [{ what: 'the charge', at: 'src/pay.ts', find: 'chargeCard' }],
+      code_sha: head, pr: null,
+    };
+    fs.writeFileSync(path.join(tmp, ...DOCS_SEGMENTS, 'delivered.jsonl'), `${JSON.stringify(entry)}\n`);
+    return { tmp, head };
   };
 
   it.each(['merge', 'squash'])('%s: answers complete, with the commit that landed on the default branch', (shape) => {
     const { tmp, head } = make(shape);
     try {
-      const result = run('touched_by', { files: ['src/pay.ts'] }, { root: tmp, corpus: 'docs' });
+      const result = run('touched_by', { files: ['src/pay.ts'] }, { root: tmp, corpus: DOCS_CORPUS });
       expect(result.workItems).toHaveLength(1);
       const hit = result.workItems[0];
       expect(hit.answer).toBe('complete');

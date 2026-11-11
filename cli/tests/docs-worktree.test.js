@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import AdmZip from 'adm-zip';
-import { makeDocsProject, git, SCRIPTS, DOCS_SCRIPTS } from './helpers/docs-project.js';
+import { makeDocsProject, git, SCRIPTS, DOCS_SCRIPTS, docsRootSegments } from './helpers/docs-project.js';
 
 const mocks = vi.hoisted(() => ({
   getLatestTag: vi.fn(),
@@ -80,8 +80,8 @@ describe('F17 — the docs worktree around install, update and uninstall', () =>
     writeGitignoreBlock(p.repo, getInstalledDirs(['claude']));
     const block = fs.readFileSync(path.join(p.repo, '.gitignore'), 'utf8');
     expect(block).toContain('.codeadd/*');
-    fs.mkdirSync(path.join(p.repo, '.codeadd', 'docs'), { recursive: true });
-    fs.writeFileSync(path.join(p.repo, '.codeadd', 'docs', 'a.md'), 'x');
+    fs.mkdirSync(path.join(p.repo, ...docsRootSegments), { recursive: true });
+    fs.writeFileSync(path.join(p.repo, ...docsRootSegments, 'a.md'), 'x');
     expect(git(p.repo, 'check-ignore', '.codeadd/docs/a.md')).toBe('.codeadd/docs/a.md');
   });
 
@@ -147,7 +147,7 @@ describe('F17 — the docs worktree around install, update and uninstall', () =>
     const r = prepareDocsWorktree(wt);
     expect(r.status).toBe('linked');
     expect(releaseDocsWorktree(wt).released).toBe(true);
-    expect(fs.existsSync(path.join(wt, '.codeadd', 'docs'))).toBe(false);
+    expect(fs.existsSync(path.join(wt, ...docsRootSegments))).toBe(false);
     expect(fs.readFileSync(path.join(p.docsRoot, 'keep.md'), 'utf8')).toBe('k');
   });
 });
