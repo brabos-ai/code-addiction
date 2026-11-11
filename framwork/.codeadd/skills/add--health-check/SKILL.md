@@ -75,7 +75,7 @@ Process:
 4. Consolidate in HEALTH-REPORT.md
 5. Close with the Docs Branch end-of-command rule — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch — before the final report
 
-Every report file opens with the frontmatter `type: health-check` and `schema: {{doc-schema}}` (each analyzer's template carries it; so does `HEALTH-REPORT.md`).
+Every report file opens with the frontmatter `type: health-check` and `schema: {{doc-schema}}` (each analyzer's template carries it; `HEALTH-REPORT.md` opens with the same two lines).
 
 Output files: `context-discovery.md`, `documentation-report.md`, `infrastructure-report.md`, `security-report.md`, `architecture-report.md`, `data-report.md`, `HEALTH-REPORT.md`.
 

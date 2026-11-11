@@ -63,12 +63,9 @@ Generate tasks.md with atomic subtasks:
 
 ### tasks.md Format
 
-```markdown
----
-type: tasks
-schema: {{doc-schema}}
----
+The frontmatter that opens the file (`type: tasks` and the schema line) is owned by `{{skill:add--tasks-checklist/SKILL.md}}`; this block shows the body that follows it.
 
+```markdown
 # Tasks: [feature or subfeature name]
 
 ## Metadata

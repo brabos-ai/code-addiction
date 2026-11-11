@@ -355,7 +355,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
    - `tags:` is a YAML list (may be empty `[]`)
-   - `schema:` is present on a document being written now (FAIL when absent; a legacy document being only adjusted is read as schema `0` and keeps its stamp — see Schema Version)
+   - `schema:` is present on a document being written now (FAIL when absent on a document this command creates or brings up to the current standard; a legacy document that is only read or lightly edited stays schema `0` — see Schema Version)
    - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 
