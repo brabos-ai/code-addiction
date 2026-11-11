@@ -1213,3 +1213,53 @@ test('done#076 commit-push: with no docs root the close-out still succeeds and s
     assert.equal(kv.DOCS_COMMIT, 'failed');
     assert.equal(kv.STATUS, 'SUCCESS');
   }));
+
+test('done#077 cleanup: a proven merge commit re-stamps the entry, and the docs branch carries it', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'src/app.js', 'const appMarker = 1;\n');
+    commitAll(p.repo, 'feat: app');
+    h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
+    assert.equal(h.runScript('delivered', ['write'], { cwd: p.repo, input: deliveryRecord() }).status, 0);
+    src(p.repo, OWN, 'own\n');
+    const gh = stubGh(p.base, JSON.stringify({ number: 42 }));
+    const first = runDone(p.repo, ['--commit-push'], { env: { GH_BIN: gh } });
+    assert.equal(first.status, 0, first.output);
+    const tip = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(bareLines(p, DOCS_LAYOUT.delivered).pop().code_sha, tip, 'commit-push stamps the branch tip');
+
+    // the forge merges with a merge commit, a NEW commit on main
+    h.git(p.repo, ['checkout', 'main', '-q']);
+    h.git(p.repo, ['merge', '--no-ff', '--no-edit', 'feature/0001F-test', '-q']);
+    h.git(p.repo, ['push', 'origin', 'main', '-q']);
+    const mergeSha = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.notEqual(mergeSha, tip);
+    h.git(p.repo, ['checkout', 'feature/0001F-test', '-q']);
+
+    const res = runDone(p.repo, ['--cleanup', mergeSha], { env: { GH_BIN: gh } });
+    assert.equal(res.status, 0, res.output);
+    const kv = h.parseKV(res.stdout);
+    assert.equal(kv.INDEX_STAMP_MERGE, 'stamped');
+    assert.equal(kv.DOCS_PUSH, 'pushed');
+    const last = bareLines(p, DOCS_LAYOUT.delivered).pop();
+    assert.equal(last.code_sha, mergeSha, 'the remote index now names the merge commit');
+    assert.equal(last.pr, 42);
+    assert.equal(last.v, 1);
+  }));
+
+test('done#078 cleanup: an omitted pr keeps the one an earlier stamp recorded', () =>
+  withProject((p) => {
+    branchCreate(p.repo, 'feature/0001F-test');
+    src(p.repo, 'src/app.js', 'const appMarker = 1;\n');
+    commitAll(p.repo, 'feat: app');
+    assert.equal(h.runScript('delivered', ['write'], { cwd: p.repo, input: deliveryRecord() }).status, 0);
+    const sha1 = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(h.runScript('delivered', ['stamp', '0001F', '--code-sha', sha1, '--pr', '7'], { cwd: p.repo }).status, 0);
+    src(p.repo, 'src/more.js', 'x\n');
+    commitAll(p.repo, 'feat: more');
+    const sha2 = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
+    assert.equal(h.runScript('delivered', ['stamp', '0001F', '--code-sha', sha2], { cwd: p.repo }).status, 0);
+    const last = h.readJsonl(docsFile(p.docs, DOCS_LAYOUT.delivered)).pop();
+    assert.equal(last.code_sha, sha2);
+    assert.equal(last.pr, 7);
+  }));

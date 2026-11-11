@@ -123,7 +123,7 @@ function parseInvocation(argv) {
     const id = args.shift() || '';
     if (!id || id.startsWith('--')) return { ok: false };
     let codeSha = '';
-    let pr = null;
+    let pr; // undefined = keep the recorded pr
     while (args.length > 0) {
       const a = args[0];
       if (a === '--code-sha') {

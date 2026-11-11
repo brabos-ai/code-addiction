@@ -398,11 +398,13 @@ function performStamp(ctx, opts = {}) {
   const id = String(opts.id === undefined ? '' : opts.id);
   if (!id) return refused('missing-field');
   if (!isSha(opts.codeSha)) return refused('bad-code-sha');
-  const pr = opts.pr === undefined ? null : opts.pr;
-  if (pr !== null && !(Number.isInteger(pr) && pr > 0)) return refused('bad-pr');
+  if (opts.pr !== undefined && opts.pr !== null && !(Number.isInteger(opts.pr) && opts.pr > 0)) return refused('bad-pr');
 
   const current = loadIndex(ctx).byId.get(id);
   if (!current) return { ok: false, exit: 2, error: 'entry-absent' };
+  // An omitted pr keeps the one already recorded: a later stamp that only learns the merge
+  // commit must not erase the pull request number an earlier stamp wrote.
+  const pr = opts.pr === undefined ? (current.pr === undefined ? null : current.pr) : opts.pr;
   if (current.code_sha === opts.codeSha && (current.pr === undefined ? null : current.pr) === pr) {
     return { ok: true, entry: id, created: false, lines: countLines(ctx), loose: [], stamped: false };
   }

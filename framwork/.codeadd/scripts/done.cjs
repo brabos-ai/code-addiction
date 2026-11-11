@@ -395,6 +395,27 @@ function closeDocsCommit() {
   if (committed.reason) out(`DOCS_REASON=${printable(committed.reason)}`);
 }
 
+/**
+ * The merge is proven: the delivery's code commit is the commit that put it on the default
+ * branch, not the branch tip stamped at commit-push (a merge or a squash makes a new commit).
+ * Re-stamp the entry with it, then commit and push the docs. Never fails the run.
+ */
+function stampMergeCommit() {
+  const ctx = deliveryIndex.createContext({ root: repoTop(CWD) });
+  const n = currentPrNumber();
+  const stamped = deliveryIndex.performStamp(ctx, { id: FEATURE_NUMBER, codeSha: CLEANUP_SHA, pr: n === null ? undefined : n });
+  let outcome = 'failed';
+  if (stamped.ok) outcome = stamped.stamped ? 'stamped' : 'current';
+  else if (stamped.error === 'entry-absent') outcome = 'absent';
+  else if (stamped.error === 'docs-root-missing') outcome = 'skipped';
+  out(`INDEX_STAMP_MERGE=${outcome}`);
+  if (outcome !== 'stamped') return;
+  const committed = commitDocs(CWD, `docs(${FEATURE_NUMBER}): record the merge commit\n\n${CREDITS}\n\n${COAUTHOR}`);
+  out(`DOCS_COMMIT=${committed.status}`);
+  if (committed.reason) out(`DOCS_REASON=${printable(committed.reason)}`);
+  closeDocsPush();
+}
+
 function closeDocsPush() {
   const pushed = pushDocs(CWD);
   out(`DOCS_PUSH=${pushed.status}`);
@@ -511,6 +532,9 @@ function doCleanup() {
     return;
   }
   out(`CHECK=2 ok (origin/${MAIN_BRANCH} contains ${CLEANUP_SHA})`);
+
+  // Runs before anything is deleted and from the branch the PR came from (gh answers for it).
+  stampMergeCommit();
 
   // Standalone, this runs from the feature branch: gh merged server-side and
   // nothing moved the local HEAD. Inside --merge it runs already on main, where
