@@ -1158,7 +1158,8 @@ describe('node inventory snapshot', () => {
     // 192 -> 194: the two Notion skills (0076B, F1, F2); both declare, so 136 -> 138.
     // 194 -> 195: add--agent-notion (0077F, F4); a skill is a declaring kind, so 138 -> 139.
     // 195 -> 193: the two Notion skills of 0076B removed (0077F, F6); both declared, so 139 -> 137.
-    expect(nodes).toHaveLength(193 + agentModeFragments() + shippedScriptsCount);
+    // 193 -> 194: the docs-migrate-prompt template node (0078F, F27); it declares nothing.
+    expect(nodes).toHaveLength(194 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
