@@ -3,6 +3,7 @@ import path from 'node:path';
 import { intro, outro, spinner, log } from '@clack/prompts';
 import { promptConfirm } from './prompt.js';
 import { removeGitignoreBlock } from './gitignore.js';
+import { releaseDocsWorktree } from './docs-worktree.js';
 
 const ADD_DIRS = ['.codeadd', '.add', '.claude', '.agent', '.agents', '.codex', '.cursor', '.kilocode', '.opencode', '.zcode'];
 const GLOBAL_ADD_DIRS = ['.codeadd', '.claude', '.agents', '.codex', '.config/opencode', '.zcode'];
@@ -106,6 +107,15 @@ export async function uninstall(cwd, force = false, scope = 'project') {
   // (a corrupted manifest carries no scope, so the --global flag decides).
   const installScope = manifest.scope ?? scope;
   const dirs = installScope === 'global' ? GLOBAL_ADD_DIRS : ADD_DIRS;
+
+  // Commit the docs worktree and take it out BEFORE anything under `.codeadd/` is
+  // removed. `codeadd-docs` stays — locally and on the remote: uninstalling the
+  // framework never deletes the project's record. A worktree that cannot be
+  // committed stops the uninstall here with nothing removed.
+  if (installScope === 'project') {
+    const released = releaseDocsWorktree(cwd);
+    if (released.released) log.info('Docs worktree committed and removed; the codeadd-docs branch is kept.');
+  }
 
   if (manifest.corrupted) {
     log.warn('Manifest is corrupted. Falling back to directory-based removal.');

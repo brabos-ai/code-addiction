@@ -59,6 +59,7 @@ const LITERAL_EXCLUSIONS = [
   { file: /^cli\/src\/mcp-registration\.js$/, regex: new RegExp(`['"]${D}['"]`) },
   { file: /^cli\/tests\/mcp-[a-z-]+\.test\.js$/, regex: new RegExp(`['"]${D}['"]`) },
   { file: /^cli\/tests\/(graph-mcp|docs-knowledge-graph|build-workbench)\.test\.js$/, regex: new RegExp(`['"]${D}['"]`) },
+  { file: /^cli\/tests\/install\.e2e\.test\.js$/, regex: new RegExp(`loadCorpus\\(['"]${D}['"]`) },
   { file: /^scripts\/rename-product-artefacts\.js$/, regex: new RegExp(`['"]${D}['"]`) },
 ];
 
@@ -80,7 +81,10 @@ export function scanText(file, text, usedExclusions = new Set()) {
     let m;
     while ((m = re.exec(clean)) !== null) {
       if (rule === 'literal') {
-        const idx = LITERAL_EXCLUSIONS.findIndex((e) => e.file.test(file) && e.regex.test(m[0]));
+        const lineStart = clean.lastIndexOf('\n', m.index) + 1;
+        const lineEnd = clean.indexOf('\n', m.index);
+        const lineText = clean.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+        const idx = LITERAL_EXCLUSIONS.findIndex((e) => e.file.test(file) && e.regex.test(lineText));
         if (idx !== -1) {
           usedExclusions.add(idx);
           continue;

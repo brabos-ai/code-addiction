@@ -11,6 +11,7 @@ import { applyEnabledFeatures, normalizeFeatureStates } from './features.js';
 import { captureBaselines } from './injection-core.js';
 import { applyEnabledPluginsDetailed, LEGACY_PLUGIN_SKILLS } from './plugins.js';
 import { runMigrations } from './migrations.js';
+import { prepareDocsWorktree, releaseDocsWorktree, reportDocsWorktree } from './docs-worktree.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 
 function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
@@ -90,6 +91,11 @@ export async function update(cwd, options = {}, scope = 'project') {
   const zipBuffer = await downloadReleaseAsset(installSource.downloadValue);
   s.stop('Downloaded.');
 
+  // The docs worktree lives under `.codeadd/`. Commit it and take it out first, so
+  // nothing the update does can touch uncommitted docs; the branch itself is never
+  // deleted. A worktree that cannot be committed stops the update here, untouched.
+  if (installScope === 'project') releaseDocsWorktree(cwd);
+
   s.start('Updating...');
   const zip = new AdmZip(zipBuffer);
 
@@ -106,6 +112,9 @@ export async function update(cwd, options = {}, scope = 'project') {
   if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
 
   fixLineEndings(path.join(addDir, 'scripts'));
+
+  // Back again, from the script this update just wrote.
+  if (installScope === 'project') reportDocsWorktree(prepareDocsWorktree(cwd));
 
   // Preserve feature + plugin states from previous manifest
   // A retired key (board) is dropped here as well as by migration 0006: the manifest written below

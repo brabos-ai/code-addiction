@@ -13,6 +13,7 @@ import { modify, applyDesiredState, validateDesired, assertPluginsEnabled } from
 import { readChangeFlags } from './change-flags.js';
 import { update } from './updater.js';
 import { applyEnabledPluginsDetailed } from './plugins.js';
+import { prepareDocsWorktree, reportDocsWorktree } from './docs-worktree.js';
 import { resolveSelected } from './providers.js';
 import { copyRelease, pruneObsolete, PRESERVE_PATTERNS, shouldPreserve } from './release-copy.js';
 import { writeMcpRegistration } from './mcp-registration.js';
@@ -351,6 +352,11 @@ export async function install(cwd, options = {}) {
   s.stop(`Installed ${allFiles.length} files.`);
 
   fixLineEndings(path.join(addDir, 'scripts'));
+
+  // The docs worktree is prepared by the script this install just wrote — one
+  // implementation. It reports instead of failing: a project with no remote yet
+  // simply has no docs branch to check out.
+  if (scope === 'project') reportDocsWorktree(prepareDocsWorktree(cwd));
 
   // gitignore write still uses cwd deliberately — only meaningful for project scope (targetDir === cwd).
   if (scope === 'project' && addToGitignore) {

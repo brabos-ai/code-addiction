@@ -90,7 +90,7 @@ export const FEATURES = {
   // add--agent-interaction instead of add--human-interaction. Off, the slot
   // fallbacks hold today's text. `commands` lists the commands whose slots and
   // fragment have landed; the plan (0038B) ends it at the twelve of its design,
-  // docs/brainstorming/2026-10-09T145554-agent-mode-feature.md.
+  // the 0038B brainstorm design.
   'agent-mode': {
     description: 'Agent mode (commands ask in one numbered batch with a recommendation, call no interactive tool, and close on the next command) for bots that drive them headless',
     default: false,
