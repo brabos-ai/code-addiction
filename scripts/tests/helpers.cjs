@@ -29,6 +29,8 @@ const path = require('node:path');
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPTS_DIR = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
 const ROOT_SCRIPTS_DIR = path.join(REPO_ROOT, 'scripts');
+// The docs root, from the one module that owns it (never spelled out here).
+const DOCS_ROOT_SEGMENTS = require(path.join(SCRIPTS_DIR, 'docs-root.cjs')).DOCS_ROOT.split('/');
 const CASE_MAP_PATH = path.join(__dirname, 'native-script-cases.json');
 
 /** Every child of the harness runs with a deterministic environment. */
@@ -172,6 +174,37 @@ function makeBoard({ files = {} } = {}) {
   return { base, bare, repo, boardDir, env, git: (cwd, ...args) => git(cwd, args), cleanup: () => rmrf(base) };
 }
 
+/**
+ * A code project with a REAL separate bare remote (never one temp dir as both),
+ * optionally with the docs worktree already prepared. `docs` is the absolute docs
+ * root. The remote is a bare repository on its own path; the code repository's
+ * `origin` points at it.
+ * Returns { base, bare, repo, docs, git, prepare, cleanup }.
+ */
+function makeProject({ prepared = true, remote = true, branch = 'main' } = {}) {
+  const base = fs.realpathSync(mkTmp('codeadd-project-'));
+  const bare = path.join(base, 'remote.git');
+  const repo = path.join(base, 'repo');
+  if (remote) git(base, ['init', '--bare', '-q', '--initial-branch=' + branch, bare]);
+  fs.mkdirSync(repo, { recursive: true });
+  git(repo, ['init', '-q', '--initial-branch=' + branch]);
+  git(repo, ['config', 'user.email', 'test@test.com']);
+  git(repo, ['config', 'user.name', 'Test']);
+  git(repo, ['config', 'commit.gpgsign', 'false']);
+  git(repo, ['commit', '--allow-empty', '-m', 'init', '-q']);
+  if (remote) {
+    git(repo, ['remote', 'add', 'origin', bare]);
+    git(repo, ['push', '-q', '-u', 'origin', branch]);
+  }
+  const docs = path.join(repo, ...DOCS_ROOT_SEGMENTS);
+  const prepare = (cwd = repo) => runScript('docs-branch', ['prepare'], { cwd });
+  if (prepared) {
+    const r = prepare();
+    if (!/DOCS=(ready|created)/.test(r.stdout)) throw new Error(`makeProject: prepare failed: ${r.output}`);
+  }
+  return { base, bare, repo, docs, git: (...args) => git(repo, args), prepare, cleanup: () => rmrf(base) };
+}
+
 /** Write a file, creating parents. */
 function write(p, content) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -264,6 +297,7 @@ module.exports = {
   git,
   makeRepo,
   makeBoard,
+  makeProject,
   write,
   read,
   readJsonl,
