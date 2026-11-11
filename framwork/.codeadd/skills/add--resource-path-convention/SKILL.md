@@ -9,6 +9,7 @@ description: Use when writing commands or skills that reference other commands, 
 - command: /add-wiki
 - script: feature-id.cjs
 - script: docs-root.cjs
+- mention: add--doc-schemas
 -->
 
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/` paths to commands or skills break because these directories do not exist in the installed project. Use build-time variables to reference resources.
@@ -23,7 +24,7 @@ Commands and skills in `framwork/.codeadd/` are the source of truth. After build
 ## When NOT to Use
 
 - Referencing scripts (`.codeadd/scripts/*.cjs` is always correct — fixed path)
-- Referencing project files outside the framework (`docs/`, `src/`, etc.)
+- Referencing project files outside the framework (`src/`, `.codeadd/docs/`, etc.)
 - Writing code in `build.js` or `cli/` (these operate on the build/install pipeline, not agent runtime)
 
 ## Variables
@@ -92,6 +93,10 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 | Skill exists in the framework's skill source directory | ✅ | ❌ |
 | Skill is generated at runtime in user project | ❌ | ✅ |
 | Resolves per-provider | ✅ | ❌ (always `.codeadd/`) |
+
+### The docs root is a literal
+
+Outputs live under `.codeadd/docs/` on every provider, always — it never changes and it is data in the user's project, not a framework artefact. Write it literally; there is no variable for it. Searches that name it must pass it explicitly (see `add--doc-schemas`, Docs Branch).
 
 ### `{{doc-schema}}`
 

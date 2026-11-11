@@ -22,6 +22,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add-plan
 - command: /add-pull-request
 - script: build-setup.cjs
+- script: docs-branch.cjs
 - script: status.cjs
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--doc-schemas/references/fix.md
@@ -123,6 +124,24 @@ Every write to an existing doc MUST follow: **read → preserve → complement �
 
 Anti-patterns: recreating a doc from scratch; silently overwriting populated sections; forgetting to bump `updated:`; duplicating content already owned by another doc (link instead).
 
+## Docs Branch
+
+**Every output a command writes lives under `.codeadd/docs/`.** That directory is a git worktree of `codeadd-docs`, an orphan branch in the project's own remote — it is not part of the code branch, so docs never ride in a code PR. `status.cjs` prepares it and prints one `DOCS=` line: `ready`, `created`, `linked` or `missing`. On `missing`, run `node .codeadd/scripts/docs-branch.cjs prepare` once; if it is still `missing`, report its `DOCS_REASON=` line and stop writing docs. **Never write an output anywhere else.**
+
+**Search it by passing the root.** `rg`, Grep and Glob skip git-ignored paths, and `.codeadd/docs/` is ignored by the code branch. A search that does not name the root finds nothing and looks like absence:
+
+```
+rg -n "^id: F0042$" .codeadd/docs/
+```
+
+**The end-of-command rule.** A command that wrote or changed anything under `.codeadd/docs/` runs this as the last step before its final report:
+
+```
+node .codeadd/scripts/docs-branch.cjs commit "<what changed, one line>"
+```
+
+It prints `DOCS_COMMIT=committed`, `clean` or `failed`. Name a `failed` result in the report; do not retry in a loop. Commits stay local until `/add-done` pushes `codeadd-docs` (agent-mode pushes it at the handoff), and a command never runs `git` in the docs directory itself.
+
 ## ID Convention & References
 
 Docs reference each other via **stable IDs** (`F0042`, `H0013`, `PRD0009`, `CHG0001`) rather than paths or titles. References use `{{doc:<ID>}}` syntax and are resolved at **runtime** by agents via grep on frontmatter `id:` — NOT at build time.
@@ -168,7 +187,7 @@ The regression was introduced by {{doc:H0013}}.
 related: [F0042, PRD0009, H0013]
 ```
 
-**Resolution.** When an agent encounters `{{doc:F0042}}`: (1) `grep -rE "^id: F0042$" docs/`, (2) resolve to file path, (3) read target (frontmatter + TL;DR first, sections on demand).
+**Resolution.** When an agent encounters `{{doc:F0042}}`: (1) `rg "^id: F0042$" .codeadd/docs/` (the root is passed explicitly — see Docs Branch), (2) resolve to file path, (3) read target (frontmatter + TL;DR first, sections on demand).
 
 **Orphans.** A `{{doc:<ID>}}` whose target does not resolve is a **warning**, not error — the gate surfaces it; user decides. Deleting a doc does NOT fix inbound refs — prefer `status: deprecated` over deletion.
 
@@ -302,7 +321,7 @@ Schemas are grouped by **doc purpose**, not by producing command. Each category 
 
 | File | Describes | Read it when |
 |------|-----------|--------------|
-| `references/delivery-index.md` | `docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.cjs` |
+| `references/delivery-index.md` | `.codeadd/docs/delivered.jsonl` — the per-project delivery index: one JSONL line per delivered feature, its `{what, at, find}` item anchor, the four statuses, the corpus rule, the nine hard bans and the `REFUSED=` vocabulary | authoring or reading a delivery-index entry, or changing `.codeadd/scripts/delivered.cjs` |
 
 ## Validation Gate Block
 
@@ -334,7 +353,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
 
 5. **Non-redundancy / density.** Apply Universal Rules → Voice: every sentence is fact, decision, constraint, link, or signal — never filler. Delete restatements, paraphrase, repetition. Numeric length caps are prohibited.
 
-6. **Doc refs resolve.** For every `{{doc:<ID>}}` in the doc, run reverse grep: `grep -rE "^id: <ID>$" docs/`. Each ref MUST return ≥1 hit. Unresolved refs = WARNING (not error); print them in the command output for the user to fix.
+6. **Doc refs resolve.** For every `{{doc:<ID>}}` in the doc, run reverse grep: `rg "^id: <ID>$" .codeadd/docs/`. Each ref MUST return ≥1 hit. Unresolved refs = WARNING (not error); print them in the command output for the user to fix.
 
 7. **`## Relations` lines are well-formed, and every target resolves.** For each line under `## Relations`, confirm it matches `- <type> [[<id>]]` with an optional ` — <why>` tail, that `<type>` is one of `caused_by`, `depends_on`, `part_of`, `links_to`, and that `<id>` resolves with the same reverse grep as check 6. Any of the three failing = **FAIL**, not a warning: STOP, fix the line, re-run this gate.
 
