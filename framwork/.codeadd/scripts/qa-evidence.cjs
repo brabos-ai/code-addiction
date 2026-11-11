@@ -24,13 +24,16 @@
  *     ACTION=/SCOPE=/FINAL=/FINAL_REPORT= plus the report metadata;
  *   - usage is exit 2, a domain failure is STATUS=ERROR/ERROR=<message> exit 1.
  *
- * Built-ins only. No shell.
+ * The ignored run-output path is built from the docs root resolver beside this
+ * file (docs-root.cjs). Built-ins only. No shell.
  */
 
 'use strict';
 
 const fs = require('node:fs');
 const path = require('node:path');
+
+const { DOCS_ROOT, DOCS_LAYOUT } = require('./docs-root.cjs');
 
 /** A domain failure: printed as STATUS=ERROR/ERROR=<message>, exit 1. */
 class FailError extends Error {}
@@ -499,7 +502,7 @@ function promoteBaseline(featureDir, raw) {
 const IGNORE_START = '# ADD QA evidence - managed by add-qa-setup';
 const IGNORE_LEGACY = '# ADD QA evidence - managed by add.qa-setup';
 const IGNORE_END = '# END ADD QA evidence';
-const IGNORE_LINE = 'docs/features/**/_tests/run-*/';
+const IGNORE_LINE = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/**/_tests/run-*/`;
 
 /** awk-style records: newline separated, no phantom record for a trailing \n. */
 function awkRecords(content) {

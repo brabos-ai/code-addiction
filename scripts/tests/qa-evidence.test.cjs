@@ -19,6 +19,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 /** Forward-slash a path fragment so Windows output still matches POSIX shapes. */
 const slash = (s) => String(s).replace(/\\/g, '/');
@@ -27,7 +28,7 @@ const slash = (s) => String(s).replace(/\\/g, '/');
 function feature(t, id = '0001F-evidence') {
   const base = h.mkTmp('codeadd-qa-evidence-');
   t.after(() => h.rmrf(base));
-  const dir = path.join(base, 'docs', 'features', id);
+  const dir = path.join(base, ...DOCS_ROOT.split('/'), DOCS_LAYOUT.features, id);
   fs.mkdirSync(dir, { recursive: true });
   return { base, dir };
 }
@@ -346,7 +347,7 @@ test('qa-evidence#019 — ensure-ignore creates, normalizes, and reruns byte-ide
   const firstRun = h.runScript('qa-evidence', ['ensure-ignore', base], { cwd: base });
   assert.equal(firstRun.status, 0, firstRun.output);
   const first = h.read(gitignore);
-  assert.match(first, /docs\/features\/\*\*\/_tests\/run-\*\//);
+  assert.ok(first.includes(`${DOCS_ROOT}/${DOCS_LAYOUT.features}/**/_tests/run-*/`), first);
   assert.match(first, /# ADD - managed by code-addiction/);
 
   const secondRun = h.runScript('qa-evidence', ['ensure-ignore', base], { cwd: base });

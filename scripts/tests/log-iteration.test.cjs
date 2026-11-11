@@ -20,16 +20,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 const FEATURE_ID = '0001F-test';
-const ITERATIONS = 'docs/features/0001F-test/iterations.md';
+const FEATURE_REL = `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${FEATURE_ID}`;
+const ITERATIONS = `${FEATURE_REL}/iterations.md`;
 
 const abs = (repo, rel) => path.join(repo, rel);
 
 /** The Bats fixture: a feature directory on `feature/<id>`. */
 function featureRepo() {
   const { repo, git, cleanup } = h.makeRepo();
-  fs.mkdirSync(abs(repo, `docs/features/${FEATURE_ID}`), { recursive: true });
+  fs.mkdirSync(abs(repo, FEATURE_REL), { recursive: true });
   git('checkout', '-b', `feature/${FEATURE_ID}`, '-q');
   return { repo, git, cleanup };
 }
@@ -222,6 +224,32 @@ test('log-iteration#015 accepts UTF-8 characters in what field', () => {
     const content = iterationsText(repo);
     assert.ok(content.includes('btn'));
     assert.ok(content.includes(what), 'UTF-8 is cut by characters, not bytes');
+  } finally {
+    cleanup();
+  }
+});
+
+test('log-iteration#016 prints FILE: under the docs root and writes there', () => {
+  const { repo, cleanup } = featureRepo();
+  try {
+    const res = h.runScript('log-iteration', ['fix', 'a', 'b', 'c.ts'], { cwd: repo });
+    assert.equal(res.status, 0, res.output);
+    assert.ok(res.stdout.includes(`FILE:${ITERATIONS}\n`), res.stdout);
+    assert.equal(fs.existsSync(abs(repo, ITERATIONS)), true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('log-iteration#017 an absent docs root is ERROR:docs_root_missing, exit 1, nothing written', () => {
+  const { repo, git, cleanup } = h.makeRepo();
+  try {
+    git('checkout', '-b', `feature/${FEATURE_ID}`, '-q');
+    const res = h.runScript('log-iteration', ['fix', 'a', 'b', 'c.ts'], { cwd: repo });
+    assert.equal(res.status, 1, res.output);
+    assert.ok(res.stdout.includes('ERROR:docs_root_missing'), res.stdout);
+    assert.ok(res.stdout.includes('DOCS_ROOT_MISSING'), res.stdout);
+    assert.equal(fs.existsSync(abs(repo, DOCS_ROOT)), false);
   } finally {
     cleanup();
   }

@@ -22,7 +22,7 @@
  *
  * THE IDENTITY HEADER is written once, on creation only. FEATURE_ID and
  * PLAN_PATH are optional; when omitted they are derived from the ledger's own
- * directory (`docs/features/<ID>/build-ledger.md` → id `0003F-signup`, plan
+ * directory (`<docs root>/features/<ID>/build-ledger.md` → id `0003F-signup`, plan
  * `<dir>/plan.md`). Once the file exists they are IGNORED: the header is never
  * rewritten, because a ledger whose identity changes mid-build is a ledger
  * that cannot be trusted.
@@ -44,7 +44,7 @@ const FINAL_REVIEW_LINE = /^Final review: (passed|ruled [0-9]+|blocked [0-9]+) \
 
 const USAGE = [
   'Usage: build-ledger.cjs <LEDGER_FILE> <LINE> [FEATURE_ID] [PLAN_PATH]',
-  '  LEDGER_FILE  docs/features/<ID>/build-ledger.md, or <SF_DIR>/build-ledger.md on an epic',
+  '  LEDGER_FILE  <docs root>/features/<ID>/build-ledger.md, or <SF_DIR>/build-ledger.md on an epic',
   '  LINE         one event, one line — must not be empty and must not contain a newline',
   '  FEATURE_ID   optional; defaults to the ledger directory\'s name',
   '  PLAN_PATH    optional; defaults to <ledger directory>/plan.md',

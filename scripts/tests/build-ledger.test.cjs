@@ -20,11 +20,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
-const LEDGER = 'docs/features/0003F-signup/build-ledger.md';
+/** A path under the docs root's features folder, as the commands pass it. */
+const F = (sub) => `${DOCS_ROOT}/${DOCS_LAYOUT.features}/${sub}`;
+
+const LEDGER = F('0003F-signup/build-ledger.md');
 const FEATURE_ID = '0003F';
-const PLAN_PATH = 'docs/features/0003F-signup/plan.md';
-const HEADER = '# Build ledger — feature: 0003F — plan: docs/features/0003F-signup/plan.md';
+const PLAN_PATH = F('0003F-signup/plan.md');
+const HEADER = `# Build ledger — feature: 0003F — plan: ${PLAN_PATH}`;
 
 const abs = (repo, rel) => path.join(repo, rel);
 const ledgerLines = (repo) => h.read(abs(repo, LEDGER)).split('\n');
@@ -137,10 +141,10 @@ test('build-ledger#007 a line starting with a dash is an entry, not an option', 
 test('build-ledger#008 the parent directory is created when absent', () => {
   const { repo, cleanup } = h.makeRepo();
   try {
-    const deep = 'docs/features/0004F-epic/subfeatures/SF02-billing/build-ledger.md';
+    const deep = F('0004F-epic/subfeatures/SF02-billing/build-ledger.md');
     const res = h.runScript(
       'build-ledger',
-      [deep, 'T01: complete', '0004F', 'docs/features/0004F-epic/subfeatures/SF02-billing/plan.md'],
+      [deep, 'T01: complete', '0004F', F('0004F-epic/subfeatures/SF02-billing/plan.md')],
       { cwd: repo },
     );
     assert.equal(res.status, 0, res.output);
@@ -157,7 +161,7 @@ test('build-ledger#009 FEATURE_ID and PLAN_PATH omitted: the header is derived f
     assert.equal(res.status, 0, res.output);
     assert.equal(
       ledgerLines(repo)[0],
-      '# Build ledger — feature: 0003F-signup — plan: docs/features/0003F-signup/plan.md',
+      `# Build ledger — feature: 0003F-signup — plan: ${PLAN_PATH}`,
     );
   } finally {
     cleanup();
