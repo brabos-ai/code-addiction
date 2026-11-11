@@ -95,13 +95,27 @@ function copyDirRecursive(src, dest, provider = null) {
  * files ship marker-free and post-install injection locates anchors by text.
  */
 function stripHtmlComments(content) {
-  return content
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<!--/g, '&lt;!--')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  // Scan rather than regex-replace so a leftover `<!--` cannot remain
+  // (CodeQL js/incomplete-multi-character-sanitization). Closed comments
+  // are dropped; an unclosed opener is dropped and the rest kept as prose.
+  const src = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const start = src.indexOf('<!--', i);
+    if (start === -1) {
+      out += src.slice(i);
+      break;
+    }
+    out += src.slice(i, start);
+    const end = src.indexOf('-->', start + 4);
+    if (end === -1) {
+      i = start + 4;
+      continue;
+    }
+    i = end + 3;
+  }
+  return out.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // ---------------------------------------------------------------------------
