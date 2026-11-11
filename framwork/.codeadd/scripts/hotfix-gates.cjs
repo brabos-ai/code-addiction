@@ -147,6 +147,9 @@ function headInfo(rel) {
 }
 
 function entryFor(rel, source) {
+  // Docs live in the docs worktree, a separate branch: no code commit or index holds them, so a
+  // docs path is read from the worktree whatever the requested source (a `--tree` recovery included).
+  if (rel.startsWith(`${DOCS_ROOT}/`)) source = 'worktree';
   let info = null;
   if (source === 'index') info = blobInfo(indexInfo(rel));
   if (source === 'worktree') info = fsInfo(rel);
