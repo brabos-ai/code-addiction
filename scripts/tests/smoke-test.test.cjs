@@ -107,7 +107,7 @@ function remoteRefs(remote) {
 function resolveGlob(repo, rel) {
   if (!rel.includes('*')) return fs.existsSync(path.join(repo, rel)) ? [rel] : [];
   const dir = path.dirname(rel);
-  const prefix = path.basename(rel).replace('*', '');
+  const prefix = path.basename(rel).replace(/\*$/, '');
   const abs = path.join(repo, dir);
   if (!fs.existsSync(abs)) return [];
   return fs

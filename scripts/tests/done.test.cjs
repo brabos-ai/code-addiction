@@ -1141,7 +1141,7 @@ test('done#072 L2.4 commit-push: the code commit holds no docs path; the docs br
     // The code side: nothing under the docs root, no gitlink, nothing left staged.
     const codeSha = h.git(p.repo, ['rev-parse', 'HEAD']).stdout.trim();
     const names = h.git(p.repo, ['diff', '--name-only', 'main...HEAD']).stdout;
-    assert.doesNotMatch(names, new RegExp(DOCS_ROOT.replace(/\./g, '\\.')));
+    assert.ok(!names.includes(DOCS_ROOT), names);
     assert.match(names, /\.codeadd\/wiki\/own\.md/);
     assert.equal(h.git(p.repo, ['ls-files', '-s']).stdout.split('\n').filter((l) => l.startsWith('160000')).length, 0);
     assert.equal(h.git(p.repo, ['ls-files', '--', DOCS_ROOT]).stdout.trim(), '');
@@ -1164,7 +1164,7 @@ test('done#073 commit-push: `git add -A` can never stage the docs worktree', () 
     h.write(docsFile(p.docs, 'features/0001F-test/about.md'), '# about\n');
     h.git(p.repo, ['add', '-A']);
     const staged = h.git(p.repo, ['diff', '--cached', '--name-only']).stdout;
-    assert.doesNotMatch(staged, new RegExp(DOCS_ROOT.replace(/\./g, '\\.')));
+    assert.ok(!staged.includes(DOCS_ROOT), staged);
     assert.equal(h.git(p.repo, ['ls-files', '-s']).stdout.split('\n').filter((l) => l.startsWith('160000')).length, 0);
   }));
 

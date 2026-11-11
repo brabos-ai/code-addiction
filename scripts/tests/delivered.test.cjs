@@ -1150,7 +1150,7 @@ test('delivered#077 L1.3: the LAST line for an id supplies the code_sha (a stamp
     const sha = headSha(r.repo);
     const prev = h.read(indexPath(r.repo));
     const bare = entry('D4', 'live', 'delivery D4 recorded', 'words D4', 'src/four.ts', 'markerFour');
-    h.write(indexPath(r.repo), prev.replace(/\n$/, '\n') + bare + '\n' + codeEntry('D4', 'src/four.ts', 'markerFour', sha) + '\n');
+    h.write(indexPath(r.repo), prev.replace(/\n*$/, '\n') + bare + '\n' + codeEntry('D4', 'src/four.ts', 'markerFour', sha) + '\n');
     const res = runTouched(r.repo, ['src/four.ts']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout)[0].commit, sha);

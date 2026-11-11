@@ -99,6 +99,7 @@ function stripHtmlComments(content) {
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<!--/g, '&lt;!--')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
