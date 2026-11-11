@@ -73,6 +73,9 @@ npx codeadd plugins list
 # serve the knowledge graph over MCP stdio (docs | artefacts)
 npx codeadd mcp --corpus=docs
 
+# move outputs kept in your code branch onto the codeadd-docs branch (run --dry-run first)
+npx codeadd docs migrate --dry-run
+
 # show installation configuration
 npx codeadd config show
 ```

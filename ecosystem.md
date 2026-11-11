@@ -17,6 +17,9 @@ graph LR
   DONE(add-done)
 
   AGIN{{add--agent-interaction}}
+  AGMDST{{add--agents-md-style}}
+  ARDI{{add--architecture-discovery}}
+  BAAR{{add--backend-architecture}}
   BADE{{add--backend-development}}
   CORE{{add--code-review}}
   CO{{add--commit}}
@@ -28,6 +31,7 @@ graph LR
   FEDI{{add--feature-discovery}}
   FESP{{add--feature-specification}}
   FIRE{{add--final-report}}
+  FRAR{{add--frontend-architecture}}
   FRDE{{add--frontend-development}}
   HUIN{{add--human-interaction}}
   IDCO{{add--id-convention}}
@@ -44,7 +48,7 @@ graph LR
   UXDE{{add--ux-design}}
   WIMA{{add--wiki-maintenance}}
 
-  BRAINSTORM --> DEMO & DOSC & FIRE & HUIN & KNDI
+  BRAINSTORM --> AGMDST & ARDI & BAAR & DEMO & DOSC & FIRE & FRAR & HUIN & KNDI
   BRAINSTORM -->|agent-mode| AGIN
   NEW --> DEMO & DOSC & FESP & FIRE & HUIN & IDCO & KNDI & PLRE & REDI & SUDRDE
   NEW -->|agent-mode| AGIN
@@ -58,7 +62,7 @@ graph LR
   REVIEW --> CO & DEMO & DOSC & FIRE & HUIN & IN & KNDI & SUDRDE & TACH
   REVIEW -->|agent-mode| AGIN
   REVIEW -->|qa-pipeline| QA
-  DONE --> DOSC & EC & FIRE & HUIN & IDCO & WIMA
+  DONE --> DEMO & DOSC & EC & FIRE & HUIN & IDCO & WIMA
   DONE -->|agent-mode| AGIN
 ```
 
@@ -99,22 +103,22 @@ graph LR
   UXDE{{add--ux-design}}
   WIMA{{add--wiki-maintenance}}
 
-  HELP --> DEENSE & EC
-  AUDIT --> DOSC & EC & FIRE & HECH & HUIN & IN & SUDRDE
+  HELP --> DEENSE & DOSC & EC
+  AUDIT --> DEMO & DOSC & EC & FIRE & HECH & HUIN & IN & SUDRDE
   AUDIT -->|agent-mode| AGIN
-  DIAGNOSE --> DOSC & EC & FIRE & HUIN & IN & KNDI & SUDRDE
+  DIAGNOSE --> DEMO & DOSC & EC & FIRE & HUIN & IN & KNDI & SUDRDE
   DIAGNOSE -->|agent-mode| AGIN
-  HOTFIX --> DOSC & EC & FIRE & HUIN & IDCO & IN & KNDI & SUDRDE & UXDE
+  HOTFIX --> DEMO & DOSC & EC & FIRE & HUIN & IDCO & IN & KNDI & SUDRDE & UXDE
   HOTFIX -->|agent-mode| AGIN
   HOTFIX -->|tdd-pipeline| TD
-  PULLREQUEST --> CO & DOSC & FIRE & HUIN & IDCO
+  PULLREQUEST --> CO & DEMO & DOSC & FIRE & HUIN & IDCO
   PULLREQUEST -->|agent-mode| AGIN
   QASETUP --> DEMO & DEENSE & DOSC & FIRE & HUIN & QA & QAMI & SE & SECO & SUDRDE
   QASETUP -->|agent-mode| AGIN
   SETUP --> DEMO & DEENSE & EC & FIRE & HUIN & SE
   SETUP -->|agent-mode| AGIN
   UX --> UXDE
-  WIKI --> AGMDST & ARDI & DOSC & EC & FIRE & HUIN & SUDRDE & WIMA
+  WIKI --> AGMDST & ARDI & DEMO & DOSC & EC & FIRE & HUIN & SUDRDE & WIMA
   WIKI -->|agent-mode| AGIN
 ```
 
