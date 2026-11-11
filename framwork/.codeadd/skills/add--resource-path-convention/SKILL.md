@@ -8,6 +8,7 @@ description: Use when writing commands or skills that reference other commands, 
 <!-- uses:
 - command: /add-wiki
 - script: feature-id.cjs
+- script: docs-root.cjs
 -->
 
 Commands and skills in `framwork/.codeadd/` are the source of truth. After build, they are placed in provider-specific directories (`.claude/commands/`, `.agents/skills/`, `.gemini/commands/`, etc.). Hardcoded `.codeadd/` paths to commands or skills break because these directories do not exist in the installed project. Use build-time variables to reference resources.
@@ -91,6 +92,16 @@ Typical cases: artefacts generated at runtime by commands like `/add-wiki` (whic
 | Skill exists in the framework's skill source directory | ✅ | ❌ |
 | Skill is generated at runtime in user project | ❌ | ✅ |
 | Resolves per-provider | ✅ | ❌ (always `.codeadd/`) |
+
+### `{{doc-schema}}`
+
+Resolves to the current doc format version — the one integer declared as `DOC_SCHEMA_VERSION` in `.codeadd/scripts/docs-root.cjs`. Same across all providers, like `{{addpath:}}`. Use it wherever a generated document or a template carries its `schema:` frontmatter line:
+
+```
+schema: {{doc-schema}}               # → the integer DOC_SCHEMA_VERSION declares
+```
+
+**Never write the number.** A literal `schema: <n>` in markdown source is a build lint warning: the version changes with the doc format, not with the package, and a copy in a file is how the files come to disagree. The variable is refused inside a chosen injection anchor line and inside a `## Materializes` block, as the other variables are.
 
 ## Examples
 

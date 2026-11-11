@@ -47,7 +47,7 @@ const CODE_FILE = /\.(js|cjs|mjs|ts|json)$/;
 const URL_TOKEN = /https?:\/\/\S+/g;
 // A: site routes — `/docs/` or `/pt-br/docs/` at a token start.
 const SITE_ROUTE = new RegExp(`(?<=^|[\\s"'(\`])(/pt-br)?/${D}/`, 'gm');
-// B: git branch-type prefix — `docs/` + [NNNN]D- | NNNND- | four digits and D-
+// B: git branch-type prefix — the docs type letter + slash + [NNNN]D- | NNNND- | four digits and D-
 const BRANCH_PREFIX = new RegExp(`${D}/(\\[NNNN\\]D-|NNNND-|[0-9]{4}D-)`, 'g');
 
 // Explicit {file, regex} exclusions for the MCP corpus NAME and the rename
@@ -170,7 +170,7 @@ describe('docs-no-legacy — self-check', () => {
   it('reports a planted hit of each pattern', () => {
     expect(plant('a.md', `see ${D}/features/x\n`)).toHaveLength(1);
     expect(plant('b.md', `./${D}/x and \${root}/${D}/y\n`)).toHaveLength(2);
-    expect(plant('c.md', `read .codeadd/project/decisions.jsonl\n`)).toHaveLength(1);
+    expect(plant('c.md', `read ${'.codeadd/project/' + 'decisions.jsonl'}\n`)).toHaveLength(1);
     expect(plant('d.js', `path.join(root,\n  '${D}',\n  'x')\n`)).toHaveLength(1);
     expect(plant('e.md', `git ls-files ':(exclude)${D}'\n`)).toHaveLength(1);
   });

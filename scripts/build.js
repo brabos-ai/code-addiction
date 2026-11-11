@@ -20,6 +20,10 @@ const crypto = require('node:crypto');
 
 const ROOT = path.resolve(__dirname, '..');
 
+// The doc format version is declared ONCE, in docs-root.cjs. The build reads that
+// constant through require() and never holds a second copy of the number.
+const { DOC_SCHEMA_VERSION } = require(path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'docs-root.cjs'));
+
 // ---------------------------------------------------------------------------
 // I/O helpers (thin wrappers — keep logic out of here)
 // ---------------------------------------------------------------------------
@@ -117,7 +121,7 @@ const SLOT_CLOSE_RE = /^\s*\/slot:([A-Za-z0-9][A-Za-z0-9.+_-]*)\s*$/;
 const SECTION_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SAFE_FALLBACK_RE = /^fallbacks\/[A-Za-z0-9][A-Za-z0-9._-]*\.md$/;
 // Resource-path variables that resolve differently per provider — illegal in an anchor.
-const ANCHOR_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):/;
+const ANCHOR_VARIABLE_RE = /\{\{(?:(?:cmd|skill|addpath):|doc-schema\}\})/;
 
 /**
  * A real injection marker stands alone on its line. A marker embedded in prose
@@ -519,7 +523,7 @@ const CONTRACT_HEADING_RE = /^## Materializes[ \t]*$/m;
 // this ban — banning it would leave the declaration unable to describe itself.
 // Do NOT relax this to [^}\s]+: `{{cmd: add.plan}}` DOES resolve (to a path with a
 // leading space) and must stay banned.
-const CONTRACT_VARIABLE_RE = /\{\{(?:cmd|skill|addpath):[^}]+\}\}/;
+const CONTRACT_VARIABLE_RE = /\{\{(?:(?:cmd|skill|addpath):[^}]+|doc-schema)\}\}/;
 const SHAPE_LINE_RE = /^shape:[ \t]*\S+[ \t]*$/;
 // `changed-in:` is the version that ships the current shape. Hand-declared like
 // `shape:` and excluded from the hash the same way — it describes the shape, it
@@ -653,7 +657,7 @@ function extractContract(rawContent, resourceName, _codeaddDir = CODEADD_DIR) {
   if (CONTRACT_VARIABLE_RE.test(block)) {
     throw new Error(
       `Contract block in ${resourceName} carries a resource-path variable — ` +
-        `{{cmd:}}/{{skill:}}/{{addpath:}} resolve per provider and would produce a different shape ` +
+        `{{cmd:}}/{{skill:}}/{{addpath:}}/{{doc-schema}} are variables and would produce a different shape ` +
         `per build target. Write the literal path inside "## Materializes".`,
     );
   }
@@ -1690,6 +1694,47 @@ const TRANSFORMERS = {
 // ---------------------------------------------------------------------------
 
 /**
+ * Resolve the one provider-independent doc-format variable. Shared by the
+ * per-provider resolver and by the packaged-tree pass below, so there is one rule.
+ * @param {string} content
+ * @returns {string}
+ */
+function resolveDocSchema(content) {
+  return content.replace(/\{\{doc-schema\}\}/g, String(DOC_SCHEMA_VERSION));
+}
+
+/**
+ * Resolve {{doc-schema}} in the trees that ship UNBUILT — .codeadd/{templates,
+ * fragments,plugins,fallbacks,agent-mode}. release.yml packs them as authored,
+ * so without this pass the token would reach a user's project and be copied into
+ * a generated doc. It rewrites files in place, which is only right in a throwaway
+ * checkout: `node scripts/build.js --package` (the release workflow) runs it, a
+ * developer's plain build never does, and the tracked sources keep the token.
+ * @param {string} codeaddDir  the .codeadd directory to resolve in
+ * @returns {number} files rewritten
+ */
+function resolvePackagedDocSchema(codeaddDir = CODEADD_DIR) {
+  let changed = 0;
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.md')) {
+        const raw = fs.readFileSync(p, 'utf8');
+        const out = resolveDocSchema(raw);
+        if (out !== raw) {
+          fs.writeFileSync(p, out, 'utf8');
+          changed++;
+        }
+      }
+    }
+  };
+  for (const sub of ['templates', 'fragments', 'plugins', 'fallbacks', 'agent-mode']) walk(path.join(codeaddDir, sub));
+  return changed;
+}
+
+/**
  * Resolve {{cmd:NAME}}, {{skill:NAME/FILE}}, {{addpath:X}} variables for a specific provider.
  * Scripts (.codeadd/scripts/) are fixed paths — no substitution needed.
  *
@@ -1718,6 +1763,9 @@ function resolveResourcePaths(content, provider) {
 
   // {{addpath:X}} → literal .codeadd/X (provider-agnostic runtime path)
   content = content.replace(/\{\{addpath:([^}]+)\}\}/g, (_, sub) => `.codeadd/${sub}`);
+
+  // {{doc-schema}} → DOC_SCHEMA_VERSION from docs-root.cjs (provider-independent, like addpath)
+  content = resolveDocSchema(content);
 
   return content;
 }
@@ -1773,6 +1821,14 @@ function lintResourcePaths(content, srcPath) {
     }
     if (/\.codeadd\/skills\//.test(line)) {
       console.warn(`  LINT ${relPath}:${i + 1}: raw .codeadd/skills/ reference — use {{skill:NAME/FILE}} or {{addpath:skills/NAME/...}}`);
+    }
+  }
+
+  // The doc format version is never a literal in markdown source — fenced examples included.
+  const allLines = content.split('\n');
+  for (let i = 0; i < allLines.length; i++) {
+    if (/\bschema:[ \t]*\d/.test(allLines[i])) {
+      console.warn(`  LINT ${relPath}:${i + 1}: literal schema number — use {{doc-schema}}`);
     }
   }
 }
@@ -2559,6 +2615,8 @@ module.exports = {
   writeContracts,
   _resetContracts: () => { CONTRACTS = {}; },
   resolveResourcePaths,
+  resolveDocSchema,
+  resolvePackagedDocSchema,
   lintResourcePaths,
   readFallbackFile,
   collectLintableSources,
@@ -2584,4 +2642,9 @@ module.exports = {
 // Only run when executed directly
 if (require.main === module) {
   main();
+  // `--package`: the release workflow's throwaway checkout also resolves the
+  // doc-format variable in the trees that ship unbuilt (see resolvePackagedDocSchema).
+  if (process.argv.includes('--package')) {
+    console.log(`  Packaged trees   : ${resolvePackagedDocSchema()} file(s) resolved ({{doc-schema}})`);
+  }
 }

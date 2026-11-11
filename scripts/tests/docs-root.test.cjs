@@ -30,10 +30,10 @@ test('constants are the literals the plan fixes', () => {
 
 test('docsPath resolves under <toplevel>/.codeadd/docs from a subdirectory', (t) => {
   const dir = repo(t);
-  fs.mkdirSync(path.join(dir, '.codeadd', 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, ...mod.DOCS_ROOT.split('/')), { recursive: true });
   fs.mkdirSync(path.join(dir, 'src', 'deep'), { recursive: true });
-  assert.equal(mod.docsPath(path.join(dir, 'src', 'deep'), 'features'), path.join(dir, '.codeadd', 'docs', 'features'));
-  assert.equal(mod.docsPath(dir), path.join(dir, '.codeadd', 'docs'));
+  assert.equal(mod.docsPath(path.join(dir, 'src', 'deep'), 'features'), path.join(dir, ...mod.DOCS_ROOT.split('/'), 'features'));
+  assert.equal(mod.docsPath(dir), path.join(dir, ...mod.DOCS_ROOT.split('/')));
 });
 
 test('docsPath resolves through a linked code worktree', (t) => {
@@ -41,8 +41,8 @@ test('docsPath resolves through a linked code worktree', (t) => {
   h.git(dir, ['-c', 'user.email=a@b.c', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'x']);
   const wt = path.join(dir, '.worktrees', 'feat');
   h.git(dir, ['worktree', 'add', '-q', '-b', 'feat/x', wt]);
-  fs.mkdirSync(path.join(wt, '.codeadd', 'docs'), { recursive: true });
-  assert.equal(mod.docsPath(wt, 'features'), path.join(fs.realpathSync(wt), '.codeadd', 'docs', 'features'));
+  fs.mkdirSync(path.join(wt, ...mod.DOCS_ROOT.split('/')), { recursive: true });
+  assert.equal(mod.docsPath(wt, 'features'), path.join(fs.realpathSync(wt), ...mod.DOCS_ROOT.split('/'), 'features'));
 });
 
 test('an absent root throws DOCS_ROOT_MISSING and never names another location', (t) => {
@@ -55,7 +55,7 @@ test('an absent root throws DOCS_ROOT_MISSING and never names another location',
 
 test('Windows separators in segments resolve the same as posix ones', (t) => {
   const dir = repo(t);
-  fs.mkdirSync(path.join(dir, '.codeadd', 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(dir, ...mod.DOCS_ROOT.split('/')), { recursive: true });
   assert.equal(mod.docsPath(dir, 'features\\0001F-x\\about.md'), mod.docsPath(dir, 'features', '0001F-x', 'about.md'));
   assert.equal(mod.toPosix('.codeadd\\docs\\features'), '.codeadd/docs/features');
 });

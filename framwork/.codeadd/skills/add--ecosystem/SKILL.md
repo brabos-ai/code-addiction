@@ -175,7 +175,7 @@ for accepted manual instructions; the route itself remains unchanged.
 | add--settings | The project settings file `.codeadd/settings.json` — ownership, read/merge/write, the content rule, the `qa` and `setup` section schemas and the receipt fields | add-qa-setup, add-setup |
 | add--setup-contract | Compare a project's receipt `setup-shape` to the shipped sidecar `shape` and route FIRST-RUN / CURRENT / STALE | add-qa-setup |
 | add--subagent-driven-development | Subagent coordination with quality gates | add-audit, add-build, add-diagnose, add-hotfix, add-new, add-plan, add-qa-setup, add-review, add-wiki |
-| add--tasks-checklist | tasks.md schema: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add-build, add-plan, add-review |
+| add--tasks-checklist | tasks.md format: 5 sections, tick rules, [!] semantics, "non-trivial change" rule, architect prompt template — single source of truth | add-build, add-plan, add-review |
 | add--tdd | RED-GREEN-REFACTOR execution discipline: failing test confirmed for the right reason before code | (none) |
 | add--test-specification | Generate contract test cases (RF/RN → testable cases) into plan-test-spec.md | (none) |
 | add--token-efficiency | Compression, compact JSON, minimal tokens | (none) |
