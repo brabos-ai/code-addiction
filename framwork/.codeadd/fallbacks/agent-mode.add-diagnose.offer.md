@@ -5,7 +5,7 @@ invoke it.
 
 | Accepted route | Next activity |
 |---|---|
-| `hotfix` | `/add-hotfix @docs/diagnose/<file>.md` — it consumes the `## Hotfix Handoff` this report appended |
+| `hotfix` | `/add-hotfix @.codeadd/docs/diagnose/<file>.md` — it consumes the `## Hotfix Handoff` this report appended |
 | `feature` | `/add-new` — a functional gap becomes a feature |
 | `extend` | `/add-new` or `/add-plan`, per the route's own scope |
 | `no-action` | none — the diagnosis was the deliverable |

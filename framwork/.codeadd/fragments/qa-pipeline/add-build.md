@@ -21,7 +21,7 @@ Findings from the QA judgement reach this step the same way every other finding 
 and no `qa` argument — one correction contract, one path. This section sits inside STEP add-build.correct and adds
 to the base contract above (consume, scoped re-review, resolution annex, finalized marker); it replaces none of it.
 
-1. Read `## Fix Routing` from the highest `docs/features/${FEATURE_ID}/review-NNN.md`.
+1. Read `## Fix Routing` from the highest `.codeadd/docs/features/${FEATURE_ID}/review-NNN.md`.
    Rows carried up from a per-scope `qa-validation-NNN.md` keep their `Scope`,
    route and citation state. Do NOT read `_tests/final/` — final snapshots are
    immutable delivery history, never a live fix queue.

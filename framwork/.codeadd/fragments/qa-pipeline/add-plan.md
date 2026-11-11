@@ -29,7 +29,7 @@ Read: about.md (RF/RN + acceptance criteria), the consolidated design.md STEP ad
 Produce a code-free QA/E2E spec — ONE row per screen design.md declares: reachability
       intent, UX acceptance, functional scenarios (apply the CRUD heuristic on data-entity
       surfaces: create/read/update/delete/list), target viewports, capture states, a11y expectations.
-Write to: docs/features/${FEATURE_ID}/plan-qa-spec.md — write the `## QA/E2E Specification`
+Write to: .codeadd/docs/features/${FEATURE_ID}/plan-qa-spec.md — write the `## QA/E2E Specification`
       heading yourself, then the EXACT 9-column table from the skill. Keep under ~15 lines.
 ALSO write the screen catalog `FEATURE_DIR/_tests/screens.json`, applying the skill's
       `## Read-merge-write (MANDATORY)` section exactly — the file is feature-wide while this

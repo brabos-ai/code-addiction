@@ -9,7 +9,7 @@
 
 **Design source — ui-ux-pro-max (installed by the user).**
 
-**Precedence:** inspected project tokens (`design-context.md`) → `docs/design-system.md` (or a user-made `design-system/<slug>/MASTER.md`) → ui-ux-pro-max → `add--ux-design` defaults. ui-ux-pro-max is a data source for style, palette, typography and chart choice. It never replaces the notation, the contract dimensions, the rubric or the schema gate of the design core.
+**Precedence:** inspected project tokens (`design-context.md`) → `.codeadd/docs/design-system.md` (or a user-made `design-system/<slug>/MASTER.md`) → ui-ux-pro-max → `add--ux-design` defaults. ui-ux-pro-max is a data source for style, palette, typography and chart choice. It never replaces the notation, the contract dimensions, the rubric or the schema gate of the design core.
 
 **Locate the skill once, before the first UX dispatch.** Take the first match, in this order:
 

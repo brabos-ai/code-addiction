@@ -43,7 +43,7 @@ IF A FILE TO PRUNE IS NOT TRACKED BY GIT:
 
 The first covers a failed write, a `docs` branch, and an operator who enabled this before the index carried anything. **Deleting the scaffolding before the record exists inverts the whole design** — the index is what makes the absence unremarkable, so no entry means no pruning.
 
-The second is what makes "it's all in git anyway" true instead of a slogan. For an untracked file it is simply false: deletion is unrecoverable. A project that gitignores `docs/` gets a notice and no pruning, never data loss.
+The second is what makes "it's all in git anyway" true instead of a slogan. For an untracked file it is simply false: deletion is unrecoverable.
 
 Check tracking before deleting, per file:
 
