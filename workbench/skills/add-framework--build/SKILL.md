@@ -158,7 +158,7 @@ a name: `/add-framework--build AGENTS.md "update the pipeline section"`. A bare 
 the same way for any existing artefact — the path resolves it, and the path decides the layer.
 
 **Telling the two forms apart:** an argument that resolves to a plan under `.codeadd/docs/plans/` is planned
-mode. Any other path or name is the direct form. Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob when resolving it — they skip git-ignored paths, and the code branch ignores the docs root.
+mode. Any other path or name is the direct form. Prepare the docs root first — `node framwork/.codeadd/scripts/docs-branch.cjs prepare` — and stop on `DOCS=missing`, naming its `DOCS_REASON=` line. Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob when resolving it — they skip git-ignored paths, and the code branch ignores the docs root.
 
 To optimize an existing artefact, use the direct form — STEP 2 detects it already exists and presents
 the analysis against `building-commands` before any edit.
@@ -572,7 +572,7 @@ applies would land after its own record.
 - **Changelog** for new or major work, written under `.codeadd/docs/changelog/`. **The filename and the
   one-per-delivery rule are owned by `add-plan-authoring`** — read **File Naming** rather than
   declaring a pattern here. This skill normally creates the file; `/add-framework--done` STEP 4
-  finds it and edits it rather than allocating a second timestamp. The changelog is tracked on `codeadd-docs`: save it with `node .codeadd/scripts/docs-branch.cjs commit "<what changed>"` before the final report. The plan and the ledger are untracked there, so they are not part of that commit.
+  finds it and edits it rather than allocating a second timestamp. The changelog is tracked on `codeadd-docs`: save it with `node framwork/.codeadd/scripts/docs-branch.cjs commit "<what changed>"` before the final report. The plan and the ledger are untracked there, so they are not part of that commit.
 - **Plan status** `draft` → `implemented`, with a changelog row naming the commits it landed in.
 - **The inventory block** — run `node scripts/inventory.js` and commit `AGENTS.md` if it changed.
   Stage that path alone, never `-A`.

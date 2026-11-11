@@ -369,7 +369,7 @@ an `id`; this one reads as two separate deliveries.
 here repairs it. Report the refusal reason from `gh pr view --json mergeStateStatus,mergeable` in STEP
 9, alongside which STEPs this run skipped.
 
-**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `.codeadd/docs/deliveries/<id>/fix.md` in the docs worktree (run `node .codeadd/scripts/docs-branch.cjs prepare` first when it is absent), for the fix gate at 2.2. The `id` is the committed entry's.
+**On the fix track the resume needs the `id` and the record's text, not a local file.** When no local copy exists — a fresh clone or another worktree — read the record from `.codeadd/docs/deliveries/<id>/fix.md` in the docs worktree (run `node framwork/.codeadd/scripts/docs-branch.cjs prepare` first when it is absent), for the fix gate at 2.2. The `id` is the committed entry's.
 
 ---
 
@@ -548,8 +548,8 @@ The design source is **the `.codeadd/docs/brainstorming/` file the plan's Contex
 The archive, the entry and the changelog are already in the docs worktree. Save them as **one commit on `codeadd-docs`** and push it, from any code worktree:
 
 ```bash
-node .codeadd/scripts/docs-branch.cjs commit "<what this delivery archived, per {{skill:add-commit/SKILL.md}}>"
-node .codeadd/scripts/docs-branch.cjs push
+node framwork/.codeadd/scripts/docs-branch.cjs commit "<what this delivery archived, per {{skill:add-commit/SKILL.md}}>"
+node framwork/.codeadd/scripts/docs-branch.cjs push
 ```
 
 Nothing is committed to `main` or to the code branch — the docs branch is a separate history, so this step triggers no CI and needs no staging of paths on the code side. The docs branch's own `.gitignore` keeps `plans/`, `brainstorming/` and `evidence/` untracked, so the commit carries the deliveries, the changelog and the index and nothing of this plan's working files. **The same two commands run on the recovery path.**
@@ -585,8 +585,8 @@ Once the PR reads `MERGED` (`gh pr view --json state,mergeCommit,number`), recor
 
 ```bash
 node framwork/.codeadd/scripts/delivered.cjs stamp <id> --code-sha <mergeCommit.oid> --pr <number>
-node .codeadd/scripts/docs-branch.cjs commit "stamp <id> with its merged code commit"
-node .codeadd/scripts/docs-branch.cjs push
+node framwork/.codeadd/scripts/docs-branch.cjs commit "stamp <id> with its merged code commit"
+node framwork/.codeadd/scripts/docs-branch.cjs push
 ```
 
 `stamp` appends a NEW line — the index is append-only — and `delivered.cjs` owns its output and exit codes in its header. With `--auto` the PR may not read `MERGED` yet: do not stamp a commit that does not exist; say so in STEP 9, skip STEP 8's deletions with the other refused checks, and tell the operator to run the close-out again, which 2.1 routes to this stamp alone. A stamp or push that fails is reported and does not undo the merge. **On the recovery path the merge commit is the one 2.4 resolved, and the PR number is read from that commit's PR.**
@@ -634,7 +634,7 @@ IF ANY CHECK FAILED:
   ⛔ DO NOT USE: Bash to run rm on anything
   ⛔ DO NOT USE: Bash to run git branch -d or git push --delete
   ⛔ DO NOT USE: Bash to run git worktree remove
-  ⛔ DO NOT: Re-copy the file and delete the original in the same run — - the archive on `codeadd-docs` is what
+  ⛔ DO NOT: Re-copy the file and delete the original in the same run — the archive on `codeadd-docs` is what
              the index entry points at, and repairing it is a change that branch has to receive
   ✅ DO: Name the failing check and the path it failed on, print the suggestion below, and go to
          STEP 9 with every deletion skipped

@@ -106,6 +106,7 @@ Inspect the user's invocation string:
 - IF input matches pattern `vamos refinar [topic] -> ref: [path-to-umbrella.md]` (or English equivalent `refine [topic] -> ref: [path]`):
   - Extract `[topic]` and `[path]`
   - IF `[path]` missing → STOP and ask user to provide the umbrella path, in the SET form STEP 5.1 declares
+  - **Docs root first:** Prepare the docs root first — `node framwork/.codeadd/scripts/docs-branch.cjs prepare` — and stop on `DOCS=missing`, naming its `DOCS_REASON=` line.
   - **Resolve `[path]`:** the full basename always works; otherwise match it as a **substring** of the basenames in `.codeadd/docs/brainstorming/` (a 24-character timestamp prefix is not typeable; pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob, which skip git-ignored paths — the code branch ignores the docs root). Both naming forms resolve — the timestamped one and the legacy `YYYY-MM-DD-[topic]` one. Exactly one match → use it. More than one → ⛔ STOP, print every candidate and ask which. **NEVER guess.** No match → list `.codeadd/docs/brainstorming/` and STOP.
   - Verify file exists at `.codeadd/docs/brainstorming/[resolved path]`
   - → JUMP to **STEP 8 (Continue Mode)**

@@ -166,7 +166,7 @@ Missing strategy docs → say so and proceed with limited context. `AGENTS.md` i
 Whatever the idea points at: `framwork/.codeadd/commands|skills|agents|scripts/`, `cli/src/`,
 `workbench/commands|skills|agents/`, `scripts/`.
 
-**Read `.codeadd/docs/brainstorming/` too, whenever the idea came from a design.** Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. That directory holds the
+**Read `.codeadd/docs/brainstorming/` too, whenever the idea came from a design.** Prepare the docs root first — `node framwork/.codeadd/scripts/docs-branch.cjs prepare` — and stop on `DOCS=missing`, naming its `DOCS_REASON=` line. Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. That directory holds the
 design documents `/add-framework--brainstorm` writes, and a plan is expected to reference the design
 it formalizes. A design the planner never opened is a set of decisions re-made from scratch, and the
 two can disagree.

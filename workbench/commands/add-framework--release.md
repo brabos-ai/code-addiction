@@ -189,7 +189,8 @@ Use file changes to enrich terse commit messages. Provider dirs (`framwork/.clau
 Read the delivered plans, bounded by the tag:
 
 ```bash
-git -C .codeadd/docs log --diff-filter=A --name-only --format= --since="$(git log -1 --format=%cI [LATEST_TAG])" -- deliveries/
+git log -1 --format=%cI [LATEST_TAG]
+git -C .codeadd/docs log --diff-filter=A --name-only --format= --since=<the date the first command printed> -- deliveries/
 ```
 
 The deliveries live on `codeadd-docs`, not on `main`, so the diff reads that worktree. Each `.codeadd/docs/deliveries/<plan-basename>/` it lists as added since the tag's date is one delivery. Read its `plan.md` for what shipped and its `ledger.md` for the decisions made along the way.

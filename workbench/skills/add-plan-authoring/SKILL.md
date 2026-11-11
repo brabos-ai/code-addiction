@@ -69,7 +69,7 @@ its STEP 8, `/add-framework--done` at its STEP 4. Two stages declaring one forma
 **The timestamp is what makes that rule necessary.** Under the date-only name both writers computed
 one path, so the second landed on the first file and the directory ended up holding one changelog per
 delivery by accident. Two timestamps differ by the seconds between the two commands. Without the rule
-above, one delivery reaches `main` as two files that each tell half of its story.
+above, one delivery reaches `codeadd-docs` as two files that each tell half of its story.
 
 ```
 ⛔ THERE IS NOTHING TO LOOK UP:
@@ -439,7 +439,7 @@ owns their form.
 
 ## Argument Resolution
 
-**Resolve BEFORE loading anything.** Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. Match the argument as a **substring** of the basenames of
+**Resolve BEFORE loading anything.** Prepare the docs root first — `node framwork/.codeadd/scripts/docs-branch.cjs prepare` — and stop on `DOCS=missing`, naming its `DOCS_REASON=` line. Pass `.codeadd/docs/` explicitly to `rg`, Grep and Glob — they skip git-ignored paths, and the code branch ignores the docs root. Match the argument as a **substring** of the basenames of
 `.codeadd/docs/plans/*PLAN--*.md`, excluding `--review-v*`, `--evidence-v*` and `--ledger` companions. A
 24-character timestamp prefix is not typeable, so a unique slug fragment is the normal argument; the
 full basename always works.
