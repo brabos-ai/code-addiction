@@ -23,6 +23,7 @@ description: Source of truth for ADD doc rules, depth floors, IDs, refs, validat
 - command: /add-pull-request
 - script: build-setup.cjs
 - script: docs-branch.cjs
+- script: docs-root.cjs
 - script: status.cjs
 - skill: add--doc-schemas/references/delivery-index.md
 - skill: add--doc-schemas/references/fix.md
@@ -278,6 +279,7 @@ id: <PREFIX><NNNN>        # per ID Convention section above
 type: <schema-type>       # one of the schemas in references/<category>.md
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
+schema: {{doc-schema}}    # the doc format version — see Schema Version below
 related: []               # list of doc IDs this doc depends on or references
 tags: []                  # list of bare topic words; the grouping a graph search filters on
 ---
@@ -296,6 +298,17 @@ Optional: `by:` (last editor — human or agent identifier), `status:`, `slug:`.
 - **Section chunks** — each H2/H3 body opens with a topic sentence (the grep target). Each chunk = topic sentence + extractive content. Split by sub-heading rather than truncate when one chunk grows past a natural boundary. No length number applies.
 - **Refs** — doc→doc links MUST use `{{doc:<ID>}}` syntax. Command/skill refs use `{{cmd:}}` / `{{skill:}}` per `{{skill:add--resource-path-convention/SKILL.md}}`.
 - **Metadata** — frontmatter IS the metadata; bump `updated:` per Cache Documental.
+
+## Schema Version
+
+**`schema:` is the doc format version** — an integer in the YAML frontmatter that says which version of this skill's document standard the file was written to. Always write it as the build variable `{{doc-schema}}`, never as a number: the build resolves it, and a build lint warns on any literal `schema: <digit>` in markdown source, fenced examples included.
+
+- **It moves only when the doc format changes.** It never follows the package version.
+- **A document without it is schema `0` — legacy.** The one resolver is `docSchemaOf` in `.codeadd/scripts/docs-root.cjs`; nothing else decides what a missing field means.
+- **Future doc migrations key off the number**, not off a guess about the file's shape.
+- **JSONL outputs carry a per-line `v` instead.** The delivery index and the iteration log each keep their own `v`; neither takes a frontmatter field.
+- **Files once written without frontmatter now carry a minimal one**: `iterations.md`, `build-ledger.md`, `tasks.md`, health-check reports, `design-system.md` and `code-quality-review.md` open with `type` and `schema`, and nothing more is required of them.
+- **Never stamp a version you did not apply.** A command that writes a doc stamps the current value. A command that only adjusts an existing doc keeps the stamp it finds unless it brought the whole file up to the current standard.
 
 ## Schema Index by Category
 
@@ -342,6 +355,7 @@ Run these checks against the doc you just wrote. DO NOT skip. DO NOT mark the co
    - `created:` and `updated:` are ISO dates (YYYY-MM-DD)
    - `related:` is a YAML list (may be empty `[]`)
    - `tags:` is a YAML list (may be empty `[]`)
+   - `schema:` is present on a document being written now (FAIL when absent; a legacy document being only adjusted is read as schema `0` and keeps its stamp — see Schema Version)
    - **`feature` only** — `branch:` present, matches `^[a-z]+/[0-9]{4}[A-Z]-[a-z0-9-]+$`, and its post-`/` slug equals the docs dir name (Hard Invariant). Legacy docs predating this field: **warn**, do not FAIL.
    If any field is missing: STOP. Fix the doc. Re-run this gate.
 

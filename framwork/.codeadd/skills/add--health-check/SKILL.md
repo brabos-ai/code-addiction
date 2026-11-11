@@ -9,6 +9,7 @@ description: |
 <!-- uses:
 - mention: add--security-audit
 - skill: add--health-check/context-discovery.md
+- skill: add--doc-schemas
 -->
 
 Suite of skills for complete technical analysis of the project. Always consult `AGENTS.md` for general project standards.
@@ -68,10 +69,13 @@ Phase 2: `security-analyzer` (deps: context, infrastructure) → security-report
 ```
 
 Process:
-1. Create folder `docs/health-checks/YYYY-MM-DD/` with current date
+1. Create folder `.codeadd/docs/health-checks/YYYY-MM-DD/` with current date
 2. Run Phase 1 agents in parallel; wait completion
 3. Run Phase 2 agents in parallel (with Phase 1 context); wait completion
 4. Consolidate in HEALTH-REPORT.md
+5. Close with the Docs Branch end-of-command rule — `{{skill:add--doc-schemas/SKILL.md}}` → Docs Branch — before the final report
+
+Every report file opens with the frontmatter `type: health-check` and `schema: {{doc-schema}}` (each analyzer's template carries it; so does `HEALTH-REPORT.md`).
 
 Output files: `context-discovery.md`, `documentation-report.md`, `infrastructure-report.md`, `security-report.md`, `architecture-report.md`, `data-report.md`, `HEALTH-REPORT.md`.
 

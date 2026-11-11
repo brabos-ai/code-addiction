@@ -4,7 +4,7 @@
 
 **Objective:** Analyze project security by feature, focusing on the frontend/backend boundary and multi-tenancy.
 
-**Output:** `docs/health-checks/YYYY-MM-DD/security-report.md`
+**Output:** `.codeadd/docs/health-checks/YYYY-MM-DD/security-report.md`
 
 **Criticality:** 🔴 CRITICAL
 
@@ -29,7 +29,7 @@ You are a subagent specialized in security analysis. Your job is:
 ## Prerequisite: Read Context
 
 ```bash
-cat docs/health-checks/YYYY-MM-DD/context-discovery.md
+cat .codeadd/docs/health-checks/YYYY-MM-DD/context-discovery.md
 ```
 
 **Extract:**
@@ -121,7 +121,7 @@ For EACH module identified in context-discovery.md:
 ### Check via infrastructure-report.md
 
 ```bash
-cat docs/health-checks/YYYY-MM-DD/infrastructure-report.md | grep "MCP Supabase"
+cat .codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md | grep "MCP Supabase"
 ```
 
 ### If MCP Enabled
@@ -156,7 +156,7 @@ WHERE schemaname = 'public';
 **Status:** ⚠️ Limited analysis - MCP Supabase not configured
 
 For complete RLS analysis, configure the MCP following the guidance at:
-`docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
+`.codeadd/docs/health-checks/YYYY-MM-DD/infrastructure-report.md`
 ```
 
 ---
@@ -200,9 +200,14 @@ grep -rn "password\|token\|secret\|hash" apps/backend/ --include="*Response*.ts"
 
 ## Output Template
 
-**Create:** `docs/health-checks/YYYY-MM-DD/security-report.md`
+**Create:** `.codeadd/docs/health-checks/YYYY-MM-DD/security-report.md`
 
 ```markdown
+---
+type: health-check
+schema: {{doc-schema}}
+---
+
 # Security Report
 
 **Generated on:** [date]

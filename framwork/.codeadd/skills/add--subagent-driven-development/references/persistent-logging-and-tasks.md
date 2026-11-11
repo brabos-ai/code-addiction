@@ -7,7 +7,7 @@ Reference material for the `add--subagent-driven-development` skill. Loaded on d
 ## PRD0031 — Persistent Decision Logging
 
 **decisions.jsonl** is the persistent record of implementation decisions per feature.
-Located at: `docs/features/${FEATURE_ID}/decisions.jsonl`
+Located at: `.codeadd/docs/features/${FEATURE_ID}/decisions.jsonl`
 
 ### When to Log
 
@@ -26,12 +26,12 @@ Log **only pivots** — when a subagent changes approach during implementation. 
 ### Append Command
 
 ```bash
-node .codeadd/scripts/log-jsonl.cjs "docs/features/${FEATURE_ID}/decisions.jsonl" "<type>" "<agent>" '"decision":"[what]","reason":"[why]"'
+node .codeadd/scripts/log-jsonl.cjs ".codeadd/docs/features/${FEATURE_ID}/decisions.jsonl" "<type>" "<agent>" '"decision":"[what]","reason":"[why]"'
 ```
 
 ### Central File (consolidated by /add-done)
 
-`.codeadd/project/decisions.jsonl` — all project decisions, consolidated at feature completion.
+`.codeadd/docs/decisions.jsonl` — all project decisions, consolidated at feature completion.
 Used by context mapping at start of new features (read last 20 pivots as warnings).
 
 ---
@@ -39,7 +39,7 @@ Used by context mapping at start of new features (read last 20 pivots as warning
 ## PRD0032 — Architect Subagent Pattern (tasks.md)
 
 **tasks.md** is the structured execution plan generated after plan.md is created.
-Located at: `docs/features/${FEATURE_ID}/tasks.md` (or subfeature dir)
+Located at: `.codeadd/docs/features/${FEATURE_ID}/tasks.md` (or subfeature dir)
 
 ### When to Dispatch Architect Subagent
 
@@ -64,6 +64,11 @@ Generate tasks.md with atomic subtasks:
 ### tasks.md Format
 
 ```markdown
+---
+type: tasks
+schema: {{doc-schema}}
+---
+
 # Tasks: [feature or subfeature name]
 
 ## Metadata

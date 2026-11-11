@@ -7,6 +7,7 @@ description: Generate contract test cases from feature requirements (RFs/RNs) an
 
 <!-- uses:
 - skill: add--tdd
+- skill: add--doc-schemas
 -->
 
 > **LANG:** Respond in user's native language. Tech terms in English.
@@ -24,10 +25,11 @@ Derive **contract** test cases (input → expected output) from `about.md` requi
 - Coverage vs Requirements MUST show 100%.
 - Output is a **specification only** — NO implementation code.
 - Keep the document under ~40 lines (token-efficient).
+- The file is written under `.codeadd/docs/` — follow Docs Branch in {{skill:add--doc-schemas/SKILL.md}}.
 
 ## Output Format
 
-Write to `docs/features/${FEATURE_ID}/plan-test-spec.md`:
+Write to `.codeadd/docs/features/${FEATURE_ID}/plan-test-spec.md`:
 
 ## Test Specification
 

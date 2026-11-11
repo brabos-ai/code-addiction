@@ -38,7 +38,7 @@ Defines the ONE procedure for consulting the delivery index and `{{addpath:wiki/
 
 ### 1. INDEX
 
-Ask the cheap question first: **was this built before, and is it still there?** `delivered.cjs` answers it from `docs/delivered.jsonl` — one file, one grep — while the wiki costs several pages and answers a different question entirely.
+Ask the cheap question first: **was this built before, and is it still there?** `delivered.cjs` answers it from `.codeadd/docs/delivered.jsonl` — one file, one grep — while the wiki costs several pages and answers a different question entirely.
 
 ```bash
 node .codeadd/scripts/delivered.cjs read "<terms from the task>"
@@ -97,7 +97,7 @@ The index answered *whether* it shipped. **The graph answers what it connects to
 
 ```
 IF YOU HAVE NEITHER THE codeadd-docs MCP TOOLS NOR A SHELL:
-  ⛔ DO NOT: Reconstruct the answer by grepping `docs/` and present it as the graph's
+  ⛔ DO NOT: Reconstruct the answer by grepping `.codeadd/docs/` and present it as the graph's
   ✅ DO: Write `NOT VERIFIED` into `RELATED_WORK`, and say the route was missing
 ```
 
@@ -230,7 +230,7 @@ claims a relationship nobody recorded.
 ```
 IF THE GRAPH IS UNREACHABLE:
   ⛔ DO NOT: Report the question as answered
-  ⛔ DO NOT: Reconstruct the answer by grepping docs/ and present it as the graph's
+  ⛔ DO NOT: Reconstruct the answer by grepping .codeadd/docs/ and present it as the graph's
   ✅ DO: Write NOT VERIFIED into RELATED_WORK, and say what blocked the route
   ✅ DO: Report whatever you did find, labelled as what it is — a guess from filenames
 ```

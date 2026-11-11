@@ -46,7 +46,7 @@ Emit **one row per surface/subfeature that `design.md` declares** — never skip
 
 ## Output 1 — `plan-qa-spec.md`
 
-Write to `docs/features/${FEATURE_ID}/plan-qa-spec.md` under a `## QA/E2E Specification` heading:
+Write to `.codeadd/docs/features/${FEATURE_ID}/plan-qa-spec.md` under a `## QA/E2E Specification` heading:
 
 | ID | surface | SF | reachability | viewports | capture states | UX acceptance | functional scenario | a11y |
 |----|---------|----|--------------|-----------|----------------|---------------|---------------------|------|
@@ -64,11 +64,11 @@ You OWN this file when dispatched by `add-plan` STEP qa-pipeline.qa-spec. (`add-
   "screens": [
     { "id": "login", "sf": "SF02", "name": "Login", "kind": "route",
       "path": "/login", "auth": false,
-      "design": "docs/features/<id>-.../subfeatures/SF02-.../design.md" },
+      "design": ".codeadd/docs/features/<id>-.../subfeatures/SF02-.../design.md" },
     { "id": "entry-form", "sf": "SF01", "name": "Entry form", "kind": "modal",
       "open": [{ "goto": "/entries" }, { "click": "role=button[name=New entry]" }],
       "auth": true,
-      "design": "docs/features/<id>-.../subfeatures/SF01-.../design.md" }
+      "design": ".codeadd/docs/features/<id>-.../subfeatures/SF01-.../design.md" }
   ]
 }
 ```
@@ -100,6 +100,7 @@ Store reachability INTENT only. If a design doc is missing or thin, list the scr
 
 ## Rules
 
+- Written files live under `.codeadd/docs/` — follow Docs Branch in {{skill:add--doc-schemas/SKILL.md}}.
 - Code-free only — no implementation code, no test scripts. The `screens.json` `open` recipe is reachability intent, not a test: never hand-write selectors you have not observed; `@e2e-agent` finalizes them post-implementation.
 - Keep `plan-qa-spec.md` under ~15 lines (tabular). `screens.json` has no line budget — it carries one entry per declared screen.
 - Flag missing UX acceptance / thin design as **gaps** — never invent content.

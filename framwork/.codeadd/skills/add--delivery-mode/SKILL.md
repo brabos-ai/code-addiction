@@ -50,7 +50,7 @@ own stops where they sit.
 
 | Carrier | Written by | Read by |
 |---|---|---|
-| `delivery:` in the intent file (`docs/brainstorm/…-intent.md`) | `/add-brainstorm`, at its approval | `/add-new`, `/add-plan` |
+| `delivery:` in the intent file (`.codeadd/docs/brainstorm/…-intent.md`) | `/add-brainstorm`, at its approval | `/add-new`, `/add-plan` |
 | `Delivery` in the `plan.md` header | `/add-plan`, copied from the intent file | `/add-build`, `/add-review` |
 | `delivery:` line under `## Notes` in `epic.md` | `/add-new`, at the epic split | `/add-plan`, `/add-build` — it wins over the other two for that epic |
 

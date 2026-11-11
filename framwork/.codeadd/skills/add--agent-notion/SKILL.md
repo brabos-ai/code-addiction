@@ -18,7 +18,7 @@ A board in Notion that the agents of an agent-mode team keep current. This skill
 ## When NOT to Use
 
 - Any framework command or command agent. They never read or write the board.
-- A project that does not track work in Notion. The handoff is then the intent file and `docs/features/<id>-<slug>/` only.
+- A project that does not track work in Notion. The handoff is then the intent file and `.codeadd/docs/features/<id>-<slug>/` only.
 
 ## ⛔ Prohibitions
 
