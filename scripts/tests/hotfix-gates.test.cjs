@@ -18,6 +18,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+const { DOCS_ROOT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
 
 /** Forward-slash a path fragment so Windows output still matches POSIX shapes. */
 const slash = (s) => String(s).replace(/\\/g, '/');
@@ -171,21 +172,21 @@ test('hotfix-gates#005 — diagnosis-check distinguishes unchanged unrelated and
   h.write(path.join(r.repo, 'src', 'fault.txt'), 'fault\n');
   r.git('add', 'src/fault.txt');
   r.git('commit', '-m', 'fault', '-q');
-  writeHandoff(r, path.join('docs', 'diagnose', 'report.md'), 'clean');
+  writeHandoff(r, path.join(...DOCS_ROOT.split('/'), 'diagnose', 'report.md'), 'clean');
 
-  const unchanged = h.runScript('hotfix-gates', ['diagnosis-check', 'docs/diagnose/report.md'], { cwd: r.repo });
+  const unchanged = h.runScript('hotfix-gates', ['diagnosis-check', `${DOCS_ROOT}/diagnose/report.md`], { cwd: r.repo });
   assert.equal(unchanged.status, 0, unchanged.output);
   assert.match(unchanged.output, /DIAGNOSIS=unchanged/);
   assert.match(unchanged.output, /OVERLAP=none/);
 
   h.write(path.join(r.repo, 'notes.txt'), 'notes\n');
-  const unrelated = h.runScript('hotfix-gates', ['diagnosis-check', 'docs/diagnose/report.md'], { cwd: r.repo });
+  const unrelated = h.runScript('hotfix-gates', ['diagnosis-check', `${DOCS_ROOT}/diagnose/report.md`], { cwd: r.repo });
   assert.equal(unrelated.status, 0, unrelated.output);
   assert.match(unrelated.output, /DIAGNOSIS=delta/);
   assert.match(unrelated.output, /OVERLAP=none/);
 
   h.write(path.join(r.repo, 'src', 'fault.txt'), 'changed\n');
-  const overlapping = h.runScript('hotfix-gates', ['diagnosis-check', 'docs/diagnose/report.md'], { cwd: r.repo });
+  const overlapping = h.runScript('hotfix-gates', ['diagnosis-check', `${DOCS_ROOT}/diagnose/report.md`], { cwd: r.repo });
   assert.equal(overlapping.status, 0, overlapping.output);
   assert.match(overlapping.output, /OVERLAP=present/);
 });
@@ -193,8 +194,8 @@ test('hotfix-gates#005 — diagnosis-check distinguishes unchanged unrelated and
 test('hotfix-gates#006 — diagnosis-check rejects a missing diagnosed commit', (t) => {
   const r = h.makeRepo();
   t.after(() => r.cleanup());
-  writeHandoff(r, path.join('docs', 'diagnose', 'report.md'), 'clean');
-  const report = path.join(r.repo, 'docs', 'diagnose', 'report.md');
+  writeHandoff(r, path.join(...DOCS_ROOT.split('/'), 'diagnose', 'report.md'), 'clean');
+  const report = path.join(r.repo, ...DOCS_ROOT.split('/'), 'diagnose', 'report.md');
   h.write(
     report,
     h.read(report).replace(
@@ -202,7 +203,7 @@ test('hotfix-gates#006 — diagnosis-check rejects a missing diagnosed commit', 
       'diagnosed-commit: 0000000000000000000000000000000000000000',
     ),
   );
-  const res = h.runScript('hotfix-gates', ['diagnosis-check', 'docs/diagnose/report.md'], { cwd: r.repo });
+  const res = h.runScript('hotfix-gates', ['diagnosis-check', `${DOCS_ROOT}/diagnose/report.md`], { cwd: r.repo });
   assert.equal(res.status, 3, res.output);
 });
 
@@ -242,51 +243,52 @@ test('hotfix-gates#008 — review fingerprint validates exact paths and detects 
   const r = h.makeRepo();
   t.after(() => r.cleanup());
   r.git('switch', '-c', 'hotfix/0001H-test', '-q');
-  const hf = path.join(r.repo, 'docs', 'features', '0001H-test');
+  const hf = path.join(r.repo, ...DOCS_ROOT.split('/'), 'features', '0001H-test');
   fs.mkdirSync(path.join(r.repo, 'src'), { recursive: true });
   h.write(path.join(r.repo, 'src', 'fault.txt'), 'fixed\n');
   h.write(path.join(hf, 'iterations.jsonl'), '{}\n');
   const placeholder =
-    'present\t100644\t0000000000000000000000000000000000000000000000000000000000000000\t646f63732f66656174757265732f30303031482d746573742f61626f75742e6d64';
+    'present\t100644\t0000000000000000000000000000000000000000000000000000000000000000\t' +
+    Buffer.from(`${DOCS_ROOT}/features/0001H-test/about.md`, 'utf8').toString('hex');
   const aboutPath = path.join(hf, 'about.md');
   h.write(aboutPath, aboutText(placeholder));
 
-  const manifestRes = h.runScript('hotfix-gates', ['review-manifest', 'docs/features/0001H-test'], { cwd: r.repo });
+  const manifestRes = h.runScript('hotfix-gates', ['review-manifest', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(manifestRes.status, 0, manifestRes.output);
   const manifest = between(manifestRes.output, 'PATHS_BEGIN', 'PATHS_END');
   assert.notEqual(manifest, '');
   h.write(aboutPath, aboutText(manifest));
 
-  const fingerprintRes = h.runScript('hotfix-gates', ['review-fingerprint', 'docs/features/0001H-test'], { cwd: r.repo });
+  const fingerprintRes = h.runScript('hotfix-gates', ['review-fingerprint', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(fingerprintRes.status, 0, fingerprintRes.output);
   const fingerprint = (fingerprintRes.stdout.match(/^REVIEWED_TREE=(.+)$/m) || [])[1];
   assert.ok(fingerprint, 'fingerprint reported');
   h.write(aboutPath, h.read(aboutPath).replace('sha256:<PENDING>', fingerprint));
 
-  const ok = h.runScript('hotfix-gates', ['review-validate', 'docs/features/0001H-test'], { cwd: r.repo });
+  const ok = h.runScript('hotfix-gates', ['review-validate', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(ok.status, 0, ok.output);
   assert.match(ok.output, /HOTFIX_REVIEW=ok/);
 
-  r.git('add', 'src/fault.txt', 'docs/features/0001H-test/about.md', 'docs/features/0001H-test/iterations.jsonl');
+  r.git('add', 'src/fault.txt', `${DOCS_ROOT}/features/0001H-test/about.md`, `${DOCS_ROOT}/features/0001H-test/iterations.jsonl`);
   r.git('commit', '-m', 'reviewed', '-q');
-  const treeOk = h.runScript('hotfix-gates', ['review-validate', 'docs/features/0001H-test', '--tree', 'HEAD'], { cwd: r.repo });
+  const treeOk = h.runScript('hotfix-gates', ['review-validate', `${DOCS_ROOT}/features/0001H-test`, '--tree', 'HEAD'], { cwd: r.repo });
   assert.equal(treeOk.status, 0, treeOk.output);
   assert.match(treeOk.output, /HOTFIX_REVIEW=ok/);
 
   h.write(path.join(r.repo, 'src', 'later.txt'), 'late\n');
-  const stale = h.runScript('hotfix-gates', ['review-validate', 'docs/features/0001H-test'], { cwd: r.repo });
+  const stale = h.runScript('hotfix-gates', ['review-validate', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(stale.status, 3, stale.output);
   assert.match(stale.output, /HOTFIX_REVIEW=stale/);
   fs.rmSync(path.join(r.repo, 'src', 'later.txt'));
 
   h.write(aboutPath, h.read(aboutPath).replace(/^status: passed$/m, 'status: blocked'));
-  const blocked = h.runScript('hotfix-gates', ['review-validate', 'docs/features/0001H-test'], { cwd: r.repo });
+  const blocked = h.runScript('hotfix-gates', ['review-validate', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(blocked.status, 3, blocked.output);
   assert.match(blocked.output, /HOTFIX_REVIEW=blocked/);
   h.write(aboutPath, h.read(aboutPath).replace(/^status: blocked$/m, 'status: passed'));
 
   fs.appendFileSync(aboutPath, '\ntampered\n');
-  const tampered = h.runScript('hotfix-gates', ['review-validate', 'docs/features/0001H-test'], { cwd: r.repo });
+  const tampered = h.runScript('hotfix-gates', ['review-validate', `${DOCS_ROOT}/features/0001H-test`], { cwd: r.repo });
   assert.equal(tampered.status, 3, tampered.output);
   assert.match(tampered.output, /HOTFIX_REVIEW=stale/);
 });
@@ -294,7 +296,7 @@ test('hotfix-gates#008 — review fingerprint validates exact paths and detects 
 // ─── hotfix-gates#009-015 — the covered-deletion rule (ticket 0048B) ─────────
 
 const HF_SLUG = '0043H-remove-turnstile';
-const HF_REL = `docs/features/${HF_SLUG}`;
+const HF_REL = `${DOCS_ROOT}/features/${HF_SLUG}`;
 const SPEC = 'tests/verify-turnstile.spec.ts';
 const SELF_ROW =
   'present\t100644\t0000000000000000000000000000000000000000000000000000000000000000\t' +
@@ -466,4 +468,18 @@ test('hotfix-gates#016 — a covered deletion does not hide an edit made to anot
   assertOk(validate(r));
   h.write(path.join(r.repo, 'src', 'fault.txt'), 'changed after the review\n');
   assertStale(validate(r));
+});
+
+// ─── hotfix-gates#016 — the docs root's close-out outputs are not delivery paths ─
+
+test('hotfix-gates#016 — the delivery index under the docs root stays out of the review manifest', (t) => {
+  const r = hotfixRepo(t, { 'src/a.txt': 'a\n' });
+  h.write(path.join(r.repo, 'src', 'a.txt'), 'changed\n');
+  h.write(path.join(r.repo, ...DOCS_ROOT.split('/'), 'delivered.jsonl'), '{}\n');
+  const res = h.runScript('hotfix-gates', ['review-manifest', HF_REL], { cwd: r.repo });
+  assert.equal(res.status, 0, res.output);
+  const manifest = between(res.output, 'PATHS_BEGIN', 'PATHS_END');
+  const hexOf = (rel) => Buffer.from(rel, 'utf8').toString('hex');
+  assert.ok(manifest.includes(hexOf('src/a.txt')), manifest);
+  assert.ok(!manifest.includes(hexOf(`${DOCS_ROOT}/delivered.jsonl`)), manifest);
 });

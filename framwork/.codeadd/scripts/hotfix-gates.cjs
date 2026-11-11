@@ -27,6 +27,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { DOCS_ROOT, DOCS_LAYOUT } = require('./docs-root.cjs');
 
 class ExitError extends Error {
   constructor(code, message) {
@@ -352,8 +353,8 @@ function parseReviewArgs() {
 }
 
 function excluded(rel, hotfixDir) {
-  return rel === 'docs/delivered.jsonl' || rel === `${hotfixDir}/changelog.md` ||
-    rel === '.codeadd/project/decisions.jsonl' || rel.startsWith('.codeadd/wiki/');
+  return rel === `${DOCS_ROOT}/${DOCS_LAYOUT.delivered}` || rel === `${hotfixDir}/changelog.md` ||
+    rel === `${DOCS_ROOT}/${DOCS_LAYOUT.decisions}` || rel.startsWith('.codeadd/wiki/');
 }
 
 function deliveryPaths(hotfixDir, tree) {
