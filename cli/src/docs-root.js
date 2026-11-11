@@ -48,3 +48,13 @@ export function loadDocsGuard(cwd) {
     throw new Error(`DOCS_ROOT_MISSING: ${file} is not installed — run codeadd install or update first (${err.code || err.message})`);
   }
 }
+
+/**
+ * Forget the installed docs modules this process already loaded. An update replaces them on
+ * disk; without this the migrations and the re-prepare would still run the previous version's code.
+ */
+export function resetDocsModules(cwd) {
+  for (const name of ['docs-root.cjs', 'docs-branch.cjs', 'docs-guard.cjs']) {
+    delete nodeRequire.cache[path.join(cwd, '.codeadd', 'scripts', name)];
+  }
+}

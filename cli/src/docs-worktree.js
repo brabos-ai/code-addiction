@@ -32,7 +32,7 @@ export function prepareDocsWorktree(cwd) {
   try {
     if (!hasDocsModule(cwd)) return { status: 'missing', reason: 'docs-branch.cjs is not installed' };
     const r = loadDocsBranch(cwd).prepareDocs(cwd);
-    return { status: r.status, reason: r.reason };
+    return { status: r.status, reason: r.reason, push: r.push };
   } catch (err) {
     return { status: 'missing', reason: err.message };
   }
@@ -87,5 +87,9 @@ export function reportDocsWorktree(result) {
     log.warn(`DOCS=missing${result.reason ? ` (${result.reason})` : ''} — Code Addiction writes its outputs there; connect a remote and run /add-setup or any command to prepare it.`);
   } else {
     log.success(`DOCS=${result.status}`);
+    // A branch created just now is pushed once; a refused or offline first push is not silent.
+    if (result.push && result.push !== 'pushed') {
+      log.warn(`DOCS_PUSH=${result.push} — the first push of codeadd-docs did not reach the remote; the local branch is kept, /add-done pushes it.`);
+    }
   }
 }

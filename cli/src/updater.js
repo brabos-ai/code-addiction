@@ -12,6 +12,7 @@ import { captureBaselines } from './injection-core.js';
 import { applyEnabledPluginsDetailed, LEGACY_PLUGIN_SKILLS } from './plugins.js';
 import { runMigrations } from './migrations.js';
 import { prepareDocsWorktree, releaseDocsWorktree, reportDocsWorktree } from './docs-worktree.js';
+import { resetDocsModules } from './docs-root.js';
 import { getInstalledDirs, writeGitignoreBlock } from './gitignore.js';
 
 function removeLegacyPluginSkills(cwd, providers, previousPlugins) {
@@ -112,6 +113,8 @@ export async function update(cwd, options = {}, scope = 'project') {
   if (removed > 0) log.success(`Removed ${removed} obsolete file(s).`);
 
   fixLineEndings(path.join(addDir, 'scripts'));
+  // The scripts on disk are the new ones now; this process must not keep running the old ones.
+  resetDocsModules(cwd);
 
   // Back again, from the script this update just wrote.
   if (installScope === 'project') reportDocsWorktree(prepareDocsWorktree(cwd));
