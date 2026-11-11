@@ -58,7 +58,6 @@ const LITERAL_EXCLUSIONS = [
   { file: /^mcp\/server\.mjs$/, regex: new RegExp(`['"]${D}['"]`) },
   { file: /^cli\/src\/mcp-registration\.js$/, regex: new RegExp(`['"]${D}['"]`) },
   { file: /^cli\/tests\/mcp-[a-z-]+\.test\.js$/, regex: new RegExp(`['"]${D}['"]`) },
-  { file: /^cli\/tests\/(graph-mcp|docs-knowledge-graph|build-workbench)\.test\.js$/, regex: new RegExp(`['"]${D}['"]`) },
   { file: /^cli\/tests\/install\.e2e\.test\.js$/, regex: new RegExp(`loadCorpus\\(['"]${D}['"]`) },
   { file: /^scripts\/rename-product-artefacts\.js$/, regex: new RegExp(`['"]${D}['"]`) },
 ];
