@@ -33,6 +33,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const h = require('./helpers.cjs');
+// The features folder of the docs root, from the one module that owns it.
+const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+const FEATURES_REL = `${DOCS_ROOT}/${DOCS_LAYOUT.features}`;
 
 // --- fixtures (mirror build_epic / new_repo in smoke-test.sh) ----------------
 
@@ -50,7 +53,7 @@ function coverageTable(id, requirement, covered) {
  * feature root, plan.md and tasks.md inside each subfeature.
  */
 function buildEpic(repo, id, sfStatus, covered) {
-  const fd = `docs/features/${id}`;
+  const fd = `${FEATURES_REL}/${id}`;
   const abs = (...parts) => path.join(repo, ...parts);
   h.write(abs(fd, 'epic.md'), [
     '# Epic',
@@ -128,7 +131,7 @@ test('S1: the guarded per-path add stages epic.md where the single-add form lose
     r.git('commit', '-qm', 'seed');
 
     // The BROKEN form: one add, four pathspecs, one of them absent on an epic.
-    r.git('add', '-A', '--', '.', ':(exclude)docs/features/*');
+    r.git('add', '-A', '--', '.', `:(exclude)${FEATURES_REL}/*`);
     const broken = r.git(
       'add', '-A', '--',
       `${fd}/subfeatures/SF02-*`,
@@ -142,7 +145,7 @@ test('S1: the guarded per-path add stages epic.md where the single-add form lose
 
     // The FIXED form: one add per path, absent skipped, present staged.
     flipSf02ToDone(r.repo, fd);
-    r.git('add', '-A', '--', '.', ':(exclude)docs/features/*');
+    r.git('add', '-A', '--', '.', `:(exclude)${FEATURES_REL}/*`);
     let rc = 0;
     for (const rel of [
       `${fd}/subfeatures/SF02-*`,
