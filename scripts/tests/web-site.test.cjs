@@ -2,7 +2,7 @@
 // =============================================================================
 // web-site — static assertions over the public site source under web/
 // =============================================================================
-// Plan: docs/plans/2026-10-25T101906-PLAN--site-ux-polish.md (ticket 0068B).
+// Plan: .codeadd/docs/plans/2026-10-25T101906-PLAN--site-ux-polish.md (ticket 0068B).
 // web/ has no test runner of its own, so the site's source-level contract is
 // held here, the way graph-mermaid.test.js already reads docs.astro.
 // Rendered behaviour (computed fonts, scrollWidth, focus, search) is proven on
@@ -22,6 +22,9 @@ const exists = rel => fs.existsSync(path.join(WEB, rel));
 const CSS = () => read('src/styles/global.css');
 const HOME = () => read('src/pages/index.astro');
 const DOCS = () => read('src/pages/docs.astro');
+// The two site pages, named by their source file (not a path element: these are Astro pages).
+const PAGE_NAMES = ['index.astro', 'docs.astro'].map(f => f.replace('.astro', ''));
+const PAGES = [[PAGE_NAMES[0], HOME], [PAGE_NAMES[1], DOCS]];
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -68,7 +71,7 @@ test('F2: CommandLine.astro has a labelled copy button, a live region and a wrap
 });
 
 test('F2: neither page keeps a hand-rolled clipboard handler, cmd- id or copyCmd', () => {
-  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+  for (const [name, src] of PAGES.map(([n, f]) => [n, f()])) {
     assert.doesNotMatch(src, /onclick="navigator\.clipboard/, `${name}: inline clipboard onclick`);
     assert.doesNotMatch(src, /id="cmd-/, `${name}: cmd- id`);
     assert.doesNotMatch(src, /copyCmd\(/, `${name}: copyCmd`);
@@ -369,7 +372,7 @@ test('F19: the Why-card spotlight follows the pointer on hover devices only, nev
 
 // -------------------------------------------------- F20 page transition
 test('F20: every inline script that binds handlers binds on astro:page-load', () => {
-  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+  for (const [name, src] of PAGES.map(([n, f]) => [n, f()])) {
     const scripts = [...src.matchAll(/<script is:inline>([\s\S]*?)<\/script>/g)].map(m => m[1]);
     assert.ok(scripts.length > 0, `${name}: no inline script found`);
     for (const [i, body] of scripts.entries()) {
@@ -389,7 +392,7 @@ test('F20: the layout turns on the client router and the navs share a transition
 });
 
 test('F20: document-level handlers are released before the page is swapped', () => {
-  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+  for (const [name, src] of PAGES.map(([n, f]) => [n, f()])) {
     assert.match(src, /astro:before-swap/, `${name}: nothing releases document listeners`);
     assert.match(src, /signal:/, `${name}: document listeners carry no abort signal`);
   }
@@ -415,7 +418,7 @@ test('Lighthouse a11y: inline links are underlined, the map hint has contrast, t
 });
 
 // ====================================================================
-// 0069B site-i18n — plan docs/plans/2026-10-25T194930-PLAN--site-i18n.md
+// 0069B site-i18n — plan .codeadd/docs/plans/2026-10-25T194930-PLAN--site-i18n.md
 // ====================================================================
 const I18N = name => read(`src/i18n/${name}`);
 
@@ -452,7 +455,7 @@ test('i18n F3: the layout sets lang from the locale and emits hreflang, canonica
 });
 
 test('i18n F4: pt-br routes wrap the shared pages and both pages render the toggle', () => {
-  for (const f of ['index', 'docs']) {
+  for (const f of PAGE_NAMES) {
     assert.ok(exists(`src/pages/pt-br/${f}.astro`), `pt-br/${f}.astro missing`);
     assert.match(read(`src/pages/pt-br/${f}.astro`), /import \w+ from "\.\.\/\w*(index|docs|HomePage|DocsPage)\.astro"|views\//);
   }
@@ -470,7 +473,7 @@ test('i18n F4: pt-br routes wrap the shared pages and both pages render the togg
 });
 
 test('i18n F4: the cross-page links go through localeHref, never a literal path', () => {
-  for (const [name, src] of [['index', HOME()], ['docs', DOCS()]]) {
+  for (const [name, src] of PAGES.map(([n, f]) => [n, f()])) {
     assert.doesNotMatch(src, /href="\/docs"/, `${name}: literal /docs link`);
     assert.doesNotMatch(src, /href="\/"/, `${name}: literal / link`);
     assert.match(src, /localeHref\(/, `${name}: no localeHref`);

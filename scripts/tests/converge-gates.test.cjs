@@ -190,7 +190,7 @@ function makeQaRun(scope, featureId, run) {
 
 /** A fully well-formed feature directory; returns its repo-relative path. */
 function buildOkTree(base, id) {
-  const rel = path.join('docs', 'features', id);
+  const rel = path.join(...h.DOCS_ROOT.split('/'), 'features', id);
   const abs = path.join(base, rel);
   fs.mkdirSync(abs, { recursive: true });
   makeQaRun(abs, id.split('-')[0], 'run-001');
@@ -293,7 +293,7 @@ function snapshotTree(root) {
 
 test('converge-gates#001 — gate 1: no review file at all → GATE_REVIEW=missing', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0020F-noreview');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0020F-noreview');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -302,7 +302,7 @@ test('converge-gates#001 — gate 1: no review file at all → GATE_REVIEW=missi
 
 test('converge-gates#002 — gate 1: review exists but Overall is BLOCKED → GATE_REVIEW=broken', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0021F-blocked');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0021F-blocked');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '001', '❌ BLOCKED', '> **QA baseline:** none');
@@ -323,7 +323,7 @@ test('converge-gates#003 — gate 1: review exists and Overall is PASSED → GAT
 
 test('converge-gates#004 — gate 1: the highest-numbered review is the one evaluated', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0023F-highest');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0023F-highest');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '001', '❌ BLOCKED', '> **QA baseline:** none');
@@ -364,7 +364,7 @@ test('converge-gates#006 — L2: path-form baseline is rejected and translated t
 
 test('converge-gates#007 — L2: baseline correct but report absent, translated to broken', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0011F-noreport');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0011F-noreport');
   const abs = path.join(base, dir);
   fs.mkdirSync(path.join(abs, '_tests', 'run-001'), { recursive: true });
   writeReview(abs, '001', '✅ PASSED', '> **QA baseline:** feature:run-001');
@@ -382,7 +382,7 @@ test('converge-gates#007 — L2: baseline correct but report absent, translated 
 
 test('converge-gates#008 — L2: none baseline with qa-pipeline disabled → ok, not broken', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0013F-nobaseline');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0013F-nobaseline');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '001', '✅ PASSED', '> **QA baseline:** none');
@@ -408,7 +408,7 @@ test('converge-gates#009 — L2: report present but schema-invalid → broken, n
 
 test('converge-gates#010 — L2: review with no QA baseline line at all → GATE_QA_BASELINE=missing', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0015F-nolineatall');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0015F-nolineatall');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '001', '✅ PASSED', '');
@@ -421,7 +421,7 @@ test('converge-gates#010 — L2: review with no QA baseline line at all → GATE
 
 test('converge-gates#011 — gate 3: no epic.md at all → GATE_EPIC=ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0030F-noepic');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0030F-noepic');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -432,7 +432,7 @@ test('converge-gates#011 — gate 3: no epic.md at all → GATE_EPIC=ok', (t) =>
 
 test('converge-gates#012 — gate 3: epic.md with every subfeature done → GATE_EPIC=ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0031F-alldone');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0031F-alldone');
   writeEpic(path.join(base, dir), 'all-done');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -441,7 +441,7 @@ test('converge-gates#012 — gate 3: epic.md with every subfeature done → GATE
 
 test('converge-gates#013 — gate 3: epic.md with a pending subfeature → broken, naming it', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0032F-pending');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0032F-pending');
   writeEpic(path.join(base, dir), 'pending');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -451,7 +451,7 @@ test('converge-gates#013 — gate 3: epic.md with a pending subfeature → broke
 
 test('converge-gates#014 — gate 3 scoped: SFxx tasks complete overrides epic pending row → ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0033F-scopedok');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0033F-scopedok');
   const abs = path.join(base, dir);
   writeEpic(abs, 'pending');
   writeSfTasks(path.join(abs, 'subfeatures', 'SF02-beta'), 'complete');
@@ -462,7 +462,7 @@ test('converge-gates#014 — gate 3 scoped: SFxx tasks complete overrides epic p
 
 test('converge-gates#015 — gate 3 scoped: SFxx tasks incomplete → broken even if epic says done', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0034F-scopedbroken');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0034F-scopedbroken');
   const abs = path.join(base, dir);
   writeEpic(abs, 'all-done');
   writeSfTasks(path.join(abs, 'subfeatures', 'SF02-beta'), 'incomplete');
@@ -475,7 +475,7 @@ test('converge-gates#015 — gate 3 scoped: SFxx tasks incomplete → broken eve
 
 test('converge-gates#016 — C1: BLOCKED verdict whose Details says PASSED must not pass gate 1', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0040F-c1');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0040F-c1');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReviewDetail(abs, '001', '❌ BLOCKED', '> **QA baseline:** none', '5/6 gates PASSED — Code Review BLOCKED');
@@ -486,7 +486,7 @@ test('converge-gates#016 — C1: BLOCKED verdict whose Details says PASSED must 
 
 test('converge-gates#017 — C1b: NOT PASSED must not pass gate 1', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0041F-c1b');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0041F-c1b');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReviewDetail(abs, '001', '❌ NOT PASSED', '> **QA baseline:** none', 'blocked on review');
@@ -496,7 +496,7 @@ test('converge-gates#017 — C1b: NOT PASSED must not pass gate 1', (t) => {
 
 test('converge-gates#018 — C2: a prose line mentioning Overall must not be read as the verdict row', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0042F-c2');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0042F-c2');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   h.write(
@@ -519,7 +519,7 @@ test('converge-gates#018 — C2: a prose line mentioning Overall must not be rea
 
 test('converge-gates#019 — C3: plan.md in add.plan STEP 10 shape must not block gate 4', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0043F-c3');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0043F-c3');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   h.write(
@@ -544,7 +544,7 @@ test('converge-gates#019 — C3: plan.md in add.plan STEP 10 shape must not bloc
 
 test('converge-gates#020 — C3b: plan.md with NO coverage table must not block', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0044F-c3b');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0044F-c3b');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   h.write(path.join(abs, 'plan.md'), '# Plan\n\n## Architecture Decisions\nnothing coverage-related\n');
@@ -554,7 +554,7 @@ test('converge-gates#020 — C3b: plan.md with NO coverage table must not block'
 
 test('converge-gates#021 — C4: NO and ❌ in the Covered? column count as uncovered', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0045F-c4');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0045F-c4');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   h.write(
@@ -575,7 +575,7 @@ test('converge-gates#021 — C4: NO and ❌ in the Covered? column count as unco
 
 test('converge-gates#022 — C5: a tasks.md with no Acceptance Checklist is not a silent pass', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0046F-c5');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0046F-c5');
   const abs = path.join(base, dir);
   writeEpic(abs, 'pending');
   h.write(path.join(abs, 'subfeatures', 'SF02-beta', 'tasks.md'), '# Tasks\n\n## Execution\nnothing here\n');
@@ -585,7 +585,7 @@ test('converge-gates#022 — C5: a tasks.md with no Acceptance Checklist is not 
 
 test('converge-gates#023 — C5b: star bullets and indented boxes are still counted', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0047F-c5b');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0047F-c5b');
   const abs = path.join(base, dir);
   writeEpic(abs, 'pending');
   h.write(
@@ -598,7 +598,7 @@ test('converge-gates#023 — C5b: star bullets and indented boxes are still coun
 
 test('converge-gates#024 — C6a: a second table below the Subfeatures table must not poison gate 3', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0048F-c6a');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0048F-c6a');
   h.write(
     path.join(base, dir, 'epic.md'),
     [
@@ -621,7 +621,7 @@ test('converge-gates#024 — C6a: a second table below the Subfeatures table mus
 
 test('converge-gates#025 — C6b: an unrelated earlier Status column must not hijack the header index', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0049F-c6b');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0049F-c6b');
   h.write(
     path.join(base, dir, 'epic.md'),
     [
@@ -646,7 +646,7 @@ test('converge-gates#025 — C6b: an unrelated earlier Status column must not hi
 
 test('converge-gates#026 — C6c: the id column is resolved by header, not assumed first', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0050F-c6c');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0050F-c6c');
   h.write(
     path.join(base, dir, 'epic.md'),
     [
@@ -664,7 +664,7 @@ test('converge-gates#026 — C6c: the id column is resolved by header, not assum
 
 test('converge-gates#027 — C7: gate 4 is fence-aware — a fenced example is not a real uncovered row', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0051F-c7');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0051F-c7');
   h.write(
     path.join(base, dir, 'plan.md'),
     [
@@ -685,7 +685,7 @@ test('converge-gates#027 — C7: gate 4 is fence-aware — a fenced example is n
 
 test('converge-gates#028 — S1: an epic-wide run aggregates the SUBFEATURE plans for coverage', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0054F-s1');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0054F-s1');
   const abs = path.join(base, dir);
   writeEpic(abs, 'all-done');
   h.write(
@@ -704,7 +704,7 @@ test('converge-gates#028 — S1: an epic-wide run aggregates the SUBFEATURE plan
 
 test('converge-gates#029 — S2: an epic-wide run reports an uncovered requirement from ANY subfeature plan', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0055F-s2');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0055F-s2');
   const abs = path.join(base, dir);
   writeEpic(abs, 'all-done');
   h.write(
@@ -722,7 +722,7 @@ test('converge-gates#029 — S2: an epic-wide run reports an uncovered requireme
 
 test('converge-gates#030 — C8: a subfeature-scoped run reads the SUBFEATURE plan.md', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0053F-c8');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0053F-c8');
   const abs = path.join(base, dir);
   writeEpic(abs, 'pending');
   writeSfTasks(path.join(abs, 'subfeatures', 'SF02-beta'), 'complete');
@@ -738,7 +738,7 @@ test('converge-gates#030 — C8: a subfeature-scoped run reads the SUBFEATURE pl
 
 test('converge-gates#031 — M2: an empty SF argument is CLI misuse, exit 2', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0052F-m2');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0052F-m2');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeEpic(abs, 'all-done');
@@ -750,7 +750,7 @@ test('converge-gates#031 — M2: an empty SF argument is CLI misuse, exit 2', (t
 
 test('converge-gates#032 — F19 blind spot 1: a Notes cell reading done must not pass a pending row', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0035F-notesdone');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0035F-notesdone');
   writeEpicBlindspot(path.join(base, dir), 'notes-done');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -760,7 +760,7 @@ test('converge-gates#032 — F19 blind spot 1: a Notes cell reading done must no
 
 test('converge-gates#033 — F19 blind spot 2: a subfeature NAMED done must not pass while pending', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0036F-namedone');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0036F-namedone');
   writeEpicBlindspot(path.join(base, dir), 'name-done');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -770,7 +770,7 @@ test('converge-gates#033 — F19 blind spot 2: a subfeature NAMED done must not 
 
 test('converge-gates#034 — F19: status resolved by header name, not by column position', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0037F-reordered');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0037F-reordered');
   h.write(
     path.join(base, dir, 'epic.md'),
     [
@@ -791,7 +791,7 @@ test('converge-gates#034 — F19: status resolved by header name, not by column 
 
 test('converge-gates#035 — F19 legacy: a done row carrying the extra checkpoint cell still reads done', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0038F-legacycheckpoint');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0038F-legacycheckpoint');
   h.write(
     path.join(base, dir, 'epic.md'),
     [
@@ -813,7 +813,7 @@ test('converge-gates#035 — F19 legacy: a done row carrying the extra checkpoin
 
 test('converge-gates#036 — gate 4: Cobertura with zero uncovered rows → ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0040F-covered');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0040F-covered');
   writePlanCoverage(path.join(base, dir), 'covered');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -823,7 +823,7 @@ test('converge-gates#036 — gate 4: Cobertura with zero uncovered rows → ok',
 
 test('converge-gates#037 — gate 4: Cobertura with an uncovered row → broken', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0041F-uncovered');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0041F-uncovered');
   writePlanCoverage(path.join(base, dir), 'uncovered');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -833,7 +833,7 @@ test('converge-gates#037 — gate 4: Cobertura with an uncovered row → broken'
 
 test('converge-gates#038 — gate 4: plan.md with no coverage table is ok, not missing', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0026F-nosection');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0026F-nosection');
   writePlanCoverage(path.join(base, dir), 'absent-section');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -843,7 +843,7 @@ test('converge-gates#038 — gate 4: plan.md with no coverage table is ok, not m
 
 test('converge-gates#039 — gate 4: no plan.md at all → GATE_COVERAGE=missing', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0043F-noplan');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0043F-noplan');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -927,7 +927,7 @@ test('converge-gates#045 — GATES_OK reflects a partial pass count on a mixed t
 
 test('converge-gates#046 — no gate ever returns not-probed, even on a completely empty feature dir', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0060F-empty');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0060F-empty');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -940,7 +940,7 @@ test('converge-gates#046 — no gate ever returns not-probed, even on a complete
 
 test('converge-gates#047 — exit 0 on total failure — diagnosis is never a gate', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0061F-totalfail');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0061F-totalfail');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -987,7 +987,7 @@ test('converge-gates#051 — CLI misuse: no arguments → exit 2 with usage', (t
 
 test('converge-gates#052 — CLI misuse: non-existent FEATURE_DIR → exit 2 with usage', (t) => {
   const base = project(t);
-  const res = h.runScript('converge-gates', ['docs/features/9999Z-does-not-exist'], { cwd: base });
+  const res = h.runScript('converge-gates', [h.DOCS_ROOT + '/features/9999Z-does-not-exist'], { cwd: base });
   assert.equal(res.status, 2, res.output);
   assert.match(res.output, /Usage/);
 });
@@ -1091,7 +1091,7 @@ test('converge-gates#061 — gate 5: the summary counts five gates', (t) => {
 
 test('converge-gates#062 — final review L1.1: passed line, no review → ok, source build, baseline skipped', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0070F-buildpassed');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0070F-buildpassed');
   const abs = path.join(base, dir);
   writeFinalReview(abs, 'passed (after review-000)');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
@@ -1104,7 +1104,7 @@ test('converge-gates#062 — final review L1.1: passed line, no review → ok, s
 
 test('converge-gates#063 — final review L1.2: ruled N counts as ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0071F-buildruled');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0071F-buildruled');
   writeFinalReview(path.join(base, dir), 'ruled 2 (after review-000)');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1114,7 +1114,7 @@ test('converge-gates#063 — final review L1.2: ruled N counts as ok', (t) => {
 
 test('converge-gates#064 — final review L1.2: blocked N → broken, detail carries verdict and suggestions', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0072F-buildblocked');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0072F-buildblocked');
   writeFinalReview(path.join(base, dir), 'blocked 1 (after review-000)', ['F-B1 — /add.build F0072F']);
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1125,7 +1125,7 @@ test('converge-gates#064 — final review L1.2: blocked N → broken, detail car
 
 test('converge-gates#065 — final review L1.3: line names review-002 and review-002 is BLOCKED → build decides', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0073F-buildnewer');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0073F-buildnewer');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '002', '❌ BLOCKED', '> **QA baseline:** none');
@@ -1138,7 +1138,7 @@ test('converge-gates#065 — final review L1.3: line names review-002 and review
 
 test('converge-gates#066 — final review L1.4: a review numbered above the line decides', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0074F-reviewnewer');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0074F-reviewnewer');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeFinalReview(abs, 'passed (after review-002)');
@@ -1153,7 +1153,7 @@ test('converge-gates#066 — final review L1.4: a review numbered above the line
 
 test('converge-gates#067 — final review L1.5: no line and no review → missing, source none', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0075F-nothing');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0075F-nothing');
   fs.mkdirSync(path.join(base, dir), { recursive: true });
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1172,7 +1172,7 @@ test('converge-gates#068 — final review L1.5b: a review and no line → REVIEW
 
 test('converge-gates#069 — final review L1.6: SFxx scope reads the subfeature ledger', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0077F-sfscope');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0077F-sfscope');
   const abs = path.join(base, dir);
   fs.mkdirSync(path.join(abs, 'subfeatures', 'SF01-thing'), { recursive: true });
   writeFinalReview(abs, 'passed (after review-000)');
@@ -1185,7 +1185,7 @@ test('converge-gates#069 — final review L1.6: SFxx scope reads the subfeature 
 
 test('converge-gates#070 — final review: the LAST Final review line is operative', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0078F-lastline');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0078F-lastline');
   const abs = path.join(base, dir);
   writeFinalReview(abs, 'blocked 1 (after review-000)', ['X — /add.build F0078F']);
   writeFinalReview(abs, 'passed (after review-000)');
@@ -1196,7 +1196,7 @@ test('converge-gates#070 — final review: the LAST Final review line is operati
 
 test('converge-gates#071 — final review: a build-verdict tree with other gates ok reaches GATES_OK=5/5', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0079F-fivebuild');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0079F-fivebuild');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writePlanCoverage(abs, 'covered');
@@ -1208,7 +1208,7 @@ test('converge-gates#071 — final review: a build-verdict tree with other gates
 
 test('converge-gates#072 — final review: a line with no (after review-NNN) is broken, never ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0080F-malformed');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0080F-malformed');
   h.write(path.join(base, dir, 'build-ledger.md'), '# L\nFinal review: passed\n');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1218,7 +1218,7 @@ test('converge-gates#072 — final review: a line with no (after review-NNN) is 
 
 test('converge-gates#073 — final review: an unknown verdict word is broken, never ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0081F-badword');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0081F-badword');
   writeFinalReview(path.join(base, dir), 'approved (after review-000)');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1227,7 +1227,7 @@ test('converge-gates#073 — final review: an unknown verdict word is broken, ne
 
 test('converge-gates#074 — final review: only the last blocked verdict suggestions reach the detail', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0082F-manysugg');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0082F-manysugg');
   const abs = path.join(base, dir);
   writeFinalReview(abs, 'blocked 1 (after review-000)', ['OLD-1 — /add.build F0082F']);
   writeFinalReview(abs, 'blocked 2 (after review-000)', ['FR-1 — /add.build F0082F', 'FR-2 — /add.plan F0082F']);
@@ -1239,7 +1239,7 @@ test('converge-gates#074 — final review: only the last blocked verdict suggest
 
 test('converge-gates#075 — final review: review-008 is compared in base ten, not octal', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0083F-octal');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0083F-octal');
   const abs = path.join(base, dir);
   fs.mkdirSync(abs, { recursive: true });
   writeReview(abs, '009', '❌ BLOCKED', '> **QA baseline:** none');
@@ -1255,7 +1255,7 @@ test('converge-gates#075 — final review: review-008 is compared in base ten, n
 
 test('converge-gates#076 — final review head: a head line after a passed verdict leaves gate 1 ok', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0084F-headpassed');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0084F-headpassed');
   const abs = path.join(base, dir);
   writeFinalReview(abs, 'passed (after review-000)');
   fs.appendFileSync(path.join(abs, 'build-ledger.md'), 'Final review head: 0a1b2c3d4e5f60718293a4b5c6d7e8f901234567\n');
@@ -1267,7 +1267,7 @@ test('converge-gates#076 — final review head: a head line after a passed verdi
 
 test('converge-gates#077 — final review head: a head line between a blocked verdict and its suggestions keeps the suggestions', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0085F-headblocked');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0085F-headblocked');
   const abs = path.join(base, dir);
   writeFinalReview(abs, 'blocked 1 (after review-000)');
   fs.appendFileSync(
@@ -1284,7 +1284,7 @@ test('converge-gates#077 — final review head: a head line between a blocked ve
 
 test('converge-gates#078 — light review loop L1.1: build line + judged run-001 → ok, BASELINE=feature:run-001, counted', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0090F-buildqa');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0090F-buildqa');
   const abs = path.join(base, dir);
   makeQaRun(abs, '0090F', 'run-001');
   writeFinalReview(abs, 'passed (after review-001)');
@@ -1298,7 +1298,7 @@ test('converge-gates#078 — light review loop L1.1: build line + judged run-001
 
 test('converge-gates#079 — light review loop L1.2: build line + no working run → skipped, BASELINE=none', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0091F-buildnoqa');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0091F-buildnoqa');
   writeFinalReview(path.join(base, dir), 'passed (after review-001)');
   const res = h.runScript('converge-gates', [dir], { cwd: base });
   assert.equal(res.status, 0, res.output);
@@ -1308,7 +1308,7 @@ test('converge-gates#079 — light review loop L1.2: build line + no working run
 
 test('converge-gates#080 — light review loop L1.3: build line + run-001 without a report → broken, names the missing report', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0092F-buildnoreport');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0092F-buildnoreport');
   const abs = path.join(base, dir);
   fs.mkdirSync(path.join(abs, '_tests', 'run-001'), { recursive: true });
   writeFinalReview(abs, 'passed (after review-001)');
@@ -1363,7 +1363,7 @@ test('converge-gates#083 — light review loop L1.5b: a malformed or different-s
 
 function featureWithPlan(t, id, planLines) {
   const base = project(t);
-  const dir = path.join('docs', 'features', id);
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', id);
   h.write(path.join(base, dir, 'plan.md'), planLines.join('\n') + '\n');
   return { base, dir };
 }
@@ -1405,7 +1405,7 @@ test('converge-gates#091 — 0049B L1.2: a later table that carries Covered? is 
 
 test('converge-gates#092 — 0049B L1.3: an epic-wide run keeps the uncovered count when the LAST plan has no table', (t) => {
   const base = project(t);
-  const dir = path.join('docs', 'features', '0098F-last-no-table');
+  const dir = path.join(...h.DOCS_ROOT.split('/'), 'features', '0098F-last-no-table');
   const abs = path.join(base, dir);
   writeEpic(abs, 'all-done');
   h.write(

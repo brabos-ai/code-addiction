@@ -30,7 +30,8 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPTS_DIR = path.join(REPO_ROOT, 'framwork', '.codeadd', 'scripts');
 const ROOT_SCRIPTS_DIR = path.join(REPO_ROOT, 'scripts');
 // The docs root, from the one module that owns it (never spelled out here).
-const DOCS_ROOT_SEGMENTS = require(path.join(SCRIPTS_DIR, 'docs-root.cjs')).DOCS_ROOT.split('/');
+const DOCS_ROOT = require(path.join(SCRIPTS_DIR, 'docs-root.cjs')).DOCS_ROOT;
+const DOCS_ROOT_SEGMENTS = DOCS_ROOT.split('/');
 const CASE_MAP_PATH = path.join(__dirname, 'native-script-cases.json');
 
 /** Every child of the harness runs with a deterministic environment. */
@@ -137,7 +138,7 @@ function makeRepo({ branch = 'main', prefix = 'codeadd-repo-' } = {}) {
 
 /**
  * A board fixture: a temp bare remote holding an orphan `board` branch with an
- * empty docs/backlog.jsonl, a code repository on `main` whose committed
+ * empty backlog.jsonl at its root, a code repository on `main` whose committed
  * .codeadd/board.json points at that remote, and the CODEADD_BOARD_DIR path the
  * board clone lands at. No test may use the real ~/.codeadd/: every call to a
  * script passes `env`.
@@ -153,7 +154,7 @@ function makeBoard({ files = {} } = {}) {
   git(seed, ['config', 'user.email', 'test@test.com']);
   git(seed, ['config', 'user.name', 'Test']);
   git(seed, ['config', 'commit.gpgsign', 'false']);
-  write(path.join(seed, 'docs', 'backlog.jsonl'), '');
+  write(path.join(seed, 'backlog.jsonl'), '');
   for (const [rel, content] of Object.entries(files)) write(path.join(seed, rel), content);
   git(seed, ['add', '.']);
   git(seed, ['commit', '-q', '-m', 'seed board']);
@@ -287,6 +288,7 @@ module.exports = {
   SCRIPTS_DIR,
   ROOT_SCRIPTS_DIR,
   CASE_MAP_PATH,
+  DOCS_ROOT,
   cleanEnv,
   mkTmp,
   rmrf,

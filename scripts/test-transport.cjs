@@ -6,7 +6,7 @@ const { createHash, randomUUID } = require('node:crypto');
 const { spawn, spawnSync } = require('node:child_process');
 const context = require('./test-context.cjs');
 const INPUTS = ['package.json', 'package-lock.json', 'cli/package.json', 'cli/package-lock.json'];
-const EXCLUDES = ['.git', '.worktrees', '.test-artifacts', 'docs/plans', 'docs/brainstorming', 'docs/evidence', 'cli/src/mcp', 'framwork/.codeadd/artefact-graph.json', 'framwork/.codeadd/contracts.json', 'framwork/.codeadd/injection-points.json'];
+const EXCLUDES = ['.git', '.worktrees', '.test-artifacts', '.codeadd/docs', 'cli/src/mcp', 'framwork/.codeadd/artefact-graph.json', 'framwork/.codeadd/contracts.json', 'framwork/.codeadd/injection-points.json'];
 function excluded(rel) {
   const parts = rel.split('/');
   return parts.some(p => ['node_modules', 'dist', 'coverage', 'test-results', 'playwright-report', '.vitest', '.vite', '.cache'].includes(p)) || rel.endsWith('.tsbuildinfo') || EXCLUDES.some(e => rel === e || rel.startsWith(e + '/')) || /^(?:framwork\/)?\.(?:claude|opencode|agents|codex|cursor|gemini|github)\/(?:commands|skills|agents|worktrees)(?:\/|$)/.test(rel);
