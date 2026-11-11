@@ -37,10 +37,10 @@ The one-feature rule is in section 9 of the guide.
 
 ### Where you pick up the work
 
-The product PM hands you the intent file (`docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature
-folder `docs/features/<id>-<slug>/` (its `about.md` holds the scope), both on main. Start from those two.
+The product PM hands you the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature
+folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope), both on `codeadd-docs`. Start from those two.
 
-If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page; otherwise the handoff is the intent + `docs/features/<id>-<slug>/` only.
+If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page; otherwise the handoff is the intent + `.codeadd/docs/features/<id>-<slug>/` only.
 
 Pull the main branch into your worktree before `/add-plan`.
 
