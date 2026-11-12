@@ -431,6 +431,12 @@ describe('addDirHoldsInstall', () => {
     expect(addDirHoldsInstall(codeadd())).toBe(false);
   });
 
+  it('is false for a clone that carries only the gitignored local settings file', () => {
+    fs.mkdirSync(codeadd(), { recursive: true });
+    fs.writeFileSync(path.join(codeadd(), 'settings.local.json'), '{"schema":1}');
+    expect(addDirHoldsInstall(codeadd())).toBe(false);
+  });
+
   it('is true as soon as the manifest is present next to them', () => {
     fs.mkdirSync(path.join(codeadd(), 'wiki'), { recursive: true });
     fs.writeFileSync(path.join(codeadd(), 'settings.json'), '{"schema":1}');

@@ -175,6 +175,18 @@ describe('uninstall', () => {
     expect(fs.existsSync(path.join(addDir, 'manifest.json'))).toBe(false);
   });
 
+  it('corrupted-manifest fallback keeps the local settings file, which holds the user\'s secret', async () => {
+    const addDir = path.join(tmpDir, '.codeadd');
+    fs.mkdirSync(path.join(addDir, 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(addDir, 'settings.local.json'), '{"schema":1}');
+    fs.writeFileSync(path.join(addDir, 'commands', 'add.md'), '# add');
+    fs.writeFileSync(path.join(addDir, 'manifest.json'), 'not json{{{', 'utf8');
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+    expect(fs.existsSync(path.join(addDir, 'settings.local.json'))).toBe(true);
+    expect(fs.existsSync(path.join(addDir, 'commands', 'add.md'))).toBe(false);
+  });
+
   it('global corrupted-manifest fallback removes .config/opencode and keeps .gitignore', async () => {
     // Global install dir that ADD_DIRS does not list — only GLOBAL_ADD_DIRS does
     const ocSkill = path.join(tmpDir, '.config', 'opencode', 'skills', 'add', 'SKILL.md');
