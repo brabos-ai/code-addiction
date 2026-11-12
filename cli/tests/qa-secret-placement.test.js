@@ -47,6 +47,7 @@ const placedInLocalFile = (rel) => {
 };
 
 const GROUPS = {
+  'F5 — the two setup commands': ['commands/add-qa-setup.md', 'commands/add-setup.md'],
   'F4 — the settings and setup-contract skills': [
     'skills/add--settings/SKILL.md',
     'skills/add--setup-contract/SKILL.md',

@@ -352,8 +352,9 @@ describe('the shipped add-qa-setup contract', () => {
       '<provider skills dir>/qa-project/SKILL.md',
       'FEATURE_DIR/_tests/screens.json',
       '.codeadd/docs/.gitignore',
+      '.codeadd/settings.local.json#qa',
     ]);
-    expect(c.paths.map((p) => p.owner)).toEqual(['shared', 'setup', 'shared', 'shared']);
+    expect(c.paths.map((p) => p.owner)).toEqual(['shared', 'setup', 'shared', 'shared', 'shared']);
   });
 
   it('the declaration embeds fenced H2s — the structure cases 3-5 guard', () => {
@@ -420,12 +421,12 @@ describe('the shipped add-qa-setup changed-in', () => {
     // The shape moved with the settings file: the last pre-refactor shape is sha256:25b937ee17628d6b.
     expect(c.shape).toMatch(/^sha256:[0-9a-f]{16}$/);
     expect(c.shape).not.toBe('sha256:25b937ee17628d6b');
-    // 0078F moved the QA run-output ignore onto the docs branch: the shape moved again, in 1.9.0.
-    expect(c.changed_in).toBe('1.9.0');
+    // 0078F moved the QA run-output ignore onto the docs branch: the shape moved again, in 1.9.0; authSeed moved to the local file, in 1.9.2.
+    expect(c.changed_in).toBe('1.9.2');
     expect(fs.existsSync(sidecar), 'sidecar missing — run `node scripts/build.js` first').toBe(true);
     const built = JSON.parse(fs.readFileSync(sidecar, 'utf8')).contracts['add-qa-setup'];
     expect(built.shape).toBe(c.shape);
-    expect(built.changed_in).toBe('1.9.0');
+    expect(built.changed_in).toBe('1.9.2');
     expect(built.paths[0]).toMatchObject({ path: '.codeadd/settings.json#qa', owner: 'shared' });
   });
 });

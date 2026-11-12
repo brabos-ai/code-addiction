@@ -109,9 +109,9 @@ describe('F3 — the two inline commands honor a Setup answers block', () => {
     });
   }
 
-  it('L1.4 the add-qa-setup contract shape is the one 1.9.0 recorded (the QA ignore moved to the docs branch)', () => {
+  it('L1.4 the add-qa-setup contract shape is the one 1.9.2 recorded (authSeed moved to the gitignored local file)', () => {
     const src = read(path.join(codeadd, 'commands/add-qa-setup.md'));
-    expect(src).toContain('shape: sha256:7e9e973468b6b777');
+    expect(src).toContain('shape: sha256:c61dbcc38148c997');
   });
 });
 

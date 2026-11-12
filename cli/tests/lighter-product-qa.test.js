@@ -221,7 +221,8 @@ describe('F7 — setup drops the smoke review and its correction loop', () => {
     // sha256:25b937ee17628d6b is the last pre-refactor shape, now held by the docs migrate command.
     // 0078F moved the QA run-output ignore onto the docs branch, so the shape moved again on
     // purpose (changed-in 1.9.0): every QA user re-runs /add-qa-setup.
-    expect(read(P.setup)).toContain('shape: sha256:7e9e973468b6b777');
+    // 0078F-fixes moved it once more (changed-in 1.9.2): authSeed went to settings.local.json.
+    expect(read(P.setup)).toContain('shape: sha256:c61dbcc38148c997');
   });
 });
 
