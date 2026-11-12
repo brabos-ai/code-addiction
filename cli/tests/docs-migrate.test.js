@@ -570,6 +570,63 @@ describe('decision 7 — every run ends with a migration summary', () => {
   });
 });
 
+describe('decision 3 — docs migrate lists the code that still reads the old paths', () => {
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+  const summary = () => (/--- MIGRATION SUMMARY ---\n([\s\S]*?)--- END MIGRATION SUMMARY ---/.exec(stdout()) || [])[1] || '';
+  const withStaleCode = () => {
+    p = makeLegacyProject();
+    const e2e = ['import fs from "node:fs";', '', 'export const cfg = JSON.parse(fs.readFileSync("docs/qa/config.json", "utf8"));', ''].join('\n');
+    fs.mkdirSync(path.join(p.repo, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(p.repo, 'src', 'e2e.ts'), e2e);
+    fs.writeFileSync(path.join(p.repo, 'src', 'fine.ts'), 'export const ok = ".codeadd/docs/features/x";\n');
+    fs.mkdirSync(path.join(p.repo, 'node_modules'), { recursive: true });
+    fs.writeFileSync(path.join(p.repo, 'node_modules', 'x.js'), 'read("docs/qa/config.json")\n');
+    git(p.repo, 'add', 'src');
+    git(p.repo, 'commit', '-q', '-m', 'code reading the old paths');
+    return e2e;
+  };
+
+  it('lists file:line under needs update, leaves the file byte-identical, skips node_modules and the new location', async () => {
+    const e2e = withStaleCode();
+    await docsMigrate(p.repo, []);
+    const text = summary();
+    expect(text).toContain('needs update');
+    expect(text).toContain('src/e2e.ts:3');
+    expect(text).not.toContain('node_modules');
+    expect(text).not.toContain('src/fine.ts');
+    expect(text).toMatch(/NEEDS_UPDATE=[1-9]/);
+    expect(fs.readFileSync(path.join(p.repo, 'src', 'e2e.ts'), 'utf8')).toBe(e2e);
+  });
+
+  it('--dry-run lists them too and writes nothing', async () => {
+    withStaleCode();
+    await docsMigrate(p.repo, ['--dry-run']);
+    expect(summary()).toContain('src/e2e.ts:3');
+    expect(git(p.repo, 'status', '--porcelain')).toBe('?? node_modules/');
+  });
+
+  it('a project with no stale reference prints NEEDS_UPDATE=0', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    expect(summary()).toContain('NEEDS_UPDATE=0');
+  });
+
+  it('the prompt prints when only NEEDS_UPDATE is above zero', async () => {
+    p = makeLegacyProject({ legacy: false });
+    fs.mkdirSync(path.join(p.repo, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(p.repo, 'src', 'a.ts'), 'const f = "docs/features/";\n');
+    git(p.repo, 'add', 'src');
+    git(p.repo, 'commit', '-q', '-m', 'stale reference only');
+    const dest = path.join(p.repo, '.codeadd', 'templates');
+    fs.mkdirSync(dest, { recursive: true });
+    fs.writeFileSync(path.join(dest, 'docs-migrate-prompt.md'), 'PROMPT BODY\n');
+    await docsMigrate(p.repo, []);
+    expect(summary()).toContain('src/a.ts:1');
+    expect(stdout()).toContain('--- AGENT PROMPT ---');
+  });
+});
+
 describe('F27 — the migrate prompt', () => {
   const TEMPLATE_SRC = path.join(ROOT, 'framwork', '.codeadd', 'templates', 'docs-migrate-prompt.md');
   const { resolveDocSchema } = require(path.join(ROOT, 'scripts', 'build.js'));

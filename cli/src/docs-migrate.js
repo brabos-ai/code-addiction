@@ -285,6 +285,62 @@ const FILE_MAP = [
 ];
 const FEATURE_FOLDER_RE = /^[0-9]{4}[A-Z]-/;
 
+// ---------------------------------------------------------------------------
+// The stale-reference scan — code that still names a moved path (decision 3)
+// ---------------------------------------------------------------------------
+
+const SCAN_SKIP_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.next', 'coverage']);
+const SCAN_MAX_BYTES = 1024 * 1024;
+const SCAN_MAX_LISTED = 500;
+const escapeRe = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The needle for every legacy path, derived from the constants this file already owns — a
+ * second list would drift. A path under the new root (`.codeadd/docs/…`) never matches.
+ */
+function staleReferenceRe() {
+  const names = [
+    ...DIR_MAP.map(([oldSub]) => `${OLD_ROOT}/${oldSub}`),
+    `${OLD_ROOT}/features`,
+    `${OLD_ROOT}/changelog`,
+    ...FILE_MAP.map(([oldName]) => `${OLD_ROOT}/${oldName}`),
+    QA_OLD_CONFIG,
+    QA_OLD_RECEIPT,
+    OLD_DECISIONS,
+  ];
+  const alternatives = [...new Set(names)].sort((a, b) => b.length - a.length).map(escapeRe).join('|');
+  return new RegExp(`(?<![A-Za-z0-9_.-])(?<!\\.codeadd/)(?:${alternatives})(?![A-Za-z0-9_-])`);
+}
+
+/**
+ * Every line, outside the docs root, that still names a moved path — `{ file, line }`. READ ONLY:
+ * this never writes a file, and the code is not this command's to rewrite. `skip` holds the files
+ * the move is about to take (a dry run has not taken them yet).
+ */
+export function scanStaleReferences(cwd, skip = new Set()) {
+  const listed = spawnSync('git', ['ls-files', '-z', '-co', '--exclude-standard'], { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  if (listed.status !== 0) return [];
+  const re = staleReferenceRe();
+  const hits = [];
+  for (const rel of listed.stdout.split('\0').filter(Boolean)) {
+    if (skip.has(rel) || rel.startsWith('.codeadd/docs/')) continue;
+    if (rel.split('/').some((seg) => SCAN_SKIP_DIRS.has(seg))) continue;
+    const full = path.join(cwd, rel);
+    let buf;
+    try {
+      const stat = fs.statSync(full);
+      if (!stat.isFile() || stat.size > SCAN_MAX_BYTES) continue;
+      buf = fs.readFileSync(full);
+    } catch {
+      continue;
+    }
+    if (buf.subarray(0, 8000).includes(0)) continue;
+    const lines = buf.toString('utf8').split('\n');
+    for (let i = 0; i < lines.length; i++) if (re.test(lines[i])) hits.push({ file: rel, line: i + 1 });
+  }
+  return hits;
+}
+
 const posix = (p) => p.split(path.sep).join('/');
 
 function gitRun(cwd, args) {
@@ -426,12 +482,17 @@ function deliveredState(file) {
  * The human summary every run ends its keys with. `lines` carries anything a later step adds
  * (the references that need an update, the stamped and unstamped counts).
  */
-function printSummary({ dryRun, count, reason, delivered, legacy, lines = [] }) {
+function printSummary({ dryRun, count, reason, delivered, legacy, needsUpdate = [], lines = [] }) {
   say(SUMMARY_BEGIN);
   say(dryRun ? `files would move: ${count}` : `files moved: ${count}`);
   if (reason) say(`reason: ${reason}`);
   say(`delivered.jsonl: ${delivered}`);
   say(`DOCS_LEGACY: ${legacy}`);
+  say('needs update:');
+  if (needsUpdate.length === 0) say('  (no code references a moved path)');
+  for (const h of needsUpdate.slice(0, SCAN_MAX_LISTED)) say(`  ${h.file}:${h.line}`);
+  if (needsUpdate.length > SCAN_MAX_LISTED) say(`  ... and ${needsUpdate.length - SCAN_MAX_LISTED} more`);
+  say(`NEEDS_UPDATE=${needsUpdate.length}`);
   for (const l of lines) say(l);
   say(SUMMARY_END);
 }
@@ -497,6 +558,7 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
       reason: planned.length ? '' : zeroReason(),
       delivered: deliveredState(deliveredPath(planned)),
       legacy: fs.existsSync(root) ? countLegacyDocs(root, docsRootMod.docSchemaOf) : 0,
+      needsUpdate: scanStaleReferences(cwd, new Set(planned.map((f) => f.from))),
     });
     return { migrated: planned.length ? 'moved' : 'nothing', count: planned.length, dryRun: true };
   }
@@ -556,13 +618,15 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
   // The prompt for the user's own agent. This command only PRINTS it — it never runs an agent.
   const legacy = outcome === 'nothing' ? 0 : countLegacyDocs(root, docsRootMod.docSchemaOf);
   if (outcome !== 'nothing') say(`DOCS_LEGACY=${legacy}`);
+  const needsUpdate = scanStaleReferences(cwd);
   printSummary({
     dryRun: false,
     count: total,
     reason: total > 0 ? '' : zeroReason(),
     delivered: deliveredState(deliveredPath([])),
     legacy,
+    needsUpdate,
   });
-  if (outcome !== 'nothing' && legacy > 0) printPrompt(cwd);
+  if (legacy > 0 || needsUpdate.length > 0) printPrompt(cwd);
   return { migrated: outcome, count: total, legacy };
 }
