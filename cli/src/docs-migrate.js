@@ -32,6 +32,11 @@ import { loadDocsRoot, loadDocsBranch, loadDocsGuard } from './docs-root.js';
  * `DOCS_LEGACY=<n>` (documents with no schema, counted by the installed resolver) and — when n is
  * above zero — the prompt template, printed between `--- AGENT PROMPT ---` and
  * `--- END AGENT PROMPT ---`. `--dry-run` and `nothing` print no prompt.
+ *
+ * EVERY run — moved, already, nothing and `--dry-run` (worded "would") — also ends its keys with a
+ * human summary between `--- MIGRATION SUMMARY ---` and `--- END MIGRATION SUMMARY ---`: files moved
+ * (0 included), the reason when 0, the `delivered.jsonl` state and `DOCS_LEGACY`. The `KEY=` lines
+ * stay exactly as they were, for bots.
  */
 
 /**
@@ -398,6 +403,39 @@ function countLegacyDocs(root, docSchemaOf) {
   return walkFiles(root).filter((f) => f.endsWith('.md') && docSchemaOf(fs.readFileSync(f, 'utf8')) === 0).length;
 }
 
+const SUMMARY_BEGIN = '--- MIGRATION SUMMARY ---';
+const SUMMARY_END = '--- END MIGRATION SUMMARY ---';
+
+/** The state of a `delivered.jsonl`: absent, already at `v: 1`, or lines that carry no `v`. */
+function deliveredState(file) {
+  if (!file || !fs.existsSync(file)) return 'absent';
+  const lines = fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim());
+  if (lines.length === 0) return 'absent';
+  const without = lines.filter((l) => {
+    try {
+      const v = JSON.parse(l).v;
+      return v === undefined || v === null;
+    } catch {
+      return true;
+    }
+  }).length;
+  return without === 0 ? 'already at v: 1' : `${without} line(s) without v`;
+}
+
+/**
+ * The human summary every run ends its keys with. `lines` carries anything a later step adds
+ * (the references that need an update, the stamped and unstamped counts).
+ */
+function printSummary({ dryRun, count, reason, delivered, legacy, lines = [] }) {
+  say(SUMMARY_BEGIN);
+  say(dryRun ? `files would move: ${count}` : `files moved: ${count}`);
+  if (reason) say(`reason: ${reason}`);
+  say(`delivered.jsonl: ${delivered}`);
+  say(`DOCS_LEGACY: ${legacy}`);
+  for (const l of lines) say(l);
+  say(SUMMARY_END);
+}
+
 const PROMPT_BEGIN = '--- AGENT PROMPT ---';
 const PROMPT_END = '--- END AGENT PROMPT ---';
 
@@ -434,15 +472,32 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
 
   const planned = collectLegacy(cwd);
   const root = docsRootMod.docsRoot(cwd);
-  const alreadyMigrated = () => {
-    if (!fs.existsSync(path.join(root, '.git'))) return false;
-    return gitRun(root, ['log', '--grep=^Migrated-From:', '-n', '1', '--format=%H']).out !== '';
+  const migratedCommit = () => {
+    if (!fs.existsSync(path.join(root, '.git'))) return '';
+    return gitRun(root, ['log', '--grep=^Migrated-From:', '-n', '1', '--format=%H']).out;
+  };
+  const alreadyMigrated = () => migratedCommit() !== '';
+  // The reason a run moved nothing: it was done before, or there was nothing to do.
+  const zeroReason = () => {
+    const sha = migratedCommit();
+    return sha ? `already migrated: Migrated-From commit ${sha} on ${docsRootMod.DOCS_BRANCH}` : 'nothing to move: no legacy outputs found';
+  };
+  const deliveredPath = (list) => {
+    const legacy = list.find((f) => f.to === 'delivered.jsonl');
+    return fs.existsSync(path.join(root, 'delivered.jsonl')) ? path.join(root, 'delivered.jsonl') : legacy ? path.join(cwd, legacy.from) : null;
   };
 
   if (dryRun) {
     for (const f of planned) say(`WOULD_MOVE ${f.from} -> ${docsRootMod.DOCS_ROOT}/${f.to}`);
     say(planned.length ? `MIGRATED=moved:${planned.length}` : alreadyMigrated() ? 'MIGRATED=already' : 'MIGRATED=nothing');
     say('DRY_RUN=1');
+    printSummary({
+      dryRun: true,
+      count: planned.length,
+      reason: planned.length ? '' : zeroReason(),
+      delivered: deliveredState(deliveredPath(planned)),
+      legacy: fs.existsSync(root) ? countLegacyDocs(root, docsRootMod.docSchemaOf) : 0,
+    });
     return { migrated: planned.length ? 'moved' : 'nothing', count: planned.length, dryRun: true };
   }
 
@@ -500,9 +555,14 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
 
   // The prompt for the user's own agent. This command only PRINTS it — it never runs an agent.
   const legacy = outcome === 'nothing' ? 0 : countLegacyDocs(root, docsRootMod.docSchemaOf);
-  if (outcome !== 'nothing') {
-    say(`DOCS_LEGACY=${legacy}`);
-    if (legacy > 0) printPrompt(cwd);
-  }
+  if (outcome !== 'nothing') say(`DOCS_LEGACY=${legacy}`);
+  printSummary({
+    dryRun: false,
+    count: total,
+    reason: total > 0 ? '' : zeroReason(),
+    delivered: deliveredState(deliveredPath([])),
+    legacy,
+  });
+  if (outcome !== 'nothing' && legacy > 0) printPrompt(cwd);
   return { migrated: outcome, count: total, legacy };
 }

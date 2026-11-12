@@ -515,6 +515,61 @@ describe('decision 8 — docs migrate never prints the QA secret and says to rot
   });
 });
 
+describe('decision 7 — every run ends with a migration summary', () => {
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+  const summary = () => {
+    const m = /--- MIGRATION SUMMARY ---\n([\s\S]*?)--- END MIGRATION SUMMARY ---/.exec(stdout());
+    return m ? m[1] : null;
+  };
+
+  it('a first run that moves files says how many, the delivered.jsonl state and DOCS_LEGACY', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    const text = summary();
+    expect(text).not.toBeNull();
+    expect(text).toMatch(/files moved: [1-9]\d*/);
+    expect(text).toMatch(/delivered\.jsonl: (absent|already at v: 1|\d+ line\(s\) without v)/);
+    expect(text).toMatch(/DOCS_LEGACY: \d+/);
+    expect(stdout()).toMatch(/MIGRATED=moved:\d+/);
+  });
+
+  it('a second run on a migrated project prints the block with 0 moved and the commit that migrated it', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, []);
+    const sha = git(p.docsRoot, 'log', '--grep=^Migrated-From:', '-n', '1', '--format=%H');
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=already');
+    const text = summary();
+    expect(text).not.toBeNull();
+    expect(text).toContain('files moved: 0');
+    expect(text).toContain(`already migrated: Migrated-From commit ${sha} on ${DOCS_BRANCH}`);
+  });
+
+  it('a project with no legacy outputs prints the block with 0 moved and the reason, not a single key', async () => {
+    p = makeLegacyProject({ legacy: false });
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toContain('MIGRATED=nothing');
+    const text = summary();
+    expect(text).not.toBeNull();
+    expect(text).toContain('files moved: 0');
+    expect(text).toContain('nothing to move: no legacy outputs found');
+    expect(text).toContain('delivered.jsonl: absent');
+    expect(text).toContain('DOCS_LEGACY: 0');
+  });
+
+  it('--dry-run words it as would and writes nothing', async () => {
+    p = makeLegacyProject();
+    await docsMigrate(p.repo, ['--dry-run']);
+    const text = summary();
+    expect(text).not.toBeNull();
+    expect(text).toMatch(/files would move: [1-9]\d*/);
+    expect(text).not.toContain('files moved:');
+    expect(git(p.repo, 'status', '--porcelain')).toBe('');
+  });
+});
+
 describe('F27 — the migrate prompt', () => {
   const TEMPLATE_SRC = path.join(ROOT, 'framwork', '.codeadd', 'templates', 'docs-migrate-prompt.md');
   const { resolveDocSchema } = require(path.join(ROOT, 'scripts', 'build.js'));
@@ -529,6 +584,15 @@ describe('F27 — the migrate prompt', () => {
     fs.writeFileSync(path.join(dest, 'docs-migrate-prompt.md'), text);
     return text;
   }
+
+  it('the summary closes the output keys, before the prompt', async () => {
+    p = makeLegacyProject();
+    installTemplate(p.repo);
+    await docsMigrate(p.repo, []);
+    const text = stdout();
+    expect(text.indexOf('--- END MIGRATION SUMMARY ---')).toBeGreaterThan(text.indexOf('MIGRATED='));
+    expect(text.indexOf('--- MIGRATION SUMMARY ---')).toBeLessThan(text.indexOf('--- AGENT PROMPT ---'));
+  });
   const block = () => {
     const m = /--- AGENT PROMPT ---\n([\s\S]*?)--- END AGENT PROMPT ---/.exec(stdout());
     return m ? m[1] : null;
@@ -597,7 +661,7 @@ describe('F27 — the migrate prompt', () => {
     await docsMigrate(p.repo, []);
     expect(stdout()).toContain('MIGRATED=nothing');
     expect(stdout()).not.toContain('AGENT PROMPT');
-    expect(stdout()).not.toContain('DOCS_LEGACY');
+    expect(stdout()).not.toMatch(/^DOCS_LEGACY=/m);
   });
 
   it('a project with no legacy docs left prints the count 0 and no prompt', async () => {
