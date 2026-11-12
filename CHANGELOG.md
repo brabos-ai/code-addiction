@@ -27,7 +27,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [1.9.0] - 2026-11-11
 
-
 ### Added
 - The docs branch. Every output Code Addiction writes (plans, feature docs, wiki, QA reports, changelog, the delivery index) now lives in `.codeadd/docs/`, a git worktree of the orphan `codeadd-docs` branch in your own remote. Code pull requests no longer carry any Code Addiction document. `status.cjs` prepares the worktree and prints one `DOCS=` line (it never fails on this step), code worktrees see the docs through a link, and `/add-done` commits and pushes the branch. Nothing deletes `codeadd-docs`.
 - The docs-guard: an output written outside `.codeadd/docs/` is moved there silently at close-out, so it never reaches a code PR.

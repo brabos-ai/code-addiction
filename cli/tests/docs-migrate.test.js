@@ -439,6 +439,18 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
     expect(out.notes.join('\n')).toMatch(/already (has|holds) a qa section/);
   });
 
+  it('an authSeed already sitting in the tracked qa section is moved to the local file too, never left behind', () => {
+    seedOldProject();
+    const SEED = 'FIXTURE-PLACEHOLDER-tracked-not-a-real-credential';
+    put('.codeadd/settings.json', JSON.stringify({ schema: 1, qa: { baseUrl: 'http://localhost:9999', authSeed: SEED } }));
+    const out = migrateQaSettings(ctx());
+    expect(readJson('.codeadd/settings.json').qa).not.toHaveProperty('authSeed');
+    // the tracked value wins over the legacy file's, which was merge-only
+    expect(readJson('.codeadd/settings.local.json').qa.authSeed).toBe(SEED);
+    expect(out.warnings.join('\n')).toMatch(/rotate/i);
+    expect(JSON.stringify(out)).not.toContain(SEED);
+  });
+
   it('a malformed old file throws and deletes nothing', () => {
     seedOldProject();
     put('docs/qa/config.json', '{not json');

@@ -37,7 +37,8 @@ import { loadDocsRoot, loadDocsBranch, loadDocsGuard } from './docs-root.js';
  * Output: `MIGRATED=moved:<n>` | `MIGRATED=already` | `MIGRATED=nothing`; after moved or already,
  * `DOCS_LEGACY=<n>` (documents with no schema, counted by the installed resolver) and — when n is
  * above zero — the prompt template, printed between `--- AGENT PROMPT ---` and
- * `--- END AGENT PROMPT ---`. `--dry-run` and `nothing` print no prompt.
+ * `--- END AGENT PROMPT ---`. The prompt also prints when `NEEDS_UPDATE` or `DOCS_UNSTAMPED` is above zero,
+ * whatever the outcome; `--dry-run` prints none.
  *
  * EVERY run — moved, already, nothing and `--dry-run` (worded "would") — also ends its keys with a
  * human summary between `--- MIGRATION SUMMARY ---` and `--- END MIGRATION SUMMARY ---`: files moved
@@ -111,11 +112,12 @@ function readJsonFile(full, label) {
  * throws with nothing changed — the failure is reported, not recorded, and the next
  * update retries. It changes files only and never commits, like 0002.
  *
- * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * `authSeed` is a credential in practice: it goes to the gitignored `.codeadd/settings.local.json`,
  * never to `settings.json`, and its value is never printed. The warning below may name the old
- * config file — this module is exempt, and that file's history is where the password sits.
+ * config file — this module is exempt, and that file's history is where the password sits. An
+ * `authSeed` already sitting in the tracked `qa` section is moved the same way.
  *
+ * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * @returns {{changes: string[], notes: string[], warnings: string[]}}
  */
 export function migrateQaSettings(ctx) {
@@ -209,8 +211,10 @@ export function migrateQaSettings(ctx) {
   if (hasReceipt) incoming.log = log;
 
   // The secret never reaches the committed file. Read the local file now, write after the checks.
-  const hasSeed = Object.prototype.hasOwnProperty.call(incoming, 'authSeed');
-  const seedValue = incoming.authSeed;
+  // A value already in the tracked section wins over the legacy file's: it is the one the user runs with.
+  const trackedSeed = !!existingQa && Object.prototype.hasOwnProperty.call(existingQa, 'authSeed');
+  const hasSeed = trackedSeed || Object.prototype.hasOwnProperty.call(incoming, 'authSeed');
+  const seedValue = trackedSeed ? existingQa.authSeed : incoming.authSeed;
   delete incoming.authSeed;
   const localPath = path.join(ctx.cwd, '.codeadd', 'settings.local.json');
   const local = hasSeed && fs.existsSync(localPath) ? readJsonFile(localPath, '.codeadd/settings.local.json') : { schema: 1 };
@@ -219,6 +223,7 @@ export function migrateQaSettings(ctx) {
   if (existingQa) {
     // Merge without overwriting: the user's section wins, and the old files stay.
     const merged = { ...existingQa };
+    delete merged.authSeed;
     for (const [key, value] of Object.entries(incoming)) {
       if (!Object.prototype.hasOwnProperty.call(merged, key)) merged[key] = value;
     }
@@ -238,7 +243,7 @@ export function migrateQaSettings(ctx) {
     fs.writeFileSync(localPath, JSON.stringify(local, null, 2) + '\n', 'utf8');
     changes.push('moved qa.authSeed to .codeadd/settings.local.json (gitignored)');
     warnings.push(
-      `qa.authSeed was read from ${QA_OLD_CONFIG}. If that file was ever committed, its history still holds the value — ` +
+      `qa.authSeed was found in ${QA_OLD_CONFIG} or in the tracked .codeadd/settings.json. If either was ever committed, its history still holds the value — ` +
         'rotate that test password. It now lives only in .codeadd/settings.local.json, which must stay out of git.'
     );
   }
