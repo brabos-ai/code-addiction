@@ -798,7 +798,6 @@ describe('F27 — the migrate prompt', () => {
     expect([...new Set(spawned)]).toEqual(['git']);
   });
 
-  // Since decision 5 the CLI stamps what the checks prove; the name is kept for the test-loss guard.
   it('adds no schema to any moved file, so DOCS_LEGACY counts every one of them', async () => {
     p = makeLegacyProject();
     installTemplate(p.repo);

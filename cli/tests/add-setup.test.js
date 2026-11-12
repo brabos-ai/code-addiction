@@ -109,9 +109,8 @@ describe('F3 — the two inline commands honor a Setup answers block', () => {
     });
   }
 
-  // The shape moved on purpose in 1.9.2 (authSeed went to the gitignored local file); the name is kept
-  // so the test-loss guard sees the same test.
   it('L1.4 the add-qa-setup contract shape is the one 1.9.0 recorded (the QA ignore moved to the docs branch)', () => {
+    // moved on purpose in 1.9.2: authSeed went to the gitignored local file (name kept for the test-loss guard)
     const src = read(path.join(codeadd, 'commands/add-qa-setup.md'));
     expect(src).toContain('shape: sha256:c61dbcc38148c997');
   });
