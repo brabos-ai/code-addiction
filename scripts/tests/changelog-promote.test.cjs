@@ -101,3 +101,18 @@ test('changelog-promote#006 — a final section with no trailing newline survive
   assert.ok(text.endsWith('- last'));
   assert.ok(text.includes('## [1.1.0] - 2026-02-02'));
 });
+
+// ─── The repository's own CHANGELOG.md (F19, F20) ────────────────────────────────────────────
+
+const repoChangelog = () => fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8');
+
+test('changelog-promote#007 — CHANGELOG.md carries a 1.9.0 and a 1.9.1 section (F19)', () => {
+  const text = repoChangelog();
+  assert.match(text, /^## \[1\.9\.0\] - 2026-11-11$/m);
+  assert.match(text, /^## \[1\.9\.1\] - 2026-11-11$/m);
+  assert.ok(text.indexOf('## [1.9.1]') < text.indexOf('## [1.9.0]'), 'newest first');
+  const v190 = text.slice(text.indexOf('## [1.9.0]'), text.indexOf('## [1.8.1]'));
+  assert.match(v190, /docs branch/i);
+  const v191 = text.slice(text.indexOf('## [1.9.1]'), text.indexOf('## [1.9.0]'));
+  assert.match(v191, /release/i);
+});
