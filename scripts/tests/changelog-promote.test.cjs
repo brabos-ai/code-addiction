@@ -116,3 +116,14 @@ test('changelog-promote#007 — CHANGELOG.md carries a 1.9.0 and a 1.9.1 section
   const v191 = text.slice(text.indexOf('## [1.9.1]'), text.indexOf('## [1.9.0]'));
   assert.match(v191, /release/i);
 });
+test('changelog-promote#008 — [Unreleased] is non-empty, opens with Security, and names authSeed and rotation (F20)', () => {
+  const text = repoChangelog();
+  const start = text.indexOf('## [Unreleased]');
+  const body = text.slice(start + '## [Unreleased]'.length, text.indexOf('## [1.9.1]'));
+  assert.ok(body.trim().length > 0, 'Unreleased is empty');
+  assert.match(body.trimStart(), /^### Security/);
+  assert.match(body, /authSeed/);
+  assert.match(body, /rotat/i);
+  assert.match(body, /### Fixed/);
+  assert.match(body, /### Changed/);
+});
