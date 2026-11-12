@@ -55,7 +55,28 @@ IF A COMMAND WRITES ITS SECTION:
 
 Values, short descriptions and decisions go in `.codeadd/settings.json`. Only prompt-like or long guidance text goes in a `.md` file, referenced from the JSON by a relative path (for example `"notes": "settings/<name>.md"`). No prompts in JSON.
 
-`bootHint` and `authSeed` are one-line hints, so they stay strings.
+`bootHint` is a one-line hint, so it stays a string.
+
+**No credential, password or token value goes in `.codeadd/settings.json`** — it is committed. A value of that kind goes in the local file below, which is gitignored and never committed.
+
+## The local file
+
+`.codeadd/settings.local.json` is the gitignored sibling of `.codeadd/settings.json`. It has the same `{ "schema": 1, ... }` shape and follows the same read → merge → write rule, and it holds secrets only. Today it holds `qa.authSeed` and nothing else.
+
+```json
+{
+  "schema": 1,
+  "qa": {
+    "authSeed": "<one line: how to sign in as a seeded user>"
+  }
+}
+```
+
+| Field | Rule |
+|---|---|
+| `qa.authSeed` | One line: how to sign in as a seeded user. A hint such as "password in `$QA_PASSWORD`" is enough; a real password is the user's to place, and only here |
+
+A receipt entry for this file carries `"owner": "shared", "hash": null` — a secret file is never hashed.
 
 ## Section `qa`
 
@@ -68,13 +89,13 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
     "baseUrl": "http://localhost:<port>",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
     "bootHint": "<command that starts the app>",
-    "authSeed": "<one line: how to sign in as a seeded user>",
     "setup-shape": "sha256:<16 hex>",
     "framework-version": "1.7.0",
     "first-run": "2026-07-27",
     "last-run": "2026-10-25",
     "materialized": [
       { "path": ".codeadd/settings.json", "owner": "shared", "hash": null },
+      { "path": ".codeadd/settings.local.json", "owner": "shared", "hash": null },
       { "path": ".claude/skills/qa-project/SKILL.md", "owner": "setup", "hash": "sha256:<hex>" }
     ],
     "prereqs": { "playwright-test": "installed", "chromium": "already-present", "playwright-mcp": "declined" },
@@ -94,7 +115,8 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
 | `qa.baseUrl` | URL the app answers on. Required for QA to run; the config probe reads it |
 | `qa.viewports` | Map of viewport name to `[width, height]` |
 | `qa.bootHint` | One line: the command that starts the app |
-| `qa.authSeed` | One line: how to sign in as a seeded user |
+
+`qa.authSeed` is not a value field of `.codeadd/settings.json`: it lives in `.codeadd/settings.local.json` (see The local file).
 
 Value fields follow the per-key merge rule in `{{skill:add--setup-contract/SKILL.md}}`: keys the user authored are kept.
 
@@ -167,13 +189,13 @@ A receipt is the record a command leaves so a later framework release can comput
 ## How Scripts Read It
 
 - `qa-preflight.cjs` reads `qa.baseUrl` for `QA_CONFIG`, and `qa["setup-shape"]` with `qa["framework-version"]` for `QA_RECEIPT`.
-- `status.cjs` reads `qa["setup-shape"]` for `SETUP_QA`.
+- `status.cjs` reads `qa["setup-shape"]` for `SETUP_QA`. Both also count a `qa.authSeed` in `.codeadd/settings.local.json` as QA state, and never print it.
 - No script reads `setup`.
 - A file with no `qa` section reads as missing config and missing receipt. A file that does not parse reads as `broken` in `qa-preflight.cjs` and as STALE in `status.cjs`.
 
 ## Git
 
-`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json` and `!.codeadd/wiki/`. The exception for `wiki/` works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`.
+`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json` and `!.codeadd/wiki/`. The exception for `wiki/` works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`. The managed block also names `.codeadd/settings.local.json` explicitly, after those exceptions, so it stays ignored; never commit it.
 
 ## Related
 
