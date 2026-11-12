@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
 import { resolveSelected } from './providers.js';
@@ -499,6 +500,78 @@ export function retireBoard(ctx) {
   return { changes, notes };
 }
 
+// ---------------------------------------------------------------------------
+// 0007 — a secret never stays in the committed settings file
+// ---------------------------------------------------------------------------
+
+const SETTINGS_REL = '.codeadd/settings.json';
+const LOCAL_SETTINGS_REL = '.codeadd/settings.local.json';
+
+function readJsonObject(file, label) {
+  let parsed;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    throw new Error(`${label} is not valid JSON — left untouched`);
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error(`${label} is not a JSON object — left untouched`);
+  }
+  return parsed;
+}
+
+/**
+ * Move `qa.authSeed` from the committed `.codeadd/settings.json` to the gitignored
+ * `.codeadd/settings.local.json`.
+ *
+ * "How to sign in as a seeded user" is a credential in practice, and the committed file is
+ * the wrong place for one. The value is NEVER put in `changes`, `notes` or `warnings`: all
+ * three are printed. An unparsable file is never overwritten — the migration throws, the
+ * runner reports it and the next update retries.
+ *
+ * @param {{cwd: string}} ctx
+ * @returns {{changes: string[], notes: string[], warnings: string[]}}
+ */
+export function moveQaAuthSeed(ctx) {
+  const changes = [];
+  const notes = [];
+  const warnings = [];
+  const settingsFile = path.join(ctx.cwd, SETTINGS_REL);
+  if (!fs.existsSync(settingsFile)) return { changes, notes, warnings };
+
+  const settings = readJsonObject(settingsFile, SETTINGS_REL);
+  if (!settings.qa || typeof settings.qa !== 'object' || !Object.prototype.hasOwnProperty.call(settings.qa, 'authSeed')) {
+    return { changes, notes, warnings };
+  }
+
+  // Read the local file BEFORE writing anything, so an unreadable one leaves both untouched.
+  const localFile = path.join(ctx.cwd, LOCAL_SETTINGS_REL);
+  const local = fs.existsSync(localFile) ? readJsonObject(localFile, LOCAL_SETTINGS_REL) : { schema: 1 };
+  if (!local.qa || typeof local.qa !== 'object') local.qa = {};
+
+  const value = settings.qa.authSeed;
+  if (!Object.prototype.hasOwnProperty.call(local.qa, 'authSeed')) {
+    local.qa.authSeed = value;
+  } else if (local.qa.authSeed !== value) {
+    notes.push(`${LOCAL_SETTINGS_REL} already held a different qa.authSeed — kept it, and removed the one in ${SETTINGS_REL}`);
+  }
+  fs.writeFileSync(localFile, JSON.stringify(local, null, 2) + '\n', 'utf8');
+
+  delete settings.qa.authSeed;
+  fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+  changes.push(`moved qa.authSeed from ${SETTINGS_REL} to ${LOCAL_SETTINGS_REL}`);
+
+  warnings.push(
+    `qa.authSeed lived in ${SETTINGS_REL}, which is committed. Check whether it was ever committed ` +
+      `(git log -S authSeed -- ${SETTINGS_REL}) and, if so, rotate that test password — history keeps it.`
+  );
+  const ignored = spawnSync('git', ['check-ignore', '-q', LOCAL_SETTINGS_REL], { cwd: ctx.cwd });
+  if (ignored.status === 1) {
+    warnings.push(`git does not ignore ${LOCAL_SETTINGS_REL} — add it to your .gitignore so the moved value is never committed`);
+  }
+  return { changes, notes, warnings };
+}
+
 export const MIGRATIONS = [
   {
     id: '0001-prune-legacy-orphans',
@@ -519,6 +592,11 @@ export const MIGRATIONS = [
     id: '0006-retire-board',
     description: 'Remove the retired board feature flag from the manifest — leaves .codeadd/board.json, the board branch and the clone alone, and says where the data stays',
     run: retireBoard,
+  },
+  {
+    id: '0007-move-qa-auth-seed',
+    description: 'Move qa.authSeed out of the committed .codeadd/settings.json into the gitignored .codeadd/settings.local.json, and warn to rotate the password if it was ever committed',
+    run: moveQaAuthSeed,
   },
 ];
 
@@ -556,12 +634,12 @@ export function pendingMigrations(applied, registry = MIGRATIONS) {
  * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * @param {string[]} applied  the current ledger
  * @param {{dryRun?: boolean, registry?: object[]}} [options]
- * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[], notes: string[]}}
+ * @returns {{pending: string[], applied: string[], failed: {id: string, error: string}[], changes: string[], notes: string[], warnings: string[]}}
  */
 export function runMigrations(ctx, applied, options = {}) {
   const { dryRun = false, registry = MIGRATIONS } = options;
   const pending = pendingMigrations(applied, registry);
-  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [], notes: [] };
+  const result = { pending: pending.map((m) => m.id), applied: [], failed: [], changes: [], notes: [], warnings: [] };
 
   if (dryRun) return result;
 
@@ -576,6 +654,7 @@ export function runMigrations(ctx, applied, options = {}) {
       // document, a file skipped because it carries no `type:`. The harvest
       // computed all of that and it reached nobody until this line existed.
       result.notes.push(...(outcome.notes ?? []));
+      result.warnings.push(...(outcome.warnings ?? []));
     } catch (err) {
       result.failed.push({ id: migration.id, error: err.message });
     }
@@ -630,6 +709,7 @@ export async function migrate(cwd, args = [], scope = 'project') {
 
   for (const change of result.changes) log.success(`Migration: ${change}`);
   for (const note of result.notes ?? []) log.info(`Migration: ${note}`);
+  for (const warning of result.warnings ?? []) log.warn(`Migration: ${warning}`);
   for (const failure of result.failed) log.warn(`${failure.id} failed: ${failure.error}`);
 
   if (result.applied.length > 0) {
