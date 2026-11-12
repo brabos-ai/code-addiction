@@ -886,6 +886,22 @@ describe('F27 — the migrate prompt', () => {
     expect(text).not.toMatch(/four things/);
   });
 
+  it('the template points at the migration report, forbids an invented provenance hash and asks for a re-run', () => {
+    const text = fs.readFileSync(TEMPLATE_SRC, 'utf8');
+    expect(text).toContain('.codeadd/docs/migration-report.md');
+    expect(text).toMatch(/never invent a provenance hash/i);
+    expect(text).toMatch(/leave[^.]*in the (migration )?report/i);
+    expect(text).toMatch(/run codeadd docs migrate again/i);
+    expect(text).toContain('Do not stamp a file you did not adjust.');
+    expect(text).not.toMatch(/four things|five things/);
+  });
+
+  it('the doc-schemas Schema Version section records the one narrow case the command stamps', () => {
+    const skill = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--doc-schemas', 'SKILL.md'), 'utf8');
+    const section = skill.slice(skill.indexOf('## Schema Version'), skill.indexOf('## Schema Index by Category'));
+    expect(section).toMatch(/codeadd docs migrate[^\n]*stamps a legacy doc only when[^\n]*deterministic checks[^\n]*migration report/);
+  });
+
   it('a distinctive sentence of the template occurs in exactly one source file', () => {
     const sentence = 'Do not stamp a file you did not adjust.';
     const roots = [path.join(ROOT, 'framwork', '.codeadd'), path.join(ROOT, 'cli', 'src'), path.join(ROOT, 'mcp')];
