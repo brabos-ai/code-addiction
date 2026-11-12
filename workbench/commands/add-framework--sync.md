@@ -23,13 +23,16 @@ Computes diff since last release, regenerates the ecosystem map, dispatches 4 an
 
 **STEPS IN ORDER:**
 ```
+STEP 0: Guard the write-set       → STOP on a tracked top-level docs folder; snapshot `git status --porcelain`
 STEP 1: Compute Change Payload    → git diff LAST_TAG..HEAD + ecosystem scan + inconsistency check
 STEP 2: Regenerate Ecosystem Map  → deterministic from scan data (no agent); 2.1 the two site graphs
 STEP 3: Regenerate ecosystem.md   → 3 Mermaid graphs from STEP 1.3 scan data (no agent)
 STEP 4: Dispatch 4 Analyzer Agents → READ-ONLY, PARALLEL, each writes report to .tmp/sync/
 STEP 5: Apply Edits               → coordinator reads all reports, applies via Edit tool (single writer)
-STEP 6: Final Report              → files modified, [MANUAL] items, log iteration
+STEP 6: Final Report              → post-check against the write-set, files modified, [MANUAL] items, log iteration
 ```
+
+**The write-set.** This command writes `README.md`, everything under `web/`, `ecosystem.md`, the `add--ecosystem` skill (`framwork/.codeadd/skills/add--ecosystem/SKILL.md`) and `.tmp/sync/`. Any document output (a plan, a brainstorm, a report meant to be kept) goes only under `.codeadd/docs/`, the docs worktree, and never into a top-level docs folder of the code branch. Nothing else is written.
 
 **⛔ ABSOLUTE PROHIBITIONS:**
 
@@ -46,13 +49,33 @@ IF AGENT REPORTS NOT ALL RECEIVED (STEP 4 not complete):
   ⛔ DO NOT: Apply any edits
   ✅ DO: Wait for all 4 report files to exist in .tmp/sync/
 
+IF `git ls-files -- docs` PRINTS ANY PATH (STEP 0, or the STEP 6 post-check):
+  ⛔ DO NOT: Run any other step, or report the sync as done
+  ✅ DO: STOP and name the tracked paths — a top-level docs folder tracked on the code branch is a leak
+
 ALWAYS:
+  ⛔ DO NOT: Run `git add -A` or `git add .` after a sync — stage the write-set paths by name, one `git add <path>` per path
   ⛔ DO NOT USE: Write on framwork/.codeadd/commands/ or framwork/.codeadd/skills/ (except ecosystem map in STEP 2)
   ⛔ DO NOT USE: Edit on framwork/.codeadd/commands/
   ⛔ DO NOT USE: Write on provider directories (framwork/.claude/, framwork/.agent/, framwork/.agents/, etc.)
   ⛔ DO NOT: Create commits or stage any files
   ⛔ DO NOT: Let agents apply edits directly — coordinator is the sole writer
 ```
+
+---
+
+## STEP 0: Guard the Write-Set
+
+The zero-legacy guard scans file content, so a document that merely sits in a top-level docs folder of the code branch passes it. This step is the check by path.
+
+Execute:
+```bash
+git ls-files -- docs
+git status --porcelain
+```
+
+- `git ls-files -- docs` prints a path → **STOP**. Report the tracked paths and tell the user to move them to `.codeadd/docs/` (or `git rm` them) before a sync. Do not continue.
+- Store the `git status --porcelain` output as `SNAPSHOT`. A tree that was already dirty before the sync is allowed: the post-check compares against this snapshot, not against a clean tree.
 
 ---
 
@@ -340,6 +363,18 @@ For each edit (in bottom-up order):
 ---
 
 ## STEP 6: Final Report + Completion
+
+### 6.0 Post-check against the write-set
+
+Run, before the report:
+```bash
+git ls-files -- docs
+git status --porcelain
+```
+
+- `git ls-files -- docs` must print nothing. A path means the sync, or something before it, left a tracked top-level docs folder: STOP and say so.
+- Compare the porcelain output with `SNAPSHOT` from STEP 0. Every line that is new must name a path inside the write-set (see the write-set paragraph at the top). A new line outside it → report it as a `[MANUAL]` item and do not call the sync clean. A line already in `SNAPSHOT` is not this run's.
+- Staging: this command leaves everything uncommitted. When the user then stages, it is by path from the write-set, never `git add -A` or `git add .`.
 
 **LOAD `add-final-report`.** It owns the seven blocks, the banned phrasings and the self-check. Emit
 the report FIRST — the sync table below comes after it, whole, as this command's own artefact.
