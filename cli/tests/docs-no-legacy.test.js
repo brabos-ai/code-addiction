@@ -101,6 +101,16 @@ function trackedFiles() {
   return out.split('\0').filter(Boolean);
 }
 
+/**
+ * Tracked paths under the top-level folder of the previous location — neutral content included.
+ * The content scan cannot see a plan or a brainstorm that merely sits there (0078F's post-sync
+ * commit carried two); the path alone is the offence. The pathspec is assembled from fragments.
+ */
+export function trackedDocsPaths(cwd) {
+  const out = execFileSync('git', ['-c', 'safe.directory=*', 'ls-files', '-z', '--', D], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  return out.split('\0').filter(Boolean);
+}
+
 function isText(buf) {
   return !buf.subarray(0, 8000).includes(0);
 }
@@ -134,6 +144,29 @@ describe('docs-no-legacy — tracked files', () => {
       expect(unused.map(([e]) => String(e.file)), 'an exclusion matched nothing').toEqual([]);
     }
     expect(hits, `${hits.length} legacy docs-path hit(s):\n${hits.join('\n')}`).toEqual([]);
+  });
+});
+
+describe('docs-no-legacy — tracked paths', () => {
+  it('no path is tracked under the top-level folder of the previous location, whatever its content', () => {
+    const tracked = trackedDocsPaths(ROOT);
+    expect(tracked, `${tracked.length} tracked path(s) under the previous docs location:\n${tracked.join('\n')}`).toEqual([]);
+  });
+
+  it('self-check: a tracked path with neutral content is reported', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nolegacy-tracked-'));
+    const git = (...args) => execFileSync('git', ['-c', 'safe.directory=*', ...args], { cwd: dir, encoding: 'utf8' });
+    git('init', '-q');
+    git('config', 'user.email', 't@t.t');
+    git('config', 'user.name', 'T');
+    fs.mkdirSync(path.join(dir, D, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(dir, D, 'plans', 'x.md'), 'nothing legacy in here\n');
+    fs.writeFileSync(path.join(dir, 'README.md'), 'neutral\n');
+    git('add', '-A');
+    expect(trackedDocsPaths(dir)).toEqual([`${D}/plans/x.md`]);
+    git('rm', '-q', '--cached', '-r', D);
+    expect(trackedDocsPaths(dir)).toEqual([]);
+    fs.rmSync(dir, { recursive: true, force: true });
   });
 });
 
