@@ -69,8 +69,8 @@ describe('authSeed placement', () => {
   }
 
   it('every shipped .md naming authSeed places it in the local file (a new file naming it elsewhere fails here)', () => {
-    // The playwright plugin fragments name only "the authSeed hint", never a location; they stay unchanged.
-    const EXEMPT = /^plugins\/playwright\/fragments\//;
+    // The playwright qa-agent fragment names only "the authSeed hint", never a location; it stays unchanged.
+    const EXEMPT = /^plugins\/playwright\/fragments\/agents\/qa-agent\.md$/;
     const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
       e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
     const naming = walk(SRC)
