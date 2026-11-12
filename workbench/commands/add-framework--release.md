@@ -147,9 +147,9 @@ For a stable release, move `## [Unreleased]` of `CHANGELOG.md` under the version
 node scripts/changelog-promote.cjs [NEXT_VERSION without v prefix]
 ```
 
-It prints `CHANGELOG_PROMOTED=<version>`, or `CHANGELOG_PROMOTED=already` when the section exists and Unreleased is empty. Exit 1 means Unreleased is empty and no section exists for the version, or the file has no `## [Unreleased]` heading: STOP, write the notes under Unreleased first, and run this step again. This is the last commit on main before STEP 5's merge, so the promoted section reaches the tagged merge.
+It prints `CHANGELOG_PROMOTED=<version>`, or `CHANGELOG_PROMOTED=already` when the section exists and Unreleased is empty. Exit 1 means Unreleased is empty and no section exists for the version, the file has no `## [Unreleased]` heading, the version is invalid, or Unreleased holds text while a section for the version already exists: STOP and fix the file. Then resume at this part only — `npm version` already ran, so do not run it or the verify again. This is the last commit on main before STEP 5's merge, so the promoted section reaches the tagged merge.
 
-Commit the three files — `cli/package.json`, `cli/package-lock.json` and (stable only) `CHANGELOG.md` — in ONE bump commit with message `chore: bump version to $NEXT_VERSION`, and push to main. Stage them by name.
+Commit the changed files — `cli/package.json` and `cli/package-lock.json`, plus `CHANGELOG.md` for a stable release — in ONE bump commit with message `chore: bump version to $NEXT_VERSION`, and push to main. Stage them by name.
 
 ---
 
@@ -311,7 +311,7 @@ ALWAYS:
 - Fetch tags from remote before reading (`git fetch --tags`) — without this, remote tags are invisible
 - Bump the version with `npm version` in `cli/` so `package-lock.json` stays in sync
 - Use annotated tags with release notes as tag message — pipeline extracts them for the GitHub Release
-- Generate changelog from commits AND file diff — commits primary, file diff enriches
+- Generate the notes from the promoted `CHANGELOG.md` section for a stable release and from the commits for a beta; the file diff and the deliveries enrich both
 - Write release notes from the user's perspective (what changed, not which files)
 - Treat provider dirs as generated — exclude from individual listing
 

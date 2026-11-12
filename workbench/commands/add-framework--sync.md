@@ -54,11 +54,10 @@ IF `git ls-files -- docs` PRINTS ANY PATH (STEP 0, or the STEP 6 post-check):
   ✅ DO: STOP and name the tracked paths — a top-level docs folder tracked on the code branch is a leak
 
 ALWAYS:
-  ⛔ DO NOT: Run `git add -A` or `git add .` after a sync — stage the write-set paths by name, one `git add <path>` per path
   ⛔ DO NOT USE: Write on framwork/.codeadd/commands/ or framwork/.codeadd/skills/ (except ecosystem map in STEP 2)
   ⛔ DO NOT USE: Edit on framwork/.codeadd/commands/
   ⛔ DO NOT USE: Write on provider directories (framwork/.claude/, framwork/.agent/, framwork/.agents/, etc.)
-  ⛔ DO NOT: Create commits or stage any files
+  ⛔ DO NOT: Create commits or stage any files — the user stages after review, by path from the write-set, never `git add -A` or `git add .`
   ⛔ DO NOT: Let agents apply edits directly — coordinator is the sole writer
 ```
 

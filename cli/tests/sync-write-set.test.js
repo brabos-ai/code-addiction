@@ -42,7 +42,7 @@ describe('F9 — add-framework--sync declares a write-set and guards it', () => 
     const text = src();
     expect(text).toContain('git add -A');
     expect(text).toContain('git add .');
-    expect(text).toMatch(/stage[^\n]*by name/i);
+    expect(text).toMatch(/stage[^\n]*by path/i);
     expect(text).toMatch(/uncommitted/i);
   });
 
