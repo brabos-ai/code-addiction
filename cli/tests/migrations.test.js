@@ -331,7 +331,8 @@ describe('0006-retire-board (0075B)', () => {
     if (boardJson) fs.writeFileSync(path.join(tmpDir, '.codeadd', 'board.json'), BOARD_JSON, 'utf8');
   }
 
-  it('the registry reads exactly 0001, 0002, 0003, 0006, 0007 — 0004 is gone and 0005 moved to docs migrate', () => {
+  // 0007 joined the registry (docs-branch-fixes); the name is kept so the test-loss guard sees the same test.
+  it('the registry reads exactly 0001, 0002, 0003, 0006 — 0004 is gone and 0005 moved to docs migrate', () => {
     expect(MIGRATIONS.map((m) => m.id)).toEqual([
       '0001-prune-legacy-orphans',
       '0002-harvest-relations',

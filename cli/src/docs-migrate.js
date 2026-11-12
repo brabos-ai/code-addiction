@@ -24,9 +24,15 @@ import { loadDocsRoot, loadDocsBranch, loadDocsGuard } from './docs-root.js';
  *   5. on the code side it `git rm`s and stages the moved paths for the user to review.
  *      It NEVER commits or pushes the code side, and never pushes the docs branch.
  *
- * It does not add or change a `schema:` key — it only moves. Bringing legacy docs to the
- * current format is the printed prompt's job, run by the user's own agent. It spawns
- * nothing but `git`.
+ * It MOVES, then it STAMPS what it can prove and REPORTS the rest. A moved legacy document
+ * (schema 0) gets `schema: <DOC_SCHEMA_VERSION>` only when every deterministic check passes:
+ * frontmatter present; `type` in the schema index; `id` matching that type's prefix rule;
+ * `created`/`updated` ISO dates; `related`/`tags` present (an absent one is added as `[]`);
+ * a `## TL;DR`; a qa-validation with `judged-contract`, `judged-tree` and evidence; a
+ * feature-design with a `provenance: sha256:` value. Every other document is listed in
+ * `.codeadd/docs/migration-report.md` with one closed reason. A provenance hash is NEVER
+ * computed or written. Bringing the rest to the current format is the printed prompt's job,
+ * run by the user's own agent. It spawns nothing but `git`.
  *
  * Output: `MIGRATED=moved:<n>` | `MIGRATED=already` | `MIGRATED=nothing`; after moved or already,
  * `DOCS_LEGACY=<n>` (documents with no schema, counted by the installed resolver) and — when n is
@@ -392,7 +398,8 @@ export function collectLegacy(cwd) {
     if (!f.endsWith('.md')) continue;
     const text = fs.readFileSync(f, 'utf8');
     const fm = readFrontmatter(text);
-    if ((fm && fm.type === 'changelog') || /^CHG[0-9]+\.md$/.test(path.basename(f))) {
+    // `NNNNCHG.md` is a changelog name some projects wrote, with or without frontmatter.
+    if ((fm && fm.type === 'changelog') || /^CHG[0-9]+\.md$/.test(path.basename(f)) || /^[0-9]{4}CHG\.md$/.test(path.basename(f))) {
       add(f, `changelog/${posix(path.relative(changelogDir, f))}`);
     }
   }
@@ -457,6 +464,153 @@ function removeCodeSide(cwd, files) {
 /** Markdown files under the docs root with no schema (or an unreadable one) — schema 0, legacy. */
 function countLegacyDocs(root, docSchemaOf) {
   return walkFiles(root).filter((f) => f.endsWith('.md') && docSchemaOf(fs.readFileSync(f, 'utf8')) === 0).length;
+}
+
+// ---------------------------------------------------------------------------
+// Decision 5 — stamp what the checks prove, report the rest
+// ---------------------------------------------------------------------------
+
+/**
+ * The schema types of the `add--doc-schemas` Schema Index. A test pins this list to the skill's
+ * table, so the two cannot drift apart unnoticed.
+ */
+export const STAMP_SCHEMA_TYPES = [
+  'feature', 'feature-plan', 'feature-design', 'brainstorm', 'brainstorm-intent', 'epic',
+  'hotfix',
+  'audit-report', 'diagnose-report', 'review', 'qa-validation',
+  'changelog',
+  'prd',
+  'setup-receipt',
+];
+
+/**
+ * The id shape per type, from the skill's ID Prefixes table (`qa-validation` from its own stated
+ * pattern, `<feature-id>-qa-validation-NNN`). A type with no entry needs only a non-empty `id`.
+ */
+export const STAMP_ID_RULES = {
+  feature: /^[0-9]{4}F$/,
+  hotfix: /^[0-9]{4}H$/,
+  prd: /^PRD[0-9]{4}$/,
+  changelog: /^CHG[0-9]{4}$/,
+  'qa-validation': /^[0-9]{4}F-qa-validation-[0-9]{3}$/,
+};
+
+/** Field names read from `references/review.md` and `references/new-feature.md`; pinned by a test. */
+export const STAMP_FIELDS = {
+  qaValidation: ['judged-contract', 'judged-tree'],
+  designHash: 'provenance',
+};
+
+export const REPORT_REASONS = [
+  'non-standard-id', 'unknown-type', 'incomplete-frontmatter', 'missing-tldr',
+  'qa-validation-without-evidence', 'design-without-hash',
+];
+
+const REPORT_REL = 'migration-report.md';
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isIsoDate = (v) => v instanceof Date || (typeof v === 'string' && ISO_DATE.test(v));
+const nonEmpty = (v) => typeof v === 'string' && v.trim() !== '';
+
+/**
+ * Judge one legacy document. `{ stamp: true, text }` carries the stamped text; `{ stamp: false, reason }`
+ * carries one reason of the closed set. The check order is the order of REPORT_REASONS' meaning: the first
+ * failing check names the reason.
+ */
+function judgeLegacyDoc(text, version) {
+  const fm = readFrontmatter(text);
+  if (!fm) return { stamp: false, reason: 'incomplete-frontmatter' };
+  if (!nonEmpty(fm.type)) return { stamp: false, reason: 'incomplete-frontmatter' };
+  if (!STAMP_SCHEMA_TYPES.includes(fm.type)) return { stamp: false, reason: 'unknown-type' };
+  const id = fm.id === undefined || fm.id === null ? '' : String(fm.id);
+  if (!nonEmpty(id)) return { stamp: false, reason: 'incomplete-frontmatter' };
+  const rule = STAMP_ID_RULES[fm.type];
+  if (rule && !rule.test(id)) return { stamp: false, reason: 'non-standard-id' };
+  // A qa-validation report is append-only per run: `updated` is optional for it.
+  if (!isIsoDate(fm.created)) return { stamp: false, reason: 'incomplete-frontmatter' };
+  if (fm.type !== 'qa-validation' && !isIsoDate(fm.updated)) return { stamp: false, reason: 'incomplete-frontmatter' };
+  if (fm.updated !== undefined && !isIsoDate(fm.updated)) return { stamp: false, reason: 'incomplete-frontmatter' };
+  for (const key of ['related', 'tags']) {
+    if (Object.prototype.hasOwnProperty.call(fm, key) && !Array.isArray(fm[key])) return { stamp: false, reason: 'incomplete-frontmatter' };
+  }
+
+  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const close = text.indexOf(`${eol}---`, 3);
+  const body = text.slice(close + eol.length + 3);
+  if (!/^## TL;DR[ \t]*\r?$/m.test(body)) return { stamp: false, reason: 'missing-tldr' };
+  if (fm.type === 'qa-validation') {
+    const hasFields = STAMP_FIELDS.qaValidation.every((k) => nonEmpty(fm[k]));
+    const hasEvidence = /_tests\/|screenshots|\.png\b/.test(body);
+    if (!hasFields || !hasEvidence) return { stamp: false, reason: 'qa-validation-without-evidence' };
+  }
+  // The hash is read, never computed: a design without one stays in the report.
+  if (fm.type === 'feature-design' && !(typeof fm[STAMP_FIELDS.designHash] === 'string' && /^sha256:[0-9a-f]+$/.test(fm[STAMP_FIELDS.designHash]))) {
+    return { stamp: false, reason: 'design-without-hash' };
+  }
+
+  const add = [`schema: ${version}`];
+  for (const key of ['related', 'tags']) if (!Object.prototype.hasOwnProperty.call(fm, key)) add.push(`${key}: []`);
+  return { stamp: true, text: `${text.slice(0, close)}${eol}${add.join(eol)}${text.slice(close)}` };
+}
+
+/** The report text: deterministic (no date, sorted), so a second run rewrites the same bytes. */
+function reportText(unstamped, version) {
+  const rows = [...unstamped].sort((a, b) => a.rel.localeCompare(b.rel)).map((u) => `| \`${u.rel}\` | \`${u.reason}\` |`);
+  return [
+    '---',
+    'id: migration-report',
+    'type: migration-report',
+    `schema: ${version}`,
+    '---',
+    '',
+    '# Migration report',
+    '',
+    '## TL;DR',
+    '',
+    `Documents \`codeadd docs migrate\` could not bring to schema ${version} on its own, one reason each. Fix them, then run \`codeadd docs migrate\` again to refresh this list.`,
+    '',
+    '| Path | Reason |',
+    '|---|---|',
+    ...rows,
+    '',
+  ].join('\n');
+}
+
+/**
+ * Classify every legacy document under the docs root: stamp the ones that pass, list the rest, and
+ * keep the report in step (rewritten every run, deleted when empty). Returns what changed on disk.
+ */
+function stampAndReport(root, docsRootMod) {
+  const version = docsRootMod.DOC_SCHEMA_VERSION;
+  const stamped = [];
+  const unstamped = [];
+  let changed = false;
+  for (const file of walkFiles(root).sort()) {
+    if (!file.endsWith('.md')) continue;
+    const rel = posix(path.relative(root, file));
+    if (rel === REPORT_REL) continue;
+    const text = fs.readFileSync(file, 'utf8');
+    if (docsRootMod.docSchemaOf(text) !== 0) continue;
+    const verdict = judgeLegacyDoc(text, version);
+    if (verdict.stamp) {
+      fs.writeFileSync(file, verdict.text);
+      stamped.push(rel);
+      changed = true;
+    } else {
+      unstamped.push({ rel, reason: verdict.reason });
+    }
+  }
+  const reportFile = path.join(root, REPORT_REL);
+  if (unstamped.length > 0) {
+    const next = reportText(unstamped, version);
+    if (!fs.existsSync(reportFile) || fs.readFileSync(reportFile, 'utf8') !== next) {
+      fs.writeFileSync(reportFile, next);
+      changed = true;
+    }
+  } else if (fs.existsSync(reportFile)) {
+    fs.rmSync(reportFile);
+    changed = true;
+  }
+  return { stamped, unstamped, changed, reportPath: unstamped.length > 0 ? `${docsRootMod.DOCS_ROOT}/${REPORT_REL}` : 'none' };
 }
 
 const SUMMARY_BEGIN = '--- MIGRATION SUMMARY ---';
@@ -591,10 +745,13 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
     if (migration) migration.run({ cwd, providers });
   }
 
+  // 3b. stamp what the checks prove, report the rest (never invent a hash)
+  const stamping = stampAndReport(root, docsRootMod);
+
   // 4. one commit on the docs branch, trailer carries the code base sha
   const base = gitRun(cwd, ['rev-parse', 'HEAD']).out || 'none';
   const total = moved.length + strays;
-  if (total > 0) {
+  if (total > 0 || stamping.changed) {
     const commit = branchMod.commitDocs(
       cwd,
       `docs: migrate Code Addiction outputs from the code branch\n\nMigrated-From: ${base}`,
@@ -626,7 +783,12 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
     delivered: deliveredState(deliveredPath([])),
     legacy,
     needsUpdate,
+    lines: [
+      `DOCS_STAMPED=${stamping.stamped.length}`,
+      `DOCS_UNSTAMPED=${stamping.unstamped.length}`,
+      `MIGRATION_REPORT=${stamping.reportPath}`,
+    ],
   });
-  if (legacy > 0 || needsUpdate.length > 0) printPrompt(cwd);
+  if (legacy > 0 || needsUpdate.length > 0 || stamping.unstamped.length > 0) printPrompt(cwd);
   return { migrated: outcome, count: total, legacy };
 }

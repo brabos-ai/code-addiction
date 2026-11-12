@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { docsMigrate, collectLegacy, migrateQaSettings } from '../src/docs-migrate.js';
+import { docsMigrate, collectLegacy, migrateQaSettings, STAMP_SCHEMA_TYPES, STAMP_ID_RULES, STAMP_FIELDS } from '../src/docs-migrate.js';
 import { MIGRATIONS, runMigrations } from '../src/migrations.js';
 import { installDocsRoot } from './helpers/brownfield-fixture.js';
 
@@ -211,13 +211,6 @@ describe('F18 — docs migrate', () => {
     expect(ids).not.toContain('0005-qa-settings');
     expect(ids).toContain('0002-harvest-relations');
     expect(ids).toContain('0003-retire-about-suffix');
-  });
-
-  it('adds or changes no schema key on a moved file', async () => {
-    p = makeLegacyProject();
-    await docsMigrate(p.repo, []);
-    expect(docSchemaOf(fs.readFileSync(path.join(p.docsRoot, 'features', '0001F-login', 'about.md'), 'utf8'))).toBe(0);
-    expect(docSchemaOf(fs.readFileSync(path.join(p.docsRoot, 'features', '0002F-signup', 'about.md'), 'utf8'))).toBe(1);
   });
 
   it('fails explicitly when there is no remote to hold the docs branch', async () => {
@@ -627,6 +620,132 @@ describe('decision 3 — docs migrate lists the code that still reads the old pa
   });
 });
 
+describe('decision 5 — stamp what the checks prove, report the rest, never invent a hash', () => {
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+  const summary = () => (/--- MIGRATION SUMMARY ---\n([\s\S]*?)--- END MIGRATION SUMMARY ---/.exec(stdout()) || [])[1] || '';
+  const put = (rel, text) => {
+    const full = path.join(p.repo, rel);
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, text);
+  };
+  const docsFile = (rel) => path.join(p.docsRoot, ...rel.split('/'));
+  const REPORT = () => path.join(p.docsRoot, 'migration-report.md');
+
+  function mixedProject() {
+    p = makeLegacyProject({ legacy: false });
+    put('docs/features/0003F-ok/about.md', ['---', 'id: 0003F', 'type: feature', 'created: 2026-02-01', 'updated: 2026-02-02', '---', '', '# Ok', '', '## TL;DR', 'fine.', ''].join('\n'));
+    put('docs/changelog/0002CHG.md', '# a changelog entry written with no frontmatter at all\n');
+    put('docs/features/0003F-ok/_tests/run-001/qa-validation-001.md', ['---', 'id: 0003F-qa-validation-001', 'type: qa-validation', 'created: 2026-02-03', '---', '', '## TL;DR', 'ran.', ''].join('\n'));
+    put('docs/features/0003F-ok/design.md', ['---', 'id: 0003F', 'type: feature-design', 'created: 2026-02-01', 'updated: 2026-02-02', 'related: [0003F]', '---', '', '## TL;DR', 'a design.', ''].join('\n'));
+    put('docs/brainstorm/x.md', ['---', 'id: BRN-x', 'type: mystery', 'created: 2026-02-01', 'updated: 2026-02-01', '---', '', '## TL;DR', 'x', ''].join('\n'));
+    git(p.repo, 'add', '-A');
+    git(p.repo, 'commit', '-q', '-m', 'legacy docs of five kinds');
+  }
+
+  it('stamps the conforming document, moves 0002CHG.md, reports each other with its reason, writes no provenance', async () => {
+    mixedProject();
+    await docsMigrate(p.repo, []);
+    const about = fs.readFileSync(docsFile('features/0003F-ok/about.md'), 'utf8');
+    expect(about).toMatch(/^schema: 1$/m);
+    expect(about).toMatch(/^related: \[\]$/m);
+    expect(about).toMatch(/^tags: \[\]$/m);
+    expect(fs.existsSync(docsFile('changelog/0002CHG.md'))).toBe(true);
+    for (const rel of ['changelog/0002CHG.md', 'features/0003F-ok/_tests/run-001/qa-validation-001.md', 'features/0003F-ok/design.md', 'brainstorm/x.md']) {
+      expect(docSchemaOf(fs.readFileSync(docsFile(rel), 'utf8')), rel).toBe(0);
+    }
+    expect(fs.readFileSync(docsFile('features/0003F-ok/design.md'), 'utf8')).not.toMatch(/provenance/);
+    const report = fs.readFileSync(REPORT(), 'utf8');
+    expect(report).toMatch(/changelog\/0002CHG\.md[^\n]*incomplete-frontmatter/);
+    expect(report).toMatch(/qa-validation-001\.md[^\n]*qa-validation-without-evidence/);
+    expect(report).toMatch(/features\/0003F-ok\/design\.md[^\n]*design-without-hash/);
+    expect(report).toMatch(/brainstorm\/x\.md[^\n]*unknown-type/);
+    expect(report).not.toContain('features/0003F-ok/about.md');
+    const text = summary();
+    expect(text).toContain('DOCS_STAMPED=1');
+    expect(text).toContain('DOCS_UNSTAMPED=4');
+    expect(text).toContain('MIGRATION_REPORT=.codeadd/docs/migration-report.md');
+    expect(git(p.docsRoot, 'ls-files', 'migration-report.md')).toBe('migration-report.md');
+  });
+
+  it('a non-standard id is reported as non-standard-id and left unstamped', async () => {
+    p = makeLegacyProject({ legacy: false });
+    put('docs/features/0004F-odd/about.md', ['---', 'id: FEATURE-4', 'type: feature', 'created: 2026-02-01', 'updated: 2026-02-02', '---', '', '## TL;DR', 'odd.', ''].join('\n'));
+    git(p.repo, 'add', '-A');
+    git(p.repo, 'commit', '-q', '-m', 'odd id');
+    await docsMigrate(p.repo, []);
+    expect(fs.readFileSync(REPORT(), 'utf8')).toMatch(/0004F-odd\/about\.md[^\n]*non-standard-id/);
+  });
+
+  it('a feature document with no TL;DR is reported as missing-tldr', async () => {
+    p = makeLegacyProject({ legacy: false });
+    put('docs/features/0005F-bare/about.md', ['---', 'id: 0005F', 'type: feature', 'created: 2026-02-01', 'updated: 2026-02-02', '---', '', '# bare', ''].join('\n'));
+    git(p.repo, 'add', '-A');
+    git(p.repo, 'commit', '-q', '-m', 'no tldr');
+    await docsMigrate(p.repo, []);
+    expect(fs.readFileSync(REPORT(), 'utf8')).toMatch(/0005F-bare\/about\.md[^\n]*missing-tldr/);
+  });
+
+  it('a second run changes nothing on the docs branch', async () => {
+    mixedProject();
+    await docsMigrate(p.repo, []);
+    const head = git(p.docsRoot, 'rev-parse', 'HEAD');
+    const report = fs.readFileSync(REPORT(), 'utf8');
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(git(p.docsRoot, 'rev-parse', 'HEAD')).toBe(head);
+    expect(git(p.docsRoot, 'status', '--porcelain')).toBe('');
+    expect(fs.readFileSync(REPORT(), 'utf8')).toBe(report);
+    expect(summary()).toContain('DOCS_UNSTAMPED=4');
+  });
+
+  it('deletes the report once nothing is left to report', async () => {
+    mixedProject();
+    await docsMigrate(p.repo, []);
+    expect(fs.existsSync(REPORT())).toBe(true);
+    // the user's agent brought every remaining document up to the standard
+    for (const rel of ['changelog/0002CHG.md', 'features/0003F-ok/_tests/run-001/qa-validation-001.md', 'features/0003F-ok/design.md', 'brainstorm/x.md']) {
+      const t = fs.readFileSync(docsFile(rel), 'utf8');
+      fs.writeFileSync(docsFile(rel), t.startsWith('---') ? t.replace(/^---\n/, '---\nschema: 1\n') : `---\nschema: 1\n---\n${t}`);
+    }
+    git(p.docsRoot, 'add', '-A');
+    git(p.docsRoot, 'commit', '-q', '-m', 'agent');
+    out.length = 0;
+    await docsMigrate(p.repo, []);
+    expect(fs.existsSync(REPORT())).toBe(false);
+    expect(summary()).toContain('MIGRATION_REPORT=none');
+    expect(summary()).toContain('DOCS_UNSTAMPED=0');
+  });
+
+  it('the CLI constants equal the skill: the schema index, the id prefixes, the field names', () => {
+    const skill = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--doc-schemas', 'SKILL.md'), 'utf8');
+    const indexRows = skill.slice(skill.indexOf('## Schema Index by Category'), skill.indexOf('**Loading discipline.**')).split('\n')
+      .filter((l) => /^\| `/.test(l));
+    const types = indexRows.flatMap((l) => l.split('|')[3].replace(/\(.*$/, '').split(',').map((t) => t.trim()).filter(Boolean));
+    expect([...STAMP_SCHEMA_TYPES].sort()).toEqual([...types].sort());
+    const prefixRows = skill.slice(skill.indexOf('### ID Prefixes'), skill.indexOf('> **Convention:**')).split('\n').filter((l) => /^\| `/.test(l));
+    const byType = Object.fromEntries(prefixRows.map((l) => {
+      const c = l.split('|').map((x) => x.trim());
+      return [c[2].toLowerCase().split(' ')[0], c[3].replace(/`/g, '')];
+    }));
+    expect(byType.feature).toBe('[NNNN]F');
+    expect(byType.hotfix).toBe('[NNNN]H');
+    expect(byType.prd).toBe('PRD[NNNN]');
+    expect(byType.changelog).toBe('CHG[NNNN]');
+    expect(STAMP_ID_RULES.feature.test('0042F')).toBe(true);
+    expect(STAMP_ID_RULES.hotfix.test('0013H')).toBe(true);
+    expect(STAMP_ID_RULES.prd.test('PRD0009')).toBe(true);
+    expect(STAMP_ID_RULES.changelog.test('CHG0001')).toBe(true);
+    expect(STAMP_ID_RULES.changelog.test('0002CHG')).toBe(false);
+    expect(STAMP_ID_RULES['qa-validation'].test('0042F-qa-validation-001')).toBe(true);
+    expect(skill).toContain('`<feature-id>-qa-validation-NNN`');
+    const review = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--doc-schemas', 'references', 'review.md'), 'utf8');
+    const design = fs.readFileSync(path.join(ROOT, 'framwork', '.codeadd', 'skills', 'add--doc-schemas', 'references', 'new-feature.md'), 'utf8');
+    for (const f of STAMP_FIELDS.qaValidation) expect(review).toContain(`\`${f}:`);
+    expect(design).toContain(`${STAMP_FIELDS.designHash}: sha256:`);
+  });
+});
+
 describe('F27 — the migrate prompt', () => {
   const TEMPLATE_SRC = path.join(ROOT, 'framwork', '.codeadd', 'templates', 'docs-migrate-prompt.md');
   const { resolveDocSchema } = require(path.join(ROOT, 'scripts', 'build.js'));
@@ -661,8 +780,9 @@ describe('F27 — the migrate prompt', () => {
     await docsMigrate(p.repo, []);
     const text = stdout();
     // schema-less markdown planted: about, iterations, plan, brainstorm intent, diagnose, audit,
-    // health check, changelog, design system — the signup about.md already carries schema 1
-    expect(text).toContain('DOCS_LEGACY=9');
+    // health check, changelog, design system — the signup about.md already carries schema 1, and the
+    // login about.md passes every stamp check, so 9 minus that one remains
+    expect(text).toContain('DOCS_LEGACY=8');
     expect(text.indexOf('MIGRATED=moved:')).toBeLessThan(text.indexOf('DOCS_LEGACY='));
     expect(text.indexOf('DOCS_LEGACY=')).toBeLessThan(text.indexOf('--- AGENT PROMPT ---'));
     expect(block()).toBe(template);
@@ -678,6 +798,7 @@ describe('F27 — the migrate prompt', () => {
     expect([...new Set(spawned)]).toEqual(['git']);
   });
 
+  // Since decision 5 the CLI stamps what the checks prove; the name is kept for the test-loss guard.
   it('adds no schema to any moved file, so DOCS_LEGACY counts every one of them', async () => {
     p = makeLegacyProject();
     installTemplate(p.repo);
@@ -692,7 +813,8 @@ describe('F27 — the migrate prompt', () => {
       }
     };
     walk(p.docsRoot);
-    expect(stamped).toEqual(['features/0002F-signup/about.md']);
+    // the login about.md passes every check and is stamped; the migration report carries its own stamp
+    expect(stamped).toEqual(['features/0001F-login/about.md', 'features/0002F-signup/about.md', 'migration-report.md']);
   });
 
   it('the re-run answers already and prints the prompt again while legacy docs remain', async () => {
@@ -702,7 +824,7 @@ describe('F27 — the migrate prompt', () => {
     out.length = 0;
     await docsMigrate(p.repo, []);
     expect(stdout()).toContain('MIGRATED=already');
-    expect(stdout()).toContain('DOCS_LEGACY=9');
+    expect(stdout()).toContain('DOCS_LEGACY=8');
     expect(block()).toBe(template);
   });
 
