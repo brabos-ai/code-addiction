@@ -170,11 +170,11 @@ function dirExists(dir) {
 }
 
 // The .codeadd/ entries a project commits; they do not mean an install is present.
-const COMMITTED_CODEADD_ENTRIES = new Set(['board.json', 'settings.json', 'wiki']);
+const COMMITTED_CODEADD_ENTRIES = new Set(['board.json', 'settings.json', 'settings.local.json', 'wiki']);
 
 /**
  * Does .codeadd/ hold an installation? A fresh clone of a project carries up to three
- * committed entries there — settings.json, wiki/ and, in a project that once had the retired
+ * committed entries there (plus the gitignored settings.local.json, which holds the user's secret and is never an install) — settings.json, wiki/ and, in a project that once had the retired
  * board feature, board.json — and none of them is something an install would overwrite. Anything else (the manifest, the commands, the
  * skills) means an installation is already in place.
  * @param {string} dir

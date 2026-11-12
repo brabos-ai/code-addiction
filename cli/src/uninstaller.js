@@ -63,6 +63,7 @@ function isProjectData(rel) {
   return (
     rel === '.codeadd/board.json' ||
     rel === '.codeadd/settings.json' ||
+    rel === '.codeadd/settings.local.json' ||
     rel.startsWith('.codeadd/wiki/')
   );
 }

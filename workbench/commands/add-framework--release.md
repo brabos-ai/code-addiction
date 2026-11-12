@@ -19,7 +19,7 @@ STEP 0: Prerequisites          → gh CLI + auth
 STEP 1: Validate branch        → must be main
 STEP 2: Release type           → stable | beta [STOP — asked together with STEP 3]
 STEP 3: Detect version         → fetch tags, choose bump [STOP — one batch with STEP 2]
-STEP 4: Update CLI version     → npm version (package.json + lock) + commit + push
+STEP 4: Update CLI version     → npm version (package.json + lock) + changelog promote (stable) + one bump commit + push
 STEP 5: Merge to production    → --no-ff + push (SKIP if beta)
 STEP 6: Changelog + preview    → generate, confirm [STOP]
 STEP 7: Push tag               → checkout tag source + run script → pipeline takes over
@@ -137,7 +137,19 @@ CRITICAL: Editing `cli/package.json` by hand leaves `cli/package-lock.json` on t
 
 Read the `version` field of `cli/package.json` and of `cli/package-lock.json`. Both MUST equal `NEXT_VERSION` without the `v` prefix. If they differ → STOP, do not commit.
 
-Commit BOTH files with message `chore: bump version to $NEXT_VERSION` and push to main.
+### Promote the changelog (stable only)
+
+**IF `RELEASE_TYPE = beta`: SKIP this part.** A beta release does not promote.
+
+For a stable release, move `## [Unreleased]` of `CHANGELOG.md` under the version being released:
+
+```bash
+node scripts/changelog-promote.cjs [NEXT_VERSION without v prefix]
+```
+
+It prints `CHANGELOG_PROMOTED=<version>`, or `CHANGELOG_PROMOTED=already` when the section exists and Unreleased is empty. Exit 1 means Unreleased is empty and no section exists for the version, the file has no `## [Unreleased]` heading, the version is invalid, or Unreleased holds text while a section for the version already exists: STOP and fix the file. Then resume at this part only — `npm version` already ran, so do not run it or the verify again. This is the last commit on main before STEP 5's merge, so the promoted section reaches the tagged merge.
+
+Commit the changed files — `cli/package.json` and `cli/package-lock.json`, plus `CHANGELOG.md` for a stable release — in ONE bump commit with message `chore: bump version to $NEXT_VERSION`, and push to main. Stage them by name.
 
 ---
 
@@ -199,6 +211,8 @@ The deliveries live on `codeadd-docs`, not on `main`, so the diff reads that wor
 
 ### Assemble release notes
 
+**A stable release starts from the promoted section.** Read the `## [<version>]` section STEP 4 promoted in `CHANGELOG.md`: it is the release notes. The commits, the file changes and the deliveries above enrich it — they add what it misses and never replace what it says. A beta release has no promoted section and builds its notes from the commits and deliveries alone.
+
 Write human-readable release notes from the user's perspective — what changed and why, not file paths.
 
 Format (omit empty sections):
@@ -250,7 +264,7 @@ node scripts/create-release-tag.cjs
 
 After the tag is pushed, checkout `main` to restore the working branch.
 
-The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, hard-fails while `cli/package-lock.json` is out of sync (the v0.8.0 lesson: the CI smoke gate fires only after the tag is pushed), fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
+The script is the ONLY way the tag gets created. It reads the version from `cli/package.json`, hard-fails while `cli/package-lock.json` is out of sync (the v0.8.0 lesson: the CI smoke gate fires only after the tag is pushed), hard-fails a stable version whose `## [<version>]` heading is missing from `CHANGELOG.md` (the changelog gate — it names `scripts/changelog-promote.cjs`; a beta is exempt), fetches remote tags, deletes a stale tag of the same name locally and on origin, creates the annotated tag carrying the release notes, and pushes it.
 
 ### Division of Labor
 
@@ -297,7 +311,7 @@ ALWAYS:
 - Fetch tags from remote before reading (`git fetch --tags`) — without this, remote tags are invisible
 - Bump the version with `npm version` in `cli/` so `package-lock.json` stays in sync
 - Use annotated tags with release notes as tag message — pipeline extracts them for the GitHub Release
-- Generate changelog from commits AND file diff — commits primary, file diff enriches
+- Generate the notes from the promoted `CHANGELOG.md` section for a stable release and from the commits for a beta; the file diff and the deliveries enrich both
 - Write release notes from the user's perspective (what changed, not which files)
 - Treat provider dirs as generated — exclude from individual listing
 
@@ -308,5 +322,5 @@ NEVER:
 - Run `node scripts/build.js` — pipeline's job
 - Commit generated provider files (`framwork/.claude/`, `.agent/`, etc.)
 - Merge to production for beta releases — beta tags come from main
-- Create `CHANGELOG.md` files
+- Create a second changelog file — `CHANGELOG.md` is the one, and STEP 4 promotes it
 - Call `gh release create` — pipeline handles release creation

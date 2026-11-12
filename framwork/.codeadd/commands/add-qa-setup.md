@@ -84,7 +84,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.migration** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
 | **STEP add-qa-setup.migration** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP add-qa-setup.migration** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
-| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and nothing under STEP add-qa-setup.ignore (the docs branch's own `.codeadd/docs/.gitignore` is created by the branch, never edited here). Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` and of `.codeadd/settings.local.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and nothing under STEP add-qa-setup.ignore (the docs branch's own `.codeadd/docs/.gitignore` is created by the branch, never edited here). Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP add-qa-setup.catalog** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add-plan}}` owns content |
 | **STEP add-qa-setup.ignore** | `.codeadd/docs/.gitignore` lacks the QA run-output line | Running migration | Run `node .codeadd/scripts/docs-branch.cjs prepare`, which recreates the line, then re-check |
 | **STEP add-qa-setup.migrate** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
@@ -103,8 +103,8 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:7e9e973468b6b777
-changed-in: 1.9.0
+shape: sha256:c61dbcc38148c997
+changed-in: 1.9.2
 paths:
   - path: .codeadd/settings.json#qa
     owner: shared
@@ -118,6 +118,9 @@ paths:
   - path: .codeadd/docs/.gitignore
     owner: shared
     step: 9
+  - path: .codeadd/settings.local.json#qa
+    owner: shared
+    step: 10
 ```
 
 ### .codeadd/settings.json#qa
@@ -129,7 +132,18 @@ The value fields of the `qa` section. The receipt fields are written by STEP add
   "qa": {
     "baseUrl": "http://localhost:5173",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
-    "bootHint": "how to start the app's dev server (free text, project-specific)",
+    "bootHint": "how to start the app's dev server (free text, project-specific)"
+  }
+}
+```
+
+### .codeadd/settings.local.json#qa
+
+The secret field of the `qa` section, in the gitignored local file `.codeadd/settings.local.json`. It is never committed and never hashed.
+
+```json
+{
+  "qa": {
     "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
   }
 }
@@ -190,7 +204,7 @@ Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this pro
 5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add-review`** with a flagged note.
 
 ## Auth / Seed
-- `<how an authenticated session is obtained for auth:true surfaces, from qa.authSeed in .codeadd/settings.json>`
+- `<how an authenticated session is obtained for auth:true surfaces, from qa.authSeed in .codeadd/settings.local.json>`
 ```
 ---
 
@@ -339,6 +353,8 @@ Target: the `qa` section of `.codeadd/settings.json` (git-tracked, project-wide)
 
 Write the shape declared in `## Materializes` → `.codeadd/settings.json#qa`. Values are free-text hints; viewports default to the declared set.
 
+`authSeed` is a secret in practice, so it is written to `.codeadd/settings.local.json` → `qa` (the shape declared in `## Materializes` → `.codeadd/settings.local.json#qa`) by the same read, merge, write rule — never to `.codeadd/settings.json`. A `qa.authSeed` already sitting in `.codeadd/settings.json` is moved: write it to the local file, then delete the key from the committed file. Never print the value.
+
 ⛔ `baseUrl` MUST point at a local/throwaway environment — the QA judgement actively exercises flows (submits forms, creates records). Never a production URL.
 
 ---
@@ -427,7 +443,7 @@ Write it on **every** run — including a run that changed nothing. A verified-c
 Read the file, merge into `qa`, write it back. ⛔ Never replace the whole file, never touch another section, never drop a key you do not know.
 
 1. **Receipt fields.** `qa["setup-shape"]` = the shipped hash from `.codeadd/contracts.json` → `contracts["add-qa-setup"].shape` (bare `sha256:<16 hex>`). `qa["framework-version"]` from the manifest (informational). `qa["first-run"]` preserved byte-identically, or set to today on a true first run. `qa["last-run"]` = today.
-2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` itself is `owner: shared`.
+2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` and `.codeadd/settings.local.json` are `owner: shared`.
 3. **`qa.prereqs`** from STEP add-qa-setup.install, `qa["qa-pipeline-feature"]` from STEP add-qa-setup.feature-gate, `qa.migration` from STEP add-qa-setup.migration. Record `.codeadd/docs/.gitignore` in `qa.materialized` with `owner: shared` and `hash: null`.
 4. **`qa.log`.** APPEND one entry `{date, item, decision, reason, shape}` per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing entry. ⛔ Never log narration or instructions — an entry records a choice, not a step.
 
@@ -440,10 +456,11 @@ Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT s
 1. **It parses.** Read the file and parse it as JSON. If it does not parse: STOP. Fix the file. Re-run this gate.
 2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
 3. **Vocabularies.** Every `prereqs.<name>`, `qa-pipeline-feature`, `migration.decision` and `materialized[].owner` holds a value declared in {{skill:add--settings/SKILL.md}}. `migration.detected` is sorted alphabetically.
-4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
+4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json`, `.codeadd/settings.local.json` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
 5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
 6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
-7. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
+7. **No secret in the committed file.** `qa` in `.codeadd/settings.json` holds no `authSeed`. When `.codeadd/settings.local.json` exists, run `git check-ignore -q .codeadd/settings.local.json`: if it does not match, add a warning that the file must be gitignored. Never print the value.
+8. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
 
 Output at end:
 - `gate: PASS` or `gate: FAIL`

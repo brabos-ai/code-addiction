@@ -53,6 +53,29 @@ $out = Get-Content out.json -Raw | ConvertFrom-Json
 if ($out.structured_output.status -ne 'done') { exit 1 }
 ```
 
+### Permissions a headless run needs
+
+A headless run has no one to approve a prompt, so a step that needs a permission it was not given stops
+there. Two things need one:
+
+- **Write access to the provider skills folder** (`.claude/skills/` in Claude Code). `/add-qa-setup` writes
+  the generated `qa-project` skill there.
+- **`Bash(node:*)`**: the commands and the migrate prompt run the `node` scripts under `.codeadd/scripts/`.
+
+In Claude Code, grant them with `--allowedTools`, and name a permission mode that lets file edits through
+as the alternative:
+
+```bash
+claude -p "/add-qa-setup" --output-format json \
+  --allowedTools "Edit" "Write" "Bash(node:*)" "Bash(git:*)" \
+  --json-schema "$(cat .codeadd/agent-mode/result.schema.json)"
+# or, instead of listing tools: --permission-mode acceptEdits
+```
+
+Grant only what the command needs. `bypassPermissions` is not the recommended default, and a guide
+that sets it by default hands a bot every permission there is. Another provider has its own way to
+grant the same two permissions: look it up in its documentation.
+
 ## 2. Resume a stopped run
 
 The resume flags below are Claude Code's. Another provider has its own way to continue a session; the rest of

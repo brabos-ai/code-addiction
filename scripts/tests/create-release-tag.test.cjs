@@ -60,7 +60,14 @@ function makeRemoteRepo() {
 }
 
 /** Write the two CLI version files the tag entry reads. */
-function writeVersion(repo, version, lockVersion = version) {
+function writeVersion(repo, version, lockVersion = version, { changelog = true } = {}) {
+  // A stable release needs its `## [<version>]` heading in CHANGELOG.md (the F17 gate).
+  if (changelog) {
+    h.write(
+      path.join(repo, 'CHANGELOG.md'),
+      `# Changelog\n\n## [Unreleased]\n\n## [${version}] - 2026-01-01\n\n- fixture\n`,
+    );
+  }
   h.write(
     path.join(repo, 'cli', 'package.json'),
     `${JSON.stringify({ name: 'code-addiction', version }, null, 2)}\n`,
@@ -128,6 +135,64 @@ test('reads the version from cli/package.json and creates an annotated v<version
     );
   } finally {
     cleanupNotes('4.5.6');
+    r.cleanup();
+  }
+});
+
+// --- the changelog gate (F17) -------------------------------------------------
+
+test('a stable version whose CHANGELOG.md heading is absent exits 1, names changelog-promote.cjs and creates no tag', () => {
+  const r = makeRemoteRepo();
+  try {
+    writeVersion(r.repo, '4.5.7', '4.5.7', { changelog: false });
+    const res = runTag(r.repo);
+    assert.equal(res.status, 1, h.stripAnsi(res.output));
+    assert.match(h.stripAnsi(res.output), /changelog-promote\.cjs/);
+    assert.equal(tagType(r, 'v4.5.7'), null, 'no tag may be created');
+    assert.equal(remoteTagPeeled(r.remote, 'v4.5.7'), null, 'no tag may be pushed');
+  } finally {
+    cleanupNotes('4.5.7');
+    r.cleanup();
+  }
+});
+
+test('a CHANGELOG.md that has only an Unreleased heading does not satisfy the gate', () => {
+  const r = makeRemoteRepo();
+  try {
+    writeVersion(r.repo, '4.5.8', '4.5.8', { changelog: false });
+    h.write(path.join(r.repo, 'CHANGELOG.md'), '# Changelog\n\n## [Unreleased]\n\n- something\n');
+    const res = runTag(r.repo);
+    assert.equal(res.status, 1, h.stripAnsi(res.output));
+    assert.equal(tagType(r, 'v4.5.8'), null);
+  } finally {
+    cleanupNotes('4.5.8');
+    r.cleanup();
+  }
+});
+
+test('a beta version is exempt from the changelog gate', () => {
+  const r = makeRemoteRepo();
+  try {
+    writeVersion(r.repo, '4.6.0-beta.1', '4.6.0-beta.1', { changelog: false });
+    const res = runTag(r.repo);
+    assert.equal(res.status, 0, h.stripAnsi(res.output));
+    assert.equal(tagType(r, 'v4.6.0-beta.1'), 'tag');
+  } finally {
+    cleanupNotes('4.6.0-beta.1');
+    r.cleanup();
+  }
+});
+
+test('with the matching heading in CHANGELOG.md the stable tag is created as before', () => {
+  const r = makeRemoteRepo();
+  try {
+    writeVersion(r.repo, '4.5.9');
+    assert.match(fs.readFileSync(path.join(r.repo, 'CHANGELOG.md'), 'utf8'), /^## \[4\.5\.9\]/m);
+    const res = runTag(r.repo);
+    assert.equal(res.status, 0, h.stripAnsi(res.output));
+    assert.equal(tagType(r, 'v4.5.9'), 'tag');
+  } finally {
+    cleanupNotes('4.5.9');
     r.cleanup();
   }
 });

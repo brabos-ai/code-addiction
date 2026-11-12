@@ -6,6 +6,27 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Security
+- **`qa.authSeed` is no longer kept in `.codeadd/settings.json`, which is committed.** It now lives in `.codeadd/settings.local.json`, a gitignored file the managed `.gitignore` block names explicitly. `codeadd update` moves an existing value for you (migration `0007-move-qa-auth-seed`), `codeadd docs migrate` writes it there too, and `/add-qa-setup` reads and writes it there. The value is never printed. **If a password was ever committed — in `.codeadd/settings.json`, or in the QA config file of the layout before the docs branch — rotate that test password:** git history keeps what was committed, and moving the key does not rewrite it. `git log -S authSeed -- .codeadd/settings.json` shows whether it was. Re-run `/add-qa-setup` once: the setup contract changed, so `SETUP_QA_STALE` is expected.
+
+### Fixed
+- The framework's own sync can no longer leave a tracked top-level docs folder on the code branch. `/add-framework--sync` declares what it may write, stops before it starts when such a folder is tracked, re-checks at the end, and never stages with `git add -A`. The zero-legacy guard now fails on a tracked path under that folder whatever its content.
+- `codeadd docs migrate` always says what it did: every run ends with a summary between `--- MIGRATION SUMMARY ---` and `--- END MIGRATION SUMMARY ---`, including a run that moved nothing and the reason, and a dry run worded as "would".
+- `codeadd docs migrate` lists the code that still reads a moved path, as `file:line` under `needs update` (and `NEEDS_UPDATE=<n>`), without touching it, and its prompt tells your agent to fix them.
+- `codeadd docs migrate` stamps `schema:` on a legacy document only when deterministic checks pass, and lists every other document with one reason in `.codeadd/docs/migration-report.md` (`DOCS_STAMPED`, `DOCS_UNSTAMPED`, `MIGRATION_REPORT`). It never invents a provenance hash. A changelog file named `NNNNCHG.md` is now moved with the rest.
+
+### Changed
+- The agent-mode guide says what a headless `claude -p` run needs: write access to the provider skills folder and `Bash(node:*)`, granted with `--allowedTools`. `bypassPermissions` is not the recommended default.
+- A release now promotes `## [Unreleased]` of this file to the released version in the version-bump commit, and the tag script refuses a stable version whose section is missing.
+
+## [1.9.1] - 2026-11-11
+
+### Fixed
+- The release pipeline runs the tests before the `--package` build, so a failing test stops a release before anything is packaged.
+- Leftover plan and brainstorm files that a post-sync commit had put on the code branch are gone from it. Code Addiction documents live on the docs branch only.
+
+## [1.9.0] - 2026-11-11
+
 ### Added
 - The docs branch. Every output Code Addiction writes (plans, feature docs, wiki, QA reports, changelog, the delivery index) now lives in `.codeadd/docs/`, a git worktree of the orphan `codeadd-docs` branch in your own remote. Code pull requests no longer carry any Code Addiction document. `status.cjs` prepares the worktree and prints one `DOCS=` line (it never fails on this step), code worktrees see the docs through a link, and `/add-done` commits and pushes the branch. Nothing deletes `codeadd-docs`.
 - The docs-guard: an output written outside `.codeadd/docs/` is moved there silently at close-out, so it never reaches a code PR.

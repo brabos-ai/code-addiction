@@ -149,6 +149,20 @@ describe('product agent mode', () => {
     expect(status).toMatch(/refus\w* to run on main/);
   });
 
+  it('L1.11 guide section 1 names the permissions a headless run needs and never recommends bypassPermissions as the default', () => {
+    const guide = fs.readFileSync(GUIDE, 'utf8');
+    const section = guide.slice(guide.indexOf('## 1.'), guide.indexOf('## 2.'));
+    expect(section).toMatch(/permission/i);
+    expect(section).toContain('--allowedTools');
+    expect(section).toContain('.claude/skills/');
+    expect(section).toContain('Bash(node:*)');
+    expect(section).toMatch(/permission mode/i);
+    // every sentence naming bypassPermissions says it is not the recommended default
+    const sentences = guide.split(/(?<=[.!?])\s+|\n+/).filter((t) => /bypassPermissions/.test(t));
+    expect(sentences.length).toBeGreaterThan(0);
+    for (const sentence of sentences) expect(sentence, sentence).toMatch(/\bnot\b|never/i);
+  });
+
   it('L1.10 guide section 1 carries the exit-code check for bash and PowerShell and says claude -p exits 0', () => {
     const guide = fs.readFileSync(GUIDE, 'utf8');
     const section = guide.slice(guide.indexOf('## 1.'), guide.indexOf('## 2.'));

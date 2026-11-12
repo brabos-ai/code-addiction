@@ -308,6 +308,7 @@ Optional: `by:` (last editor — human or agent identifier), `status:`, `slug:`.
 - **Future doc migrations key off the number**, not off a guess about the file's shape.
 - **JSONL outputs carry a per-line `v` instead.** The delivery index and the iteration log each keep their own `v`; neither takes a frontmatter field.
 - **Files once written without frontmatter now carry a minimal one**: `iterations.md`, `build-ledger.md`, `tasks.md`, health-check reports, `design-system.md` and `code-quality-review.md` open with `type` and `schema`, and nothing more is required of them.
+- **`codeadd docs migrate` stamps a legacy doc only when its deterministic checks pass, and lists every other one in the migration report** — the narrow, stated case of "stamp what you applied": the checks are what a script can verify, and the rest is the migration report's list for an agent to bring up to standard.
 - **Never stamp a version you did not apply.** A command that writes a doc stamps the current value. A command that only adjusts an existing doc keeps the stamp it finds unless it brought the whole file up to the current standard.
 
 ## Schema Index by Category
