@@ -12,7 +12,9 @@
  * Reads the project's `.codeadd/settings.json`, section `qa` (schema: add--settings):
  *   QA_CONFIG comes from qa.baseUrl; QA_RECEIPT and QA_CONTRACT_* from qa["setup-shape"]
  *   and qa["framework-version"]. A file that does not parse is broken for both; a file
- *   with no qa section reads as missing for both.
+ *   with no qa section reads as missing for both. A `qa.authSeed` held only in the gitignored
+ *   `.codeadd/settings.local.json` also counts as QA state (a project whose only value moved is
+ *   not never-set-up); its value is never read into output.
  *
  * Output: KEY=STATUS lines. Statuses: ok | missing | broken | not-probed.
  *   On QA_CONTRACT_MATCH=broken only, five more rows say why: the receipt shape and
@@ -226,7 +228,18 @@ const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 /** Does the section hold any value field (the scaffolded QA values)? */
 function hasValueFields(qa) {
-  return ['baseUrl', 'viewports', 'bootHint', 'authSeed'].some((k) => has(qa, k));
+  return ['baseUrl', 'viewports', 'bootHint'].some((k) => has(qa, k));
+}
+
+/** Does the gitignored local settings file hold a `qa.authSeed`? Presence only — the value is never printed. */
+function localHasAuthSeed(file) {
+  if (!isFile(file)) return false;
+  try {
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return !!(doc && doc.qa && typeof doc.qa === 'object' && has(doc.qa, 'authSeed'));
+  } catch {
+    return false;
+  }
 }
 
 /** Does the section hold any receipt field? */
@@ -294,7 +307,8 @@ async function phaseA() {
 
   // .codeadd/settings.json → qa — parse + require baseUrl; dependent probes short-circuit.
   const settings = readQaSection(path.resolve(process.cwd(), '.codeadd', 'settings.json'));
-  if (settings.state === 'absent' || (settings.state === 'ok' && !hasValueFields(settings.qa))) {
+  const localSeed = localHasAuthSeed(path.resolve(process.cwd(), '.codeadd', 'settings.local.json'));
+  if (!localSeed && (settings.state === 'absent' || (settings.state === 'ok' && !hasValueFields(settings.qa)))) {
     write('QA_CONFIG=missing');
     write('QA_BASEURL=');
     write('QA_BASEURL_LOCAL=not-probed');

@@ -80,6 +80,14 @@ describe('authSeed placement', () => {
     for (const rel of naming) placedInLocalFile(rel);
   });
 
+  it('F7 — the two scripts that read the local file name it in their source', () => {
+    for (const rel of ['scripts/qa-preflight.cjs', 'scripts/status.cjs']) {
+      const text = read(rel);
+      expect(text, rel).toContain(LOCAL);
+      expect(misplacedLines(text), rel).toEqual([]);
+    }
+  });
+
   it('the settings skill states the content rule: no credential value in the committed settings file', () => {
     const text = read('skills/add--settings/SKILL.md');
     expect(text).toMatch(/no (credential|password)[^\n]*settings\.json|settings\.json[^\n]*(never|no)[^\n]*(credential|password|token)/i);

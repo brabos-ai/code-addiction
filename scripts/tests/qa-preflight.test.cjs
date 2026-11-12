@@ -398,3 +398,15 @@ test('qa-preflight#032 — values and a current receipt in .codeadd/settings.jso
   assert.match(res.output, /QA_RECEIPT=ok/);
   assert.match(res.output, /QA_CONTRACT_MATCH=ok/);
 });
+
+test('qa-preflight#080 — a qa.authSeed that lives only in the gitignored local file still counts as QA state, and is never printed', (t) => {
+  const base = project(t);
+  const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
+  h.write(path.join(base, '.codeadd', 'settings.json'), JSON.stringify({ schema: 1, qa: {} }));
+  h.write(path.join(base, '.codeadd', 'settings.local.json'), JSON.stringify({ schema: 1, qa: { authSeed: SEED } }));
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.equal(res.status, 0, res.output);
+  assert.doesNotMatch(res.output, /QA_CONFIG=missing/);
+  assert.match(res.output, /QA_CONFIG=broken/);
+  assert.ok(!res.output.includes(SEED), 'the secret value must never be printed');
+});
