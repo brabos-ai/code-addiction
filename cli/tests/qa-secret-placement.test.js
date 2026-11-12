@@ -47,6 +47,13 @@ const placedInLocalFile = (rel) => {
 };
 
 const GROUPS = {
+  'F6 — the readers': [
+    'agents/qa-agent.md',
+    'agents/e2e-agent.md',
+    'skills/add--qa/SKILL.md',
+    'skills/add--qa/references/coordinator.md',
+    'fragments/qa-pipeline/add-build.md',
+  ],
   'F5 — the two setup commands': ['commands/add-qa-setup.md', 'commands/add-setup.md'],
   'F4 — the settings and setup-contract skills': [
     'skills/add--settings/SKILL.md',
@@ -60,6 +67,18 @@ describe('authSeed placement', () => {
       for (const rel of files) it(`${rel} places authSeed in ${LOCAL}`, () => placedInLocalFile(rel));
     });
   }
+
+  it('every shipped .md naming authSeed places it in the local file (a new file naming it elsewhere fails here)', () => {
+    // The playwright plugin fragments name only "the authSeed hint", never a location; they stay unchanged.
+    const EXEMPT = /^plugins\/playwright\/fragments\//;
+    const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
+    const naming = walk(SRC)
+      .map((f) => path.relative(SRC, f).split(path.sep).join('/'))
+      .filter((rel) => rel.endsWith('.md') && !EXEMPT.test(rel) && read(rel).includes('authSeed'));
+    expect(naming.length).toBeGreaterThan(5);
+    for (const rel of naming) placedInLocalFile(rel);
+  });
 
   it('the settings skill states the content rule: no credential value in the committed settings file', () => {
     const text = read('skills/add--settings/SKILL.md');

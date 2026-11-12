@@ -43,7 +43,7 @@ to the base contract above (consume, scoped re-review, resolution annex, finaliz
    | code rows — `@database-agent`, `@backend-agent`, `@frontend-agent` in the table | ONE `@fix-agent` for all of them, per the **Correction Dispatch** contract and its `ATTEMPT` counter. The area agents are not dispatched for a correction |
    | `@e2e-agent` rows (`test-file`) | `@e2e-agent`, once, for all its rows, after the `@fix-agent` wave, with `CAPTURE_DIR` = `${FEATURE_DIR}/_build/e2e-scratch` (deleted afterwards). It is a repair of an existing spec, not the delivery-time authoring |
    | `@ux-agent` rows (`design-spec`) with their contract-line citation | `@ux-agent` in **FIX MODE — design-spec route** |
-   | `data-seed`, `env-boot`, capability-invalid, `@ux-agent` rows missing the citation | **Present, do NOT dispatch** — surfaced as user decisions (**deciding**, in every delivery mode). Name the `qa` field of `.codeadd/settings.json` to fix — `authSeed` / `bootHint` |
+   | `data-seed`, `env-boot`, capability-invalid, `@ux-agent` rows missing the citation | **Present, do NOT dispatch** — surfaced as user decisions (**deciding**, in every delivery mode). Name the `qa` field to fix — `bootHint` in `.codeadd/settings.json`, `authSeed` in `.codeadd/settings.local.json` |
 
    - **Name the mode verbatim.** `@ux-agent` has three modes and only one may
      write; dispatch it stating **"FIX MODE — design-spec route"** in the prompt.
