@@ -2,7 +2,7 @@ I just moved my project's Code Addiction documents to a new place, and I need yo
 
 The documents now live in the folder .codeadd/docs/, which is a separate branch of this repository named codeadd-docs. They were moved exactly as they were. Some of them were written in an older document format and do not yet say which format they use.
 
-Please do these four things, in order.
+Please do these five things, in order.
 
 1. Review the migrated documents. Look at the folder layout of .codeadd/docs/ and open the files you need. Do not change anything in this step.
 
@@ -10,6 +10,8 @@ Please do these four things, in order.
 
 3. On each file you adjusted, set this line in its frontmatter: schema: {{doc-schema}}. Do not stamp a file you did not adjust.
 
-4. Report what you changed, file by file, as a short list. Name every file you skipped and say why.
+4. Fix the code that still points at the old places. The migration summary printed above this prompt lists, under needs update, every line in this project that still names a moved path, as a file name and a line number. Fix every file listed under needs update so that it reads the new location under .codeadd/docs/. Change only the path, never the logic around it. If the summary lists none, skip this step.
 
-Rules while you work. Touch only files under .codeadd/docs/. When you search those documents, always pass .codeadd/docs/ as the search path, because search tools skip folders that git ignores. When you are done, save your work with this command: node .codeadd/scripts/docs-branch.cjs commit "docs: bring legacy documents to schema {{doc-schema}}"
+5. Report what you changed, file by file, as a short list. Name every file you skipped and say why.
+
+Rules while you work. Touch only files under .codeadd/docs/, except the files listed under needs update in the migration summary. When you search those documents, always pass .codeadd/docs/ as the search path, because search tools skip folders that git ignores. When you are done, save your work with this command: node .codeadd/scripts/docs-branch.cjs commit "docs: bring legacy documents to schema {{doc-schema}}"

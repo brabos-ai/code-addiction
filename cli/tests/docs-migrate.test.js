@@ -755,6 +755,16 @@ describe('F27 — the migrate prompt', () => {
     expect(text).not.toMatch(/(^|\s)\/add-/);
   });
 
+  it('the template tells the agent to fix every file listed under needs update, as the one exception to the docs-only rule', () => {
+    const text = fs.readFileSync(TEMPLATE_SRC, 'utf8');
+    expect(text).toMatch(/needs update/);
+    expect(text).toMatch(/migration summary/i);
+    expect(text).toMatch(/Fix every (file|reference) listed under needs update/);
+    const rules = text.slice(text.indexOf('Rules while you work'));
+    expect(rules).toMatch(/Touch only files under \.codeadd\/docs\/[^.]*except[^.]*needs update/i);
+    expect(text).not.toMatch(/four things/);
+  });
+
   it('a distinctive sentence of the template occurs in exactly one source file', () => {
     const sentence = 'Do not stamp a file you did not adjust.';
     const roots = [path.join(ROOT, 'framwork', '.codeadd'), path.join(ROOT, 'cli', 'src'), path.join(ROOT, 'mcp')];
