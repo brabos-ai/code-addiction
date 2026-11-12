@@ -101,17 +101,22 @@ function readJsonFile(full, label) {
  * update retries. It changes files only and never commits, like 0002.
  *
  * @param {{cwd: string, providers: {dest: string}[]}} ctx
- * @returns {{changes: string[], notes: string[]}}
+ * `authSeed` is a credential in practice: it goes to the gitignored `.codeadd/settings.local.json`,
+ * never to `settings.json`, and its value is never printed. The warning below may name the old
+ * config file — this module is exempt, and that file's history is where the password sits.
+ *
+ * @returns {{changes: string[], notes: string[], warnings: string[]}}
  */
 export function migrateQaSettings(ctx) {
   const configPath = path.join(ctx.cwd, QA_OLD_CONFIG);
   const receiptPath = path.join(ctx.cwd, QA_OLD_RECEIPT);
   const hasConfig = fs.existsSync(configPath);
   const hasReceipt = fs.existsSync(receiptPath);
-  if (!hasConfig && !hasReceipt) return { changes: [], notes: ['no QA setup to migrate'] };
+  if (!hasConfig && !hasReceipt) return { changes: [], notes: ['no QA setup to migrate'], warnings: [] };
 
   const changes = [];
   const notes = [];
+  const warnings = [];
 
   // --- read + parse, nothing written ------------------------------------------------
   const config = hasConfig ? readJsonFile(configPath, QA_OLD_CONFIG) : {};
@@ -192,6 +197,13 @@ export function migrateQaSettings(ctx) {
   const incoming = { ...config, ...receiptFields };
   if (hasReceipt) incoming.log = log;
 
+  // The secret never reaches the committed file. Read the local file now, write after the checks.
+  const hasSeed = Object.prototype.hasOwnProperty.call(incoming, 'authSeed');
+  const seedValue = incoming.authSeed;
+  delete incoming.authSeed;
+  const localPath = path.join(ctx.cwd, '.codeadd', 'settings.local.json');
+  const local = hasSeed && fs.existsSync(localPath) ? readJsonFile(localPath, '.codeadd/settings.local.json') : { schema: 1 };
+
   // --- write ------------------------------------------------------------------------
   if (existingQa) {
     // Merge without overwriting: the user's section wins, and the old files stay.
@@ -209,7 +221,18 @@ export function migrateQaSettings(ctx) {
   fs.writeFileSync(settingsPath, JSON.stringify(ordered, null, 2) + '\n', 'utf8');
   changes.push('wrote the qa section of .codeadd/settings.json');
 
-  if (existingQa) return { changes, notes };
+  if (hasSeed) {
+    if (!local.qa || typeof local.qa !== 'object') local.qa = {};
+    if (!Object.prototype.hasOwnProperty.call(local.qa, 'authSeed')) local.qa.authSeed = seedValue;
+    fs.writeFileSync(localPath, JSON.stringify(local, null, 2) + '\n', 'utf8');
+    changes.push('moved qa.authSeed to .codeadd/settings.local.json (gitignored)');
+    warnings.push(
+      `qa.authSeed was read from ${QA_OLD_CONFIG}. If that file was ever committed, its history still holds the value — ` +
+        'rotate that test password. It now lives only in .codeadd/settings.local.json, which must stay out of git.'
+    );
+  }
+
+  if (existingQa) return { changes, notes, warnings };
 
   for (const r of skillRewrites) {
     fs.writeFileSync(r.full, r.after, 'utf8');
@@ -225,7 +248,7 @@ export function migrateQaSettings(ctx) {
     fs.rmdirSync(qaDir);
     changes.push('removed docs/qa/ (empty)');
   }
-  return { changes, notes };
+  return { changes, notes, warnings };
 }
 
 
@@ -431,6 +454,7 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
   // 2. the former migration 0005 — it needs the old paths, so it runs before the copy
   const qa = migrateQaSettings({ cwd, providers });
   for (const c of qa.changes) say(`MIGRATION=${c}`);
+  for (const w of qa.warnings ?? []) say(`WARNING=${w}`);
 
   const files = collectLegacy(cwd);
   const moved = [];

@@ -338,7 +338,6 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
       baseUrl: CONFIG.baseUrl,
       viewports: CONFIG.viewports,
       bootHint: CONFIG.bootHint,
-      authSeed: CONFIG.authSeed,
       teamNote: 'kept as is',
       'framework-version': '1.6.0',
       'first-run': '2026-07-27',
@@ -350,6 +349,12 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
     for (const dropped of ['id', 'type', 'created', 'updated', 'related', 'command']) {
       expect(doc.qa).not.toHaveProperty(dropped);
     }
+
+    // The secret goes to the gitignored local file, never to the committed one, and is never printed.
+    expect(doc.qa).not.toHaveProperty('authSeed');
+    expect(readJson('.codeadd/settings.local.json')).toEqual({ schema: 1, qa: { authSeed: CONFIG.authSeed } });
+    expect(out.warnings.join('\n')).toMatch(/rotate/i);
+    expect(JSON.stringify(out)).not.toContain(CONFIG.authSeed);
 
     // The Decision Log rows, in order, then the migration entry.
     expect(doc.qa.log).toHaveLength(3);
@@ -491,6 +496,24 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
 // ---------------------------------------------------------------------------
 // F27 — the printed prompt (D20) and the legacy count (D21)
 // ---------------------------------------------------------------------------
+
+describe('decision 8 — docs migrate never prints the QA secret and says to rotate it', () => {
+  let p;
+  afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
+
+  it('prints the rotation warning, not the value, and writes the value only to the local file', async () => {
+    p = makeLegacyProject();
+    const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
+    fs.mkdirSync(path.join(p.repo, 'docs', 'qa'), { recursive: true });
+    fs.writeFileSync(path.join(p.repo, 'docs', 'qa', 'config.json'), JSON.stringify({ baseUrl: 'http://localhost:1', authSeed: SEED }));
+    await docsMigrate(p.repo, []);
+    expect(stdout()).toMatch(/rotate/i);
+    expect(stdout()).not.toContain(SEED);
+    const settings = JSON.parse(fs.readFileSync(path.join(p.repo, '.codeadd', 'settings.json'), 'utf8'));
+    expect(settings.qa).not.toHaveProperty('authSeed');
+    expect(JSON.parse(fs.readFileSync(path.join(p.repo, '.codeadd', 'settings.local.json'), 'utf8')).qa.authSeed).toBe(SEED);
+  });
+});
 
 describe('F27 — the migrate prompt', () => {
   const TEMPLATE_SRC = path.join(ROOT, 'framwork', '.codeadd', 'templates', 'docs-migrate-prompt.md');
