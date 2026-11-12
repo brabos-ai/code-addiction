@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-11-12
+
 ### Security
 - **`qa.authSeed` is no longer kept in `.codeadd/settings.json`, which is committed.** It now lives in `.codeadd/settings.local.json`, a gitignored file the managed `.gitignore` block names explicitly. `codeadd update` moves an existing value for you (migration `0007-move-qa-auth-seed`), `codeadd docs migrate` writes it there too, and `/add-qa-setup` reads and writes it there. The value is never printed. **If a password was ever committed — in `.codeadd/settings.json`, or in the QA config file of the layout before the docs branch — rotate that test password:** git history keeps what was committed, and moving the key does not rewrite it. `git log -S authSeed -- .codeadd/settings.json` shows whether it was. Re-run `/add-qa-setup` once: the setup contract changed, so `SETUP_QA_STALE` is expected.
 
