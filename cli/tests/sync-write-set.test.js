@@ -51,3 +51,43 @@ describe('F9 — add-framework--sync declares a write-set and guards it', () => 
     expect(src().split('\n').filter((l) => slash.test(l))).toEqual([]);
   });
 });
+
+describe('F18 — add-framework--release promotes the changelog in the bump commit', () => {
+  const src = () => read('workbench/commands/add-framework--release.md');
+  const section = (text, from, to) => text.slice(text.indexOf(from), text.indexOf(to));
+
+  it('STEP 4 runs changelog-promote on a stable release and commits CHANGELOG.md with the two package files', () => {
+    const step4 = section(src(), '## STEP 4', '## STEP 5');
+    expect(step4).toContain('node scripts/changelog-promote.cjs');
+    expect(step4).toMatch(/stable/i);
+    expect(step4).toContain('CHANGELOG.md');
+    expect(step4).toMatch(/cli\/package\.json/);
+    expect(step4).toMatch(/cli\/package-lock\.json|BOTH files|three files|both package files/i);
+    expect(step4).toMatch(/bump commit|chore: bump version/);
+  });
+
+  it('STEP 6 builds the release notes from the promoted section and lets commits and deliveries enrich it', () => {
+    const step6 = section(src(), '## STEP 6', '## STEP 7');
+    expect(step6).toMatch(/promoted section/i);
+    expect(step6).toMatch(/enrich/i);
+    expect(step6).toContain('CHANGELOG.md');
+  });
+
+  it('STEP 7 names the changelog gate of the tag script', () => {
+    const step7 = section(src(), '## STEP 7', '## STEP 8');
+    expect(step7).toMatch(/CHANGELOG\.md/);
+    expect(step7).toMatch(/changelog-promote\.cjs|changelog gate/i);
+  });
+
+  it('the NEVER list no longer bans the file, and bans only a second changelog file', () => {
+    const text = src();
+    const never = text.slice(text.lastIndexOf('NEVER:'));
+    expect(never).not.toMatch(/Create `CHANGELOG\.md` files/);
+    expect(never).toMatch(/second changelog file/i);
+  });
+
+  it('never writes the previous docs location in its slash form', () => {
+    const slash = new RegExp('(?<![A-Za-z0-9_.-])(?<!\\.codeadd/)' + 'do' + 'cs/');
+    expect(src().split('\n').filter((l) => slash.test(l))).toEqual([]);
+  });
+});
