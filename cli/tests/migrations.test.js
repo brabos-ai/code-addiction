@@ -23,6 +23,7 @@ import {
 } from '../src/migrations.js';
 
 let tmpDir;
+const log = {};
 
 /** Minimal installed project: .codeadd plus the given provider dests. */
 function seedProject(dests = ['.claude', '.opencode']) {
@@ -336,6 +337,7 @@ describe('0006-retire-board (0075B)', () => {
       '0002-harvest-relations',
       '0003-retire-about-suffix',
       '0006-retire-board',
+      '0007-move-qa-auth-seed',
     ]);
     expect(allMigrationIds()).toEqual([...allMigrationIds()].sort());
     expect(MIGRATIONS.find((m) => m.id === '0006-retire-board').description).toMatch(/board/i);
@@ -416,5 +418,106 @@ describe('0006-retire-board (0075B)', () => {
     expect(done.failed).toEqual([]);
     expect(done.applied).toEqual(['0006-retire-board']);
     expect(done.notes).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 0007-move-qa-auth-seed — a secret never stays in the committed settings file
+// ---------------------------------------------------------------------------
+
+describe('0007-move-qa-auth-seed', () => {
+  const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
+  const ID = '0007-move-qa-auth-seed';
+  const ledgerWithout = () => allMigrationIds().filter((id) => id !== ID);
+  const settingsPath = () => path.join(tmpDir, '.codeadd', 'settings.json');
+  const localPath = () => path.join(tmpDir, '.codeadd', 'settings.local.json');
+  const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
+
+  function seedSettings(obj) {
+    fs.mkdirSync(path.join(tmpDir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(settingsPath(), JSON.stringify(obj, null, 2) + '\n', 'utf8');
+  }
+  const everythingPrinted = (result) =>
+    JSON.stringify(result) + JSON.stringify(Object.values(log).flatMap((fn) => fn.mock?.calls ?? []));
+
+  beforeEach(async () => {
+    const { log: mocked } = await import('@clack/prompts');
+    Object.assign(log, mocked);
+    for (const fn of Object.values(mocked)) fn.mockClear?.();
+  });
+
+  it('moves qa.authSeed to the local file, keeps every other key, warns about rotation and prints no value', () => {
+    seedSettings({ schema: 1, other: { a: 1 }, qa: { baseUrl: 'http://localhost:3000', authSeed: SEED, extra: true } });
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(result.failed).toEqual([]);
+    expect(result.applied).toEqual([ID]);
+    const settings = readJson(settingsPath());
+    expect(settings.qa).toEqual({ baseUrl: 'http://localhost:3000', extra: true });
+    expect(Object.keys(settings)).toEqual(['schema', 'other', 'qa']);
+    expect(settings.other).toEqual({ a: 1 });
+    expect(readJson(localPath())).toEqual({ schema: 1, qa: { authSeed: SEED } });
+    expect(result.warnings.join('\n')).toMatch(/rotate/i);
+    expect(result.warnings.join('\n')).toContain('git log -S authSeed -- .codeadd/settings.json');
+    expect(everythingPrinted(result)).not.toContain(SEED);
+  });
+
+  it('a project with no authSeed is a no-op', () => {
+    seedSettings({ schema: 1, qa: { baseUrl: 'http://localhost:3000' } });
+    const before = fs.readFileSync(settingsPath(), 'utf8');
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(result.applied).toEqual([ID]);
+    expect(result.warnings).toEqual([]);
+    expect(fs.readFileSync(settingsPath(), 'utf8')).toBe(before);
+    expect(fs.existsSync(localPath())).toBe(false);
+  });
+
+  it('an unparsable settings.json is reported as failed and left byte-identical', () => {
+    fs.mkdirSync(path.join(tmpDir, '.codeadd'), { recursive: true });
+    fs.writeFileSync(settingsPath(), '{ "qa": { "authSeed": "' + SEED + '", ', 'utf8');
+    const before = fs.readFileSync(settingsPath(), 'utf8');
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(result.failed.map((f) => f.id)).toEqual([ID]);
+    expect(result.applied).toEqual([]);
+    expect(fs.readFileSync(settingsPath(), 'utf8')).toBe(before);
+    expect(everythingPrinted(result)).not.toContain(SEED);
+  });
+
+  it('keeps an existing, different local value, still removes the tracked one, and says so without a value', () => {
+    seedSettings({ schema: 1, qa: { authSeed: SEED } });
+    fs.writeFileSync(localPath(), JSON.stringify({ schema: 1, qa: { authSeed: 'LOCAL-PLACEHOLDER' } }), 'utf8');
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(readJson(localPath()).qa.authSeed).toBe('LOCAL-PLACEHOLDER');
+    expect(readJson(settingsPath()).qa).toEqual({});
+    expect(result.notes.join('\n')).toMatch(/local/i);
+    const printed = everythingPrinted(result);
+    expect(printed).not.toContain(SEED);
+    expect(printed).not.toContain('LOCAL-PLACEHOLDER');
+  });
+
+  it('warns to ignore the local file when git does not ignore it', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    seedSettings({ schema: 1, qa: { authSeed: SEED } });
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(result.warnings.filter((w) => w.includes('.codeadd/settings.local.json')).length).toBeGreaterThan(0);
+    expect(result.warnings.join('\n')).toMatch(/ignore/i);
+  });
+
+  it('no ignore warning when the managed block already ignores the file', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    fs.writeFileSync(path.join(tmpDir, '.gitignore'), '.codeadd/settings.local.json\n', 'utf8');
+    seedSettings({ schema: 1, qa: { authSeed: SEED } });
+    const result = runMigrations({ cwd: tmpDir, providers: [] }, ledgerWithout());
+    expect(result.warnings.join('\n')).not.toMatch(/to ignore|add it to/i);
+  });
+
+  it('the standalone migrate entry prints the warning too, and not the value', async () => {
+    writeManifestFile(tmpDir, { version: '1.0.0', providers: [], files: [], migrations: ledgerWithout() });
+    seedSettings({ schema: 1, qa: { authSeed: SEED } });
+    const { log: mocked } = await import('@clack/prompts');
+    await migrate(tmpDir, []);
+    const warned = mocked.warn.mock.calls.map((c) => String(c[0])).join('\n');
+    expect(warned).toMatch(/rotate/i);
+    const all = Object.values(mocked).flatMap((fn) => fn.mock.calls.flat()).join('\n');
+    expect(all).not.toContain(SEED);
   });
 });

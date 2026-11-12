@@ -29,6 +29,10 @@ describe('getInstalledDirs', () => {
     expect(dirs).not.toContain('.codeadd/');
   });
 
+  it('names the local settings file explicitly, so a secret never reaches a tracked file', () => {
+    expect(getInstalledDirs([])).toContain('.codeadd/settings.local.json');
+  });
+
   it('includes provider dest dirs for selected keys', () => {
     const dirs = getInstalledDirs(['claude', 'codex']);
     expect(dirs).toContain('.claude/');
@@ -37,7 +41,7 @@ describe('getInstalledDirs', () => {
 
   it('returns only the .codeadd pair when no providers selected', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json']);
   });
 
   it('includes all known providers when all are selected', () => {
@@ -51,7 +55,7 @@ describe('getInstalledDirs', () => {
 
   it('silently ignores unknown provider keys', () => {
     const dirs = getInstalledDirs(['unknown-provider']);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json']);
   });
 
   it('every provider entry has a trailing slash (the .codeadd pair is a pattern)', () => {
@@ -245,6 +249,14 @@ describe('the .codeadd pair (settings.json and wiki/ stay committable)', () => {
     expect(gitIgnored(tmpDir, '.codeadd/manifest.json')).toBe(true);
   });
 
+  it('git ignores .codeadd/settings.local.json after the block is written, and the order keeps it last-match ignored', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    writeGitignoreBlock(tmpDir, getInstalledDirs([]));
+    const lines = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8').split('\n');
+    expect(lines.indexOf('.codeadd/settings.local.json')).toBeGreaterThan(lines.indexOf('!.codeadd/settings.json'));
+    expect(gitIgnored(tmpDir, '.codeadd/settings.local.json')).toBe(true);
+  });
+
   it('rewrites an existing bare .codeadd/ line outside the block into the pair, once', () => {
     const gitignorePath = path.join(tmpDir, '.gitignore');
     fs.writeFileSync(gitignorePath, 'node_modules/\n.codeadd/\ndist/\n', 'utf8');
@@ -264,7 +276,7 @@ describe('the .codeadd pair (settings.json and wiki/ stay committable)', () => {
     fs.writeFileSync(gitignorePath, '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n# END ADD\n', 'utf8');
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(gitignorePath, 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/\n.claude/');
+    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/\n.codeadd/settings.local.json\n.claude/');
     expect(content.split('\n')).not.toContain('.codeadd/');
   });
 });

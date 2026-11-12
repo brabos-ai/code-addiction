@@ -120,7 +120,15 @@ The `qa` section of `.codeadd/settings.json` (project-wide; scaffolded by `/add-
   "qa": {
     "baseUrl": "http://localhost:<port>",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
-    "bootHint": "how to start the app's dev server (free text, project-specific)",
+    "bootHint": "how to start the app's dev server (free text, project-specific)"
+  }
+}
+```
+
+The gitignored `.codeadd/settings.local.json` holds the secret field, `authSeed`, and is never committed:
+```json
+{
+  "qa": {
     "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
   }
 }

@@ -65,7 +65,7 @@ Materialized state is present when any `owner: setup` path declared in the comma
 Apply the calling command's merge rules. For `add-qa-setup`:
 
 - `qa-project` skill: always regenerate.
-- The `qa` value fields (`baseUrl`, `viewports`, `bootHint`, `authSeed`): per-key merge. Keep every existing key, including extras. Fill missing declared keys with defaults. Never drop a user key. Drift-check applies: report a user-edited value that differs from the default; do not silently overwrite it.
+- The `qa` value fields (`baseUrl`, `viewports`, `bootHint`): per-key merge. Keep every existing key, including extras. Fill missing declared keys with defaults. Never drop a user key — with ONE exception: `authSeed` is a secret, so a `qa.authSeed` found in `.codeadd/settings.json` is moved to `qa.authSeed` in `.codeadd/settings.local.json` (the gitignored file), not kept, and the value is never printed. Drift-check applies: report a user-edited value that differs from the default; do not silently overwrite it.
 - `screens.json`: leave it if it exists; write `{ "feature": "<id>", "screens": [] }` only when absent.
 - `.gitignore`: idempotent `ensure-ignore`.
 - Missing declared paths: create.

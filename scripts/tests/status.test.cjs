@@ -949,3 +949,15 @@ test('status#064 reads the feature phase from the docs root of a prepared projec
   has(res, 'PHASE:planned');
   has(res, `DIR:${DOCS_ROOT}/${DOCS_LAYOUT.features}/0001F-test`);
 });
+
+test('status#080 SETUP_QA: stale when the only QA value is qa.authSeed in the gitignored local file — and it is never printed', (t) => {
+  const r = repo(t);
+  const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
+  writeIn(r, SETTINGS, JSON.stringify({ schema: 1, qa: {} }) + '\n');
+  writeIn(r, path.join('.codeadd', 'settings.local.json'), JSON.stringify({ schema: 1, qa: { authSeed: SEED } }) + '\n');
+  const res = status(r);
+  assert.equal(res.status, 0);
+  has(res, 'SETUP_QA:stale');
+  has(res, 'SETUP_QA_STALE:yes');
+  assert.ok(!res.output.includes(SEED), 'the secret value must never be printed');
+});

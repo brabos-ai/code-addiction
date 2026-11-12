@@ -14,14 +14,16 @@
 //  1. reads the version from `cli/package.json`, builds TAG = `v<version>`
 //  2. validates TAG against `^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$`  (exit 1)
 //  3. gates on `cli/package-lock.json` carrying the same version (exit 1)
-//  4. fetches remote tags
-//  5. deletes a stale local tag of the same name
-//  6. deletes a stale remote tag of the same name
-//  7. creates an ANNOTATED tag: message from the release-notes file when one
+//  4. gates a STABLE version on `CHANGELOG.md` carrying a `## [<version>]` heading
+//     (exit 1, naming `scripts/changelog-promote.cjs`); a beta version is exempt
+//  5. fetches remote tags
+//  6. deletes a stale local tag of the same name
+//  7. deletes a stale remote tag of the same name
+//  8. creates an ANNOTATED tag: message from the release-notes file when one
 //     exists, otherwise `Release <tag>`
-//  8. pushes the tag to origin
+//  9. pushes the tag to origin
 //
-// Steps 2 and 3 fire BEFORE any tag is touched: the CI package smoke test only
+// Steps 2, 3 and 4 fire BEFORE any tag is touched: the CI package smoke test only
 // enforces the lockfile sync AFTER the tag is pushed (the v0.8.0 lesson).
 //
 // -----------------------------------------------------------------------------
@@ -57,6 +59,17 @@ const RELEASES_URL = 'https://github.com/brabos-ai/code-addiction/releases/tag/'
 
 const PACKAGE_JSON = path.join('cli', 'package.json');
 const PACKAGE_LOCK = path.join('cli', 'package-lock.json');
+const CHANGELOG = 'CHANGELOG.md';
+
+/** Does CHANGELOG.md carry a `## [<version>]` heading? */
+function changelogHasVersion(version) {
+  try {
+    const escaped = version.replace(/[.+*?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^## \\[${escaped}\\]`, 'm').test(fs.readFileSync(CHANGELOG, 'utf8'));
+  } catch {
+    return false;
+  }
+}
 
 /** One git invocation, argv array, the caller's cwd. Never a shell. */
 function git(args) {
@@ -147,6 +160,20 @@ function main() {
     return;
   }
   say(`${GREEN}✓ package-lock.json in sync (${lockVersion})${NC}`);
+  say('');
+
+  // GATE: a stable release carries its changelog section, before any tag is touched.
+  if (!version.includes('-beta.') && !changelogHasVersion(version)) {
+    process.stderr.write(
+      `${RED}❌ CHANGELOG.md has no "## [${version}]" heading — a stable release needs its notes promoted${NC}\n`,
+    );
+    process.stderr.write(
+      `${RED}   Fix: node scripts/changelog-promote.cjs ${version}, commit CHANGELOG.md, merge to production, re-run this script.${NC}\n`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  say(`${GREEN}✓ changelog gate passed${NC}`);
   say('');
 
   say(`${YELLOW}Fetching tags from remote...${NC}`);

@@ -1,0 +1,8 @@
+{"last_tag":"v1.9.1","diff_range":"v1.9.1..HEAD",
+"commands":{"added":[],"removed":[],"renamed":[],"description_changed":[]},
+"skills":{"added":[],"removed":[],"description_changed":[]},
+"providers":{"added":[],"removed":[]},
+"flows":{"changed":false},
+"cli":{"changed":true,"notes":"installer/uninstaller treat settings.local.json as user data; docs migrate moves authSeed; gitignore/migrations/updater touched; qa authSeed read from local file"},
+"scripts":{"added":[],"removed":[]},
+"repo_structure_changed":false}
