@@ -399,14 +399,58 @@ test('qa-preflight#032 — values and a current receipt in .codeadd/settings.jso
   assert.match(res.output, /QA_CONTRACT_MATCH=ok/);
 });
 
-test('qa-preflight#080 — a qa.authSeed that lives only in the gitignored local file still counts as QA state, and is never printed', (t) => {
+test('qa-preflight#081 — QA_SEED is ok for a command and an env array of strings', (t) => {
   const base = project(t);
-  const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
-  h.write(path.join(base, '.codeadd', 'settings.json'), JSON.stringify({ schema: 1, qa: {} }));
-  h.write(path.join(base, '.codeadd', 'settings.local.json'), JSON.stringify({ schema: 1, qa: { authSeed: SEED } }));
+  mergeQa(base, { baseUrl: 'http://localhost:3000', seed: { command: 'node .codeadd/qa/seed.mjs', env: ['DATABASE_URL'] } });
   const res = h.runScript('qa-preflight', ['a'], { cwd: base });
   assert.equal(res.status, 0, res.output);
-  assert.doesNotMatch(res.output, /QA_CONFIG=missing/);
-  assert.match(res.output, /QA_CONFIG=broken/);
-  assert.ok(!res.output.includes(SEED), 'the secret value must never be printed');
+  assert.match(res.output, /^QA_SEED=ok$/m);
+});
+
+test('qa-preflight#082 — QA_SEED is ok when qa.seed.env is absent (no env vars needed)', (t) => {
+  const base = project(t);
+  mergeQa(base, { baseUrl: 'http://localhost:3000', seed: { command: 'node .codeadd/qa/seed.mjs' } });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.match(res.output, /^QA_SEED=ok$/m);
+});
+
+test('qa-preflight#083 — QA_SEED is missing when the qa section has no seed', (t) => {
+  const base = project(t);
+  mergeQa(base, { baseUrl: 'http://localhost:3000' });
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.match(res.output, /^QA_SEED=missing$/m);
+});
+
+test('qa-preflight#084 — QA_SEED is broken on a wrong type (empty command, non-array env, non-object seed)', (t) => {
+  for (const seed of [{ command: '' }, { command: 'x', env: 'DATABASE_URL' }, { command: 'x', env: [1] }, 'node seed.js', { env: [] }]) {
+    const base = project(t);
+    mergeQa(base, { baseUrl: 'http://localhost:3000', seed });
+    const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+    assert.match(res.output, /^QA_SEED=broken$/m, JSON.stringify(seed));
+  }
+});
+
+test('qa-preflight#085 — QA_SEED is not-probed when the qa section is missing or the file is broken', (t) => {
+  const none = project(t);
+  assert.match(h.runScript('qa-preflight', ['a'], { cwd: none }).output, /^QA_SEED=not-probed$/m);
+  const broken = project(t);
+  h.write(path.join(broken, '.codeadd', 'settings.json'), '{ "qa": ');
+  assert.match(h.runScript('qa-preflight', ['a'], { cwd: broken }).output, /^QA_SEED=not-probed$/m);
+});
+
+test('qa-preflight#086 — the local settings file is not read: a key held only there is not QA state', (t) => {
+  const base = project(t);
+  h.write(path.join(base, '.codeadd', 'settings.json'), JSON.stringify({ schema: 1, qa: {} }));
+  h.write(path.join(base, '.codeadd', 'settings.local.json'), JSON.stringify({ schema: 1, qa: { seed: { command: 'x' } } }));
+  const res = h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.match(res.output, /QA_CONFIG=missing/);
+  assert.match(res.output, /^QA_SEED=missing$/m);
+});
+
+test('qa-preflight#087 — Phase A never runs the seed command', (t) => {
+  const base = project(t);
+  const marker = path.join(base, 'seed-ran');
+  mergeQa(base, { baseUrl: 'http://localhost:3000', seed: { command: `node -e "require('fs').writeFileSync('seed-ran','x')"` } });
+  h.runScript('qa-preflight', ['a'], { cwd: base });
+  assert.ok(!fs.existsSync(marker), 'the probe must not execute the seed');
 });

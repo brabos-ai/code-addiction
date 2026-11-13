@@ -29,9 +29,7 @@
  * THE RECEIPT IS JSON. The setup receipt is the receipt fields of the `qa`
  * section of `.codeadd/settings.json` (schema: add--settings), and `setup-shape` is
  * read from that one key, so a `log` entry that also names a shape can never
- * leak into the recorded value. A `qa.authSeed` held only in the gitignored
- * `.codeadd/settings.local.json` also counts as QA state (presence only, never printed).
- * A file that does not parse counts as QA state
+ * leak into the recorded value. A file that does not parse counts as QA state
  * without a current receipt (STALE) and never crashes the script.
  *
  * THE DOCS STEP. Every run prepares the docs worktree and prints one `DOCS=` line
@@ -448,16 +446,6 @@ function setupMaterialized(cwd, section) {
   if (section.state === 'broken') return true;
   if (section.state === 'ok' && ['baseUrl', 'viewports', 'bootHint'].some((k) => hasKey(section.qa, k))) {
     return true;
-  }
-  // The secret lives in the gitignored local file; its presence alone is QA state. Never printed.
-  const local = path.join(cwd, '.codeadd', 'settings.local.json');
-  if (isFile(local)) {
-    try {
-      const doc = JSON.parse(read(local));
-      if (doc && doc.qa && typeof doc.qa === 'object' && hasKey(doc.qa, 'authSeed')) return true;
-    } catch {
-      // unreadable local file is not QA state by itself
-    }
   }
   for (const d of ['.claude', '.agents', '.agent', '.cursor', '.opencode']) {
     if (isFile(path.join(cwd, d, 'skills', 'qa-project', 'SKILL.md'))) return true;
