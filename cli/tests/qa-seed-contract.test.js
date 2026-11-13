@@ -338,3 +338,30 @@ describe('review findings — one seed run per review, and a seed gap is repaire
     expect(text).toMatch(/seed[^\n]*row[^\n]*(exception|only)[^\n]*@e2e-agent|@e2e-agent[^\n]*(exception|only)[^\n]*seed[^\n]*row/i);
   });
 });
+
+describe('prompt-review findings — seed ownership and re-run rules', () => {
+  it('the seed step keeps an existing seed, reports drift, and says what to do about an ignored seed file', () => {
+    const text = read('commands/add-qa-setup.md');
+    const start = text.indexOf('\n## STEP add-qa-setup.seed:');
+    const body = text.slice(start, text.indexOf('\n## ', start + 5));
+    expect(body).toMatch(/already exists?[^\n]*keep|keep[^\n]*existing seed/i);
+    expect(body).toMatch(/drift/i);
+    expect(body).toMatch(/app (is )?(up|booted)|boot/i);
+    expect(text).toMatch(/must NOT match[^\n]*codeadd update/i);
+  });
+
+  it('add--setup-contract gives seed no default and never regenerates an existing one', () => {
+    const text = read('skills/add--setup-contract/SKILL.md');
+    expect(text).toMatch(/`seed` has no default/i);
+    expect(text).not.toMatch(/qa\.seed|\.codeadd\/qa\//);
+    expect(text).toMatch(/never regenerated/i);
+  });
+
+  it('qa.seed.env gets new names from the seed update through @e2e-agent, and e2e-agent loads add--qa first', () => {
+    expect(read('skills/add--settings/SKILL.md')).toMatch(/`@e2e-agent`[^\n]*`qa\.seed\.env`|`qa\.seed\.env`[^\n]*`@e2e-agent`/);
+    const agent = read('agents/e2e-agent.md');
+    expect(agent).toMatch(/Load skill `add--qa`/);
+    expect(agent).toMatch(/`qa\.seed\.env`/);
+    expect(agent).not.toMatch(/Inputs \(from the dispatching command\)[\s\S]{0,1200}the seed output the lifecycle ran/);
+  });
+});

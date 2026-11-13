@@ -12,6 +12,7 @@ description: Use when a command persists project configuration or a setup record
 - script: status.cjs
 - skill: add--setup-contract
 - skill: add--doc-schemas
+- agent: e2e-agent
 -->
 
 ## Overview
@@ -98,7 +99,7 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
 | `qa.viewports` | Map of viewport name to `[width, height]` |
 | `qa.bootHint` | One line: the command that starts the app |
 | `qa.seed.command` | How to run the seed in `.codeadd/qa/` — a command in the project's own runtime, with no bash dependency. Required for QA to run |
-| `qa.seed.env` | Array of env var NAMES the seed needs, never values. May be empty or absent when the seed needs none |
+| `qa.seed.env` | Array of env var NAMES the seed needs, never values. May be empty or absent when the seed needs none. `/add-qa-setup` writes it; `@e2e-agent` may merge one new name into it when a feature's seed update needs it |
 
 Value fields follow the per-key merge rule in `{{skill:add--setup-contract/SKILL.md}}`: keys the user authored are kept.
 
@@ -177,7 +178,7 @@ A receipt is the record a command leaves so a later framework release can comput
 
 ## Git
 
-`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json`, `!.codeadd/wiki/` and `!.codeadd/qa/`. The exception for a directory works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`. The managed block also carries `!.codeadd/qa/`, so the generated QA seed (env var names only) is committed with the project.
+`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json`, `!.codeadd/wiki/` and `!.codeadd/qa/`. The exception for a directory works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json` and the generated QA seed in `.codeadd/qa/` (env var names only).
 
 ## Related
 

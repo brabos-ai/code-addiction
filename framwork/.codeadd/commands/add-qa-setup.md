@@ -383,7 +383,9 @@ The seed prints the `Seed Output Contract` of {{skill:add--qa/SKILL.md}} on its 
 
 **4. Write `qa.seed`** (`command` and `env`, the shape declared in `## Materializes` → `.codeadd/settings.json#qa`) by the same read, merge, write rule as STEP add-qa-setup.config.
 
-**5. Run the seed once** and check that the last stdout line parses as the contract and the exit code is 0. On failure: fix the seed, or report what is missing and its remedy. ⛔ Do not continue past a seed that does not run.
+**5. An existing seed is kept.** When `.codeadd/qa/` or `qa.seed` already exists, keep it and report where it drifts from the analysis; regenerate it only on explicit confirmation, because feature builds edit it.
+
+**6. Run the seed once**, against the app booted the way the `qa-project` Managed App Lifecycle boots it (and torn down only if setup booted it), and check that the last stdout line parses as the contract and the exit code is 0. On failure: fix the seed, or report what is missing and its remedy. ⛔ Do not continue past a seed that does not run.
 
 ---
 
@@ -487,7 +489,7 @@ Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT s
 4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json`, `.codeadd/qa/` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
 5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
 6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
-7. **The seed is configured, tracked and secret-free.** `qa.seed.command` is a non-empty string and `qa.seed.env` is an array of env var names only. No tracked file under `.codeadd/qa/`, and no value in `qa`, holds a secret value. Run `git check-ignore -q` on each seed file: it must NOT match — an ignored seed is not shared. Never print a value.
+7. **The seed is configured, tracked and secret-free.** `qa.seed.command` is a non-empty string and `qa.seed.env` is an array of env var names only. No tracked file under `.codeadd/qa/`, and no value in `qa`, holds a secret value. Run `git check-ignore -q` on each seed file: it must NOT match — an ignored seed is not shared; the remedy is the `!.codeadd/qa/` exception in the managed `.gitignore` block, which `codeadd update` rewrites. Never print a value.
 8. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
 
 Output at end:
