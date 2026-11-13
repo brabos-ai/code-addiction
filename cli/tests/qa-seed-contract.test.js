@@ -287,3 +287,41 @@ describe('F14 — add-build applies the seed update and checks seed coverage thr
     expect(body).not.toMatch(/settings\.local\.json|authSeed/);
   });
 });
+
+describe('F15 — add-review blocks without a seed and runs it before capture, through its fragment (L3.7)', () => {
+  const fragment = () => read('fragments/qa-pipeline/add-review.md');
+  const section = (name) => {
+    const text = fragment();
+    const start = text.indexOf(`<!-- section:${name} -->`);
+    return text.slice(start, text.indexOf(`<!-- /section:${name} -->`));
+  };
+
+  it('preflight Phase A table holds the QA_SEED row: block, remedy /add-qa-setup', () => {
+    const body = section('preflight');
+    expect(body).toMatch(/\| `QA_SEED` \|[^\n]*\*\*block\*\*[^\n]*\{\{cmd:add-qa-setup\}\}|\|[^\n]*`QA_SEED`[^\n]*\*\*block\*\*[^\n]*\{\{cmd:add-qa-setup\}\}/);
+  });
+
+  it('preflight runs qa.seed.command once per review, after the boot and before capture, parsed per the contract', () => {
+    const body = section('preflight');
+    expect(body).toMatch(/`qa\.seed\.command`/);
+    expect(body).toMatch(/once per review/i);
+    expect(body).toMatch(/after (the )?(row 3's )?boot/i);
+    expect(body).toMatch(/before (STEP qa-pipeline\.capture|capture)/i);
+    expect(body).toMatch(/Seed Output Contract/);
+    expect(body).toMatch(/no (login|sign-in)|attempts no sign-in/i);
+    expect(body).toMatch(/both judges/i);
+  });
+
+  it('the seed block never names a login, and failure says run /add-qa-setup', () => {
+    const body = section('preflight');
+    expect(body).toMatch(/run `\{\{cmd:add-qa-setup\}\}`/);
+    expect(body).not.toMatch(/\blogin\b/i);
+  });
+
+  it('evidence coverage reconciliation adds the seed coverage check for new screens', () => {
+    const body = section('evidence');
+    expect(body).toMatch(/seed coverage/i);
+    expect(body).toMatch(/new screen/i);
+    expect(body).toMatch(/identity/);
+  });
+});

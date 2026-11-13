@@ -97,9 +97,7 @@ describe('L3.1 — seed instructions exist only with qa-pipeline on', () => {
     expect(leaks(fixture.root())).toEqual([]);
   });
 
-  // RED by design until F13–F15 land the fragment text: `it.fails` keeps every commit green and
-  // makes the red visible. F15 flips it to a plain `it` — an unexpected pass fails the suite.
-  it.fails('QA on: each fragment sentinel lands in its section, and nowhere else in add-plan, add-build and add-review', () => {
+  it('QA on: each fragment sentinel lands in its section, and nowhere else in add-plan, add-build and add-review', () => {
     const cwd = fixture.root();
     enableFeature(cwd, 'qa-pipeline');
     for (const [command, bySection] of Object.entries(OWNED)) {
