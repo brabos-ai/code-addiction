@@ -133,3 +133,24 @@ describe('F8 — /add-qa-setup studies the project and generates the seed (L3.5)
     expect(step('handoff')).toMatch(/tracked/i);
   });
 });
+
+describe('F9 — agent-mode config values ask only what the analysis could not infer (L3.5)', () => {
+  const fragment = () => read('fragments/agent-mode/add-qa-setup.md');
+  const fallback = () => read('fallbacks/agent-mode.add-qa-setup.config-values.md');
+  const section = () => {
+    const text = fragment();
+    const start = text.indexOf('<!-- section:config-values -->');
+    return text.slice(start, text.indexOf('<!-- /section:config-values -->'));
+  };
+
+  for (const [name, get] of [['the fragment section', section], ['the fallback', fallback]]) {
+    it(`${name} takes values from the project analysis and asks only what it could not infer`, () => {
+      const text = get();
+      expect(text).toMatch(/project analysis/i);
+      expect(text).toMatch(/only what the analysis could not infer/i);
+      expect(text).toMatch(/never ask for a secret value|never asks? for a secret value/i);
+      expect(text).toMatch(/env var name/i);
+      expect(text).not.toMatch(/do NOT guess base URL or auth\/seed flow/);
+    });
+  }
+});
