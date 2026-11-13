@@ -564,7 +564,7 @@ export function dropRetiredQaKeys(qa) {
  * @param {{cwd: string}} ctx
  * @returns {{changes: string[], notes: string[], warnings: string[]}}
  */
-export function removeQaAuthSeed(ctx) {
+export function removeRetiredQaKeys(ctx) {
   const changes = [];
   const notes = [];
   const warnings = [];
@@ -626,7 +626,7 @@ export const MIGRATIONS = [
   {
     id: '0008-remove-qa-auth-seed',
     description: 'Remove a retired QA key from both settings files and tell the user to rerun /add-qa-setup (BREAKING for QA users)',
-    run: removeQaAuthSeed,
+    run: removeRetiredQaKeys,
   },
 ];
 
