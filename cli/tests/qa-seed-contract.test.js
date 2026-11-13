@@ -249,3 +249,41 @@ describe('F13 — add-plan asks for a seed update through the qa-spec fragment (
     expect(text).toContain('.codeadd/qa/README.md');
   });
 });
+
+describe('F14 — add-build applies the seed update and checks seed coverage through its fragment (L3.7)', () => {
+  const fragment = () => read('fragments/qa-pipeline/add-build.md');
+  const section = (name) => {
+    const text = fragment();
+    const start = text.indexOf(`<!-- section:${name} -->`);
+    return text.slice(start, text.indexOf(`<!-- /section:${name} -->`));
+  };
+
+  it('e2e-dispatch orders the seed update before spec authoring, in the same spec batch commit', () => {
+    const body = section('e2e-dispatch');
+    expect(body).toContain('## QA Seed Update');
+    const update = body.indexOf('## QA Seed Update');
+    const author = body.indexOf('author ONE <surface>.qa.spec');
+    expect(update).toBeGreaterThan(-1);
+    expect(update).toBeLessThan(author);
+    expect(body).toMatch(/`\.codeadd\/qa\/`[^\n]*seed[^\n]*README|seed[^\n]*README[^\n]*`\.codeadd\/qa\/`/i);
+    expect(body).toMatch(/same (spec )?batch/i);
+    expect(body).toMatch(/read-write on test files and `\.codeadd\/qa\/`/);
+  });
+
+  it('e2e-dispatch holds the seed coverage check before ## Final Review, and a gap becomes an E2E-n row', () => {
+    const body = section('e2e-dispatch');
+    expect(body).toMatch(/seed coverage/i);
+    const coverage = body.search(/seed coverage/i);
+    expect(body.slice(coverage)).toMatch(/E2E-n/);
+    expect(body.slice(coverage)).toMatch(/Final Review/);
+    expect(body).toMatch(/new screen/i);
+    expect(body).toMatch(/identity/);
+  });
+
+  it('qa-fix routes a data-seed row to the seed in .codeadd/qa/ or /add-qa-setup, and no settings field', () => {
+    const body = section('qa-fix');
+    expect(body).toMatch(/`data-seed`[^\n]*`\.codeadd\/qa\/`/);
+    expect(body).toMatch(/\{\{cmd:add-qa-setup\}\}/);
+    expect(body).not.toMatch(/settings\.local\.json|authSeed/);
+  });
+});
