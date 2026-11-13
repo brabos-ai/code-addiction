@@ -170,7 +170,7 @@ describe('setup contract (0061)', () => {
     // the moment the build's ban is tightened or loosened — two descriptions of
     // one rule, the drift shape this whole design rejects.
     const block = sliceContractBlock(src);
-    expect(block).toContain('## Auth / Seed'); // proves we got the WHOLE block
+    expect(block).toContain('## Seed'); // proves we got the WHOLE block
     expect(CONTRACT_VARIABLE_RE.test(block)).toBe(false);
   });
 

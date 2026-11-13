@@ -65,3 +65,71 @@ describe('F7 — add--settings and add--setup-contract (L3.4)', () => {
     expect(text).not.toContain('settings.local.json');
   });
 });
+
+describe('F8 — /add-qa-setup studies the project and generates the seed (L3.5)', () => {
+  const setup = () => read('commands/add-qa-setup.md');
+  const materializes = () => {
+    const text = setup();
+    const start = text.indexOf('\n## Materializes');
+    return text.slice(start, text.indexOf('\n## STEP add-qa-setup.context'));
+  };
+  const step = (id) => {
+    const text = setup();
+    const start = text.indexOf(`\n## STEP add-qa-setup.${id}:`);
+    expect(start, `STEP add-qa-setup.${id} exists`).toBeGreaterThan(-1);
+    const next = text.indexOf('\n## ', start + 5);
+    return text.slice(start, next === -1 ? undefined : next);
+  };
+
+  it('the step list holds STEP add-qa-setup.seed between config and catalog', () => {
+    const text = setup();
+    const list = text.slice(text.indexOf('STEP add-qa-setup.context: Load context'), text.indexOf('## ⛔ ABSOLUTE PROHIBITIONS'));
+    const order = [...list.matchAll(/^STEP add-qa-setup\.([\w-]+):/gm)].map((m) => m[1]);
+    expect(order.indexOf('seed')).toBe(order.indexOf('config') + 1);
+    expect(order.indexOf('catalog')).toBe(order.indexOf('seed') + 1);
+  });
+
+  it('the seed step analyses auth model, stores, services, existing tooling and env vars, cites files, asks only the rest', () => {
+    const body = step('seed');
+    for (const topic of [/auth model/i, /data stores?/i, /services?/i, /seed, fixture|existing seed/i, /env vars?/i]) expect(body).toMatch(topic);
+    expect(body).toMatch(/none, session, OAuth, API key, magic link/i);
+    expect(body).toMatch(/cite/i);
+    expect(body).toMatch(/only what the analysis could not infer/i);
+    expect(body).toMatch(/`\.codeadd\/qa\/`/);
+    expect(body).toMatch(/README\.md/);
+    expect(body).toMatch(/Seed Output Contract/);
+    expect(body).toMatch(/no auth/i);
+    expect(body).toMatch(/no bash dependency/i);
+    expect(body).toMatch(/never editing/i);
+  });
+
+  it('## Materializes holds qa.seed and .codeadd/qa/ (shared), and no local settings file', () => {
+    const block = materializes();
+    expect(block).toMatch(/- path: \.codeadd\/qa\/\n\s+owner: shared/);
+    expect(block).toMatch(/"seed": \{ "command"/);
+    expect(block).not.toMatch(/settings\.local\.json/);
+    expect(block).toMatch(/changed-in: 1\.9\.3/);
+    expect(block).toMatch(/^## Seed$/m);
+    expect(block).not.toMatch(/^## Auth \/ Seed$/m);
+    expect(block).toMatch(/\*\*Seed\*\*|^\d+\. \*\*Seed\*\*/m);
+  });
+
+  it('the command names the local settings file and the retired key nowhere', () => {
+    expect(setup()).not.toContain('settings.local.json');
+    expect(setup()).not.toMatch(/authSeed/);
+  });
+
+  it('the proof requires QA_SEED=ok, the validate gate checks names-only and tracked seed, the prohibitions allow .codeadd/qa/', () => {
+    const text = setup();
+    expect(step('proof')).toMatch(/`QA_SEED`/);
+    const validate = step('validate');
+    expect(validate).toMatch(/qa\.seed\.command/);
+    expect(validate).toMatch(/qa\.seed\.env/);
+    expect(validate).toMatch(/names only/i);
+    expect(validate).toMatch(/git check-ignore/);
+    expect(validate).toMatch(/must NOT match/i);
+    expect(text).toMatch(/\| \*\*STEP add-qa-setup\.qa-project-9\*\*[^\n]*`\.codeadd\/qa\/`/);
+    expect(step('receipt')).toMatch(/\.codeadd\/qa\/`[^\n]*owner: shared|owner: shared[^\n]*\.codeadd\/qa\//);
+    expect(step('handoff')).toMatch(/tracked/i);
+  });
+});
