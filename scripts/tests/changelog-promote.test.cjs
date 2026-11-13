@@ -129,3 +129,24 @@ test('changelog-promote#008 — the [1.9.2] section opens with Security and name
   assert.match(body, /### Fixed/);
   assert.match(body, /### Changed/);
 });
+test('changelog-promote#009 — the newest section after 1.9.2 names BREAKING for QA users, 0008 and /add-qa-setup (F17)', () => {
+  const text = repoChangelog();
+  const heads = [...text.matchAll(/^## \[([^\]]+)\][^\n]*$/gm)];
+  const newer = (v) => {
+    if (v === 'Unreleased') return true;
+    const [a, b, c] = v.split('.').map(Number);
+    return a > 1 || (a === 1 && (b > 9 || (b === 9 && c > 2)));
+  };
+  const sections = heads.map((m, i) => ({
+    version: m[1],
+    body: text.slice(m.index + m[0].length, i + 1 < heads.length ? heads[i + 1].index : undefined),
+  }));
+  // [Unreleased] while the work waits for its release; the promoted section once /add-framework--release ran
+  const section = sections.find((s) => newer(s.version) && s.body.trim().length > 0);
+  assert.ok(section, 'no unreleased or post-1.9.2 section with content');
+  assert.match(section.body, /BREAKING for QA users/);
+  assert.match(section.body, /0008/);
+  assert.match(section.body, /\/add-qa-setup/);
+  assert.match(section.body, /### Added/);
+  assert.match(section.body, /### Changed/);
+});
