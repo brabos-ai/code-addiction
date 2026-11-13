@@ -5,22 +5,23 @@ import { PROVIDERS } from './providers.js';
 const BLOCK_START = '# ADD - managed by code-addiction';
 const BLOCK_END = '# END ADD';
 
-// .codeadd/ holds the installed framework AND two committed entries:
-// settings.json (the project's settings, one section per command) and wiki/
-// (the generated project wiki). One more file is named explicitly as local:
-// settings.local.json holds secrets (qa.authSeed) and is never committed.
+// .codeadd/ holds the installed framework AND three committed entries:
+// settings.json (the project's settings, one section per command), wiki/
+// (the generated project wiki) and qa/ (the generated QA seed, which holds env var
+// names and never a secret value). One more file is named explicitly as local:
+// settings.local.json — earlier versions wrote there, so an ignored file is harmless.
 // git cannot re-include a file inside an ignored DIRECTORY, so the directory
 // line becomes a contents line plus exceptions. `!.codeadd/wiki/` works
 // because `.codeadd/*` ignores only the direct children of .codeadd/, so the
 // wiki directory itself is un-ignored and everything under it follows.
 const CODEADD_DIR_LINE = '.codeadd/';
-// The local file is written AFTER the two `!` exceptions so last-match-wins keeps it ignored.
-const CODEADD_PAIR = ['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json'];
+// The local file is written AFTER the `!` exceptions so last-match-wins keeps it ignored.
+const CODEADD_PAIR = ['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '!.codeadd/qa/', '.codeadd/settings.local.json'];
 
 /**
  * Get the list of directories to add to .gitignore.
  * Always includes the .codeadd group (`.codeadd/*` plus the exceptions for the
- * committed `settings.json` and `wiki/`).
+ * committed `settings.json`, `wiki/` and `qa/`).
  * Adds provider dest dirs for each selected key.
  * @param {string[]} selectedKeys
  * @returns {string[]}

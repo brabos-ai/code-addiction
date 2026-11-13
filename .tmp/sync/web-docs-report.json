@@ -1,4 +1,38 @@
 [
-  {"target": "web/src/i18n/en.ts", "edits": [], "manual_items": []},
-  {"target": "web/src/i18n/pt-br.ts", "edits": [], "manual_items": []}
+  {
+    "target": "web/src/i18n/en.ts",
+    "edits": [
+      {
+        "action": "REPLACE",
+        "old": "generates qa-project, scaffolds config/screens, ignores ephemeral working evidence",
+        "new": "generates qa-project, scaffolds config/screens, studies the project and generates a tracked QA seed, ignores ephemeral working evidence"
+      }
+    ],
+    "manual_items": [
+      {
+        "reason": "Existing docs copy for /add-qa-setup already differs from the payload old_description",
+        "detail": "The en.ts entry ends with 'smoke-tests the QA judgement via /add-review', while the payload says 'proves the setup with the QA preflight'. Only the seed phrase is inserted here (minimal diff). The coordinator may decide whether to also align the ending."
+      },
+      {
+        "reason": "Providers table and flows",
+        "detail": "providers.added/removed are empty and flows.changed is false, so no provider note or flows edit is needed. No skills changed and no commands were added, removed or renamed."
+      }
+    ]
+  },
+  {
+    "target": "web/src/i18n/pt-br.ts",
+    "edits": [
+      {
+        "action": "REPLACE",
+        "old": "gera o qa-project, cria config/screens, ignora a evidência temporária",
+        "new": "gera o qa-project, cria config/screens, estuda o projeto e gera um seed de QA versionado, ignora a evidência temporária"
+      }
+    ],
+    "manual_items": [
+      {
+        "reason": "Possible SAME_IN_BOTH need",
+        "detail": "None. The PT-BR value differs from EN, so no SAME_IN_BOTH entry in web/src/i18n/index.ts is required. The name field '/add-qa-setup' is untouched."
+      }
+    ]
+  }
 ]

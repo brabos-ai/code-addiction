@@ -437,6 +437,13 @@ describe('addDirHoldsInstall', () => {
     expect(addDirHoldsInstall(codeadd())).toBe(false);
   });
 
+  it('is false for a fresh clone that carries the tracked QA seed in .codeadd/qa/', () => {
+    fs.mkdirSync(path.join(codeadd(), 'qa'), { recursive: true });
+    fs.writeFileSync(path.join(codeadd(), 'qa', 'README.md'), '# seed');
+    fs.writeFileSync(path.join(codeadd(), 'settings.json'), '{"schema":1}');
+    expect(addDirHoldsInstall(codeadd())).toBe(false);
+  });
+
   it('is true as soon as the manifest is present next to them', () => {
     fs.mkdirSync(path.join(codeadd(), 'wiki'), { recursive: true });
     fs.writeFileSync(path.join(codeadd(), 'settings.json'), '{"schema":1}');

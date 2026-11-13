@@ -1,5 +1,18 @@
 {
   "target": "README.md",
   "edits": [],
-  "manual_items": []
+  "manual_items": [
+    {
+      "reason": "cli.changed is true but the payload names no added, removed or renamed CLI command or flag",
+      "detail": "The Quickstart block already lists install, update, modify, providers, uninstall, doctor, validate, features, plugins, mcp, docs migrate and config show. No edit can be derived from the payload. Confirm by hand if a CLI command or flag was added."
+    },
+    {
+      "reason": "add-qa-setup description changed, but README.md does not mention it",
+      "detail": "The Development Trail table lists only the six trail steps: brainstorm, new, plan, build, review and done. No README line describes add-qa-setup, so there is nothing to update. The new text is 'studies the project and generates a tracked QA seed'. Nothing was added, because the payload does not call for new README coverage."
+    },
+    {
+      "reason": "No other section is triggered",
+      "detail": "Providers, flows and repo_structure_changed are all unchanged. README.md has no Roadmap section."
+    }
+  ]
 }

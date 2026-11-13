@@ -1,5 +1,22 @@
 [
-  {"target": "web/public/commands.svg", "edits": [], "manual_items": []},
-  {"target": "web/public/flows.svg", "edits": [], "manual_items": []},
-  {"target": "web/public/flowchart.svg", "edits": [], "manual_items": []}
+  {
+    "target": "web/public/commands.svg",
+    "edits": [],
+    "manual_items": [
+      {
+        "reason": "Optional: add-qa-setup description gained 'generates a tracked QA seed'; box width is fixed",
+        "detail": "The only payload change is add-qa-setup. The SVG label 'Bootstrap QA + ignored working evidence' (cmd-desc at x=716 y=130) is a condensed summary and is still accurate, so no text edit is reported. If you want to mention the seed, a candidate is 'Bootstrap QA + tracked seed + ignored evidence'. Check that it fits the box width visually before applying."
+      }
+    ]
+  },
+  {
+    "target": "web/public/flows.svg",
+    "edits": [],
+    "manual_items": []
+  },
+  {
+    "target": "web/public/flowchart.svg",
+    "edits": [],
+    "manual_items": []
+  }
 ]

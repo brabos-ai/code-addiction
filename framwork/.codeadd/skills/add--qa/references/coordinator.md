@@ -26,7 +26,7 @@ Routing turns each merged finding into a dispatch target for `/add-build`. It is
 | functional / `contract-mismatch` | `@backend-agent` → `@frontend-agent` | api-contract |
 | functional / `selector-drift` | `@e2e-agent` | test-file |
 | functional / `spec-defect` | `@e2e-agent` | test-file |
-| functional / `data-seed` | **user (manual)** | env-config |
+| functional / `data-seed` | **user (manual)** — feature data: update the seed in `.codeadd/qa/` through `{{cmd:add-build}}`; base change: `{{cmd:add-qa-setup}}` | env-config |
 | functional / `env-boot` | **user (manual)** | env-config |
 | functional / `regression` | route by the underlying cause, flagged `regression` | varies |
 | ux / `contract-violated` | `@frontend-agent` | component |
@@ -67,7 +67,7 @@ Fixed by layer: `@database-agent → @backend-agent → @frontend-agent → @e2e
 | 3 | @frontend-agent | F1, F2 | component, api-contract | @backend-agent |
 | 4 | @e2e-agent | F5 | test-file | @frontend-agent |
 | — | @ux-agent | F4 | design-spec | — |
-| — | user (manual) | F6 (data-seed: authSeed, in `.codeadd/settings.local.json`) | env-config | — |
+| — | user (manual) | F6 (data-seed: seed gap — feature data in the seed under `.codeadd/qa/`, a base change via `{{cmd:add-qa-setup}}`) | env-config | — |
 ```
 
 A finding may appear under more than one agent when its route is a chain — each slice states what that agent owns. Counts in summaries are **involvement, not ownership**: count distinct findings.

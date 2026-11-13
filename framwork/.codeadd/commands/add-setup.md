@@ -142,7 +142,7 @@ If nothing is new, drifted or named to revisit, say the project is fully set up 
 
 ### Values the sub-commands would ask
 
-For accepted `qa-setup` only, the batch also asks the values `{{cmd:add-qa-setup}}` would otherwise ask: `baseUrl` (recommend it from the project's dev script, never a production URL), `bootHint`, `authSeed` (the answer goes to `.codeadd/settings.local.json`, never to `.codeadd/settings.json`), and the migration decision only when that command's migration scan list finds existing tooling (apply its list by reference, do not copy it). `{{cmd:add-wiki}}` needs nothing from the batch.
+For accepted `qa-setup` only, the batch carries only the values `{{cmd:add-qa-setup}}`'s own analysis could not infer: `baseUrl` (recommend it from the project's dev script, never a production URL), `bootHint`, and the migration decision only when that command's migration scan list finds existing tooling (apply its list by reference, do not copy it). `{{cmd:add-wiki}}` needs nothing from the batch.
 
 ### The reply
 
