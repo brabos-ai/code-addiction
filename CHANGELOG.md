@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.9.3] - 2026-11-13
+
 ### Added
 - `/add-qa-setup` now studies your project before it writes anything: the auth model (none, session, OAuth, API key, magic link), the data stores, the services and how they boot, the seed, fixture and migration scripts you already have, and the env vars they need. It asks only what it could not infer and generates a project-specific QA seed in `.codeadd/qa/`, tracked in git and free of secrets: the seed and its README name env vars, never values. The tracked `.codeadd/settings.json` holds only `qa.seed.command` and `qa.seed.env`, the list of env var names. A project with no auth is a valid result: the seed prepares services and data and reports no identity.
 - Every QA run executes the seed first and uses what it prints: one JSON object on its last stdout line (`ready`, `baseUrl`, `identity`, `data`). A missing or failing seed stops QA with "run `/add-qa-setup`" and attempts no sign-in. A fresh clone runs QA without `/add-qa-setup` once the env vars named in `qa.seed.env` are set.
