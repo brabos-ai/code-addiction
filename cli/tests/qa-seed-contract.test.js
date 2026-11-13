@@ -171,3 +171,50 @@ describe('F10 — /add-setup carries no seed vocabulary (L3.6)', () => {
     }
   });
 });
+
+describe('F11 — the QA readers consume the seed output and improvise no sign-in (L3.3)', () => {
+  const FILES = {
+    'agents/qa-agent.md': 'qa-agent',
+    'agents/e2e-agent.md': 'e2e-agent',
+    'plugins/playwright/fragments/agents/qa-agent.md': 'playwright qa-agent fragment',
+    'plugins/playwright/fragments/add-review.md': 'playwright add-review fragment',
+  };
+
+  for (const [rel, name] of Object.entries(FILES)) {
+    it(`${name} names neither the retired key nor the local settings file, and has no login fallback`, () => {
+      const text = read(rel);
+      expect(text).not.toMatch(/authSeed/);
+      expect(text).not.toContain('settings.local.json');
+      expect(text).not.toMatch(/\blogin\b/i);
+    });
+  }
+
+  for (const rel of ['agents/qa-agent.md', 'agents/e2e-agent.md', 'plugins/playwright/fragments/agents/qa-agent.md']) {
+    it(`${rel} consumes the Seed Output Contract and treats an auth screen without identity as a data-seed finding`, () => {
+      const text = read(rel);
+      expect(text).toMatch(/Seed Output Contract/);
+      expect(text).toMatch(/identity/);
+      expect(text).toMatch(/env var names?/i);
+    });
+  }
+
+  it('qa-agent and the plugin fragment say an auth:true screen with no identity is a data-seed finding, never a guess', () => {
+    for (const rel of ['agents/qa-agent.md', 'plugins/playwright/fragments/agents/qa-agent.md']) {
+      expect(read(rel), rel).toMatch(/auth:true[^\n]*data-seed|data-seed[^\n]*auth:true/);
+    }
+  });
+
+  it('e2e-agent may write .codeadd/qa/ for the per-feature seed update', () => {
+    expect(read('agents/e2e-agent.md')).toMatch(/`\.codeadd\/qa\/`/);
+    expect(read('agents/e2e-agent.md')).toMatch(/seed update/i);
+  });
+
+  it('the playwright add-review fragment carries no seed sentinel — it injects with QA off', () => {
+    const text = read('plugins/playwright/fragments/add-review.md');
+    for (const sentinel of ['qa.seed', '.codeadd/qa/', 'QA_SEED', 'Seed Update', 'seed coverage', 'Seed Output Contract']) {
+      expect(text, sentinel).not.toContain(sentinel);
+    }
+    expect(text).toMatch(/identity the QA judgement hands/i);
+    expect(text).toMatch(/does not sign in/i);
+  });
+});

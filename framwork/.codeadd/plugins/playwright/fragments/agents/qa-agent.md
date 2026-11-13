@@ -1,4 +1,5 @@
 <!-- uses:
+- skill: add--qa
 - mention: @ux-agent
 -->
 
@@ -16,7 +17,7 @@
 | Console diagnostics | `browser_console_messages` | Collect errors/warnings/page errors throughout the run. |
 | Network diagnostics | `browser_network_requests` | Collect failed requests + 4xx–5xx. |
 
-Settle before judging (`browser_wait_for`) so you screenshot the final rendered state, not a loading frame. For `auth:true` screens, establish the session per the `authSeed` hint first. Prefer non-destructive interactions; note any state you mutate. If a tool surface differs from the above, fall back to the closest available `browser_*` tool and note the substitution — do not abort the axis.
+Settle before judging (`browser_wait_for`) so you screenshot the final rendered state, not a loading frame. For `auth:true` screens, authenticate with the `identity` of the seed output (the Seed Output Contract of skill `add--qa`), resolving the env var names it lists from the environment and never printing a value. With `identity: null` there is no sign-in. An `auth:true` screen with no identity in the seed output is a `data-seed` finding, never a guess. Prefer non-destructive interactions; note any state you mutate. If a tool surface differs from the above, fall back to the closest available `browser_*` tool and note the substitution — do not abort the axis.
 
 In live mode this is **purely additive** over read-PNG judgment: beyond the scripted PNG set the run persisted, you may additionally capture unscripted states and read console/network interactively for richer evidence. Your read-PNG axes — functional delivery, deterministic conformance, and ALL a11y — still stand on the persisted screenshots + computed-styles + axe/assertion artifacts (the UX-judgement and responsiveness axes are `@ux-agent`'s, not yours).
 
