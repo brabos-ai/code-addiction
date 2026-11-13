@@ -37,5 +37,10 @@ ALSO write the screen catalog `FEATURE_DIR/_tests/screens.json`, applying the sk
       the merge order both live in the skill; do not re-derive either here.
       Store reachability INTENT only — selectors are finalized post-implementation by @e2e-agent.
 Flag missing UX acceptance / thin design / uncovered CRUD operations as gaps — never invent.
+ALSO compare the screens in scope against `.codeadd/qa/README.md` and write a `## QA Seed Update`
+      block into `plan-qa-spec.md`, per the skill: `none`, or each data/prerequisite to add with the
+      screen that needs it.
+
+**The `## QA Seed Update` block is the plan's seed-update task.** Carry its rows into the plan's task list so `{{cmd:add-build}}` applies them in the same delivery. A missing `.codeadd/qa/` is a warning that names `{{cmd:add-qa-setup}}`, never a stop — the same as the setup check above.
 
 <!-- /section:qa-spec -->

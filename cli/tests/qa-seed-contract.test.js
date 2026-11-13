@@ -218,3 +218,34 @@ describe('F11 — the QA readers consume the seed output and improvise no sign-i
     expect(text).toMatch(/does not sign in/i);
   });
 });
+
+describe('F13 — add-plan asks for a seed update through the qa-spec fragment (L3.7)', () => {
+  const section = () => {
+    const text = read('fragments/qa-pipeline/add-plan.md');
+    const start = text.indexOf('<!-- section:qa-spec -->');
+    return text.slice(start, text.indexOf('<!-- /section:qa-spec -->'));
+  };
+
+  it('the qa-spec section compares the screens in scope with .codeadd/qa/README.md and writes ## QA Seed Update', () => {
+    const body = section();
+    expect(body).toContain('## QA Seed Update');
+    expect(body).toContain('.codeadd/qa/README.md');
+    expect(body).toMatch(/`none`|\bnone\b/);
+    expect(body).toMatch(/screen that needs it/i);
+    expect(body).toMatch(/seed-update task/i);
+  });
+
+  it('a missing .codeadd/qa/ is a warning that names /add-qa-setup, never a stop', () => {
+    const body = section();
+    expect(body).toMatch(/\.codeadd\/qa\/[^\n]*warning[^\n]*\{\{cmd:add-qa-setup\}\}|warning[^\n]*\.codeadd\/qa\/[^\n]*\{\{cmd:add-qa-setup\}\}/i);
+    expect(body).toMatch(/never a stop/i);
+  });
+
+  it('add--qa-spec documents the ## QA Seed Update block with none or one row per data/prerequisite and its screen', () => {
+    const text = read('skills/add--qa-spec/SKILL.md');
+    expect(text).toContain('## QA Seed Update');
+    expect(text).toMatch(/`none`/);
+    expect(text).toMatch(/screen/);
+    expect(text).toContain('.codeadd/qa/README.md');
+  });
+});
