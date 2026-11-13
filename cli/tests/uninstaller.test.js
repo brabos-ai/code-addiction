@@ -155,6 +155,19 @@ describe('uninstall', () => {
     expect(fs.existsSync(zcodeAgent)).toBe(false);
   });
 
+  it('corrupted-manifest fallback keeps the tracked QA seed in .codeadd/qa/ (project data)', async () => {
+    const addDir = path.join(tmpDir, '.codeadd');
+    fs.mkdirSync(path.join(addDir, 'qa'), { recursive: true });
+    fs.mkdirSync(path.join(addDir, 'commands'), { recursive: true });
+    fs.writeFileSync(path.join(addDir, 'qa', 'seed.mjs'), '// seed');
+    fs.writeFileSync(path.join(addDir, 'commands', 'add.md'), '# add');
+    fs.writeFileSync(path.join(addDir, 'manifest.json'), 'not json{{{', 'utf8');
+    const { uninstall } = await import('../src/uninstaller.js');
+    await uninstall(tmpDir, true);
+    expect(fs.readFileSync(path.join(addDir, 'qa', 'seed.mjs'), 'utf8')).toBe('// seed');
+    expect(fs.existsSync(path.join(addDir, 'commands', 'add.md'))).toBe(false);
+  });
+
   it('corrupted-manifest fallback keeps board.json, settings.json and wiki/ (project data)', async () => {
     const addDir = path.join(tmpDir, '.codeadd');
     fs.mkdirSync(path.join(addDir, 'wiki'), { recursive: true });

@@ -1,5 +1,5 @@
 ---
-description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and proves the setup with the QA preflight
+description: End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, studies the project and generates a tracked QA seed, ignores ephemeral working evidence under a setup contract, migrates existing QA, and proves the setup with the QA preflight
 argument-hint: "[feature-id] [--migrate] [--upgrade]  (feature-id scaffolds that feature's screen catalog, e.g. /add-qa-setup 0001F; --migrate reopens the migration decision; --upgrade forces a full re-materialize even when the shape matches)"
 ---
 
@@ -61,6 +61,7 @@ STEP add-qa-setup.install: Install prerequisites    → runner (mandatory) + chr
 STEP add-qa-setup.migration: Detect migration         → ALWAYS scan; ask only when the detected fingerprint differs from the receipt
 STEP add-qa-setup.qa-project: Generate qa-project      → <provider skills dir>/qa-project/SKILL.md (shape from ## Materializes)
 STEP add-qa-setup.config: Scaffold QA config       → .codeadd/settings.json, `qa` value fields (interactive, project-wide; shape from ## Materializes)
+STEP add-qa-setup.seed: Generate the QA seed        → study the project, ask only what it cannot infer, write .codeadd/qa/ + qa.seed, run it once
 STEP add-qa-setup.catalog: Scaffold catalog         → FEATURE_DIR/_tests/screens.json (shape from ## Materializes)
 STEP add-qa-setup.ignore: Ignore working evidence  → confirm the docs branch's .gitignore carries the QA run-output line
 STEP add-qa-setup.migrate: Autonomous migration    → IF MIGRATE: dispatch add-new→add-plan→add-build→add-review (checkpoints only)
@@ -84,7 +85,7 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 | **STEP add-qa-setup.migration** | Existing tooling found | Entering migration mode silently | Ask the user; set MIGRATE only on explicit confirmation |
 | **STEP add-qa-setup.migration** | Always | Skipping the scan because the project is not first-run | Scan on every run; compare against `migration.detected` in the receipt; ASK only on a fingerprint change or `--migrate` |
 | **STEP add-qa-setup.migration** | Fingerprint unchanged and a decision is recorded | Re-asking the user | Stay silent; the recorded decision stands |
-| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` and of `.codeadd/settings.local.json` (read, merge, write — never another section), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and nothing under STEP add-qa-setup.ignore (the docs branch's own `.codeadd/docs/.gitignore` is created by the branch, never edited here). Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
+| **STEP add-qa-setup.qa-project-9** | Always | Edit/Write on source code, app files, migrations | Write only the `qa` section of `.codeadd/settings.json` (read, merge, write — never another section), `.codeadd/qa/` (the seed and its README), `FEATURE_DIR/_tests/`, the resolved provider skills dir (`qa-project/`), and nothing under STEP add-qa-setup.ignore (the docs branch's own `.codeadd/docs/.gitignore` is created by the branch, never edited here). Single named exception: STEP add-qa-setup.feature-gate's CLI-mediated `codeadd features enable qa-pipeline`, which rewrites installed provider command files via the CLI — never via direct Edit/Write |
 | **STEP add-qa-setup.catalog** | `FEATURE_DIR/_tests/screens.json` already exists | Overwriting catalog content | Leave the file — `{{cmd:add-plan}}` owns content |
 | **STEP add-qa-setup.ignore** | `.codeadd/docs/.gitignore` lacks the QA run-output line | Running migration | Run `node .codeadd/scripts/docs-branch.cjs prepare`, which recreates the line, then re-check |
 | **STEP add-qa-setup.migrate** | Dispatched subagent hits an install or a file overwrite | Proceeding autonomously | Pause and surface the decision to the user |
@@ -103,8 +104,8 @@ STEP add-qa-setup.handoff: Hand-off                → enable plugin (optional) 
 
 ```yaml
 contract: add-qa-setup
-shape: sha256:c61dbcc38148c997
-changed-in: 1.9.2
+shape: sha256:9c0cfa352e58dfb9
+changed-in: 1.9.3
 paths:
   - path: .codeadd/settings.json#qa
     owner: shared
@@ -112,13 +113,13 @@ paths:
   - path: <provider skills dir>/qa-project/SKILL.md
     owner: setup
     step: 6
-  - path: FEATURE_DIR/_tests/screens.json
+  - path: .codeadd/qa/
     owner: shared
     step: 8
-  - path: .codeadd/docs/.gitignore
+  - path: FEATURE_DIR/_tests/screens.json
     owner: shared
     step: 9
-  - path: .codeadd/settings.local.json#qa
+  - path: .codeadd/docs/.gitignore
     owner: shared
     step: 10
 ```
@@ -132,22 +133,20 @@ The value fields of the `qa` section. The receipt fields are written by STEP add
   "qa": {
     "baseUrl": "http://localhost:5173",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
-    "bootHint": "how to start the app's dev server (free text, project-specific)"
+    "bootHint": "how to start the app's dev server (free text, project-specific)",
+    "seed": { "command": "how to run the seed in .codeadd/qa/", "env": ["NAME_OF_A_REQUIRED_ENV_VAR"] }
   }
 }
 ```
 
-### .codeadd/settings.local.json#qa
+`qa.seed.env` holds env var NAMES only, never values.
 
-The secret field of the `qa` section, in the gitignored local file `.codeadd/settings.local.json`. It is never committed and never hashed.
+### .codeadd/qa/
 
-```json
-{
-  "qa": {
-    "authSeed": "how an authenticated session is obtained for auth:true screens (free text / steps)"
-  }
-}
-```
+The project's QA seed, tracked in git and secret-free. It is `owner: shared` because feature builds edit it, so it is never hashed.
+
+- the seed entry — written in the project's own runtime, named by `qa.seed.command`, printing the `Seed Output Contract` of the `add--qa` skill on its last stdout line;
+- `README.md` — what the seed does, its prerequisites and the env var names it reads.
 
 ### FEATURE_DIR/_tests/screens.json
 
@@ -198,13 +197,15 @@ description: Use when authoring E2E specs (/add-build) or judging QA (/add-revie
 ## Managed App Lifecycle
 Both `/add-build` (E2E green-confirm) and `/add-review` (QA run) invoke this procedure:
 1. **Probe** `qa.baseUrl` (from `.codeadd/settings.json`).
-2. If **down**: boot the app as a managed process (this step owns it and tears it down in step 4 — it is not pending work) using `<boot command / qa.bootHint in .codeadd/settings.json>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
-3. **Run** the spec(s).
-4. **Teardown** the app **iff we booted it** — never kill a dev server the user already had running.
-5. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add-review`** with a flagged note.
+2. If **down**: boot the app as a managed process (this step owns it and tears it down in step 5 — it is not pending work) using `<boot command / qa.bootHint in .codeadd/settings.json>`, then **wait-for-ready** by polling `baseUrl` with a bounded timeout.
+3. **Seed** — run `qa.seed.command` once, after the app is up and before any spec runs. A non-zero exit, or a last stdout line that does not parse, STOPS the run with "run /add-qa-setup" and no login attempt.
+4. **Run** the spec(s).
+5. **Teardown** the app **iff we booted it** — never kill a dev server the user already had running.
+6. On **boot failure / timeout**: do NOT hang — author-only and **defer the run to `/add-review`** with a flagged note.
 
-## Auth / Seed
-- `<how an authenticated session is obtained for auth:true surfaces, from qa.authSeed in .codeadd/settings.local.json>`
+## Seed
+- Run `qa.seed.command` (from `.codeadd/settings.json`); its files live in `.codeadd/qa/`.
+- Consume its output per the Seed Output Contract of the `add--qa` skill: `identity` says whether and how to authenticate (`null` means no sign-in), `data` says what is seeded.
 ```
 ---
 
@@ -353,9 +354,38 @@ Target: the `qa` section of `.codeadd/settings.json` (git-tracked, project-wide)
 
 Write the shape declared in `## Materializes` → `.codeadd/settings.json#qa`. Values are free-text hints; viewports default to the declared set.
 
-`authSeed` is a secret in practice, so it is written to `.codeadd/settings.local.json` → `qa` (the shape declared in `## Materializes` → `.codeadd/settings.local.json#qa`) by the same read, merge, write rule — never to `.codeadd/settings.json`. A `qa.authSeed` already sitting in `.codeadd/settings.json` is moved: write it to the local file, then delete the key from the committed file. Never print the value.
+`qa.seed` is written by STEP add-qa-setup.seed, not here.
 
 ⛔ `baseUrl` MUST point at a local/throwaway environment — the QA judgement actively exercises flows (submits forms, creates records). Never a production URL.
+
+---
+
+## STEP add-qa-setup.seed: Generate the QA Seed
+
+Target: `.codeadd/qa/` (tracked in git, no secret value) and `qa.seed` in `.codeadd/settings.json`. Nothing about how the project signs in, boots or seeds is assumed: **detect first, ask only the rest.**
+
+**1. Analyse the project, in this order**, and cite each finding to the file it came from:
+1. The auth model — none, session, OAuth, API key, magic link, or another.
+2. The data stores.
+3. The services the app needs and how they boot.
+4. Existing seed, fixture and migration scripts.
+5. The env vars those need — from `.env.example`, config files and the code that reads them.
+
+**2. Ask only what the analysis could not infer**, in one batch through the interaction slot already loaded at the top of this command. Each question names what was found and what is missing. ⛔ Never ask for a secret value: ask for the env var NAME that will hold it.
+
+**3. Write `.codeadd/qa/`:**
+- the seed entry, in the project's own runtime. When the project already has seed or migration tooling, the seed reuses it by invoking it, never editing it; glue is written only when none exists. No bash dependency — a script in the project's own language, not a shell script.
+- `README.md` — what the seed does, its prerequisites and the env var names it reads.
+
+The seed prints the `Seed Output Contract` of {{skill:add--qa/SKILL.md}} on its last stdout line and exits 0 when the environment is ready. A project with no auth is a valid result: the seed only prepares services and data and reports `identity: null` — it creates no user. A project with auth gets a test identity created from env var names, and `identity` names the auth model and those env var names.
+
+⛔ Nothing is hard-coded: no user name, no password, no URL the analysis did not find. The seed and the README hold env var names, never values.
+
+**4. Write `qa.seed`** (`command` and `env`, the shape declared in `## Materializes` → `.codeadd/settings.json#qa`) by the same read, merge, write rule as STEP add-qa-setup.config.
+
+**5. An existing seed is kept.** When `.codeadd/qa/` or `qa.seed` already exists, keep it and report where it drifts from the analysis; regenerate it only on explicit confirmation, because feature builds edit it.
+
+**6. Run the seed once**, against the app booted the way the `qa-project` Managed App Lifecycle boots it (and torn down only if setup booted it), and check that the last stdout line parses as the contract and the exit code is 0. On failure: fix the seed, or report what is missing and its remedy. ⛔ Do not continue past a seed that does not run.
 
 ---
 
@@ -415,7 +445,7 @@ Run Phase A again, after every file above has been written:
 node .codeadd/scripts/qa-preflight.cjs a
 ```
 
-The proof holds when `QA_CONFIG`, `QA_BASEURL_LOCAL`, `QA_BASEURL_REACHABLE`, `QA_RUNNER`, `QA_CHROMIUM` and `QA_PROJECT_SKILL` are all `ok`. `QA_BASEURL_REACHABLE` means the app is up: a proof that skips it is green with the app down. Do not read `QA_RECEIPT` or `QA_CONTRACT_MATCH` yet: STEP add-qa-setup.receipt writes the receipt next.
+The proof holds when `QA_CONFIG`, `QA_BASEURL_LOCAL`, `QA_BASEURL_REACHABLE`, `QA_SEED`, `QA_RUNNER`, `QA_CHROMIUM` and `QA_PROJECT_SKILL` are all `ok`. `QA_BASEURL_REACHABLE` means the app is up: a proof that skips it is green with the app down. Do not read `QA_RECEIPT` or `QA_CONTRACT_MATCH` yet: STEP add-qa-setup.receipt writes the receipt next.
 
 When a feature with a scaffolded `FEATURE_DIR/_tests/screens.json` exists, also run Phase B:
 
@@ -443,7 +473,7 @@ Write it on **every** run — including a run that changed nothing. A verified-c
 Read the file, merge into `qa`, write it back. ⛔ Never replace the whole file, never touch another section, never drop a key you do not know.
 
 1. **Receipt fields.** `qa["setup-shape"]` = the shipped hash from `.codeadd/contracts.json` → `contracts["add-qa-setup"].shape` (bare `sha256:<16 hex>`). `qa["framework-version"]` from the manifest (informational). `qa["first-run"]` preserved byte-identically, or set to today on a true first run. `qa["last-run"]` = today.
-2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` and `.codeadd/settings.local.json` are `owner: shared`.
+2. **`qa.materialized`.** One entry per path declared in `## Materializes` that this project actually holds. `owner: setup` entries carry `hash: sha256:<hex>` of the current content; `owner: shared` entries carry `hash: null` — ⛔ never hash a co-owned file, it produces permanent false drift. `.codeadd/settings.json` and `.codeadd/qa/` are `owner: shared`.
 3. **`qa.prereqs`** from STEP add-qa-setup.install, `qa["qa-pipeline-feature"]` from STEP add-qa-setup.feature-gate, `qa.migration` from STEP add-qa-setup.migration. Record `.codeadd/docs/.gitignore` in `qa.materialized` with `owner: shared` and `hash: null`.
 4. **`qa.log`.** APPEND one entry `{date, item, decision, reason, shape}` per behaviour-changing decision taken this run: a declined prerequisite, a declined feature enable, a migration decision, a STALE re-materialize. ⛔ Never edit or delete an existing entry. ⛔ Never log narration or instructions — an entry records a choice, not a step.
 
@@ -454,12 +484,12 @@ Read the file, merge into `qa`, write it back. ⛔ Never replace the whole file,
 Run these checks against `.codeadd/settings.json` as you just wrote it. DO NOT skip. DO NOT mark the command complete until every check passes.
 
 1. **It parses.** Read the file and parse it as JSON. If it does not parse: STOP. Fix the file. Re-run this gate.
-2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
+2. **Required keys.** `schema` is `1`; `qa` is an object holding `baseUrl`, `viewports`, `seed`, `setup-shape`, `framework-version`, `first-run`, `last-run`, `materialized`, `prereqs`, `qa-pipeline-feature`, `migration` and `log`. `setup-shape` is a bare `sha256:` + 16 hex. `first-run` and `last-run` are ISO dates (YYYY-MM-DD). A missing key: STOP, fix, re-run.
 3. **Vocabularies.** Every `prereqs.<name>`, `qa-pipeline-feature`, `migration.decision` and `materialized[].owner` holds a value declared in {{skill:add--settings/SKILL.md}}. `migration.detected` is sorted alphabetically.
-4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json`, `.codeadd/settings.local.json` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
+4. **No hash on a shared entry.** Every `materialized` entry with `owner: shared` — `.codeadd/settings.json`, `.codeadd/qa/` and `.codeadd/docs/.gitignore` among them — carries `hash: null`. Every `owner: setup` entry carries a `sha256:` hash.
 5. **`log` is append-only.** Compare with the file as it was before this run (`BEFORE`, kept at STEP add-qa-setup.config; an absent file has no previous entries): every previous entry is present, unchanged and in the same order; new entries only at the end. Each entry holds `date`, `item`, `decision`, `reason` and `shape`, and records a choice, never a step.
 6. **Other sections untouched.** Every top-level key except `qa` — and every key inside `qa` this command does not own — is identical to the file as it was before this run.
-7. **No secret in the committed file.** `qa` in `.codeadd/settings.json` holds no `authSeed`. When `.codeadd/settings.local.json` exists, run `git check-ignore -q .codeadd/settings.local.json`: if it does not match, add a warning that the file must be gitignored. Never print the value.
+7. **The seed is configured, tracked and secret-free.** `qa.seed.command` is a non-empty string and `qa.seed.env` is an array of env var names only. No tracked file under `.codeadd/qa/`, and no value in `qa`, holds a secret value. Run `git check-ignore -q` on each seed file: it must NOT match — an ignored seed is not shared; the remedy is the `!.codeadd/qa/` exception in the managed `.gitignore` block, which `codeadd update` rewrites. Never print a value.
 8. **Hard bans absent.** None of the hard bans in {{skill:add--settings/SKILL.md}} is present, `first-run` was not rewritten, and no `log` entry carries narration or aspirational language.
 
 Output at end:
@@ -490,6 +520,8 @@ Then, after the seven blocks, tell the user, in order:
 6. Enable the capability (optional — the QA judgement degrades without it): `codeadd plugins enable playwright`.
 7. Verify the MCP server is connected (`/mcp` lists `playwright`).
 8. The audit is the next activity: `/add-review` on the feature, scoped to the SFxx subfeature when one exists. Its QA sections judge the rendered result. Name it here; `STEP add-qa-setup.offer` puts the full invocation behind the offer.
+
+The seed in `.codeadd/qa/` is tracked: commit it with the project, and set the env vars named in `qa.seed.env` before the first run. A feature build updates it in the same PR when the feature needs new QA data; `/add-qa-setup` runs again only when the project base changes, for example the auth model.
 
 `/add-qa-setup` does NOT modify application code, and does NOT merge the migration branch.
 

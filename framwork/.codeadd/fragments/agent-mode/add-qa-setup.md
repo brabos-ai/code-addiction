@@ -16,7 +16,7 @@ For each missing or non-functional prerequisite, show the EXACT command and expl
 
 <!-- section:config-values -->
 
-If it exists → per-key merge: keep every existing key (including extras the user added). Fill missing declared keys with defaults. Never drop a user key. Put every value that needs a refresh in one numbered batch with a RECOMMENDED line each; do not silently overwrite a user-edited value with the default. If absent → create it, asking for every project-specific value in one numbered batch (do NOT guess base URL or auth/seed flow).
+If it exists → per-key merge: keep every existing key (including extras the user added). Fill missing declared keys with defaults. Never drop a user key. Put every value that needs a refresh in one numbered batch with a RECOMMENDED line each; do not silently overwrite a user-edited value with the default. If absent → create it. Every value comes from the project analysis; ask, in one numbered batch with a RECOMMENDED line each, only what the analysis could not infer. Never ask for a secret value, only the env var name that holds it.
 
 <!-- /section:config-values -->
 

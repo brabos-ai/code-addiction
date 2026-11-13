@@ -111,8 +111,11 @@ short-circuited the row — report it as not probed, never as passing.
 | 7 | `playwright` MCP connected | provider MCP listing (not scripted) | **degrade** — read-PNG mode |
 | 8 | Receipt = `qa.setup-shape` in `.codeadd/settings.json`, present and readable | `QA_RECEIPT` | **block** — remedy: `{{cmd:add-qa-setup}}` |
 | 9 | Receipt `setup-shape` equals shipped `contracts.json` shape | `QA_CONTRACT_MATCH` | **block** — remedy: `{{cmd:add-qa-setup}}` (full re-materialize). Say why from the five rows the preflight prints on `broken`: the QA setup changed in version `QA_CONTRACT_CHANGED_IN` (receipt written by `QA_CONTRACT_RECEIPT_VERSION`), receipt shape `QA_CONTRACT_RECEIPT_SHAPE` against shipped shape `QA_CONTRACT_SHIPPED_SHAPE`; run `QA_CONTRACT_ACTION`. A value of `unknown` is reported as unknown, never guessed |
+| 10 | `qa.seed` configured in `.codeadd/settings.json` (`command` set, `env` an array of names) | `QA_SEED` | **block** — remedy: `{{cmd:add-qa-setup}}`. The probe reads configuration only and never runs the seed |
 
 **Row 3 boots before it blocks.** When `QA_BASEURL_REACHABLE` is not `ok` and rows 1, 2 and 6 held, start the app through the `qa-project` Managed App Lifecycle (`bootHint`, boot in the background, wait until ready) and probe `baseUrl` again. The row blocks only if boot fails, and then it surfaces `bootHint`. The app stays up through capture and the judges, so STEP qa-pipeline.capture finds it running and boots nothing of its own.
+
+**The seed runs once per review, after the boot of row 3 and before capture.** With every `block` row clear, run `qa.seed.command` from `.codeadd/settings.json` once and parse its last stdout line per the Seed Output Contract in `{{skill:add--qa/SKILL.md}}`. A non-zero exit, or a last line that does not parse, blocks the QA steps with "run `{{cmd:add-qa-setup}}`" — the review attempts no sign-in. Keep the parsed output (`baseUrl`, `identity`, `data`) and hand it to both judges; STEP qa-pipeline.capture reuses it and does not run the seed again, so every agent judges the state that was captured.
 
 **The preflight owns the app it booted.** Tear it down when the QA steps end — after STEP qa-pipeline.merge-write-per for the last scope, or at once when a `block` row stops the QA steps — and only if the preflight booted it. An app that was already running is never stopped.
 
@@ -209,7 +212,7 @@ It resolves the immediate numeric predecessor from working plus final evidence,
 never a deeper history walk.
 
 Run the surface's `<surface>.qa.spec` via the `qa-project` Managed App Lifecycle
-(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted). Collect, all
+(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted), skipping the lifecycle's Seed step: the preflight already ran the seed once for this review). Collect, all
 under the resolved `run-NNN`:
 
 - the functional assertion pass/fail roll-up
@@ -243,6 +246,8 @@ Two binding rules:
 Emit a reconciliation table (screen · expected states/viewports · evidence
 present · verdict). It is SHARED INPUT — the SAME table goes to BOTH judges.
 
+**Seed coverage.** For every new screen in scope, check the seed output against what the screen needs: an `auth:true` screen needs an `identity`, and a screen that shows records needs the `data` its capture states display. A new screen the seed does not cover is a coverage row in the same table — `seed coverage: <screen> lacks <identity|data>` — with remedy "update the seed in `.codeadd/qa/`" (feature data) or `{{cmd:add-qa-setup}}` (base change).
+
 ⛔ Coverage blockers are the COORDINATOR's findings, never a judge's. Neither
 judge re-derives coverage; both consume the table as given.
 <!-- /section:evidence -->
@@ -269,7 +274,7 @@ Each dispatch passes:
 
 - the resolved paths — `SCOPE_DIR/about.md` and `DESIGN_FILE`;
 - the `run-NNN` evidence dirs that judge owns per the table (`@ux-agent` → `screenshots/`; `@qa-agent` → `screenshots/` + `computed-styles/` + axe results + the assertion roll-up + console/network artifacts);
-- the STEP qa-pipeline.coverage-reconciliation reconciliation table (identical copy to both);
+- the STEP qa-pipeline.coverage-reconciliation reconciliation table (identical copy to both) and the seed output the preflight parsed (identical copy to both: `identity` and `data`, env var names only);
 - **`RELATED_WORK` from STEP add-review.baseline** — the deliveries that last changed these files, ids with one line each. **Never blank** — `none` when the graph answered and had no match, `NOT VERIFIED` plus the reason when it could not be reached. A judge that does not know a file was rewritten two deliveries ago judges it as though it were new;
 - `{{skill:add--qa/SKILL.md}}` — rubric, severity scale, finding schema.
 

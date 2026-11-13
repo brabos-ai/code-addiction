@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+- `/add-qa-setup` now studies your project before it writes anything: the auth model (none, session, OAuth, API key, magic link), the data stores, the services and how they boot, the seed, fixture and migration scripts you already have, and the env vars they need. It asks only what it could not infer and generates a project-specific QA seed in `.codeadd/qa/`, tracked in git and free of secrets: the seed and its README name env vars, never values. The tracked `.codeadd/settings.json` holds only `qa.seed.command` and `qa.seed.env`, the list of env var names. A project with no auth is a valid result: the seed prepares services and data and reports no identity.
+- Every QA run executes the seed first and uses what it prints: one JSON object on its last stdout line (`ready`, `baseUrl`, `identity`, `data`). A missing or failing seed stops QA with "run `/add-qa-setup`" and attempts no sign-in. A fresh clone runs QA without `/add-qa-setup` once the env vars named in `qa.seed.env` are set.
+- The seed evolves per feature, only with the `qa-pipeline` feature on: `/add-plan` writes a `## QA Seed Update` block when a feature needs new QA data, `/add-build` applies it in the same PR and checks that new screens have the data they need, and `/add-review` checks the same coverage. With the feature off, no command or skill carries these instructions.
+- The managed `.gitignore` block now carries `!.codeadd/qa/`, so the seed is committed.
+
+### Changed
+- **BREAKING for QA users:** `qa.authSeed` is gone, with no fallback and no compatibility path. `codeadd update` runs migration `0008` and removes it from `.codeadd/settings.json` and from `.codeadd/settings.local.json`, then prints a BREAKING notice. **Rerun `/add-qa-setup` in every project that uses QA:** the QA setup contract changed, so `SETUP_QA_STALE` is expected once. If the removed key held a credential and was ever committed, git history keeps it — rotate it. The 1.9.2 entry below is left as it was written.
+- Migration `0007` is now a no-op that keeps its id, and `codeadd docs migrate` drops the retired key instead of moving it.
+
 ## [1.9.2] - 2026-11-12
 
 ### Security

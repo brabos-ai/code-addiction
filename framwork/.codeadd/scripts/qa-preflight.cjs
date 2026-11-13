@@ -12,9 +12,11 @@
  * Reads the project's `.codeadd/settings.json`, section `qa` (schema: add--settings):
  *   QA_CONFIG comes from qa.baseUrl; QA_RECEIPT and QA_CONTRACT_* from qa["setup-shape"]
  *   and qa["framework-version"]. A file that does not parse is broken for both; a file
- *   with no qa section reads as missing for both. A `qa.authSeed` held only in the gitignored
- *   `.codeadd/settings.local.json` also counts as QA state (a project whose only value moved is
- *   not never-set-up); its value is never read into output.
+ *   with no qa section reads as missing for both. Only `.codeadd/settings.json` is read.
+ *   QA_SEED comes from qa.seed: `ok` when qa.seed.command is a non-empty string and qa.seed.env,
+ *   if present, is an array of strings; `missing` when qa.seed is absent; `broken` on a wrong
+ *   type; `not-probed` when the qa section is missing or broken. The probe NEVER runs the seed —
+ *   Phase A stays side-effect free; the review runs it.
  *
  * Output: KEY=STATUS lines. Statuses: ok | missing | broken | not-probed.
  *   On QA_CONTRACT_MATCH=broken only, five more rows say why: the receipt shape and
@@ -231,15 +233,14 @@ function hasValueFields(qa) {
   return ['baseUrl', 'viewports', 'bootHint'].some((k) => has(qa, k));
 }
 
-/** Does the gitignored local settings file hold a `qa.authSeed`? Presence only — the value is never printed. */
-function localHasAuthSeed(file) {
-  if (!isFile(file)) return false;
-  try {
-    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return !!(doc && doc.qa && typeof doc.qa === 'object' && has(doc.qa, 'authSeed'));
-  } catch {
-    return false;
-  }
+/** QA_SEED status for a qa section. Configuration only — the seed is never run here. */
+function seedStatus(qa) {
+  if (!has(qa, 'seed')) return 'missing';
+  const seed = qa.seed;
+  if (seed === null || typeof seed !== 'object' || Array.isArray(seed)) return 'broken';
+  if (typeof seed.command !== 'string' || seed.command.trim() === '') return 'broken';
+  if (has(seed, 'env') && !(Array.isArray(seed.env) && seed.env.every((e) => typeof e === 'string'))) return 'broken';
+  return 'ok';
 }
 
 /** Does the section hold any receipt field? */
@@ -307,8 +308,7 @@ async function phaseA() {
 
   // .codeadd/settings.json → qa — parse + require baseUrl; dependent probes short-circuit.
   const settings = readQaSection(path.resolve(process.cwd(), '.codeadd', 'settings.json'));
-  const localSeed = localHasAuthSeed(path.resolve(process.cwd(), '.codeadd', 'settings.local.json'));
-  if (!localSeed && (settings.state === 'absent' || (settings.state === 'ok' && !hasValueFields(settings.qa)))) {
+  if ((settings.state === 'absent' || (settings.state === 'ok' && !hasValueFields(settings.qa)))) {
     write('QA_CONFIG=missing');
     write('QA_BASEURL=');
     write('QA_BASEURL_LOCAL=not-probed');
@@ -351,6 +351,9 @@ async function phaseA() {
       }
     }
   }
+
+  // Seed configuration — never executed here.
+  write(`QA_SEED=${settings.state === 'ok' ? seedStatus(settings.qa) : 'not-probed'}`);
 
   // Runner — must be the PROJECT's @playwright/test, then a functional probe.
   const resolved = resolvePlaywright();

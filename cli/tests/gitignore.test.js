@@ -41,7 +41,7 @@ describe('getInstalledDirs', () => {
 
   it('returns only the .codeadd pair when no providers selected', () => {
     const dirs = getInstalledDirs([]);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '!.codeadd/qa/', '.codeadd/settings.local.json']);
   });
 
   it('includes all known providers when all are selected', () => {
@@ -55,7 +55,7 @@ describe('getInstalledDirs', () => {
 
   it('silently ignores unknown provider keys', () => {
     const dirs = getInstalledDirs(['unknown-provider']);
-    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json']);
+    expect(dirs).toEqual(['.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '!.codeadd/qa/', '.codeadd/settings.local.json']);
   });
 
   it('every provider entry has a trailing slash (the .codeadd pair is a pattern)', () => {
@@ -257,6 +257,45 @@ describe('the .codeadd pair (settings.json and wiki/ stay committable)', () => {
     expect(gitIgnored(tmpDir, '.codeadd/settings.local.json')).toBe(true);
   });
 
+  it('the managed block carries !.codeadd/qa/ after the wiki exception and before the local line, and git does not ignore the seed', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
+    const lines = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8').split('\n');
+    const qa = lines.indexOf('!.codeadd/qa/');
+    expect(qa).toBeGreaterThan(lines.indexOf('.codeadd/*'));
+    expect(qa).toBeGreaterThan(lines.indexOf('!.codeadd/wiki/'));
+    expect(qa).toBeLessThan(lines.indexOf('.codeadd/settings.local.json'));
+    fs.mkdirSync(path.join(tmpDir, '.codeadd', 'qa'), { recursive: true });
+    expect(gitIgnored(tmpDir, '.codeadd/qa/seed.mjs')).toBe(false);
+    expect(gitIgnored(tmpDir, '.codeadd/qa/README.md')).toBe(false);
+    expect(gitIgnored(tmpDir, '.codeadd/settings.local.json')).toBe(true);
+  });
+
+  it('an update rewrites the 1.9.2 managed block with the qa exception and leaves entries outside it alone', () => {
+    spawnSync('git', ['init', '-q'], { cwd: tmpDir });
+    const old = [
+      'node_modules/',
+      '# ADD - managed by code-addiction',
+      '.codeadd/*',
+      '!.codeadd/settings.json',
+      '!.codeadd/wiki/',
+      '.codeadd/settings.local.json',
+      '.claude/',
+      '# END ADD',
+      'dist/',
+      '',
+    ].join('\n');
+    fs.writeFileSync(path.join(tmpDir, '.gitignore'), old, 'utf8');
+    fs.mkdirSync(path.join(tmpDir, '.codeadd', 'qa'), { recursive: true });
+    expect(gitIgnored(tmpDir, '.codeadd/qa/seed.mjs')).toBe(true);
+    writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
+    const content = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8');
+    expect(content).toContain('!.codeadd/wiki/\n!.codeadd/qa/\n.codeadd/settings.local.json');
+    expect(content.startsWith('node_modules/\n')).toBe(true);
+    expect(content).toContain('dist/');
+    expect(gitIgnored(tmpDir, '.codeadd/qa/seed.mjs')).toBe(false);
+  });
+
   it('rewrites an existing bare .codeadd/ line outside the block into the pair, once', () => {
     const gitignorePath = path.join(tmpDir, '.gitignore');
     fs.writeFileSync(gitignorePath, 'node_modules/\n.codeadd/\ndist/\n', 'utf8');
@@ -276,7 +315,7 @@ describe('the .codeadd pair (settings.json and wiki/ stay committable)', () => {
     fs.writeFileSync(gitignorePath, '# ADD - managed by code-addiction\n.codeadd/\n.claude/\n# END ADD\n', 'utf8');
     writeGitignoreBlock(tmpDir, getInstalledDirs(['claude']));
     const content = fs.readFileSync(gitignorePath, 'utf8');
-    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/\n.codeadd/settings.local.json\n.claude/');
+    expect(content).toContain('.codeadd/*\n!.codeadd/settings.json\n!.codeadd/wiki/\n!.codeadd/qa/\n.codeadd/settings.local.json\n.claude/');
     expect(content.split('\n')).not.toContain('.codeadd/');
   });
 });

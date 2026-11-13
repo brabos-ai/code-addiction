@@ -52,6 +52,14 @@ Write to `.codeadd/docs/features/${FEATURE_ID}/plan-qa-spec.md` under a `## QA/E
 |----|---------|----|--------------|-----------|----------------|---------------|---------------------|------|
 | QA01 | entry-form | SF01 | modal (open via New-entry) | mobile,desktop | empty,filled,list | fields render + width rule | submit persists entry + list shows it | labels + focus trap |
 
+Below the table, write a `## QA Seed Update` block in the same file. Compare the screens in scope with what `.codeadd/qa/README.md` says the project's QA seed provides. The block reads `none` when the seed already covers every screen, otherwise one row per data or prerequisite to add, with the screen that needs it:
+
+| Seed addition | Screen that needs it |
+|---------------|----------------------|
+| a second record in the list, so the empty state can be left | entry-list |
+
+The block is the plan's seed-update task: `{{cmd:add-build}}` applies it in the same delivery. Never invent a data need no screen has. When `.codeadd/qa/README.md` is absent, write `none` and say the seed is not set up.
+
 ## Output 2 — Screen Catalog (`_tests/screens.json`)
 
 You OWN this file when dispatched by `add-plan` STEP qa-pipeline.qa-spec. (`add-qa-setup` STEP add-qa-setup.catalog only scaffolds it at setup time, before any plan exists.) One catalog entry per row of the table above.
@@ -102,7 +110,7 @@ Store reachability INTENT only. If a design doc is missing or thin, list the scr
 
 - Written files live under `.codeadd/docs/` — follow Docs Branch in {{skill:add--doc-schemas/SKILL.md}}.
 - Code-free only — no implementation code, no test scripts. The `screens.json` `open` recipe is reachability intent, not a test: never hand-write selectors you have not observed; `@e2e-agent` finalizes them post-implementation.
-- Keep `plan-qa-spec.md` under ~15 lines (tabular). `screens.json` has no line budget — it carries one entry per declared screen.
+- Keep `plan-qa-spec.md` under ~15 lines (tabular), the `## QA Seed Update` block aside. `screens.json` has no line budget — it carries one entry per declared screen.
 - Flag missing UX acceptance / thin design as **gaps** — never invent content.
 - Each row maps to one surface/subfeature; do not merge unrelated surfaces into one row.
 - Emit a row for **every** screen `design.md` declares — an omitted declared screen becomes a coverage `blocker` at run time.

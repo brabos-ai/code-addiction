@@ -343,10 +343,11 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
       expect(doc.qa).not.toHaveProperty(dropped);
     }
 
-    // The secret goes to the gitignored local file, never to the committed one, and is never printed.
+    // The retired key is dropped: nothing is moved to a local file, nothing is printed.
     expect(doc.qa).not.toHaveProperty('authSeed');
-    expect(readJson('.codeadd/settings.local.json')).toEqual({ schema: 1, qa: { authSeed: CONFIG.authSeed } });
-    expect(out.warnings.join('\n')).toMatch(/rotate/i);
+    expect(fs.existsSync(file('.codeadd/settings.local.json'))).toBe(false);
+    expect(JSON.stringify(out)).not.toMatch(/password|rotate/i);
+    expect(out.notes.join('\n')).toContain('/add-qa-setup');
     expect(JSON.stringify(out)).not.toContain(CONFIG.authSeed);
 
     // The Decision Log rows, in order, then the migration entry.
@@ -439,15 +440,15 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
     expect(out.notes.join('\n')).toMatch(/already (has|holds) a qa section/);
   });
 
-  it('an authSeed already sitting in the tracked qa section is moved to the local file too, never left behind', () => {
+  it('a retired key already sitting in the tracked qa section is dropped, never moved', () => {
     seedOldProject();
     const SEED = 'FIXTURE-PLACEHOLDER-tracked-not-a-real-credential';
     put('.codeadd/settings.json', JSON.stringify({ schema: 1, qa: { baseUrl: 'http://localhost:9999', authSeed: SEED } }));
     const out = migrateQaSettings(ctx());
     expect(readJson('.codeadd/settings.json').qa).not.toHaveProperty('authSeed');
-    // the tracked value wins over the legacy file's, which was merge-only
-    expect(readJson('.codeadd/settings.local.json').qa.authSeed).toBe(SEED);
-    expect(out.warnings.join('\n')).toMatch(/rotate/i);
+    expect(fs.existsSync(file('.codeadd/settings.local.json'))).toBe(false);
+    expect(out.notes.join('\n')).toContain('/add-qa-setup');
+    expect(JSON.stringify(out)).not.toMatch(/password|rotate/i);
     expect(JSON.stringify(out)).not.toContain(SEED);
   });
 
@@ -502,21 +503,22 @@ describe('0005-qa-settings (0066B) — now the first step of docs migrate', () =
 // F27 — the printed prompt (D20) and the legacy count (D21)
 // ---------------------------------------------------------------------------
 
-describe('decision 8 — docs migrate never prints the QA secret and says to rotate it', () => {
+describe('decision 8 — docs migrate drops the retired QA key, prints no value and no password wording', () => {
   let p;
   afterEach(() => p && fs.rmSync(p.base, { recursive: true, force: true }));
 
-  it('prints the rotation warning, not the value, and writes the value only to the local file', async () => {
+  it('names the dropped key and /add-qa-setup, never the value, and writes no local file', async () => {
     p = makeLegacyProject();
     const SEED = 'FIXTURE-PLACEHOLDER-not-a-real-credential';
     fs.mkdirSync(path.join(p.repo, 'docs', 'qa'), { recursive: true });
     fs.writeFileSync(path.join(p.repo, 'docs', 'qa', 'config.json'), JSON.stringify({ baseUrl: 'http://localhost:1', authSeed: SEED }));
     await docsMigrate(p.repo, []);
-    expect(stdout()).toMatch(/rotate/i);
+    expect(stdout()).toContain('/add-qa-setup');
+    expect(stdout()).not.toMatch(/password|rotate/i);
     expect(stdout()).not.toContain(SEED);
     const settings = JSON.parse(fs.readFileSync(path.join(p.repo, '.codeadd', 'settings.json'), 'utf8'));
     expect(settings.qa).not.toHaveProperty('authSeed');
-    expect(JSON.parse(fs.readFileSync(path.join(p.repo, '.codeadd', 'settings.local.json'), 'utf8')).qa.authSeed).toBe(SEED);
+    expect(fs.existsSync(path.join(p.repo, '.codeadd', 'settings.local.json'))).toBe(false);
   });
 });
 

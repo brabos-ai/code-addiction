@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { readManifest } from './injection-core.js';
-import { MIGRATIONS, readFrontmatter, sectionBody } from './migrations.js';
+import { MIGRATIONS, readFrontmatter, sectionBody, dropRetiredQaKeys } from './migrations.js';
 import { resolveSelected } from './providers.js';
 import { loadDocsRoot, loadDocsBranch, loadDocsGuard } from './docs-root.js';
 
@@ -112,10 +112,9 @@ function readJsonFile(full, label) {
  * throws with nothing changed — the failure is reported, not recorded, and the next
  * update retries. It changes files only and never commits, like 0002.
  *
- * `authSeed` is a credential in practice: it goes to the gitignored `.codeadd/settings.local.json`,
- * never to `settings.json`, and its value is never printed. The warning below may name the old
- * config file — this module is exempt, and that file's history is where the password sits. An
- * `authSeed` already sitting in the tracked `qa` section is moved the same way.
+ * A retired QA key — in the legacy file or already in the tracked `qa` section — is dropped by
+ * the helper `migrations.js` owns, so it never reaches the tracked file and its value is never
+ * printed. Nothing is written to a local file.
  *
  * @param {{cwd: string, providers: {dest: string}[]}} ctx
  * @returns {{changes: string[], notes: string[], warnings: string[]}}
@@ -210,42 +209,32 @@ export function migrateQaSettings(ctx) {
   const incoming = { ...config, ...receiptFields };
   if (hasReceipt) incoming.log = log;
 
-  // The secret never reaches the committed file. Read the local file now, write after the checks.
-  // A value already in the tracked section wins over the legacy file's: it is the one the user runs with.
-  const trackedSeed = !!existingQa && Object.prototype.hasOwnProperty.call(existingQa, 'authSeed');
-  const hasSeed = trackedSeed || Object.prototype.hasOwnProperty.call(incoming, 'authSeed');
-  const seedValue = trackedSeed ? existingQa.authSeed : incoming.authSeed;
-  delete incoming.authSeed;
-  const localPath = path.join(ctx.cwd, '.codeadd', 'settings.local.json');
-  const local = hasSeed && fs.existsSync(localPath) ? readJsonFile(localPath, '.codeadd/settings.local.json') : { schema: 1 };
+  // A retired key never reaches the tracked file: drop it from what is merged and from what is kept.
+  const droppedIncoming = dropRetiredQaKeys(incoming);
+  const droppedExisting = dropRetiredQaKeys(existingQa);
+  const droppedAny = droppedIncoming.dropped || droppedExisting.dropped;
+  const keptIncoming = { ...(droppedIncoming.qa ?? {}) };
+  const keptQa = droppedExisting.qa ?? {};
 
   // --- write ------------------------------------------------------------------------
   if (existingQa) {
     // Merge without overwriting: the user's section wins, and the old files stay.
-    const merged = { ...existingQa };
-    delete merged.authSeed;
-    for (const [key, value] of Object.entries(incoming)) {
+    const merged = { ...keptQa };
+    for (const [key, value] of Object.entries(keptIncoming)) {
       if (!Object.prototype.hasOwnProperty.call(merged, key)) merged[key] = value;
     }
     settings.qa = merged;
     notes.push(`.codeadd/settings.json already has a qa section; merged the keys it lacked and kept ${QA_OLD_CONFIG} and ${QA_OLD_RECEIPT} for you to review`);
   } else {
-    settings.qa = incoming;
+    settings.qa = keptIncoming;
   }
   const ordered = { schema: settings.schema ?? 1, ...settings };
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
   fs.writeFileSync(settingsPath, JSON.stringify(ordered, null, 2) + '\n', 'utf8');
   changes.push('wrote the qa section of .codeadd/settings.json');
 
-  if (hasSeed) {
-    if (!local.qa || typeof local.qa !== 'object') local.qa = {};
-    if (!Object.prototype.hasOwnProperty.call(local.qa, 'authSeed')) local.qa.authSeed = seedValue;
-    fs.writeFileSync(localPath, JSON.stringify(local, null, 2) + '\n', 'utf8');
-    changes.push('moved qa.authSeed to .codeadd/settings.local.json (gitignored)');
-    warnings.push(
-      `qa.authSeed was found in ${QA_OLD_CONFIG} or in the tracked .codeadd/settings.json. If either was ever committed, its history still holds the value — ` +
-        'rotate that test password. It now lives only in .codeadd/settings.local.json, which must stay out of git.'
-    );
+  if (droppedAny) {
+    notes.push('a retired QA key was dropped from the qa section; rerun /add-qa-setup to generate the project seed');
   }
 
   if (existingQa) return { changes, notes, warnings };
@@ -731,6 +720,7 @@ export async function docsMigrate(cwd, args = [], scope = 'project') {
   const qa = migrateQaSettings({ cwd, providers });
   for (const c of qa.changes) say(`MIGRATION=${c}`);
   for (const w of qa.warnings ?? []) say(`WARNING=${w}`);
+  for (const n of qa.notes ?? []) say(`NOTE=${n}`);
 
   const files = collectLegacy(cwd);
   const moved = [];
