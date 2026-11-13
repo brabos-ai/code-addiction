@@ -57,26 +57,7 @@ Values, short descriptions and decisions go in `.codeadd/settings.json`. Only pr
 
 `bootHint` is a one-line hint, so it stays a string.
 
-**No credential, password or token value goes in `.codeadd/settings.json`** — it is committed. A value of that kind goes in the local file below, which is gitignored and never committed.
-
-## The local file
-
-`.codeadd/settings.local.json` is the gitignored sibling of `.codeadd/settings.json`. It has the same `{ "schema": 1, ... }` shape and follows the same read → merge → write rule, and it holds secrets only. Today it holds `qa.authSeed` and nothing else.
-
-```json
-{
-  "schema": 1,
-  "qa": {
-    "authSeed": "<one line: how to sign in as a seeded user>"
-  }
-}
-```
-
-| Field | Rule |
-|---|---|
-| `qa.authSeed` | One line: how to sign in as a seeded user. A hint such as "password in `$QA_PASSWORD`" is enough; a real password is the user's to place, and only here |
-
-A receipt entry for this file carries `"owner": "shared", "hash": null` — a secret file is never hashed.
+**No credential, password or token value goes in `.codeadd/settings.json`** — it is committed. A secret is only ever referred to by the NAME of the environment variable that holds it.
 
 ## Section `qa`
 
@@ -89,13 +70,14 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
     "baseUrl": "http://localhost:<port>",
     "viewports": { "desktop": [1440, 900], "tablet": [768, 1024], "mobile": [375, 812] },
     "bootHint": "<command that starts the app>",
+    "seed": { "command": "<command that runs the seed in .codeadd/qa/>", "env": ["<ENV_VAR_NAME>"] },
     "setup-shape": "sha256:<16 hex>",
     "framework-version": "1.7.0",
     "first-run": "2026-07-27",
     "last-run": "2026-10-25",
     "materialized": [
       { "path": ".codeadd/settings.json", "owner": "shared", "hash": null },
-      { "path": ".codeadd/settings.local.json", "owner": "shared", "hash": null },
+      { "path": ".codeadd/qa/", "owner": "shared", "hash": null },
       { "path": ".claude/skills/qa-project/SKILL.md", "owner": "setup", "hash": "sha256:<hex>" }
     ],
     "prereqs": { "playwright-test": "installed", "chromium": "already-present", "playwright-mcp": "declined" },
@@ -115,8 +97,8 @@ Written by `/add-qa-setup`. Value fields first, then receipt fields.
 | `qa.baseUrl` | URL the app answers on. Required for QA to run; the config probe reads it |
 | `qa.viewports` | Map of viewport name to `[width, height]` |
 | `qa.bootHint` | One line: the command that starts the app |
-
-`qa.authSeed` is not a value field of `.codeadd/settings.json`: it lives in `.codeadd/settings.local.json` (see The local file).
+| `qa.seed.command` | How to run the seed in `.codeadd/qa/` — a command in the project's own runtime, with no bash dependency. Required for QA to run |
+| `qa.seed.env` | Array of env var NAMES the seed needs, never values. May be empty or absent when the seed needs none |
 
 Value fields follow the per-key merge rule in `{{skill:add--setup-contract/SKILL.md}}`: keys the user authored are kept.
 
@@ -188,14 +170,14 @@ A receipt is the record a command leaves so a later framework release can comput
 
 ## How Scripts Read It
 
-- `qa-preflight.cjs` reads `qa.baseUrl` for `QA_CONFIG`, and `qa["setup-shape"]` with `qa["framework-version"]` for `QA_RECEIPT`.
-- `status.cjs` reads `qa["setup-shape"]` for `SETUP_QA`. Both also count a `qa.authSeed` in `.codeadd/settings.local.json` as QA state, and never print it.
+- `qa-preflight.cjs` reads `qa.seed` for `QA_SEED` (configuration only; it never runs the seed), `qa.baseUrl` for `QA_CONFIG`, and `qa["setup-shape"]` with `qa["framework-version"]` for `QA_RECEIPT`.
+- `status.cjs` reads `qa["setup-shape"]` for `SETUP_QA`.
 - No script reads `setup`.
 - A file with no `qa` section reads as missing config and missing receipt. A file that does not parse reads as `broken` in `qa-preflight.cjs` and as STALE in `status.cjs`.
 
 ## Git
 
-`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json` and `!.codeadd/wiki/`. The exception for `wiki/` works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`. The managed block also names `.codeadd/settings.local.json` explicitly, after those exceptions, so it stays ignored; never commit it.
+`.codeadd/*` is gitignored, so the managed `.gitignore` block adds exceptions: `!.codeadd/settings.json`, `!.codeadd/wiki/` and `!.codeadd/qa/`. The exception for a directory works because `.codeadd/*` ignores only the direct children of `.codeadd/`. Commit `.codeadd/settings.json`. The managed block also carries `!.codeadd/qa/`, so the generated QA seed (env var names only) is committed with the project.
 
 ## Related
 

@@ -40,3 +40,28 @@ describe('F6 — the Seed Output Contract lives in add--qa', () => {
     expect(coordinator).not.toMatch(/settings\.local\.json/);
   });
 });
+
+describe('F7 — add--settings and add--setup-contract (L3.4)', () => {
+  const settings = () => read('skills/add--settings/SKILL.md');
+  const contract = () => read('skills/add--setup-contract/SKILL.md');
+
+  it('add--settings names qa.seed.command and qa.seed.env, names only, never values', () => {
+    const text = settings();
+    expect(text).toMatch(/\| `qa\.seed\.command` \|/);
+    expect(text).toMatch(/\| `qa\.seed\.env` \|[^\n]*(NAMES|names)[^\n]*never[^\n]*values/);
+    expect(text).toMatch(/no[^\n]*bash/i);
+  });
+
+  it('add--settings has no local-file section and no mention of the local file', () => {
+    const text = settings();
+    expect(text).not.toMatch(/^## The local file/m);
+    expect(text).not.toContain('settings.local.json');
+  });
+
+  it('add--setup-contract keeps the "never drop a user key" rule with no exception', () => {
+    const text = contract();
+    expect(text).toMatch(/Never drop a user key/);
+    expect(text).not.toMatch(/ONE exception/);
+    expect(text).not.toContain('settings.local.json');
+  });
+});
