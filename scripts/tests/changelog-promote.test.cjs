@@ -116,12 +116,14 @@ test('changelog-promote#007 — CHANGELOG.md carries a 1.9.0 and a 1.9.1 section
   const v191 = text.slice(text.indexOf('## [1.9.1]'), text.indexOf('## [1.9.0]'));
   assert.match(v191, /release/i);
 });
-test('changelog-promote#008 — [Unreleased] is non-empty, opens with Security, and names authSeed and rotation (F20)', () => {
+test('changelog-promote#008 — the [1.9.2] section opens with Security and names authSeed and rotation (F1)', () => {
   const text = repoChangelog();
-  const start = text.indexOf('## [Unreleased]');
-  const body = text.slice(start + '## [Unreleased]'.length, text.indexOf('## [1.9.1]'));
-  assert.ok(body.trim().length > 0, 'Unreleased is empty');
-  assert.match(body.trimStart(), /^### Security/);
+  const start = text.indexOf('## [1.9.2]');
+  const body = text.slice(start + '## [1.9.2]'.length, text.indexOf('## [1.9.1]'));
+  assert.ok(start !== -1, 'no 1.9.2 section');
+  // drop the rest of the heading line (the date)
+  const content = body.slice(body.indexOf('\n')).trimStart();
+  assert.match(content, /^### Security/);
   assert.match(body, /authSeed/);
   assert.match(body, /rotat/i);
   assert.match(body, /### Fixed/);
