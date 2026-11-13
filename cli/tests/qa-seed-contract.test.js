@@ -154,3 +154,20 @@ describe('F9 — agent-mode config values ask only what the analysis could not i
     });
   }
 });
+
+describe('F10 — /add-setup carries no seed vocabulary (L3.6)', () => {
+  const addSetup = () => read('commands/add-setup.md');
+
+  it('the value batch names neither the retired key nor the local settings file, and points to the analysis of /add-qa-setup', () => {
+    const text = addSetup();
+    expect(text).not.toMatch(/authSeed/);
+    expect(text).not.toContain('settings.local.json');
+    expect(text).toMatch(/\{\{cmd:add-qa-setup\}\}`?'s own analysis could not infer/);
+  });
+
+  it('add-setup contains no seed sentinel', () => {
+    for (const sentinel of ['qa.seed', '.codeadd/qa/', 'QA_SEED', 'Seed Update', 'seed coverage']) {
+      expect(addSetup(), sentinel).not.toContain(sentinel);
+    }
+  });
+});
