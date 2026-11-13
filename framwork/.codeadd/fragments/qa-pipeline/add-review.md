@@ -212,7 +212,7 @@ It resolves the immediate numeric predecessor from working plus final evidence,
 never a deeper history walk.
 
 Run the surface's `<surface>.qa.spec` via the `qa-project` Managed App Lifecycle
-(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted). Collect, all
+(probe → boot-bg + wait-ready only if the preflight did not already boot it → run → teardown-iff-booted), skipping the lifecycle's Seed step: the preflight already ran the seed once for this review). Collect, all
 under the resolved `run-NNN`:
 
 - the functional assertion pass/fail roll-up

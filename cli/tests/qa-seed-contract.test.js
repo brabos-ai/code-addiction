@@ -325,3 +325,16 @@ describe('F15 — add-review blocks without a seed and runs it before capture, t
     expect(body).toMatch(/identity/);
   });
 });
+
+describe('review findings — one seed run per review, and a seed gap is repaired by the agent that owns the seed', () => {
+  it('the review capture step says the lifecycle skips its Seed step because the preflight ran it', () => {
+    const text = read('fragments/qa-pipeline/add-review.md');
+    const evidence = text.slice(text.indexOf('<!-- section:evidence -->'), text.indexOf('<!-- /section:evidence -->'));
+    expect(evidence).toMatch(/skip[^\n]*Seed step|Seed step[^\n]*skip/i);
+  });
+
+  it('the build says a seed-coverage row goes to @e2e-agent as the one exception to the fix wave', () => {
+    const text = read('fragments/qa-pipeline/add-build.md');
+    expect(text).toMatch(/seed[^\n]*row[^\n]*(exception|only)[^\n]*@e2e-agent|@e2e-agent[^\n]*(exception|only)[^\n]*seed[^\n]*row/i);
+  });
+});

@@ -53,7 +53,7 @@ function walkDir(dir, cwd) {
 
 /**
  * Is this path project data that lives under .codeadd/ but is not an ADD file?
- * settings.json and the wiki are committed by the project, and so is the board.json a retired
+ * settings.json, the wiki and the QA seed in qa/ are committed by the project, and so is the board.json a retired
  * board feature left behind; a directory-based
  * removal has no manifest to tell it so, and must never list them.
  * @param {string} rel path relative to cwd, forward slashes
@@ -64,7 +64,8 @@ function isProjectData(rel) {
     rel === '.codeadd/board.json' ||
     rel === '.codeadd/settings.json' ||
     rel === '.codeadd/settings.local.json' ||
-    rel.startsWith('.codeadd/wiki/')
+    rel.startsWith('.codeadd/wiki/') ||
+    rel.startsWith('.codeadd/qa/')
   );
 }
 
