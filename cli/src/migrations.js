@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { intro, outro, log } from '@clack/prompts';
 import { readManifest, saveManifest } from './injection-core.js';
 import { resolveSelected } from './providers.js';
@@ -501,7 +500,7 @@ export function retireBoard(ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// 0007 — a secret never stays in the committed settings file
+// 0007 (superseded) and 0008 — the retired QA key leaves both settings files
 // ---------------------------------------------------------------------------
 
 const SETTINGS_REL = '.codeadd/settings.json';
@@ -521,56 +520,82 @@ function readJsonObject(file, label) {
 }
 
 /**
- * Move `qa.authSeed` from the committed `.codeadd/settings.json` to the gitignored
- * `.codeadd/settings.local.json`.
+ * Superseded by 0008 — a no-op. It keeps its id because projects' ledgers already record it.
  *
- * "How to sign in as a seeded user" is a credential in practice, and the committed file is
- * the wrong place for one. The value is NEVER put in `changes`, `notes` or `warnings`: all
- * three are printed. An unparsable file is never overwritten — the migration throws, the
- * runner reports it and the next update retries.
+ * @returns {{changes: string[], notes: string[], warnings: string[]}}
+ */
+export function supersededByRemoval() {
+  return { changes: [], notes: [], warnings: [] };
+}
+
+// retired-qa-key:begin
+// The only region of framwork/.codeadd/ and cli/src/ allowed to name the retired QA key.
+// cli/tests/qa-retired-key.test.js reads these markers.
+
+const RETIRED_QA_KEYS = ['authSeed'];
+
+/**
+ * Delete the retired QA key from a `qa` object.
+ *
+ * @param {unknown} qa  the `qa` section of a settings file
+ * @returns {{qa: object | undefined, dropped: boolean}}  `qa` is undefined when it became empty
+ */
+export function dropRetiredQaKeys(qa) {
+  if (!qa || typeof qa !== 'object' || Array.isArray(qa)) return { qa: qa === null ? undefined : qa, dropped: false };
+  const next = { ...qa };
+  let dropped = false;
+  for (const key of RETIRED_QA_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(next, key)) {
+      delete next[key];
+      dropped = true;
+    }
+  }
+  if (!dropped) return { qa, dropped: false };
+  return { qa: Object.keys(next).length === 0 ? undefined : next, dropped: true };
+}
+
+/**
+ * Remove the retired QA key from `.codeadd/settings.json` and `.codeadd/settings.local.json`.
+ *
+ * Both files are parsed before either is written, so an unparsable one leaves both untouched
+ * (the migration throws, the runner reports it and the next update retries). The value is
+ * never put in `changes`, `notes` or `warnings`: all three are printed.
  *
  * @param {{cwd: string}} ctx
  * @returns {{changes: string[], notes: string[], warnings: string[]}}
  */
-export function moveQaAuthSeed(ctx) {
+export function removeQaAuthSeed(ctx) {
   const changes = [];
   const notes = [];
   const warnings = [];
-  const settingsFile = path.join(ctx.cwd, SETTINGS_REL);
-  if (!fs.existsSync(settingsFile)) return { changes, notes, warnings };
-
-  const settings = readJsonObject(settingsFile, SETTINGS_REL);
-  if (!settings.qa || typeof settings.qa !== 'object' || !Object.prototype.hasOwnProperty.call(settings.qa, 'authSeed')) {
-    return { changes, notes, warnings };
+  const targets = [];
+  for (const rel of [SETTINGS_REL, LOCAL_SETTINGS_REL]) {
+    const file = path.join(ctx.cwd, rel);
+    if (!fs.existsSync(file)) continue;
+    const parsed = readJsonObject(file, rel);
+    const { qa, dropped } = dropRetiredQaKeys(parsed.qa);
+    if (dropped) targets.push({ rel, file, parsed, qa });
   }
+  if (targets.length === 0) return { changes, notes, warnings };
 
-  // Read the local file BEFORE writing anything, so an unreadable one leaves both untouched.
-  const localFile = path.join(ctx.cwd, LOCAL_SETTINGS_REL);
-  const local = fs.existsSync(localFile) ? readJsonObject(localFile, LOCAL_SETTINGS_REL) : { schema: 1 };
-  if (!local.qa || typeof local.qa !== 'object') local.qa = {};
-
-  const value = settings.qa.authSeed;
-  if (!Object.prototype.hasOwnProperty.call(local.qa, 'authSeed')) {
-    local.qa.authSeed = value;
-  } else if (local.qa.authSeed !== value) {
-    notes.push(`${LOCAL_SETTINGS_REL} already held a different qa.authSeed — kept it, and removed the one in ${SETTINGS_REL}`);
+  for (const { rel, file, parsed, qa } of targets) {
+    if (qa === undefined) delete parsed.qa;
+    else parsed.qa = qa;
+    fs.writeFileSync(file, JSON.stringify(parsed, null, 2) + '\n', 'utf8');
+    changes.push(`removed the retired QA key from ${rel}`);
   }
-  fs.writeFileSync(localFile, JSON.stringify(local, null, 2) + '\n', 'utf8');
-
-  delete settings.qa.authSeed;
-  fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2) + '\n', 'utf8');
-  changes.push(`moved qa.authSeed from ${SETTINGS_REL} to ${LOCAL_SETTINGS_REL}`);
-
   warnings.push(
-    `qa.authSeed lived in ${SETTINGS_REL}, which is committed. Check whether it was ever committed ` +
-      `(git log -S authSeed -- ${SETTINGS_REL}) and, if so, rotate that test password — history keeps it.`
+    'BREAKING: the QA configuration changed. The retired QA sign-in hint is gone, with no fallback. ' +
+      'Rerun /add-qa-setup: it studies your project and generates a tracked seed in .codeadd/qa/.'
   );
-  const ignored = spawnSync('git', ['check-ignore', '-q', LOCAL_SETTINGS_REL], { cwd: ctx.cwd });
-  if (ignored.status === 1) {
-    warnings.push(`git does not ignore ${LOCAL_SETTINGS_REL} — add it to your .gitignore so the moved value is never committed`);
+  if (targets.some((t) => t.rel === SETTINGS_REL)) {
+    warnings.push(
+      `The retired key sat in ${SETTINGS_REL}, which is committed. If it held a credential, git history keeps it — rotate it.`
+    );
   }
   return { changes, notes, warnings };
 }
+// retired-qa-key:end
 
 export const MIGRATIONS = [
   {
@@ -595,8 +620,13 @@ export const MIGRATIONS = [
   },
   {
     id: '0007-move-qa-auth-seed',
-    description: 'Move qa.authSeed out of the committed .codeadd/settings.json into the gitignored .codeadd/settings.local.json, and warn to rotate the password if it was ever committed',
-    run: moveQaAuthSeed,
+    description: 'Superseded by 0008 — no-op, kept so the ledger of projects that already ran it stays valid',
+    run: supersededByRemoval,
+  },
+  {
+    id: '0008-remove-qa-auth-seed',
+    description: 'Remove a retired QA key from both settings files and tell the user to rerun /add-qa-setup (BREAKING for QA users)',
+    run: removeQaAuthSeed,
   },
 ];
 
