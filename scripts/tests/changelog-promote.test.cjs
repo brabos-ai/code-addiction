@@ -142,8 +142,10 @@ test('changelog-promote#009 — the newest section after 1.9.2 names BREAKING fo
     body: text.slice(m.index + m[0].length, i + 1 < heads.length ? heads[i + 1].index : undefined),
   }));
   // [Unreleased] while the work waits for its release; the promoted section once /add-framework--release ran
-  const section = sections.find((s) => newer(s.version) && s.body.trim().length > 0);
-  assert.ok(section, 'no unreleased or post-1.9.2 section with content');
+  // every section newer than 1.9.2 together: an [Unreleased] fix may sit above the section that carries the note
+  const newerSections = sections.filter((s) => newer(s.version) && s.body.trim().length > 0);
+  assert.ok(newerSections.length > 0, 'no unreleased or post-1.9.2 section with content');
+  const section = { body: newerSections.map((s) => s.body).join('\n') };
   assert.match(section.body, /BREAKING for QA users/);
   assert.match(section.body, /0008/);
   assert.match(section.body, /\/add-qa-setup/);
