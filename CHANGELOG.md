@@ -6,8 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.9.4] - 2026-11-16
+
 ### Fixed
-- The QA seed in `.codeadd/qa/` is no longer left ignored by a managed `.gitignore` block written before `!.codeadd/qa/` existed. `codeadd update` now syncs the block even when the project is already up to date (it used to return first), adding the line once and never twice. `/add-qa-setup` adds the line to the managed block itself when `git check-ignore` still matches the seed.
+- The QA seed in `.codeadd/qa/` is no longer left ignored by a managed `.gitignore` block written before `!.codeadd/qa/` existed, including a project upgrading from 1.9.3. `codeadd update` (the migration) now syncs the block even when the project is already up to date (it used to return first), adding the line once and never twice. `/add-qa-setup` adds the line to the managed block itself when `git check-ignore` still matches the seed.
 
 ## [1.9.3] - 2026-11-13
 
