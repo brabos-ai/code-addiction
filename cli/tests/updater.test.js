@@ -288,6 +288,48 @@ describe('update command', () => {
     expect(gitignore).toContain('# END ADD');
   });
 
+  // qa-seed-gitignore (0079B): a block written by a 1.9.2/1.9.3 CLI lacks `!.codeadd/qa/`.
+  const STALE_BLOCK = [
+    '# ADD - managed by code-addiction',
+    '.codeadd/*', '!.codeadd/settings.json', '!.codeadd/wiki/', '.codeadd/settings.local.json',
+    '.claude/',
+    '# END ADD',
+    '',
+  ].join('\n');
+
+  it('adds !.codeadd/qa/ to a stale managed block when the project is already up to date', async () => {
+    writeManifestFile(tmpDir, { version: '2.0.0', source: 'release', ref: null, providers: ['claude'], gitignore: true });
+    fs.writeFileSync(path.join(tmpDir, '.gitignore'), 'node_modules/\n\n' + STALE_BLOCK);
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+
+    await update(tmpDir);
+
+    const lines = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8').split('\n');
+    expect(lines.filter((l) => l === '!.codeadd/qa/')).toHaveLength(1);
+    expect(lines).toContain('node_modules/');
+    expect(mocks.downloadReleaseAsset).not.toHaveBeenCalled();
+  });
+
+  it('adds !.codeadd/qa/ to a stale managed block on a real update, once, and a second run adds no duplicate', async () => {
+    writeManifestFile(tmpDir, { version: '1.0.0', source: 'release', ref: null, providers: ['claude'], gitignore: true });
+    fs.writeFileSync(path.join(tmpDir, '.gitignore'), STALE_BLOCK);
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    mocks.downloadReleaseAsset.mockResolvedValue(buildZip());
+
+    await update(tmpDir);
+    await update(tmpDir);
+
+    const lines = fs.readFileSync(path.join(tmpDir, '.gitignore'), 'utf8').split('\n');
+    expect(lines.filter((l) => l === '!.codeadd/qa/')).toHaveLength(1);
+  });
+
+  it('leaves .gitignore alone on an up-to-date project that opted out', async () => {
+    writeManifestFile(tmpDir, { version: '2.0.0', source: 'release', ref: null, providers: ['claude'], gitignore: false });
+    mocks.getLatestTag.mockResolvedValue('v2.0.0');
+    await update(tmpDir);
+    expect(fs.existsSync(path.join(tmpDir, '.gitignore'))).toBe(false);
+  });
+
   it('does not create .gitignore when manifest.gitignore is false', async () => {
     writeManifestFile(tmpDir, {
       version: '1.0.0',

@@ -134,6 +134,19 @@ describe('F8 — /add-qa-setup studies the project and generates the seed (L3.5)
   });
 });
 
+describe('qa-seed-gitignore — the setup repairs an ignored seed itself', () => {
+  it('the validate gate says what to do when the seed is ignored: add !.codeadd/qa/ to the managed block, not only "codeadd update"', () => {
+    const text = read('commands/add-qa-setup.md');
+    const start = text.indexOf('\n## STEP add-qa-setup.validate:');
+    expect(start).toBeGreaterThan(-1);
+    const validate = text.slice(start, text.indexOf('\n## ', start + 5));
+    expect(validate).toMatch(/!\.codeadd\/qa\//);
+    expect(validate).toMatch(/managed block[^\n]*(add|insert)|(add|insert)[^\n]*managed block/i);
+    expect(validate).toMatch(/after the `!\.codeadd\/wiki\/` line/);
+    expect(validate).toMatch(/once|no duplicate|already/i);
+  });
+});
+
 describe('F9 — agent-mode config values ask only what the analysis could not infer (L3.5)', () => {
   const fragment = () => read('fragments/agent-mode/add-qa-setup.md');
   const fallback = () => read('fallbacks/agent-mode.add-qa-setup.config-values.md');

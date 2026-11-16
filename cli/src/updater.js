@@ -83,7 +83,19 @@ export async function update(cwd, options = {}, scope = 'project') {
     writeMcpRegistration(cwd, resolveSelected(providerKeys, installScope), newVersion),
   );
 
+  // The block is synced BEFORE the early return too: a CLI older than the files it
+  // installed can leave a managed block without a line a newer release added
+  // (`!.codeadd/qa/`), and "already up to date" would then never repair it. The
+  // writer replaces the block in place, so it is idempotent.
+  const syncGitignore = () => {
+    if (installScope === 'project' && manifest.gitignore === true) {
+      writeGitignoreBlock(cwd, getInstalledDirs(providerKeys));
+      log.success('.gitignore synced.');
+    }
+  };
+
   if (currentVersion === newVersion) {
+    syncGitignore();
     outro(`Already up to date (v${currentVersion}).`);
     return;
   }
@@ -179,10 +191,7 @@ export async function update(cwd, options = {}, scope = 'project') {
   reportNotDetectedPlugins(plugins.notDetected);
 
   // Sync .gitignore block if opted-in during install (project scope only — never gitignore the home dir)
-  if (installScope === 'project' && manifest.gitignore === true) {
-    writeGitignoreBlock(cwd, getInstalledDirs(providerKeys));
-    log.success('.gitignore synced.');
-  }
+  syncGitignore();
 
   log.success(`Updated from v${currentVersion} to ${installSource.manifestVersion}`);
   outro(
