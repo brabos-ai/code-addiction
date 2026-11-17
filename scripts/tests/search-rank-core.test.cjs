@@ -127,3 +127,10 @@ test('search-rank-core#012 tunables are exported', () => {
   assert.equal(core.BUDGET_TOKENS, 2000);
   assert.equal(core.CHARS_PER_TOKEN, 4);
 });
+
+test('search-rank-core#013 reserve keeps the caller\'s own header lines inside the budget', () => {
+  const big = (id, score) => ({ id, score, pad: 'x'.repeat(3000) });
+  const rows = [big('a', 1), big('b', 0.95)];
+  assert.equal(core.cut(rows, { limit: 5 }).rows.length, 2);
+  assert.equal(core.cut(rows, { limit: 5, reserve: 3000 }).rows.length, 1);
+});

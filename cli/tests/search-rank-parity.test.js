@@ -103,6 +103,7 @@ describe('rank parity — search-rank-core.cjs and mcp/rank.mjs', () => {
       [mk([1, 0.9, 0.8]), { limit: 99 }],
       [mk([1, 0.9, 0.8]), { limit: 5, offset: 9 }],
       [mk([1, 0.1, 0.05]), { limit: 5, relevance: false }],
+      [big(3), { limit: 5, reserve: 3000 }],
       [big(6), { limit: 5 }],
       [[{ id: 'h', score: 1, pad: 'x'.repeat(20000) }, ...big(1)], { limit: 5 }],
     ];

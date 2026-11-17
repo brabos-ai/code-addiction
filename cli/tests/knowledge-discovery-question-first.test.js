@@ -65,14 +65,16 @@ const commandFragments = () =>
 // ─── L2 — the written contracts describe what the code does ──────────────────
 
 describe('L2.1 — the entry and its side-effect-free core carry the contract', () => {
-  it('names the two caps and the scoring rule in the usage block', () => {
+  it('names the ranking rule and the read keys in the entry and the core headers', () => {
     // The native reader split the shell header across two files: the entry
-    // owns argv/exit, and the core owns the caps and the scoring rule.
+    // owns argv/exit and the keys, and the core owns the ranking rule.
     const header = read(...CORE);
-    expect(header).toMatch(/per-term|terms? are scored|score/i);
-    expect(header).toMatch(/5 live|five live/i);
-    expect(header).toMatch(/2 dead|two dead/i);
-    expect(read(...SCRIPT)).toMatch(/MATCHED_LIVE|RETURNED_LIVE|LIVE_CAP|DEAD_CAP/);
+    expect(header).toMatch(/BM25/);
+    expect(header).toMatch(/whole-word or word-prefix/i);
+    expect(header).toMatch(/relevance cut/i);
+    const entry = read(...SCRIPT);
+    for (const k of ['MATCHED', 'COLLAPSED', 'RETURNED', 'NEXT_OFFSET', 'STOP']) expect(entry).toContain(k);
+    expect(entry).not.toMatch(/MATCHED_LIVE|RETURNED_LIVE|LIVE_CAP|DEAD_CAP/);
   });
 });
 

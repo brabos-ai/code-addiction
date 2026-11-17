@@ -228,6 +228,7 @@ export function collapseChains(rows, supersededBy) {
  *   opts.offset     rows to skip; the first row of a page is never cut by relevance
  *   opts.relevance  false for an enumeration that carries no score
  *   opts.serialize  row -> string, what the budget measures (default JSON.stringify)
+ *   opts.reserve    characters the caller spends outside the rows (its header lines)
  * Returns `{ rows, stop, nextOffset }`; `nextOffset` is null at the end of the list.
  */
 export function cut(rows, opts = {}) {
@@ -255,7 +256,7 @@ export function cut(rows, opts = {}) {
     }
     kept.push(page[i]);
   }
-  const budget = BUDGET_TOKENS * CHARS_PER_TOKEN;
+  const budget = BUDGET_TOKENS * CHARS_PER_TOKEN - Math.max(0, Math.trunc(opts.reserve) || 0);
   const size = (list) => list.reduce((n, r) => n + serialize(r).length + 1, 0);
   while (kept.length > 1 && size(kept) > budget) {
     kept.pop();

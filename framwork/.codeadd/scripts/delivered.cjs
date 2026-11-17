@@ -6,7 +6,8 @@
  * rule lives in the side-effect-free `delivery-index-core.cjs` beside it.
  *
  * Usage: node .codeadd/scripts/delivered.cjs write < record.json
- *        node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N] [--no-verify]
+ *        node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N] [--offset N] [--no-verify]
+ *        node .codeadd/scripts/delivered.cjs get <id> [--no-verify]
  *        node .codeadd/scripts/delivered.cjs verify [<id>] [--repair]
  *        node .codeadd/scripts/delivered.cjs touched <path> [<path>...]
  *        node .codeadd/scripts/delivered.cjs stamp <id> --code-sha <sha> [--pr <n>]
@@ -21,10 +22,13 @@
  * retired; the surviving hard dependency is git, for the corpus, and an unmet
  * one is an `ERROR=` value distinct from `REFUSED=`, exit 2.
  *
- * Output: KEY=VALUE lines, plus JSONL entries on `read`/`touched`. A line
+ * Output: KEY=VALUE lines, plus JSONL entries on `read`/`get`/`touched`.
+ *   read: MATCHED, COLLAPSED, RETURNED, OFFSET, NEXT_OFFSET (empty at the end), STOP
+ *         (drop|floor|limit|budget|end|no-terms), SKIPPED_LINES, then one lean row each.
+ *   get:  FOUND=0|1, TRUNCATED=commits:N,items:M when the record was cut, then the record. A line
  * starting with `{` is an entry; anything else is a key.
  *
- * Exits: 0 for probe results — `read`, `verify` and `touched` always exit 0,
+ * Exits: 0 for probe results — `read`, `get`, `verify` and `touched` always exit 0,
  *        including on an absent index. 1 ONLY when the filesystem refuses a
  *        write. 2 for caller error: a bad mode, bad arguments, a record
  *        breaking a hard ban (REFUSED=<name>), or a missing git root
@@ -38,7 +42,8 @@ const core = require('./delivery-index-core.cjs');
 
 const USAGE = [
   'Usage: node .codeadd/scripts/delivered.cjs write < record.json',
-  '       node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N] [--no-verify]',
+  '       node .codeadd/scripts/delivered.cjs read <query> [--layer product|internal] [--limit N<=20] [--offset N] [--no-verify]',
+  '       node .codeadd/scripts/delivered.cjs get <id> [--no-verify]',
   '       node .codeadd/scripts/delivered.cjs verify [<id>] [--repair]',
   '       node .codeadd/scripts/delivered.cjs touched <path> [<path>...]',
   '       node .codeadd/scripts/delivered.cjs stamp <id> --code-sha <sha> [--pr <n>]',
@@ -69,7 +74,8 @@ function parseInvocation(argv) {
     args.shift();
 
     let layer = '';
-    let limit = '5'; // the LIVE cap; the dead cap is fixed in the core
+    let limit = '5';
+    let offset = '0';
     let noVerify = false;
     while (args.length > 0) {
       const a = args[0];
@@ -81,6 +87,9 @@ function parseInvocation(argv) {
       } else if (a === '--limit') {
         limit = args[1] === undefined ? '' : args[1];
         args.splice(0, 2);
+      } else if (a === '--offset') {
+        offset = args[1] === undefined ? '' : args[1];
+        args.splice(0, 2);
       } else if (a === '--no-verify') {
         noVerify = true;
         args.shift();
@@ -89,10 +98,25 @@ function parseInvocation(argv) {
       }
     }
     if (layer !== '' && layer !== 'product' && layer !== 'internal') return { ok: false };
-    if (!/^[0-9]+$/.test(limit)) return { ok: false };
+    if (!/^[0-9]+$/.test(limit) || !/^[0-9]+$/.test(offset)) return { ok: false };
     const parsed = parseInt(limit, 10);
-    if (!(parsed > 0)) return { ok: false };
-    return { ok: true, mode, query, layer, limit: parsed, noVerify };
+    if (!(parsed > 0) || parsed > 20) return { ok: false };
+    return { ok: true, mode, query, layer, limit: parsed, offset: parseInt(offset, 10), noVerify };
+  }
+
+  if (mode === 'get') {
+    const id = args.shift() || '';
+    if (!id || id.startsWith('--')) return { ok: false };
+    let noVerify = false;
+    while (args.length > 0) {
+      if (args[0] === '--no-verify') {
+        noVerify = true;
+        args.shift();
+      } else {
+        return { ok: false };
+      }
+    }
+    return { ok: true, mode, id, noVerify };
   }
 
   if (mode === 'verify') {
@@ -205,14 +229,23 @@ function main(argv) {
 
   if (inv.mode === 'read') {
     const r = core.performRead(ctx, inv);
-    let out = 'MATCHED_LIVE=' + String(r.matchedLive) + '\n';
-    out += 'MATCHED_DEAD=' + String(r.matchedDead) + '\n';
-    out += 'RETURNED_LIVE=' + String(r.returnedLive) + '\n';
-    out += 'RETURNED_DEAD=' + String(r.returnedDead) + '\n';
-    out += 'LIVE_CAP=' + String(r.liveCap) + '\n';
-    out += 'DEAD_CAP=' + String(r.deadCap) + '\n';
+    let out = 'MATCHED=' + String(r.matched) + '\n';
+    out += 'COLLAPSED=' + String(r.collapsed) + '\n';
+    out += 'RETURNED=' + String(r.returned) + '\n';
+    out += 'OFFSET=' + String(r.offset) + '\n';
+    out += 'NEXT_OFFSET=' + (r.nextOffset === null ? '' : String(r.nextOffset)) + '\n';
+    out += 'STOP=' + r.stop + '\n';
     out += 'SKIPPED_LINES=' + r.skipped.join(',') + '\n';
-    for (const e of r.entries) out += JSON.stringify(e) + '\n';
+    for (const e of r.rows) out += JSON.stringify(e) + '\n';
+    write(out);
+    process.exit(0);
+  }
+
+  if (inv.mode === 'get') {
+    const r = core.performGet(ctx, inv);
+    let out = 'FOUND=' + (r.found ? '1' : '0') + '\n';
+    if (r.truncated) out += 'TRUNCATED=commits:' + String(r.truncated.commits) + ',items:' + String(r.truncated.items) + '\n';
+    if (r.found) out += JSON.stringify(r.record) + '\n';
     write(out);
     process.exit(0);
   }
@@ -245,7 +278,7 @@ function main(argv) {
     process.exit(0);
   }
 
-  // parseInvocation admits only the five modes above.
+  // parseInvocation admits only the six modes above.
   usage();
   process.exit(2);
 }
