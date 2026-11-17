@@ -213,15 +213,18 @@ For `/add-brainstorm` (creates `.codeadd/docs/brainstorm/YYYY-MM-DDTHHMMSS-<slug
 **Narrowing of Universal Document Requirements — declared, not assumed.** This schema keeps `id`, `type`, `created` and `schema`, adds `path`, `topic`, `doc` and `delivery`, and **relaxes `related`, `tags`, `## TL;DR` and the TOC rule**. The one-screen cap is the artifact's entire purpose, and every relaxed field costs lines without being read by the one consumer this file has.
 
 - **Frontmatter:** `id: BRN-<slug>` (the same id the paired brainstorm carries — no new prefix, and never `status.cjs next-id`), `type: brainstorm-intent`, `created: YYYY-MM-DD`, `schema: {{doc-schema}}`, `path: spike|bounded|architectural`, `topic: <slug>`, `doc: <brainstorm document path, or none>`, `delivery: confirm|automatic` (the user's answer to the approval; `{{skill:add--delivery-mode/SKILL.md}}` owns what each value does, and an absent key reads as `confirm`)
-- **Sections:** Objective · Decided · Open · Prior art · Rejected
+- **Sections:** Problem · Objective · What we expect · Decided · Open · Acceptance criteria · Prior art · Rejected
 - **Depth floor:**
+  - **Problem** — the user pain in product terms: what is bad or missing today, and who feels it. Never a solution.
   - **Objective** — the brainstorm's objective, copied verbatim. On `bounded`, where no brainstorm document exists, this section is the only place it survives the handoff.
+  - **What we expect** — four labelled parts, all in the product view: **moment of use** (when and why the user uses it); **output example** (one concrete example of the output — a file, a screen or a CLI run — marked fictitious); **done when** (a criterion the user can check); **out of scope** (what the card leaves out). In a bug or hotfix the output example is one line: the expected correct behaviour.
   - **Decided** — one bullet per closed decision, each carrying its one-line rationale and the part of the objective it serves. This is what `/add-new` extracts.
-  - **Open** — the literal word `None` when the conversation closed everything, which is the normal case. Otherwise one bullet per question the conversation could not close. ⛔ **A section that is present but empty is read as absent**, and the reader falls back to the full ceremony — a missing signal means "not closed", never "closed".
+  - **Open** — the literal word `None` when the conversation closed everything, which is the normal case. Otherwise one bullet per question the conversation could not close, each carrying a recommendation. ⛔ **A section that is present but empty is read as absent**, and the reader falls back to the full ceremony — a missing signal means "not closed", never "closed".
+  - **Acceptance criteria** — at least one `WHEN <what the user does> THEN <what the user sees>` line, written as what the user checks.
   - **Prior art** — `<id> <status> — <what it was>` per hit, filled from the INDEX and GRAPH steps `/add-brainstorm` STEP 1 already ran, so the reader does not run them again for anything named here.
   - **Rejected** — one bullet per direction the conversation discarded, with why. It stops the next session re-proposing it.
 - **Compression:** bullets only, no narrative. Every section may read `None`.
-- **Hard bans:** writing a question into **Open** that one more turn of conversation would have settled — it lands in `/add-new` as exactly the redundant questionnaire this artifact exists to remove; restating the brainstorm document; any implementation detail; a `path` value outside the three; writing this file at all on the `spike` path.
+- **Hard bans:** writing a question into **Open** that one more turn of conversation would have settled — it lands in `/add-new` as exactly the redundant questionnaire this artifact exists to remove; restating the brainstorm document; any implementation detail; a `path` value outside the three; an output example not marked fictitious; an acceptance criterion that names an implementation; writing this file at all on the `spike` path.
 
 ### epic
 
