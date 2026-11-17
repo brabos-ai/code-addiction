@@ -1226,3 +1226,26 @@ describe('/add-framework--done — the CI gate it reproduces', () => {
     });
   }
 });
+
+describe('docs-search-precision — the workbench graph skill describes the lean, scored search', () => {
+  const skill = fs.readFileSync(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'workbench', 'skills', 'add-artefact-graph', 'SKILL.md'),
+    'utf8',
+  );
+  const row = (verb) => skill.split('\n').filter((l) => l.startsWith(`| \`${verb}\``) || l.includes(`\`${verb}\` — **MCP only**`)).join('\n');
+
+  it('search says hits are lean and scored, with a snippet and a page cursor', () => {
+    const r = row('search');
+    expect(r).toMatch(/score/);
+    expect(r).toMatch(/snippet/);
+    expect(r).toMatch(/offset/);
+  });
+
+  it('get says it carries relations, tags and attachments and may report truncated', () => {
+    const r = row('get');
+    expect(r).toMatch(/relations/);
+    expect(r).toMatch(/tags/);
+    expect(r).toMatch(/attachments/);
+    expect(r).toMatch(/truncated/);
+  });
+});
