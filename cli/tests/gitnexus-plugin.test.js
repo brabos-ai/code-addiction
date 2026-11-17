@@ -43,9 +43,10 @@ describe('gitnexus catalog entry', () => {
     expect(Array.isArray(e.skills)).toBe(true);
   });
 
-  it('injects exactly the seven target commands', () => {
+  it('injects exactly the eight target commands', () => {
     // add-build joined when its main session was seen calling gitnexus with no guidance at all.
-    expect(catalogEntry().injects.sort()).toEqual(['add-build', 'add-diagnose', 'add-done', 'add-hotfix', 'add-new', 'add-plan', 'add-wiki']);
+    // add-review joined with plan 2026-11-16T205432-PLAN--gitnexus-integration (detect_changes over the diff).
+    expect(catalogEntry().injects.sort()).toEqual(['add-build', 'add-diagnose', 'add-done', 'add-hotfix', 'add-new', 'add-plan', 'add-review', 'add-wiki']);
   });
 
   it('ships the add--gitnexus skill', () => {
@@ -84,8 +85,9 @@ describe('gitnexus fragments carry the repo rule themselves', () => {
     ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments', 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`),
   ];
 
-  it('covers the sixteen fragments', () => {
-    expect(fragments.length).toBe(16);
+  it('covers the seventeen fragments', () => {
+    // 16 -> 17: fragments/add-review.md (plan 2026-11-16T205432-PLAN--gitnexus-integration, F4).
+    expect(fragments.length).toBe(17);
   });
 
   for (const rel of fragments) {
@@ -199,5 +201,141 @@ describe('gitnexus skills', () => {
     for (const native of ['gitnexus-exploring', 'gitnexus-impact-analysis', 'gitnexus-debugging']) {
       expect(content, `add--gitnexus should reference ${native}`).toContain(native);
     }
+  });
+});
+
+// ─── plan 2026-11-16T205432-PLAN--gitnexus-integration — L1.3 to L1.9 ───
+const read = (...p) => fs.readFileSync(path.join(...p), 'utf8');
+const FRAG = (name) => (fs.existsSync(path.join(PLUGIN_DIR, 'fragments', name)) ? read(PLUGIN_DIR, 'fragments', name) : '');
+const SKILL_TEXT = () => read(PLUGIN_DIR, 'skills', 'add--gitnexus', 'SKILL.md');
+const BRIDGED = ['add-plan', 'add-hotfix', 'add-diagnose', 'add-review'];
+const SIX_SKILLS = ['gitnexus-exploring', 'gitnexus-impact-analysis', 'gitnexus-debugging', 'gitnexus-refactoring', 'gitnexus-guide', 'gitnexus-cli'];
+
+describe('gitnexus freshness and the bridge (L1.3, L1.5)', () => {
+  for (const cmd of BRIDGED) {
+    it(`${cmd} fragment has a graph-fresh section with the exact commands`, () => {
+      const sections = parseFragmentSections(FRAG(`${cmd}.md`));
+      const body = sections.get('graph-fresh');
+      expect(body, `${cmd}.md has no graph-fresh section`).toBeDefined();
+      for (const needle of ['gitnexus status --json', 'stale', 'up-to-date', 'gitnexus analyze --skip-agents-md']) {
+        expect(body, `${cmd} graph-fresh lacks ${needle}`).toContain(needle);
+      }
+    });
+
+    it(`${cmd} fragment carries the bridge, the paging rule and uses add--knowledge-discovery`, () => {
+      const text = FRAG(`${cmd}.md`);
+      const sections = [...parseFragmentSections(text).values()];
+      expect(sections.some((b) => b.includes('GRAPH question') && b.includes('add--knowledge-discovery') && b.includes('summaryOnly'))).toBe(true);
+      const uses = text.match(/<!-- uses:[\s\S]*?-->/)?.[0] ?? '';
+      expect(uses).toContain('skill: add--knowledge-discovery');
+    });
+  }
+});
+
+describe('gitnexus freshness slot order (L1.4)', () => {
+  const where = {
+    'add-plan': 'STEP add-plan.context',
+    'add-hotfix': 'STEP add-hotfix.context',
+    'add-diagnose': 'STEP add-diagnose.context',
+    'add-review': 'STEP add-review.bootstrap',
+  };
+  const dispatchesInjected = (line, agents) => agents.some((a) => line.includes(`@${a}`) && (/DISPATCH/i.test(line) || /\*\*Agent:\*\*/.test(line)));
+
+  for (const cmd of BRIDGED) {
+    it(`${cmd}: graph-fresh sits in ${where[cmd]}, before every other gitnexus marker and agent dispatch`, () => {
+      const src = read(COMMANDS_DIR, `${cmd}.md`);
+      const open = src.indexOf('<!-- slot:gitnexus.graph-fresh');
+      expect(open, `${cmd} has no gitnexus.graph-fresh slot`).toBeGreaterThan(-1);
+      const stepStart = src.indexOf(`## ${where[cmd]}`);
+      expect(stepStart, `no ${where[cmd]} heading`).toBeGreaterThan(-1);
+      const nextStep = src.indexOf('\n## STEP', stepStart + 5);
+      expect(open).toBeGreaterThan(stepStart);
+      expect(open).toBeLessThan(nextStep === -1 ? Infinity : nextStep);
+
+      const others = [...src.matchAll(/<!-- plugin:gitnexus:(?!graph-fresh)/g)].map((m) => m.index);
+      for (const o of others) expect(open, `${cmd}: another gitnexus marker precedes graph-fresh`).toBeLessThan(o);
+
+      const agents = catalogEntry().agents.map((t) => t.agent);
+      let offset = 0;
+      for (const line of src.split('\n')) {
+        if (dispatchesInjected(line, agents)) expect(open, `${cmd}: ${line.trim().slice(0, 60)} precedes graph-fresh`).toBeLessThan(offset);
+        offset += line.length + 1;
+      }
+    });
+  }
+});
+
+describe('add--gitnexus skill reading rules (L1.6)', () => {
+  it('has Freshness and Small answers headings and the vocabulary', () => {
+    const t = SKILL_TEXT();
+    expect(t).toMatch(/^#+ .*Freshness/m);
+    expect(t).toMatch(/^#+ .*Small answers/m);
+    for (const w of ['summaryOnly', 'limit', 'offset', 'maxTokens', 'detect_changes']) expect(t).toContain(w);
+  });
+
+  it('names only the six skills `analyze --skip-agents-md` installs', () => {
+    const t = SKILL_TEXT();
+    expect(t).not.toContain('gitnexus-pr-review');
+    const names = new Set(t.match(/gitnexus-[a-z-]+/g) ?? []);
+    for (const n of names) expect(SIX_SKILLS, `${n} is not a standard skill`).toContain(n);
+  });
+});
+
+describe('detect_changes over the diff (L1.7)', () => {
+  const files = { review: FRAG('add-review.md'), reviewer: FRAG('agents/reviewer-agent.md') };
+  for (const [k, text] of Object.entries(files)) {
+    it(`${k} fragment names detect_changes, compare, base_ref, get-main-branch.cjs and GRAPH_IMPACT`, () => {
+      for (const w of ['detect_changes', 'compare', 'base_ref', 'get-main-branch.cjs', 'GRAPH_IMPACT']) expect(text, w).toContain(w);
+      for (const l of text.split('\n').filter((x) => /scope:\s*"all"|`all`/.test(x))) expect(l, 'all may only appear as a warning').toMatch(/never|do not/i);
+    });
+  }
+  it('the reviewer fragment never tells the agent to run analyze or status', () => {
+    const lines = files.reviewer.split('\n').filter((l) => /gitnexus (analyze|status)/.test(l));
+    for (const l of lines) expect(l, 'only a prohibition may mention them').toMatch(/never|do not|don't/i);
+  });
+});
+
+describe('no hooks, no AGENTS.md writes in any instruction (L1.8)', () => {
+  const surfaces = () => {
+    const out = [];
+    const walk = (d) => {
+      for (const f of fs.readdirSync(d, { withFileTypes: true })) {
+        if (f.isDirectory()) walk(path.join(d, f.name));
+        else out.push([path.relative(ROOT, path.join(d, f.name)), read(d, f.name)]);
+      }
+    };
+    walk(PLUGIN_DIR);
+    out.push(['plugins.json#gitnexus', JSON.stringify(catalogEntry())]);
+    out.push(['add-setup.md', read(COMMANDS_DIR, 'add-setup.md')]);
+    return out;
+  };
+  it('every `gitnexus analyze` carries --skip-agents-md; every `gitnexus setup` line forbids it', () => {
+    for (const [name, text] of surfaces()) {
+      for (const m of text.matchAll(/gitnexus analyze(?!\s+--skip-agents-md)/g)) {
+        // allow prose "gitnexus analyze` writes" only when followed by a skip flag nearby is NOT allowed
+        throw new Error(`${name}: bare gitnexus analyze at ${m.index}`);
+      }
+      const textLines = text.replace(/\\n/g, '\n').split('\n');
+      for (const l of textLines) if (l.includes('gitnexus setup')) expect(l, `${name}: ${l}`).toMatch(/do not|never/i);
+    }
+  });
+});
+
+describe('license shown before enabling (L1.9)', () => {
+  it('hints state PolyForm Noncommercial and the manual setup', () => {
+    const e = catalogEntry();
+    expect(e.postEnableHint).toContain('PolyForm Noncommercial');
+    expect(e.installHint).toContain('PolyForm Noncommercial');
+    for (const w of ['mcp add gitnexus', 'gitnexus analyze --skip-agents-md', '.claude/skills']) expect(e.postEnableHint).toContain(w);
+    expect(e.postEnableHint).toContain('grep');
+    expect(e.installHint).toContain('npm install -g gitnexus');
+  });
+  it('add-setup offer row states the license', () => {
+    const row = read(COMMANDS_DIR, 'add-setup.md').split('\n').find((l) => l.startsWith('|') && l.includes('gitnexus'));
+    expect(row).toContain('PolyForm Noncommercial');
+  });
+  it('reviewer fragment has the graph section with the repo rule', () => {
+    const body = parseFragmentSections(FRAG('agents/reviewer-agent.md')).get('graph');
+    expect(body).toContain('list_repos');
   });
 });
