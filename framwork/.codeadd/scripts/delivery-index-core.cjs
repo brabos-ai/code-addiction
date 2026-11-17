@@ -48,6 +48,7 @@
  *   performWrite(ctx, raw)               -> refused | cannot-write-index | summary
  *   performStamp(ctx, opts)              -> the same, for one recorded id
  *   performRead(ctx, opts)               -> counts, skipped, entries
+ *   performHistoryRead(ctx, opts)        -> the entries recording one node id
  *   performVerify(ctx, opts)             -> results, repaired, skipped | error
  *   performTouched(ctx, opts)            -> complete, curated, curatedOnly, ...
  *
@@ -498,6 +499,61 @@ function performRead(ctx, opts = {}) {
   };
 }
 
+// ─── history read ────────────────────────────────────────────────────────────
+
+/**
+ * The entries recording ONE artefact: those whose `node` equals the full node id,
+ * at the record or at an item. This is an exact-node question, not a text search —
+ * it must never pass through the text ranker, because a relevance cut could drop
+ * the very entry that carries the node. Graph `history` and the MCP `history` ask it.
+ *
+ * Status-first order (live -> changed -> superseded -> gone), then recency, then
+ * id; two independent buckets (`limit` live, DEAD_CAP dead) with no backfill; the
+ * six counts `history` has always reported. `noVerify` returns the stored status.
+ */
+function performHistoryRead(ctx, opts = {}) {
+  const { byId, skipped } = loadIndex(ctx);
+  const node = String(opts.node === undefined ? '' : opts.node);
+  const layer = opts.layer || '';
+
+  let list = Array.from(byId.values());
+  if (layer) list = list.filter((e) => e.layer === layer);
+  list = list.filter((e) => e.node === node
+    || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node)));
+
+  if (!opts.noVerify) {
+    for (const e of list) e.status = verifyEntry(ctx, e).status;
+  }
+
+  list.sort((a, b) => {
+    const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
+    const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
+    if (ra !== rb) return ra - rb;
+    if (a.ts !== b.ts) return a.ts < b.ts ? 1 : -1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+
+  const requested = typeof opts.limit === 'string' ? parseInt(opts.limit, 10) : opts.limit;
+  const LIVE_CAP = Number.isFinite(requested) && requested > 0 ? Math.trunc(requested) : DEFAULT_LIVE_CAP;
+  const DEAD = new Set(['superseded', 'gone']);
+  const liveList = list.filter((e) => !DEAD.has(e.status));
+  const deadList = list.filter((e) => DEAD.has(e.status));
+  const returnedLive = liveList.slice(0, LIVE_CAP);
+  const returnedDead = deadList.slice(0, DEAD_CAP);
+
+  return {
+    ok: true,
+    matchedLive: liveList.length,
+    matchedDead: deadList.length,
+    returnedLive: returnedLive.length,
+    returnedDead: returnedDead.length,
+    liveCap: LIVE_CAP,
+    deadCap: DEAD_CAP,
+    skipped,
+    entries: [...returnedLive, ...returnedDead],
+  };
+}
+
 // ─── verify ──────────────────────────────────────────────────────────────────
 
 function performVerify(ctx, opts = {}) {
@@ -626,6 +682,7 @@ module.exports = {
   verifyEntry,
   performWrite,
   performRead,
+  performHistoryRead,
   performVerify,
   performStamp,
   performTouched,

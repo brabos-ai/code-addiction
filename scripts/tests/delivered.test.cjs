@@ -1321,3 +1321,48 @@ test('delivered#089 L1.13: with no docs root, write is a named error and read is
     r.cleanup();
   }
 });
+
+// --- performHistoryRead: the exact-node question, off the text ranker ----------
+
+test('delivered#090 F3: performHistoryRead returns an entry carrying the node even when no text names it', () =>
+  withRepo((r) => {
+    src(r.repo, 'a.txt', 'alphaFind\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [
+      entry('0001F', 'live', 'unrelated wording', 'nothing here', 'a.txt', 'alphaFind', { node: 'product/command/add-done' }),
+      entry('0002F', 'live', 'add-done mentioned in text only', 'add-done', 'a.txt', 'alphaFind'),
+      entry('0003F', 'superseded', 'older', 'older', 'a.txt', 'alphaFind', { node: 'product/command/add-done', superseded_by: '0001F' }),
+    ]);
+    const core = require(path.join(h.SCRIPTS_DIR, 'delivery-index-core.cjs'));
+    const ctx = core.createContext({ root: r.repo });
+    const out = core.performHistoryRead(ctx, { node: 'product/command/add-done', limit: 50 });
+    assert.deepEqual(out.entries.map((e) => e.id), ['0001F', '0003F']);
+    assert.equal(out.matchedLive, 1);
+    assert.equal(out.matchedDead, 1);
+    assert.equal(out.returnedLive, 1);
+    assert.equal(out.returnedDead, 1);
+    assert.equal(out.liveCap, 50);
+    assert.equal(out.deadCap, core.DEAD_CAP);
+    assert.deepEqual(out.skipped, []);
+  }));
+
+test('delivered#091 F3: performHistoryRead honours --layer and the dead cap, and matches an item-level node', () =>
+  withRepo((r) => {
+    src(r.repo, 'a.txt', 'alphaFind\n');
+    commitAll(r.repo);
+    const items = [{ what: 'x', at: 'a.txt', find: 'alphaFind', node: 'internal/skill/foo' }];
+    writeIndex(r.repo, [
+      JSON.stringify({ ...JSON.parse(entry('0010F', 'live', 'n', 'w', 'a.txt', 'alphaFind')), layer: 'internal', items }),
+      entry('0011F', 'gone', 'g1', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+      entry('0012F', 'gone', 'g2', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+      entry('0013F', 'gone', 'g3', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+    ]);
+    const core = require(path.join(h.SCRIPTS_DIR, 'delivery-index-core.cjs'));
+    const ctx = core.createContext({ root: r.repo });
+    const out = core.performHistoryRead(ctx, { node: 'internal/skill/foo', limit: 50 });
+    assert.equal(out.entries.length, 3); // the live item-level hit + 2 dead (cap)
+    assert.equal(out.matchedDead, 3);
+    assert.equal(out.returnedDead, 2);
+    const layered = core.performHistoryRead(core.createContext({ root: r.repo }), { node: 'internal/skill/foo', layer: 'internal', limit: 50 });
+    assert.deepEqual(layered.entries.map((e) => e.id), ['0010F']);
+  }));
