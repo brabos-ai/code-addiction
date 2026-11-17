@@ -12,7 +12,7 @@ import path from 'node:path';
  * twelve times. A fragment with a section the sidecar lacks, or a sidecar
  * point with no section, still fails them.
  */
-export const BASELINE_POINTS = 51;
+export const BASELINE_POINTS = 54; // 51 -> 54: gitnexus graph-fresh on add-plan, add-hotfix, add-diagnose (plan 2026-11-16T205432-PLAN--gitnexus-integration, F3)
 
 const FRAGMENTS = path.resolve(import.meta.dirname, '..', '..', '..', 'framwork', '.codeadd', 'fragments', 'agent-mode');
 

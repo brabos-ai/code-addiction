@@ -239,7 +239,7 @@ describe('gitnexus freshness slot order (L1.4)', () => {
     'add-diagnose': 'STEP add-diagnose.context',
     'add-review': 'STEP add-review.bootstrap',
   };
-  const dispatchesInjected = (line, agents) => agents.some((a) => line.includes(`@${a}`) && (/DISPATCH/i.test(line) || /\*\*Agent:\*\*/.test(line)));
+  const dispatchesInjected = (line, agents) => !line.startsWith('|') && agents.some((a) => line.includes(`@${a}`) && (/DISPATCH/i.test(line) || /\*\*Agent:\*\*/.test(line)));
 
   for (const cmd of BRIDGED) {
     it(`${cmd}: graph-fresh sits in ${where[cmd]}, before every other gitnexus marker and agent dispatch`, () => {

@@ -105,6 +105,11 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
          or with `NOT VERIFIED` plus the reason when the graph could not be reached
 ```
 
+<!-- slot:gitnexus.graph-fresh fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-fresh -->
+<!-- /plugin:gitnexus:graph-fresh -->
+<!-- /slot:gitnexus.graph-fresh -->
+
 ---
 
 ## STEP add-diagnose.capture: Capture & Reformulate Input (internal)

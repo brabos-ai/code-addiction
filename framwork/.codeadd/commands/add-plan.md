@@ -130,6 +130,11 @@ Provides: BRANCH (feature ID, type, phase), FEATURE_DOCS (HAS_DESIGN, HAS_PLAN),
 
 **Epic Detection:** IF `HAS_EPIC=true`, read epic.md, identify next pending SF (EPIC_CURRENT_SF), set scope to that SF only, load its about.md + shared discovery.md, and inform user: "Planning subfeature ${EPIC_CURRENT_SF} of epic ${FEATURE_ID}". IF HAS_EPIC=true AND no pending subfeature, NEVER plan—inform user all SFs complete and suggest `/add-done`.
 
+<!-- slot:gitnexus.graph-fresh fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-fresh -->
+<!-- /plugin:gitnexus:graph-fresh -->
+<!-- /slot:gitnexus.graph-fresh -->
+
 ---
 
 ## STEP add-plan.recent: Load Recent Context (INTELLIGENT)
