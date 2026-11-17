@@ -572,7 +572,7 @@ classified at STEP add-brainstorm.classify, the approval's answer as `delivery:`
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
 STEP add-brainstorm.load-context found, and the directions that were rejected.
 
-It also carries the product view the schema's depth floors check: the **Problem** (the user pain), the four parts of **What we expect** (moment of use, an output example marked fictitious, done when, out of scope) and the **Acceptance criteria** as `WHEN … THEN …` lines. Take each from what the user said. When the conversation never reached one, ask it in the same turn as the approval — never invent it and never write `unknown`.
+It also carries the product view the schema's depth floors check: the **Problem** (the user pain), the four parts of **What we expect** (moment of use, an output example marked fictitious, done when, out of scope) and the **Acceptance criteria** as `WHEN … THEN …` lines. Take each from what the user said. When the conversation never reached one, ask it before the approval question — never invent it and never write `unknown`.
 
 
 ```

@@ -221,7 +221,7 @@ Several agents can work on one codebase: product PMs shape the work, engineers b
 start a new agent, tell it to read its role file and use this framework:
 
 - `.codeadd/agent-mode/roles/product-pm.md` owns scope, release and priority, and shapes the work up to
-  the intent file and the feature folder. It never implements.
+  the intent (section 10 says where it lives when work is tracked outside the repository) and the feature folder. It never implements.
 - `.codeadd/agent-mode/roles/chief-engineer.md` takes one feature and runs it through `/add-plan`,
   `/add-build` and then `/add-done`. A bug runs `/add-hotfix`, then `/add-done`.
 
@@ -233,9 +233,9 @@ Rules for the team, every time:
 - Every agent has its own git worktree and its own session. The rules for that are in section 2. They are
   not repeated here.
 - One engineer takes one feature at a time. This is a process rule the product PM keeps: the PM says in its
-  summary which engineer takes which intent file, and nothing stops a second engineer.
+  summary which engineer takes which card or intent file, and nothing stops a second engineer.
 - The product PM hands work to an engineer with the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`)
-  and the feature folder `.codeadd/docs/features/<id>-<slug>/`, both on `codeadd-docs`.
+  and the feature folder `.codeadd/docs/features/<id>-<slug>/`, both on `codeadd-docs`. Section 10 covers the case where the card is the intent.
 - Push `codeadd-docs` before the handoff: `/add-new` commits locally and pushes nothing, and another worktree does not see a commit that was never pushed.
 - `/add-review` is optional (section 4). Another engineer may run it in its own worktree.
 
