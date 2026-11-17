@@ -49,6 +49,24 @@ it('history rejects invalid layer and limits at the native reader boundary', () 
   }
 });
 
+it('history asks the reader for the exact node (performHistoryRead), never the text ranker', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hist-reader-'));
+  try {
+    const reader = path.join(tmp, 'reader.cjs');
+    const realCore = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delivery-index-core.cjs');
+    fs.writeFileSync(reader, `const base = require(${JSON.stringify(realCore)});
+module.exports = { ...base,
+  performRead() { throw new Error('history must not use the text ranker'); },
+  performHistoryRead(ctx, args) { return { ...base.performHistoryRead(ctx, args), entries: [{ id: 'EXACT', node: args.node, items: [] }], matchedLive: 1, returnedLive: 1 }; } };`);
+    execFileSync('git', ['init', '-q', tmp]);
+    const out = history(G, 'product/skill/skillX', { script: reader, cwd: tmp });
+    expect(out.unavailable).toBeNull();
+    expect(out.entries.map((e) => e.id)).toEqual(['EXACT']);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 /**
  *   cmdA ──uses──> skillX ──uses──> skillY
  *   cmdB ──uses──> skillX

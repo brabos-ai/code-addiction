@@ -259,7 +259,7 @@ const DELIVERY_CORE = path.join(ROOT, 'framwork', '.codeadd', 'scripts', 'delive
 function deliveryIndex(reader = DELIVERY_CORE) {
   const loaded = require(path.resolve(reader));
   const core = loaded?.core ?? loaded;
-  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performTouched']) {
+  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performHistoryRead', 'performTouched']) {
     if (typeof core?.[method] !== 'function') throw new Error(`Native delivery reader lacks ${method}`);
   }
   return core;
@@ -302,12 +302,10 @@ const WRITING_FLAGS = new Set(['--repair', '--write', '--fix']);
 function history(graph, ref, opts = {}) {
   const node = resolve(graph, ref);
 
-  // The core matches free text against id, name, words, `node` and
-  // items[].what / items[].find — never against items[].at, which --repair
-  // rewrites. So the query is the bare name, and it now reaches an entry whose
-  // only mention of this artefact is its `node`. The filter below still runs:
-  // the text search can match a word rather than the artefact, and the filter
-  // is what makes this an answer about the ARTEFACT.
+  // The question is exact — which entries record THIS node — so it goes to
+  // `performHistoryRead` with the full node id, never to the text ranker: a
+  // relevance cut could drop the very entry that carries the node. The filter
+  // below stays as the same check over what comes back.
   const name = node.slice(node.lastIndexOf('/') + 1);
 
   const unavailable = (reason, detail) => ({
@@ -350,8 +348,8 @@ function history(graph, ref, opts = {}) {
   let read;
   try {
     const ctx = core.createContext({ root: rootRes.root });
-    read = core.performRead(ctx, {
-      query: name,
+    read = core.performHistoryRead(ctx, {
+      node,
       layer: opts.layer || '',
       limit: opts.limit ?? 50,
     });
