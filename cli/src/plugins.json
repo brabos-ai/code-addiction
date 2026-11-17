@@ -18,8 +18,8 @@
     "description": "Code knowledge-graph navigation (calls, refs, blast-radius) via MCP",
     "detect": "gitnexus --version",
     "homepage": "https://github.com/abhigyanpatwari/GitNexus",
-    "installHint": "Install globally: npm install -g gitnexus",
-    "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) gitnexus setup     # wire MCP (once)\n  2) gitnexus analyze   # index this repo (from repo root)\n  3) verify: ask Claude to run gitnexus list_repos (or /mcp) — this repo MUST appear indexed; if it does not, the commands silently fall back to grep.\nRe-run analyze after large changes. Docs: https://github.com/abhigyanpatwari/GitNexus",
+    "installHint": "Install globally: npm install -g gitnexus. GitNexus is licensed PolyForm Noncommercial 1.0.0; commercial use needs a license from its author.",
+    "postEnableHint": "gitnexus enabled. Make the graph usable:\n  1) register the MCP server by hand — Claude Code: claude mcp add gitnexus -- npx -y gitnexus@latest mcp (other editors: https://github.com/abhigyanpatwari/GitNexus/blob/main/docs/editor-setup.md). Do not run gitnexus setup: it installs editor hooks.\n  2) gitnexus analyze --skip-agents-md   # index this repo (from repo root); it writes GitNexus's own gitnexus-* skills under .claude/skills/ and .agents/skills/ and nothing into AGENTS.md or CLAUDE.md\n  3) verify: ask Claude to run gitnexus list_repos (or /mcp) — this repo MUST appear indexed; if it does not, the commands silently fall back to grep.\nThe commands check freshness themselves and re-index when stale. License: GitNexus is PolyForm Noncommercial 1.0.0 — commercial use needs a license from its author. Docs: https://github.com/abhigyanpatwari/GitNexus",
     "injects": ["add-new", "add-plan", "add-build", "add-diagnose", "add-hotfix", "add-done", "add-wiki", "add-review"],
     "skills": ["add--gitnexus"],
     "agents": [
