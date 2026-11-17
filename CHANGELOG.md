@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-16
+
+### Added
+- **docs-search-precision:** searching the delivery index and the knowledge-graph MCP now ranks results with BM25. Hits are lean and scored, cut by relevance and capped to a 2k-token budget, with `offset` paging and a bounded `get` for detail. `history` reads the exact node. The delivery index refuses the legacy `docs/` origin, and `verify --repair` rewrites it to the current path.
+- **pm-refinement-standard:** a refined card now holds Problem, What we expect and Acceptance criteria (WHEN/THEN). The brainstorm intent writer collects them and asks for missing parts before approval. In agent mode the PM role states the standard and the engineer reads the card body as the intent, with no separate intent subpage.
+- **gitnexus-integration:** the optional gitnexus plugin has a freshness-aware dispatcher, graph-fresh sections in plan, hotfix and diagnose, and a delivery-history bridge. `/add-review` runs `detect_changes` once over the diff and the reviewer uses graph impact. `/add-setup` registers the MCP by hand and shows the PolyForm Noncommercial license. The `/add-done` re-index skips the AGENTS.md block.
+
+### Fixed
+- gitnexus review findings: frozen slot map and guards for legacy string values.
+
 ## [1.9.4] - 2026-11-16
 
 ### Fixed
