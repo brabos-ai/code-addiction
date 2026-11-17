@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { ACTIONS } from '../../mcp/engine.mjs';
 
@@ -27,6 +28,7 @@ import { ACTIONS } from '../../mcp/engine.mjs';
  */
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
+const require = createRequire(import.meta.url);
 const CODEADD = path.join(REPO, 'framwork', '.codeadd');
 
 const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
@@ -78,25 +80,62 @@ describe('L2.1 — the entry and its side-effect-free core carry the contract', 
   });
 });
 
-describe('L2.2 — the read contract stops promising what the script does not do', () => {
+describe('L2.2 — the read contract describes the ranked read and every tunable as declared', () => {
   const contract = () => read(...CONTRACT);
+  const rankCore = require('../../framwork/.codeadd/scripts/search-rank-core.cjs');
 
-  it('states per-term matching', () => {
-    expect(contract()).toMatch(/per-term|each term|term by term/i);
+  it('states whole-word or word-prefix matching, BM25 and the dropped terms', () => {
+    const c = contract();
+    expect(c).toMatch(/whole word or a word prefix|whole-word or word-prefix/i);
+    expect(c).toMatch(/BM25/);
+    expect(c).toMatch(/stopwords/i);
+    expect(c).toMatch(/under 3 letters|MIN_TERM_LEN/);
+    expect(c).not.toMatch(/Match PER TERM/);
   });
 
-  it('states the two-bucket cut with both caps', () => {
+  it('lists every tunable of the ranking core with its declared value', () => {
     const c = contract();
-    expect(c).toMatch(/5 live|five live/i);
-    expect(c).toMatch(/2 dead|two dead/i);
+    for (const name of ['DEFAULT_LIMIT', 'MAX_LIMIT', 'MIN_TERM_LEN', 'K1', 'B', 'FLOOR', 'DROP_RATIO', 'BUDGET_TOKENS', 'CHARS_PER_TOKEN', 'SNIPPET_CHARS']) {
+      const row = c.split('\n').find((l) => l.startsWith('| `' + name + '`'));
+      expect(row, name + ' is listed').toBeTruthy();
+      expect(row, name + ' carries its value').toContain('`' + String(rankCore[name]) + '`');
+    }
+    expect(c).toMatch(/`GET_BUDGET_TOKENS`[^\n]*`4000`/);
+    for (const w of ['id 3', 'name 3', 'words 2', 'node 2', 'what 1', 'find 1']) expect(c).toContain(w);
   });
 
-  it('never promises dead entries are returned without naming the dead cap', () => {
-    // The old line read "Dead entries are returned, never filtered." — true only
-    // while MATCHED <= LIMIT, which is the defect F2 closes.
+  it('names the read and get keys, the cut reasons and the budget rule, and none of the six bucket keys', () => {
     const c = contract();
-    const unqualified = /never filtered\.|NEVER dropped\./;
-    expect(c).not.toMatch(unqualified);
+    for (const k of ['MATCHED', 'COLLAPSED', 'RETURNED', 'OFFSET', 'NEXT_OFFSET', 'STOP', 'FOUND', 'TRUNCATED']) expect(c).toContain(k + '=');
+    for (const r of ['drop', 'floor', 'limit', 'budget', 'end', 'no-terms']) expect(c).toContain('`' + r + '`');
+    for (const k of ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD', 'LIVE_CAP', 'DEAD_CAP']) expect(c).not.toContain(k);
+    expect(c).toMatch(/drops\s+WHOLE rows/i);
+  });
+
+  it('states one row per supersession chain and the score order', () => {
+    const c = contract();
+    expect(c).toMatch(/one row per supersession chain/i);
+    expect(c).toMatch(/superseded→|superseded_by/);
+    expect(c).toMatch(/score DESCENDING/);
+  });
+
+  it('words are written in English and the team language, and the origin repair is documented', () => {
+    const c = contract();
+    expect(c).toMatch(/English AND the team's language/);
+    for (const k of ['REFUSED=origin-legacy-path', 'origin-legacy-path', 'ORIGIN_REPAIRED', 'ORIGIN_UNRESOLVED']) expect(c).toContain(k);
+    expect(c).not.toMatch(/Lines already on disk keep whatever they were written with/);
+  });
+
+  it('never promises dead entries are returned without relevance', () => {
+    // The old line read "Dead entries are returned, never filtered."
+    const c = contract();
+    expect(c).not.toMatch(/never filtered\.|NEVER dropped\./);
+  });
+
+  it('the doc-schemas skill says a hit carries a snippet, not the first sentence', () => {
+    const skill = read('skills', 'add--doc-schemas', 'SKILL.md');
+    expect(skill).not.toMatch(/returns its \*\*first sentence\*\* with every hit/);
+    expect(skill).toMatch(/snippet/);
   });
 });
 
