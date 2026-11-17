@@ -49,9 +49,6 @@ const GRAPH_COMMANDS = [
   'add-review.md',
 ];
 
-/** The per-bucket keys F2 emits in place of MATCHED/RETURNED. */
-const BUCKET_KEYS = ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD'];
-
 const AGENT_FRAGMENT_DIR = path.join(CODEADD, 'plugins', 'gitnexus', 'fragments', 'agents');
 const COMMAND_FRAGMENT_DIR = path.join(CODEADD, 'plugins', 'gitnexus', 'fragments');
 
@@ -139,15 +136,35 @@ describe('L2.2 — the read contract describes the ranked read and every tunable
   });
 });
 
-describe('L2.3 — every reader of doRead output speaks the new keys, and there are exactly two', () => {
-  it('the skill INDEX step names the per-bucket keys', () => {
+const READ_KEYS = ['MATCHED', 'RETURNED', 'STOP'];
+const RETIRED_KEYS = ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD', 'LIVE_CAP', 'DEAD_CAP'];
+
+describe('L2.3 — every reader of the read output speaks the ranked keys, and there are exactly two', () => {
+  it('the skill INDEX step names the ranked keys, the score and `get`, and none of the six bucket keys', () => {
     const s = read(...SKILL);
-    for (const k of BUCKET_KEYS) expect(s).toContain(k);
+    for (const k of [...READ_KEYS, 'NEXT_OFFSET', 'COLLAPSED']) expect(s).toContain(k);
+    expect(s).toContain('score');
+    expect(s).toContain('delivered.cjs get');
+    for (const k of RETIRED_KEYS) expect(s).not.toContain(k);
   });
 
-  it('add-hotfix.md, which calls `delivered.cjs read` directly, names them too', () => {
+  it('the INDEX step retries once in the other language only when the result is weak', () => {
+    const s = read(...SKILL);
+    expect(s).toMatch(/other language/i);
+    expect(s).toMatch(/RETURNED=0/);
+    expect(s).toMatch(/only when the result is weak|only when the first read is weak/i);
+  });
+
+  it('the GRAPH step says hits carry a snippet, and typed relations come from get', () => {
+    const s = read(...SKILL);
+    expect(s).not.toMatch(/the first sentence of its TL;DR/);
+    expect(s).toMatch(/snippet/);
+  });
+
+  it('add-hotfix.md, which calls `delivered.cjs read` directly, reads MATCHED, RETURNED and STOP', () => {
     const h = read('commands', 'add-hotfix.md');
-    for (const k of BUCKET_KEYS) expect(h).toContain(k);
+    for (const k of READ_KEYS) expect(h).toContain(k);
+    for (const k of RETIRED_KEYS) expect(h).not.toContain(k);
   });
 
   it('no third artefact invokes `delivered.cjs read`', () => {

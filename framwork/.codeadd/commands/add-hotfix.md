@@ -254,9 +254,9 @@ Query `delivered.cjs` with the bug's keywords and **`--no-verify`**:
 node .codeadd/scripts/delivered.cjs read "<bug keywords>" --no-verify
 ```
 
-**Read `MATCHED_LIVE`, `MATCHED_DEAD`, `RETURNED_LIVE` and `RETURNED_DEAD`, not just the entries.** The read cuts in two buckets and the counts are what say whether it cut anything: `MATCHED_LIVE` above `RETURNED_LIVE` means candidates were left out, and a narrower query is the answer.
+**Read `MATCHED`, `RETURNED` and `STOP`, not just the rows.** The read ranks by relevance and stops on a relevance cut, a limit or a size budget: `MATCHED` above `RETURNED` with `STOP=limit` or `STOP=budget` means candidates were left out, and a narrower query or `--offset` is the answer. Each row carries a `score` and a `snippet`; the full record, commits included, is `delivered.cjs get <id>`.
 
-⛔ **Under `--no-verify` the dead bucket is nearly always empty, and that is not evidence of anything.** `gone` is COMPUTED at verification, never stored, so a read that skips verification can only ever see a `superseded` somebody declared by hand. Do not read `MATCHED_DEAD=0` here as "nothing was ever dropped in this area" — it means this call did not look.
+⛔ **Under `--no-verify` a `gone` row never appears.** `gone` is COMPUTED at verification, never stored, so a read that skips verification can only ever see a `superseded` somebody declared by hand. Do not read the absence of a `gone` row here as "nothing was ever dropped in this area" — it means this call did not look.
 
 ```
 IF THE INDEX READ OMITS --no-verify:
