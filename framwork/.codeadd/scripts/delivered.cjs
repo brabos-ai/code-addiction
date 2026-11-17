@@ -25,6 +25,9 @@
  * Output: KEY=VALUE lines, plus JSONL entries on `read`/`get`/`touched`.
  *   read: MATCHED, COLLAPSED, RETURNED, OFFSET, NEXT_OFFSET (empty at the end), STOP
  *         (drop|floor|limit|budget|end|no-terms), SKIPPED_LINES, then one lean row each.
+ *   verify --repair also prints ORIGIN_REPAIRED=<n> and one ORIGIN_UNRESOLVED=<id> per rewritten
+ *         origin whose target document is absent. `write` refuses an origin still spelled
+ *         `docs/...` with REFUSED=origin-legacy-path.
  *   get:  FOUND=0|1, TRUNCATED=commits:N,items:M when the record was cut, then the record. A line
  * starting with `{` is an entry; anything else is a key.
  *
@@ -260,6 +263,8 @@ function main(argv) {
       process.exit(r.exit || 1);
     }
     out += 'REPAIRED=' + String(r.repaired) + '\n';
+    out += 'ORIGIN_REPAIRED=' + String(r.originRepaired) + '\n';
+    for (const id of r.originUnresolved) out += 'ORIGIN_UNRESOLVED=' + id + '\n';
     out += 'SKIPPED_LINES=' + r.skipped.join(',') + '\n';
     write(out);
     process.exit(0);

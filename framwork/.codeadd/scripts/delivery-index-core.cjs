@@ -28,6 +28,8 @@
  *     `--no-verify` returns the stored status.
  *   - `verify` reports each entry; only `--repair` writes, and a repair is a
  *     NEW line (`by=verify`, `status=changed`) that points at a UNIQUE match.
+ *     It also rewrites an `origin` still spelled `docs/...` to the docs root, and
+ *     `write` refuses one (`origin-legacy-path`): no legacy path in the index.
  *   - `write` also accepts two optional, additive fields — `code_sha` (the code
  *     commit that delivered the entry) and `pr` (its pull request number, or
  *     null) — without bumping `v`. `stamp` appends a NEW line carrying them for
@@ -63,7 +65,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath, docsRoot } = require('./docs-root.cjs');
 
 const STATUSES = ['live', 'changed', 'gone', 'superseded'];
 const RANK = { live: 0, changed: 1, superseded: 2, gone: 3 };
@@ -84,6 +86,35 @@ const LOOSE_THRESHOLD = 6;
 /** Normalise a repository-relative path: backslashes to slashes, drop one `./`. */
 function norm(p) {
   return String(p).replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+/**
+ * The origin as it reads today. The docs live under DOCS_ROOT; an origin still
+ * spelled `docs/...` is the retired pre-move path, so it is shown (and repaired)
+ * as DOCS_ROOT + the rest. Anything else is returned untouched.
+ */
+function currentOrigin(origin) {
+  const o = norm(origin === undefined || origin === null ? '' : origin);
+  return o.indexOf('docs/') === 0 ? DOCS_ROOT + '/' + o.slice('docs/'.length) : o;
+}
+
+/**
+ * Does the document an origin names exist? The docs root is a worktree of its own
+ * branch, so the path is resolved under it — through docs-root.cjs — and never
+ * relative to whichever checkout the script happened to run in.
+ */
+function originExists(ctx, origin) {
+  const o = norm(origin);
+  if (o.indexOf(DOCS_ROOT + '/') !== 0) return fs.existsSync(path.join(ctx.root, o));
+  try {
+    return fs.existsSync(path.join(docsRoot(ctx.root), o.slice(DOCS_ROOT.length + 1)));
+  } catch (e) {
+    return false;
+  }
+}
+
+function isLegacyOrigin(origin) {
+  return typeof origin === 'string' && norm(origin).indexOf('docs/') === 0;
 }
 
 /** Second-precision UTC timestamp, the format the index records. */
@@ -344,6 +375,7 @@ function performWrite(ctx, raw) {
     const v = rec[f];
     if (v === undefined || v === null || v === '') return refused('missing-field');
   }
+  if (isLegacyOrigin(rec.origin)) return refused('origin-legacy-path');
   if (typeof rec.layer !== 'string' || ['product', 'internal'].indexOf(rec.layer) === -1) return refused('missing-field');
   if (typeof rec.by !== 'string' || ['done', 'verify', 'human'].indexOf(rec.by) === -1) return refused('missing-field');
   if (!Array.isArray(rec.commits) || rec.commits.length < 1) return refused('no-commits');
@@ -496,7 +528,7 @@ function performRead(ctx, opts = {}) {
       title: r.doc.rec.name,
       score: r.score,
       snippet: r.snippet,
-      path: r.doc.rec.origin,
+      path: currentOrigin(r.doc.rec.origin),
     };
     if (r.doc.rec.status === 'superseded' && r.doc.rec.superseded_by) row.superseded_by = r.doc.rec.superseded_by;
     return row;
@@ -551,6 +583,7 @@ function performGet(ctx, opts = {}) {
   const found = byId.get(String(opts.id === undefined ? '' : opts.id));
   if (!found) return { ok: true, found: false, record: null, truncated: null, skipped };
   const rec = JSON.parse(JSON.stringify(found));
+  rec.origin = currentOrigin(rec.origin);
   if (!opts.noVerify) rec.status = verifyEntry(ctx, rec).status;
 
   const budget = GET_BUDGET_TOKENS * 4;
@@ -632,21 +665,31 @@ function performVerify(ctx, opts = {}) {
 
   const newLines = [];
   const results = [];
+  const originUnresolved = [];
   let repaired = 0;
+  let originRepaired = 0;
 
   for (const e of list) {
     const r = verifyEntry(ctx, e);
     results.push({ id: e.id, status: r.status });
-    if (!opts.repair || r.repairs.length === 0) continue;
+    const legacy = isLegacyOrigin(e.origin);
+    if (!opts.repair || (r.repairs.length === 0 && !legacy)) continue;
 
     // A repair is a NEW LINE. Nothing is rewritten in place; last line wins.
     const copy = JSON.parse(JSON.stringify(e));
     for (const rep of r.repairs) copy.items[rep.index].at = rep.to;
+    if (legacy) {
+      copy.origin = currentOrigin(e.origin);
+      originRepaired++;
+      // The pointer was fixed; the target may not exist (an early plan that was
+      // never archived). That is reported, never invented.
+      if (!originExists(ctx, copy.origin)) originUnresolved.push(e.id);
+    }
     copy.ts = nowTs();
     copy.by = 'verify';
-    // `changed` on a repaired line means "a pointer was just repaired", not
-    // "something is broken here".
-    copy.status = 'changed';
+    // `changed` on an item repair means "a pointer was just repaired", not
+    // "something is broken here". An origin-only repair keeps the verified status.
+    copy.status = r.repairs.length ? 'changed' : r.status;
     newLines.push(serialize(copy));
     repaired++;
   }
@@ -658,7 +701,7 @@ function performVerify(ctx, opts = {}) {
     if (!appended.ok) return { ok: false, exit: 1, error: appended.error, results };
   }
 
-  return { ok: true, results, repaired, skipped };
+  return { ok: true, results, repaired, originRepaired, originUnresolved, skipped };
 }
 
 // ─── touched ─────────────────────────────────────────────────────────────────
@@ -737,6 +780,7 @@ module.exports = {
   DEFAULT_LIVE_CAP,
   DEAD_CAP,
   norm,
+  currentOrigin,
   nowTs,
   resolveRoot,
   createContext,
