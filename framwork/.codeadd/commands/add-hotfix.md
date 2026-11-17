@@ -274,7 +274,7 @@ From the user's bug report plus `RECENT_CHANGELOGS` from STEP add-hotfix.context
 - One-sentence problem statement
 - Affected area / keywords (component, route, entity)
 - Optional window (default: 30 days)
-- **The ranked index results from STEP add-hotfix.history**, each with its id, name and status
+- **The ranked index results from STEP add-hotfix.history**, each with its id, title, status and score
 
 ### STEP add-hotfix.dispatch-parallel Dispatch parallel
 

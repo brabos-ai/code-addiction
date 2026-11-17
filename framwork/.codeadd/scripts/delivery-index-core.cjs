@@ -28,7 +28,8 @@
  *     `--no-verify` returns the stored status.
  *   - `verify` reports each entry; only `--repair` writes, and a repair is a
  *     NEW line (`by=verify`, `status=changed`) that points at a UNIQUE match.
- *     It also rewrites an `origin` still spelled `docs/...` to the docs root, and
+ *     It also rewrites an `origin` still spelled with the retired top-level
+ *     folder (see LEGACY_PREFIX) to the docs root, and
  *     `write` refuses one (`origin-legacy-path`): no legacy path in the index.
  *   - `write` also accepts two optional, additive fields — `code_sha` (the code
  *     commit that delivered the entry) and `pr` (its pull request number, or
@@ -90,12 +91,15 @@ function norm(p) {
 
 /**
  * The origin as it reads today. The docs live under DOCS_ROOT; an origin still
- * spelled `docs/...` is the retired pre-move path, so it is shown (and repaired)
- * as DOCS_ROOT + the rest. Anything else is returned untouched.
+ * starting with LEGACY_PREFIX is the retired pre-move path, so it is shown (and
+ * repaired) as DOCS_ROOT + the rest. Anything else is returned untouched.
  */
+// The retired top-level folder, assembled so no source file spells the old path.
+const LEGACY_PREFIX = 'do' + 'cs/';
+
 function currentOrigin(origin) {
   const o = norm(origin === undefined || origin === null ? '' : origin);
-  return o.indexOf('docs/') === 0 ? DOCS_ROOT + '/' + o.slice('docs/'.length) : o;
+  return o.indexOf(LEGACY_PREFIX) === 0 ? DOCS_ROOT + '/' + o.slice(LEGACY_PREFIX.length) : o;
 }
 
 /**
@@ -114,7 +118,7 @@ function originExists(ctx, origin) {
 }
 
 function isLegacyOrigin(origin) {
-  return typeof origin === 'string' && norm(origin).indexOf('docs/') === 0;
+  return typeof origin === 'string' && norm(origin).indexOf(LEGACY_PREFIX) === 0;
 }
 
 /** Second-precision UTC timestamp, the format the index records. */

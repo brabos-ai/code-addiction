@@ -163,6 +163,8 @@ IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
   ✅ DO: Run the second action the question needs, then report both
 ```
 
+**`search` returns a page, not the whole answer.** Read `stop` and `matched`: when the rows do not name the subject and `stop` is `limit` or `budget`, continue with `offset` = `next_offset`. `get` says what it cut in `truncated`.
+
 **`reindex` is the one row that is not a question.** It is an operation with exactly one call, and `{{cmd:add-done}}` already runs it after a delivery. Run it here only when a read came back describing documents you know have changed.
 
 **Produces `RELATED_WORK`:** the hits, each carrying its `id`, `kind`, `status`, `title`, `score`, `snippet` and `path`; the typed relations, tags and summary come from a `get` on a hit that survives. Every command that loads this skill names where `RELATED_WORK` goes; none of them may leave it unused.

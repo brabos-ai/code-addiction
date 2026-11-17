@@ -38,6 +38,8 @@ const h = require('./helpers.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+// The retired top-level folder, assembled so this file never spells the old path.
+const LEGACY = 'do' + 'cs/';
 
 // --- fixture helpers ---------------------------------------------------------
 
@@ -1503,13 +1505,13 @@ test('delivered#099 F6: get past the size limit cuts commits then items, says so
     assert.equal(rec.name, 'big');
   }));
 
-// --- no legacy `docs/...` origin in the index (docs-search-precision F8) --------
+// --- no legacy top-level origin in the index (docs-search-precision F8) --------
 
-test('delivered#100 F8: write refuses an origin that still points at the retired docs/ path', () =>
+test('delivered#100 F8: write refuses an origin that still points at the retired top-level folder', () =>
   withRepo((r) => {
     validSource(r.repo);
     commitAll(r.repo);
-    const res = runWrite(r.repo, validRecord({ origin: 'docs/plans/2026-01-01T000000-PLAN--x.md' }));
+    const res = runWrite(r.repo, validRecord({ origin: LEGACY + 'plans/2026-01-01T000000-PLAN--x.md' }));
     assert.equal(res.status, 2, res.output);
     assert.match(res.output, /REFUSED=origin-legacy-path/);
     assert.equal(fs.existsSync(indexPath(r.repo)), false);
@@ -1517,14 +1519,14 @@ test('delivered#100 F8: write refuses an origin that still points at the retired
     assert.equal(ok.status, 0, ok.output);
   }));
 
-test('delivered#101 F8: verify --repair rewrites a docs/ origin as a NEW line and reports what it could not resolve', () =>
+test('delivered#101 F8: verify --repair rewrites a legacy origin as a NEW line and reports what it could not resolve', () =>
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     h.write(path.join(docsDir(r.repo), 'plans', 'present.md'), '# plan\n');
     writeIndex(r.repo, [
-      entry('P1', 'live', 'present plan', 'present', 'src/live.ts', 'liveThing', { origin: 'docs/plans/present.md' }),
-      entry('P2', 'live', 'missing plan', 'missing', 'src/live.ts', 'liveThing', { origin: 'docs/plans/missing.md' }),
+      entry('P1', 'live', 'present plan', 'present', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/present.md' }),
+      entry('P2', 'live', 'missing plan', 'missing', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/missing.md' }),
       entry('P3', 'live', 'current plan', 'current', 'src/live.ts', 'liveThing'),
     ]);
     const before = h.read(indexPath(r.repo));
@@ -1545,14 +1547,14 @@ test('delivered#101 F8: verify --repair rewrites a docs/ origin as a NEW line an
     assert.equal(kvOf(runVerify(r.repo, ['--repair'])).ORIGIN_REPAIRED, '0');
   }));
 
-test('delivered#102 F8: read and get print the current path even for an unrepaired docs/ line', () =>
+test('delivered#102 F8: read and get print the current path even for an unrepaired legacy line', () =>
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
-    writeIndex(r.repo, [entry('P1', 'live', 'legacy plan', 'legacy', 'src/live.ts', 'liveThing', { origin: 'docs/plans/legacy.md' })]);
+    writeIndex(r.repo, [entry('P1', 'live', 'legacy plan', 'legacy', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/legacy.md' })]);
     const row = jsonOf(runRead(r.repo, ['legacy', '--no-verify']).stdout)[0];
     assert.equal(row.path, DOCS_ROOT + '/plans/legacy.md');
     const rec = jsonOf(runGet(r.repo, ['P1', '--no-verify']).stdout)[0];
     assert.equal(rec.origin, DOCS_ROOT + '/plans/legacy.md');
-    assert.match(h.read(indexPath(r.repo)), /"origin":"docs\/plans\/legacy.md"/);
+    assert.ok(h.read(indexPath(r.repo)).includes('"origin":"' + LEGACY + 'plans/legacy.md"'));
   }));

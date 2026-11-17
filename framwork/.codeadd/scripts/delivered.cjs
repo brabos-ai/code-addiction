@@ -27,7 +27,7 @@
  *         (drop|floor|limit|budget|end|no-terms), SKIPPED_LINES, then one lean row each.
  *   verify --repair also prints ORIGIN_REPAIRED=<n> and one ORIGIN_UNRESOLVED=<id> per rewritten
  *         origin whose target document is absent. `write` refuses an origin still spelled
- *         `docs/...` with REFUSED=origin-legacy-path.
+ *         the retired top-level folder with REFUSED=origin-legacy-path.
  *   get:  FOUND=0|1, TRUNCATED=commits:N,items:M when the record was cut, then the record. A line
  * starting with `{` is an entry; anything else is a key.
  *

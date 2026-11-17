@@ -45,7 +45,7 @@ independently trustworthy.
 | `name` | yes | Human label, in whatever language the project writes docs in |
 | `words` | yes | Free-text search surface — the words someone would actually type, **written in English AND the team's language** (the language the project's docs are written in), so a search in either finds the entry. `0042F` finds nothing in `words`; `login google oauth` finds it. `read` also searches `id`, `name`, `node` and each item's `what` and `find`, never an item's `at` |
 | `commits` | yes, ≥1 | Short hashes. Where to go look, never an explanation |
-| `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `.codeadd/docs/deliveries/<id>/`, the archived plan documents. **Never spelled `docs/...`** — that is the retired path from before the docs moved under `.codeadd/docs/`; `write` refuses it (`REFUSED=origin-legacy-path`) |
+| `origin` | yes | **A directory that survives**, never a file that does not. Product: the feature directory, which pruning keeps. Internal: `.codeadd/docs/deliveries/<id>/`, the archived plan documents. **Never spelled with the retired top-level documentation folder** — the path from before the docs moved under `.codeadd/docs/`; `write` refuses it (`REFUSED=origin-legacy-path`) |
 | `items` | yes, ≥1 | What was delivered. **No upper bound** — a delivery that touched twenty artefacts records twenty, and one that touched two records two |
 | `superseded_by` | only when `status` is `superseded` | The `id` that replaced this one |
 | `node` | optional, internal only | The `artefact-graph.json` node id. **Part of the `read` search surface**, beside `words`, so a query for the bare artefact name finds the entry even when no other field spells it |
@@ -62,7 +62,7 @@ cost of a short one is a delivered artefact the index cannot find. Those are not
 delivery happened, and a gitignored path answers that on exactly one machine. The internal layer wrote
 `.codeadd/docs/plans/<id>.md` until its close-out began archiving those documents to `.codeadd/docs/deliveries/<id>/`; that
 is the value now, and it is chosen for the same reason the feature directory is — it is still there
-afterwards. A line written before the docs moved still carries `docs/...`. Hard ban 6 forbids rewriting it, so
+afterwards. A line written before the docs moved still carries the retired top-level folder. Hard ban 6 forbids rewriting it, so
 `verify --repair` appends a NEW line with the origin under `.codeadd/docs/` and reports
 `ORIGIN_REPAIRED=<n>` and, for each rewritten origin whose target document is absent (an early plan that
 was never archived), `ORIGIN_UNRESOLVED=<id>`. Until it runs, `read` and `get` print the current path for
@@ -202,7 +202,7 @@ which is a new line like any other correction.
    `superseded→ID`). `COLLAPSED` counts the rows folded away; `MATCHED` counts after the fold.
 6. **Order: score DESCENDING, then the stored status (`live` → `changed` → `superseded` → `gone`), then
    recency NEWEST FIRST, then id ASCENDING**, and the reader applies it — consumers render what they
-   receive and never re-rank. Status is a tie-break only; validity ordering is another card's.
+   receive and never re-rank. Status is a tie-break only.
 7. **The size is controlled by relevance, never by a blind cut.** Default 5 rows, at most 20
    (`--limit`, above 20 is a usage error, exit 2); `--offset N` continues the ranked list. A page stops at
    the first row — from its second row on — that scores under `FLOOR` of the first (`STOP=floor`) or under
@@ -239,8 +239,6 @@ and an updated line here, the same treatment the over-match thresholds get.
 | `CHARS_PER_TOKEN` | `4` | how a token is estimated, with no tokenizer dependency |
 | `SNIPPET_CHARS` | `200` | the length of a row's snippet |
 | `GET_BUDGET_TOKENS` | `4000` | the size of a `get` record before it drops `commits`, then `items` |
-
-Field weights: id 3, name 3, words 2, node 2, what 1, find 1.
 
 ## The impact question — which deliveries touched a path
 
@@ -330,7 +328,7 @@ them, so they are listed here rather than left implicit in the script.
 
 Thirteen names cover nine bans: ban 7 has three distinguishable ways to break and ban 9 has two, and three
 names cover what no numbered ban states — input that is not a record, the over-match threshold, and an
-origin spelled with the retired `docs/` path.
+origin spelled with the retired top-level documentation folder.
 
 | `REFUSED=` | Ban | The record did this |
 |---|---|---|
@@ -346,7 +344,7 @@ origin spelled with the retired `docs/` path.
 | `item-in-docs` | 9 | an item's `at` is under `.codeadd/docs/` |
 | `item-ignored` | 9 | an item's `at` is a path the project's `.gitignore` excludes — never on a `superseded` line |
 | `find-over-matched` | — | the `find` string appears in **more than 20** corpus files |
-| `origin-legacy-path` | — | `origin` starts with `docs/`, the path retired when the docs moved under `.codeadd/docs/` |
+| `origin-legacy-path` | — | `origin` starts with the retired top-level documentation folder, the path replaced when the docs moved under `.codeadd/docs/` |
 
 Bans 6 and 8 carry no `REFUSED=` name because neither is something a caller can submit: they are structural
 promises the script keeps — it only ever appends, and it only ever searches the corpus.
