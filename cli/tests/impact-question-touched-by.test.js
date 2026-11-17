@@ -11,7 +11,7 @@ const DOCS_SEGMENTS = DOCS_ROOT.split('/');
 // The MCP corpus key for the docs root is the root's own folder name.
 const DOCS_CORPUS = DOCS_SEGMENTS[DOCS_SEGMENTS.length - 1];
 // The scripts the engine loads from beside it, copied into a fixture project.
-const SHIPPED = ['delivered.cjs', 'delivery-index-core.cjs', 'docs-root.cjs'];
+const SHIPPED = ['delivered.cjs', 'delivery-index-core.cjs', 'search-rank-core.cjs', 'docs-root.cjs'];
 
 /**
  * Plan 2026-09-14T145149 — the impact question: which deliveries touched this
