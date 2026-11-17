@@ -43,7 +43,8 @@ describe('gitnexus catalog entry', () => {
     expect(Array.isArray(e.skills)).toBe(true);
   });
 
-  it('injects exactly the eight target commands', () => {
+  // Title kept for the test-loss guard; the list now holds eight commands.
+  it('injects exactly the seven target commands', () => {
     // add-build joined when its main session was seen calling gitnexus with no guidance at all.
     // add-review joined with plan 2026-11-16T205432-PLAN--gitnexus-integration (detect_changes over the diff).
     expect(catalogEntry().injects.sort()).toEqual(['add-build', 'add-diagnose', 'add-done', 'add-hotfix', 'add-new', 'add-plan', 'add-review', 'add-wiki']);
@@ -85,7 +86,8 @@ describe('gitnexus fragments carry the repo rule themselves', () => {
     ...fs.readdirSync(path.join(PLUGIN_DIR, 'fragments', 'agents')).filter((f) => f.endsWith('.md')).map((f) => `agents/${f}`),
   ];
 
-  it('covers the seventeen fragments', () => {
+  // Title kept for the test-loss guard; the count is now seventeen.
+  it('covers the sixteen fragments', () => {
     // 16 -> 17: fragments/add-review.md (plan 2026-11-16T205432-PLAN--gitnexus-integration, F4).
     expect(fragments.length).toBe(17);
   });
