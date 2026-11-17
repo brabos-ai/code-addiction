@@ -37,10 +37,9 @@ The one-feature rule is in section 9 of the guide.
 
 ### Where you pick up the work
 
-The product PM hands you the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature
-folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope), both on `codeadd-docs`. Start from those two.
+If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page. The product PM hands you the card and the feature folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope). The card body is the intent: read it, and the feature folder, to run `/add-plan`. What a card holds is in `roles/product-pm.md`, section Refined card.
 
-If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page; otherwise the handoff is the intent + `.codeadd/docs/features/<id>-<slug>/` only.
+Otherwise the product PM hands you the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope), both on `codeadd-docs`. Start from those two.
 
 Pull the main branch into your worktree before `/add-plan`.
 
@@ -51,7 +50,7 @@ Ask the user, and wait, when:
 - the scope changes, or the intent and the code disagree in a way the intent does not settle;
 - a decision is not in the intent, the feature or the plan and cannot be read from the code;
 - a `blocker` cannot be resolved inside the scope;
-- no intent file is assigned to you.
+- no card is assigned to you (in a project without Notion: no intent file is assigned to you).
 
 Decide alone, and say so in the summary, when the intent or the code settles the question.
 
