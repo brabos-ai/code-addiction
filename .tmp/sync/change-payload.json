@@ -1,5 +1,9 @@
-{"last_tag":"v1.9.2","diff_range":"v1.9.2..HEAD",
-"commands":{"added":[],"removed":[],"renamed":[],"description_changed":[{"name":"add-qa-setup","old_description":"End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, ignores ephemeral working evidence under a setup contract, migrates existing QA, and proves the setup with the QA preflight","new_description":"End-to-end-verified QA bootstrap — verifies + installs the QA runner, generates qa-project, scaffolds config/screens, studies the project and generates a tracked QA seed, ignores ephemeral working evidence under a setup contract, migrates existing QA, and proves the setup with the QA preflight"}]},
+{"last_tag":"v1.9.4","diff_range":"v1.9.4..HEAD",
+"commands":{"added":[],"removed":[],"renamed":[],"description_changed":[]},
 "skills":{"added":[],"removed":[],"description_changed":[]},
-"providers":{"added":[],"removed":[]},"flows":{"changed":false},"cli":{"changed":true},
-"scripts":{"added":[],"removed":[]},"repo_structure_changed":false}
+"providers":{"added":[],"removed":[]},
+"flows":{"changed":false},
+"cli":{"changed":true,"note":"plugins.json gitnexus entry updated; mcp/ gained rank.mjs (search ranking), engine/server changes"},
+"scripts":{"added":["search-rank-core.cjs"],"removed":[]},
+"features":["docs-search-precision: ranked search over delivered index and graph (search-rank-core.cjs, mcp/rank.mjs)","pm-refinement-standard: add-brainstorm/add-plan/add-diagnose/add-hotfix/add-review/add-setup and add--doc-schemas changed","gitnexus-integration: gitnexus plugin (third plugin, with design and playwright)"],
+"repo_structure_changed":false}
