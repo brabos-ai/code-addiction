@@ -100,6 +100,16 @@ describe('F8 — the tool surface', () => {
     expect(TOOLS.map((t) => t.name)).toContain('history');
   });
 
+  it('search declares offset, a 5/20 limit, and says what a hit carries', () => {
+    const search = TOOLS.find((t) => t.name === 'search');
+    expect(Object.keys(search.inputSchema.properties)).toEqual(expect.arrayContaining(['terms', 'limit', 'offset']));
+    expect(search.inputSchema.properties.limit.description).toMatch(/5/);
+    expect(search.inputSchema.properties.limit.description).toMatch(/20/);
+    for (const word of ['score', 'snippet', 'next_offset', 'no-terms']) expect(search.description).toContain(word);
+    expect(search.description).not.toMatch(/FIRST SENTENCE/);
+    expect(TOOLS.find((t) => t.name === 'get').description).toMatch(/truncated/);
+  });
+
   it('every tool carries a description and an input schema', () => {
     for (const tool of TOOLS) {
       expect(tool.description.length, tool.name).toBeGreaterThan(40);
@@ -214,16 +224,19 @@ describe('F8 — the protocol over a pipe', () => {
 // ---------------------------------------------------------------------------
 
 describe('F8 — every action answers over the wire', () => {
-  it('search then get: reject on the first sentence, then read the rest', async () => {
+  it('search then get: reject on the snippet, then read the rest', async () => {
     const { frames } = await talk([
       call(1, 'search', { terms: 'refresh expiry' }),
       call(2, 'get', { id: '0051H' }),
     ]);
     const hits = payload(frames[0]).hits;
     expect(hits[0].id).toBe('0051H');
-    expect(hits[0].summary).toMatch(/^The refresh shipped without an expiry test/);
+    expect(hits[0].snippet).toContain('refresh');
+    expect(hits[0].score).toBe(1);
+    expect(hits[0]).not.toHaveProperty('summary');
 
     const full = payload(frames[1]);
+    expect(full.summary).toMatch(/^The refresh shipped without an expiry test/);
     expect(full.tldr).toContain('every session past one hour dropped');
     expect(full.observations[0]).toMatchObject({ category: 'cause', tags: ['auth'] });
     expect(full.relations.find((r) => r.type === 'caused_by').to).toBe('0042F');

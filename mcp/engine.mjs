@@ -31,6 +31,7 @@ import path from 'node:path';
 // the same call reaches the reader on Windows, macOS and Linux alike.
 import { createRequire } from 'node:module';
 import { CORPORA, resolveCorpus, probe } from './corpora.mjs';
+import * as rank from './rank.mjs';
 
 /**
  * Edge kinds that mean "this would break if that changed", per corpus.
@@ -329,29 +330,41 @@ function readArgsError(layer, limit) {
 // The actions
 // ---------------------------------------------------------------------------
 
-function scoreNode(node, terms) {
-  const haystacks = [
-    [node.id, 8],
-    [node.slug ?? '', 6],
-    [node.name ?? '', 6],
-    [(node.tags ?? []).join(' '), 5],
-    [node.area ?? '', 4],
-    [node.summary ?? '', 3],
-    [node.tldr ?? '', 2],
-    [(node.observations ?? []).map((o) => o.text).join(' '), 1],
-  ];
-  let score = 0;
-  for (const term of terms) {
-    const needle = term.toLowerCase();
-    for (const [text, weight] of haystacks) {
-      if (String(text).toLowerCase().includes(needle)) score += weight;
-    }
-  }
-  return score;
+// Today's field weights, kept as BM25 field weights.
+const SEARCH_WEIGHTS = { id: 8, slug: 6, name: 6, tags: 5, area: 4, summary: 3, tldr: 2, observations: 1 };
+
+function searchFields(node) {
+  return {
+    id: node.id,
+    slug: node.slug ?? '',
+    name: node.name ?? '',
+    tags: (node.tags ?? []).join(' '),
+    area: node.area ?? '',
+    summary: node.summary ?? '',
+    tldr: node.tldr ?? '',
+    observations: (node.observations ?? []).map((o) => o.text).join(' '),
+  };
 }
 
-/** A search hit — every field a consumer needs to reject it without a follow-up. */
-function toHit(data, node) {
+/**
+ * A lean search hit: enough to pick a candidate, nothing to read twice. The
+ * relations, tags, area and attachments live in `get`.
+ */
+function toHit(node, score, snippet) {
+  const hit = {
+    id: node.id,
+    kind: node.kind,
+    status: node.status ?? null,
+    title: node.slug ?? node.name ?? node.id,
+  };
+  if (score !== null) hit.score = Math.round(score * 1000) / 1000;
+  hit.snippet = snippet;
+  hit.path = node.path ?? null;
+  return hit;
+}
+
+/** The fat node, for `get`: every field `search` no longer carries. */
+function toDetail(data, node) {
   return {
     id: node.id,
     kind: node.kind,
@@ -368,37 +381,99 @@ function toHit(data, node) {
   };
 }
 
+// `get` is bounded like a search is. A node past it drops observations, then
+// files, then inbound from the tail — inbound last, because a hub page can have
+// many inbound edges but they are the relations the caller came to `get` for —
+// and `truncated` says how many of each went.
+const GET_BUDGET_TOKENS = 4000;
+const GET_DROP_ORDER = ['observations', 'files', 'inbound'];
+
+function boundGet(full) {
+  const budget = GET_BUDGET_TOKENS * rank.CHARS_PER_TOKEN;
+  const truncated = {};
+  for (const field of GET_DROP_ORDER) {
+    while (Array.isArray(full[field]) && full[field].length > 0 && JSON.stringify(full).length > budget) {
+      full[field].pop();
+      truncated[field] = (truncated[field] ?? 0) + 1;
+    }
+  }
+  if (Object.keys(truncated).length) full.truncated = truncated;
+  return full;
+}
+
 export const actions = {
   /**
-   * Keyword search over ids, slugs, tags, area, TL;DR and observations.
+   * Ranked keyword search: whole words or word prefixes, pt+en stopwords dropped,
+   * BM25 over weighted fields (mcp/rank.mjs — the twin of the delivery reader's),
+   * one hit per supersession chain, a relevance cut and a ~2,000-token budget that
+   * drops whole hits. The answer says how many matched, how many came back and
+   * why it stopped; `offset` pages on.
    *
    * Every hit carries its `status`, in-flight included. Two work items in
    * flight that touch the same area are exactly the pair that most needs to see
    * each other; filtering is the consumer's choice against a returned field,
    * never a silent exclusion made here.
+   *
+   * Empty `terms` enumerates: sorted by id, no score, no relevance cut — the
+   * budget still applies. Terms that are ALL dropped match nothing (`no-terms`).
    */
-  search(data, { terms = '', limit = 10, kind = null, status = null, tag = null } = {}) {
-    const words = String(terms).split(/\s+/).filter(Boolean);
+  search(data, { terms = '', limit = rank.DEFAULT_LIMIT, offset = 0, kind = null, status = null, tag = null } = {}) {
     let candidates = data.nodes;
     if (kind) candidates = candidates.filter((n) => n.kind === kind);
     if (status) candidates = candidates.filter((n) => n.status === status);
     if (tag) candidates = candidates.filter((n) => (n.tags ?? []).includes(tag));
 
-    const scored = words.length
-      ? candidates
-          .map((n) => ({ node: n, score: scoreNode(n, words) }))
-          .filter((s) => s.score > 0)
-          .sort((a, b) => b.score - a.score || a.node.id.localeCompare(b.node.id))
-      : candidates.map((n) => ({ node: n, score: 0 })).sort((a, b) => a.node.id.localeCompare(b.node.id));
+    const query = String(terms ?? '').trim();
+    const reserve = 200;
+    const empty = (stop) => ({ matched: 0, collapsed: 0, returned: 0, offset: Math.max(0, Math.trunc(offset) || 0), next_offset: null, stop, hits: [] });
 
+    if (!query) {
+      const sorted = [...candidates].sort((a, b) => a.id.localeCompare(b.id));
+      const rows = sorted.map((n) => ({ id: n.id, score: 1, hit: toHit(n, null, rank.snippet(n.summary ?? '', []))}));
+      const page = rank.cut(rows, { limit, offset, relevance: false, serialize: (r) => JSON.stringify(r.hit), reserve });
+      return {
+        matched: rows.length,
+        collapsed: 0,
+        returned: page.rows.length,
+        offset: Math.max(0, Math.trunc(offset) || 0),
+        next_offset: page.nextOffset,
+        stop: page.stop,
+        hits: page.rows.map((r) => r.hit),
+      };
+    }
+
+    const ranked = rank.rank(
+      candidates.map((n) => ({ id: n.id, fields: searchFields(n), node: n })),
+      query,
+      { weights: SEARCH_WEIGHTS, compare: (a, b) => a.id.localeCompare(b.id) },
+    );
+    if (ranked.stop === 'no-terms') return empty('no-terms');
+
+    const supersededBy = new Map();
+    for (const e of data.edges) if (e.type === 'superseded_by') supersededBy.set(e.from, e.to);
+
+    const rows = ranked.rows.map((r) => ({ id: r.doc.id, score: r.score, node: r.doc.node, snippet: r.snippet }));
+    const collapsed = rank.collapseChains(rows, supersededBy);
+    const emit = (r) => {
+      const hit = toHit(r.node, r.score, r.snippet);
+      if (r.superseded_by) hit.superseded_by = r.superseded_by;
+      if (r.replaces) hit.replaces = r.replaces;
+      return hit;
+    };
+    const page = rank.cut(collapsed, { limit, offset, serialize: (r) => JSON.stringify(emit(r)), reserve });
     return {
-      total: scored.length,
-      hits: scored.slice(0, limit).map((s) => toHit(data, s.node)),
+      matched: collapsed.length,
+      collapsed: rows.length - collapsed.length,
+      returned: page.rows.length,
+      offset: Math.max(0, Math.trunc(offset) || 0),
+      next_offset: page.nextOffset,
+      stop: page.stop,
+      hits: page.rows.map(emit),
     };
   },
 
   /**
-   * One node in full, because `search` returns only the first sentence.
+   * One node in full, because `search` returns only a score and a snippet.
    *
    * Without this there is no way to ask for the rest of a TL;DR short of
    * opening the file by path, which is what the index exists to avoid.
@@ -407,7 +482,7 @@ export const actions = {
     const resolved = resolve(data, id ?? nodeRef);
     const node = data.nodes.find((n) => n.id === resolved);
     const full = {
-      ...toHit(data, node),
+      ...toDetail(data, node),
       tldr: node.tldr ?? '',
       observations: node.observations ?? [],
       files: node.files ?? [],
@@ -416,10 +491,10 @@ export const actions = {
         .filter((e) => e.to === node.id)
         .map((e) => ({ type: e.type, from: e.from, why: e.why ?? null })),
     };
-    if (!sections) return full;
-    return Object.fromEntries(
+    if (!sections) return boundGet(full);
+    return boundGet(Object.fromEntries(
       Object.entries(full).filter(([key]) => key === 'id' || sections.includes(key)),
-    );
+    ));
   },
 
   /** What breaks if this changes — dependants, transitively. */

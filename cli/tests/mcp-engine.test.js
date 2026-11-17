@@ -256,24 +256,28 @@ describe('scenario — "what was already built near this"', () => {
     expect(actions.search(docs, { terms: 'critical findings' }).hits).toEqual([]);
   });
 
-  it('L2.7 search returns the first sentence, and get returns the whole section', () => {
+  it('L2.7 search returns a snippet of the matched field, and get returns the summary and the whole section', () => {
     const hit = actions.search(docs, { terms: 'itemised' }).hits[0];
     expect(hit.id).toBe('0042F');
-    expect(hit.summary).toBe('A purchase can be split into itemised lines.');
-    expect(hit.summary).not.toContain('one row per item');
+    expect(hit.snippet).toContain('itemised');
+    expect(hit).not.toHaveProperty('summary');
 
     const full = actions.get(docs, { id: '0042F' });
+    expect(full.summary).toBe('A purchase can be split into itemised lines.');
+    expect(full.summary).not.toContain('one row per item');
     expect(full.tldr).toContain('A purchase can be split into itemised lines.');
     expect(full.tldr).toContain('one row per item');
   });
 
-  it('every hit carries the fields needed to reject it without opening the file', () => {
+  it('a hit is lean — id, kind, status, title, score, snippet, path — and get carries the rest', () => {
     const hit = actions.search(docs, { terms: 'refresh' }).hits[0];
     expect(hit).toMatchObject({ id: '0051H', kind: 'work-item', status: 'live' });
-    expect(hit.tags).toEqual(['auth']);
+    expect(Object.keys(hit).sort()).toEqual(['id', 'kind', 'path', 'score', 'snippet', 'status', 'title']);
     expect(hit.path).toContain('0051H-token-refresh/about.md');
-    expect(hit.relations.some((r) => r.type === 'caused_by' && r.to === '0042F')).toBe(true);
-    expect(hit.attachments.length).toBeGreaterThan(0);
+    const full = actions.get(docs, { id: '0051H' });
+    expect(full.tags).toEqual(['auth']);
+    expect(full.relations.some((r) => r.type === 'caused_by' && r.to === '0042F')).toBe(true);
+    expect(full.attachments.length).toBeGreaterThan(0);
   });
 
   it('an in-flight work item is visible, and filtering is the consumer choice', () => {
@@ -316,7 +320,166 @@ A draft that has not shipped. It touches auth, which is why it must be visible.
   it('search honours limit while reporting the true total', () => {
     const capped = actions.search(docs, { terms: '', limit: 2 });
     expect(capped.hits).toHaveLength(2);
-    expect(capped.total).toBe(5);
+    expect(capped.matched).toBe(5);
+    expect(capped.stop).toBe('limit');
+    expect(capped.next_offset).toBe(2);
+  });
+});
+
+describe('F7 — ranked search: whole words, BM25, a small scored answer', () => {
+  const corpus = (files) => makeDocsCorpus(files);
+  const about = (id, slug, tldr, extra = '') => ({
+    [`.codeadd/docs/features/${id}-${slug}/about.md`]: `---
+id: ${id}
+type: feature
+slug: ${slug}
+status: live
+created: 2026-08-01
+updated: 2026-08-20
+related: []
+tags: []
+${extra}---
+
+## TL;DR
+${tldr}
+
+## Relations
+None
+`,
+  });
+
+  it('a query of only stopwords returns nothing, never everything', () => {
+    for (const terms of ['de da para', 'the of and', 'para o de']) {
+      const out = actions.search(docs, { terms });
+      expect(out.hits, terms).toEqual([]);
+      expect(out.matched).toBe(0);
+      expect(out.stop).toBe('no-terms');
+    }
+  });
+
+  it('a fragment such as `de` never returns the corpus, and a word prefix still matches', () => {
+    expect(actions.search(docs, { terms: 'de' }).hits).toEqual([]);
+    expect(actions.search(docs, { terms: 'ken' }).hits).toEqual([]);
+    expect(actions.search(docs, { terms: 'itemis' }).hits.map((h) => h.id)).toContain('0042F');
+  });
+
+  it('a rare term outranks a common one', () => {
+    const root = corpus({
+      ...about('0101F', 'one', 'Setup of the qa runner for the whole suite. Setup qa again.'),
+      ...about('0102F', 'two', 'Another qa setup page about setup of qa.'),
+      ...about('0103F', 'three', 'qa notes and a setup checklist for qa.'),
+      ...about('0104F', 'four', 'The seed rotates credentials.'),
+    });
+    try {
+      const data = loadCorpus('docs', root);
+      const out = actions.search(data, { terms: 'qa seed setup' });
+      expect(out.hits[0].id).toBe('0104F');
+    } finally {
+      removeTree(root);
+    }
+  });
+
+  it('every hit has a score in [0,1], the first is 1, and a snippet of about 200 characters', () => {
+    const long = 'filler '.repeat(80) + 'needleword ' + 'tail '.repeat(80);
+    const root = corpus({ ...about('0110F', 'long', long), ...about('0111F', 'short', 'needleword here') });
+    try {
+      const data = loadCorpus('docs', root);
+      const out = actions.search(data, { terms: 'needleword' });
+      expect(out.hits[0].score).toBe(1);
+      for (const h of out.hits) {
+        expect(h.score).toBeGreaterThanOrEqual(0);
+        expect(h.score).toBeLessThanOrEqual(1);
+        expect(h.snippet.length).toBeGreaterThan(0);
+        expect(h.snippet.length).toBeLessThanOrEqual(215);
+        expect(h.snippet).toContain('needleword');
+      }
+      expect(out.returned).toBe(out.hits.length);
+    } finally {
+      removeTree(root);
+    }
+  });
+
+  it('a supersession chain is one hit — the head, with the older ids it replaces', () => {
+    const root = corpus({
+      ...about('0120F', 'old-ranking', 'Ranking by relevance of search results.', 'superseded_by: 0121F\n'),
+      ...about('0121F', 'new-ranking', 'Ranking by relevance of search results, improved.'),
+    });
+    try {
+      const data = loadCorpus('docs', root);
+      const out = actions.search(data, { terms: 'ranking relevance' });
+      expect(out.hits.map((h) => h.id)).toEqual(['0121F']);
+      expect(out.hits[0].replaces).toEqual(['0120F']);
+      expect(out.collapsed).toBe(1);
+      const only = actions.search(data, { terms: 'old' });
+      expect(only.hits.map((h) => h.id)).toEqual(['0120F']);
+      expect(only.hits[0].superseded_by).toBe('0121F');
+    } finally {
+      removeTree(root);
+    }
+  });
+
+  it('offset pages the ranked list and the answer says why it stopped', () => {
+    const files = {};
+    for (let i = 0; i < 8; i++) Object.assign(files, about(`02${String(i).padStart(2, '0')}F`, `page-${i}`, 'pagingword same text'));
+    const root = corpus(files);
+    try {
+      const data = loadCorpus('docs', root);
+      const first = actions.search(data, { terms: 'pagingword' });
+      expect(first.returned).toBe(5);
+      expect(first.stop).toBe('limit');
+      expect(first.next_offset).toBe(5);
+      const second = actions.search(data, { terms: 'pagingword', offset: 5 });
+      expect(second.hits).toHaveLength(3);
+      expect(second.stop).toBe('end');
+      expect(second.next_offset).toBeNull();
+      expect(new Set([...first.hits, ...second.hits].map((h) => h.id)).size).toBe(8);
+    } finally {
+      removeTree(root);
+    }
+  });
+
+  it('empty terms enumerate by id with no score', () => {
+    const out = actions.search(docs, { terms: '', kind: 'page' });
+    expect(out.hits.map((h) => h.id)).toEqual(['wiki/backend']);
+    expect(out.hits[0]).not.toHaveProperty('score');
+    expect(out.stop).toBe('end');
+  });
+
+  it('get past the size limit drops observations, then files, then inbound — says so — and stays valid JSON', () => {
+    const many = Array.from({ length: 900 }, (_, i) => `- [note] observation number ${i} with some padding text to make it longer #auth`).join('\n');
+    const root = corpus({
+      '.codeadd/docs/features/0130F-big/about.md': `---
+id: 0130F
+type: feature
+slug: big
+status: live
+created: 2026-08-01
+updated: 2026-08-20
+related: []
+tags: []
+---
+
+## TL;DR
+A node with very many observations.
+
+## Relations
+None
+
+## Observations
+${many}
+`,
+    });
+    try {
+      const data = loadCorpus('docs', root);
+      const full = actions.get(data, { id: '0130F' });
+      expect(full.truncated.observations).toBeGreaterThan(0);
+      expect(full.observations.length).toBeLessThan(900);
+      expect(JSON.stringify(full).length).toBeLessThanOrEqual(16000);
+      expect(() => JSON.parse(JSON.stringify(full))).not.toThrow();
+      expect(actions.get(docs, { id: '0042F' })).not.toHaveProperty('truncated');
+    } finally {
+      removeTree(root);
+    }
   });
 });
 
