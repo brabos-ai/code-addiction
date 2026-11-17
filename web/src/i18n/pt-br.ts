@@ -440,9 +440,9 @@ export const ptBr: Strings = {
         summary: "Navegação no código por grafo de conhecimento (call graph, referências, blast-radius) via MCP. Dá navegação estrutural nos comandos de descoberta, planejamento, diagnóstico e hotfix — vai além do grep para entender as cadeias de chamada e o impacto de verdade.",
         skillDesc: "— navegação estrutural/relacional no código (call graph, referências, blast-radius, rastreio de fluxos, refactors seguros)",
         installTitle: "1 — Instale o GitNexus",
-        installText: 'Necessário antes de ligar o plugin. O Code Addiction confere isso com <code class="font-mono">gitnexus --version</code>.',
+        installText: 'Necessário antes de ligar o plugin. O Code Addiction confere isso com <code class="font-mono">gitnexus --version</code>. O GitNexus usa a licença PolyForm Noncommercial 1.0.0; uso comercial exige uma licença do autor.',
         wireTitle: "3 — Configure e indexe (uma vez por repositório)",
-        wireText: 'Rode estes comandos depois de ligar. Rode o <code class="font-mono">analyze</code> de novo depois de mudanças grandes.',
+        wireText: 'Rode estes comandos depois de ligar: registre o servidor MCP à mão (outros editores: o guia de editor-setup no repositório do GitNexus) e depois indexe. Não rode <code class="font-mono">gitnexus setup</code> — ele instala hooks no editor. O <code class="font-mono">--skip-agents-md</code> deixa o <code class="font-mono">AGENTS.md</code> e qualquer outro arquivo de contexto intactos. Os comandos checam se o grafo está fresco e reindexam quando está velho.',
         verify: 'Confira: peça ao Claude para rodar <code class="font-mono">gitnexus list_repos</code> (ou <code class="font-mono">/mcp</code>) — este repositório precisa aparecer indexado. Se não aparecer, os comandos voltam para o grep sem avisar.',
       },
       playwright: {

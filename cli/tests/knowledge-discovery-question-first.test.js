@@ -252,6 +252,7 @@ describe('L2.5 — the injection surface is untouched', () => {
       'add-hotfix.md',
       'add-new.md',
       'add-plan.md',
+      'add-review.md', // plan 2026-11-16T205432-PLAN--gitnexus-integration, F4
       'add-wiki.md',
     ]);
   });

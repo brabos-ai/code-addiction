@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "membershipCount": 93,
-  "slotCount": 86,
+  "membershipCount": 98,
+  "slotCount": 91,
   "grouping": "maximal run of standalone marker pairs separated only by whitespace",
   "providers": {
     "command": [
@@ -838,6 +838,24 @@
           ]
         },
         {
+          "id": "gitnexus.graph-fresh",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ]
+        },
+        {
           "id": "gitnexus.graph-trace",
           "fallback": "fallbacks/empty.md",
           "sourceOrder": [
@@ -994,6 +1012,24 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "interaction"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-fresh",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
             }
           ]
         },
@@ -1236,6 +1272,24 @@
               "namespace": "feature",
               "name": "qa-pipeline",
               "section": "step-list"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-fresh",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
             }
           ]
         },
@@ -1566,6 +1620,42 @@
               "namespace": "feature",
               "name": "agent-mode",
               "section": "staging-consent"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-fresh",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-fresh"
+            }
+          ]
+        },
+        {
+          "id": "gitnexus.graph-review",
+          "fallback": "fallbacks/empty.md",
+          "sourceOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-review"
+            }
+          ],
+          "expectedOrder": [
+            {
+              "namespace": "plugin",
+              "name": "gitnexus",
+              "section": "graph-review"
             }
           ]
         },
@@ -2330,6 +2420,10 @@
         {
           "id": "product/skill/add--gitnexus",
           "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--knowledge-discovery",
+          "via": "USES_SKILL"
         }
       ]
     },
@@ -2356,6 +2450,10 @@
         {
           "id": "product/skill/add--gitnexus",
           "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--knowledge-discovery",
+          "via": "USES_SKILL"
         }
       ]
     },
@@ -2381,6 +2479,35 @@
         },
         {
           "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--knowledge-discovery",
+          "via": "USES_SKILL"
+        }
+      ]
+    },
+    {
+      "id": "product/fragment/plugins/gitnexus/fragments/add-review.md",
+      "dependencies": [
+        {
+          "id": "product/command/add-review",
+          "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/agent/reviewer-agent",
+          "via": "DISPATCHES"
+        },
+        {
+          "id": "product/script/get-main-branch.cjs",
+          "via": "RUNS_SCRIPT"
+        },
+        {
+          "id": "product/skill/add--gitnexus",
+          "via": "USES_SKILL"
+        },
+        {
+          "id": "product/skill/add--knowledge-discovery",
           "via": "USES_SKILL"
         }
       ]
@@ -2469,6 +2596,10 @@
         {
           "id": "product/agent/reviewer-agent",
           "via": "INJECTS_INTO"
+        },
+        {
+          "id": "product/script/get-main-branch.cjs",
+          "via": "RUNS_SCRIPT"
         },
         {
           "id": "product/skill/add--gitnexus",

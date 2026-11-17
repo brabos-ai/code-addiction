@@ -87,7 +87,7 @@ describe('F2 — /add-setup no longer offers notion (0077F)', () => {
   it('L1.4 the execute order is install, modify, gitnexus, QA setup, wiki, and the MCP stop follows step 4', () => {
     const src = setupSrc();
     const exec = stepSection(src, 'add-setup.execute');
-    const order = ['Install the external tools', 'codeadd modify', 'gitnexus setup', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((x) => exec.indexOf(x));
+    const order = ['Install the external tools', 'codeadd modify', 'gitnexus analyze --skip-agents-md', 'cmd:add-qa-setup', 'cmd:add-wiki'].map((x) => exec.indexOf(x));
     for (const i of order) expect(i).toBeGreaterThan(-1);
     expect([...order].sort((x, y) => x - y)).toEqual(order);
     expect(src).toContain('STOP after step 4');

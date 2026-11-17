@@ -134,6 +134,11 @@ node .codeadd/scripts/status.cjs
 
 If the invocation carries `@.codeadd/docs/diagnose/<file>.md`, store that relative path as `DIAGNOSE_REPORT`. A conversational diagnosis with no file is not a fast path.
 
+<!-- slot:gitnexus.graph-fresh fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-fresh -->
+<!-- /plugin:gitnexus:graph-fresh -->
+<!-- /slot:gitnexus.graph-fresh -->
+
 ---
 
 ## STEP add-hotfix.branch-check: Branch Check (HARD STOP)

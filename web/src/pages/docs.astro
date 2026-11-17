@@ -30,7 +30,7 @@ const featureTargets: Record<string, string[]> = {
 
 // Plugin cards name the commands and agents they touch: artefact names, never translated.
 const codeList = (names: string[]) => names.map((n) => `<code class="font-mono">${n}</code>`).join(", ");
-const gitnexusCommands = ["add-new", "add-plan", "add-build", "add-diagnose", "add-hotfix", "add-done", "add-wiki"];
+const gitnexusCommands = ["add-new", "add-plan", "add-build", "add-diagnose", "add-hotfix", "add-done", "add-wiki", "add-review"];
 
 // Everything the inline scripts print or set. Rendered once into #docs-i18n; the scripts re-read it
 // on every astro:page-load, so a client-side switch between /docs/ and /pt-br/docs/ changes language.
@@ -589,8 +589,8 @@ const clientStringsJson = JSON.stringify(clientStrings).replace(/</g, "\\u003c")
             <p class="text-foreground text-sm font-semibold mb-2">{t("docs.plugins.gitnexus.wireTitle")}</p>
             <p class="text-muted-light text-xs mb-2" set:html={t("docs.plugins.gitnexus.wireText")} />
             <div class="space-y-2">
-              <CommandLine command="gitnexus setup" />
-              <CommandLine command="gitnexus analyze" />
+              <CommandLine command="claude mcp add gitnexus -- npx -y gitnexus@latest mcp" />
+              <CommandLine command="gitnexus analyze --skip-agents-md" />
             </div>
             <p class="text-muted text-xs mt-2" set:html={t("docs.plugins.gitnexus.verify")} />
           </div>
