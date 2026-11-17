@@ -54,9 +54,17 @@ IF release type = stable AND current branch is not production:
   ⛔ DO NOT: Run `node scripts/create-release-tag.cjs`
   ✅ DO: Checkout `production` (merged in STEP 5) first — the script tags the CHECKED-OUT branch
 
+IF the docs-no-legacy check fails (STEP 4 or STEP 7):
+  ⛔ DO NOT USE: Bash for git commit, git merge, git tag, git push
+  ✅ DO: Reword the flagged line in `CHANGELOG.md`, re-run the check and go on only when it passes
+
 IF preview not approved:
   ⛔ DO NOT USE: Bash for git tag, git push (tag)
   ✅ DO: Wait for confirmation or cancel
+
+## Temp files
+
+A temp file (a script, a commit or tag message, release notes in progress) goes to `.codeadd/.temp/`. Create `.codeadd/.temp/` when it is missing, before the first write. A write into a missing directory fails, and a release that goes on without it ships the wrong content: v1.10.0 pushed its bump and its first production merge without the changelog this way. Delete each temp file after use.
 
 ---
 
@@ -148,6 +156,16 @@ node scripts/changelog-promote.cjs [NEXT_VERSION without v prefix]
 ```
 
 It prints `CHANGELOG_PROMOTED=<version>`, or `CHANGELOG_PROMOTED=already` when the section exists and Unreleased is empty. Exit 1 means Unreleased is empty and no section exists for the version, the file has no `## [Unreleased]` heading, the version is invalid, or Unreleased holds text while a section for the version already exists: STOP and fix the file. Then resume at this part only — `npm version` already ran, so do not run it or the verify again. This is the last commit on main before STEP 5's merge, so the promoted section reaches the tagged merge.
+
+### Legacy-path check
+
+Run it for every release type, after the promote and before the commit:
+
+```bash
+node scripts/run-tests.js cli tests/docs-no-legacy.test.js
+```
+
+The tag pipeline runs the same test and, when it fails, stops the release after the tag is already pushed: v1.10.0 was tagged and never published because its changelog named the old docs location. If it fails → STOP: reword the flagged line of `CHANGELOG.md` so it names the current location and keeps its meaning, then re-run it. Do not commit until it passes.
 
 Commit the changed files — `cli/package.json` and `cli/package-lock.json`, plus `CHANGELOG.md` for a stable release — in ONE bump commit with message `chore: bump version to $NEXT_VERSION`, and push to main. Stage them by name.
 
@@ -256,6 +274,14 @@ The script tags whatever branch is CHECKED OUT. Checkout the right one first:
 | beta | `main` |
 
 Tagging `main` on a stable release produces a tag that does not point at the released production merge. This happened on v0.7.0.
+
+Re-run the legacy-path check on the checked-out tag source, so the tagged tree is the one checked:
+
+```bash
+node scripts/run-tests.js cli tests/docs-no-legacy.test.js
+```
+
+If it fails → STOP. Do not tag.
 
 Run:
 ```bash
