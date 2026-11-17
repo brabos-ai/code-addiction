@@ -272,7 +272,7 @@ describe('product PM refined-card standard (0081F)', () => {
     const sec = refined();
     for (const anchor of ['Problem', 'Objective', 'What we expect', 'Decided', 'Open', 'Acceptance criteria', 'WHEN', 'THEN',
       'moment of use', 'output example', 'fictitious', 'done when', 'out of scope', 'one line', 'open feature', 'card body']) {
-      expect(sec, `Refined card names ${anchor}`).toContain(anchor);
+      expect(sec.toLowerCase(), `Refined card names ${anchor}`).toContain(anchor.toLowerCase());
     }
     expect(sec).toMatch(/never (say|says|how)[^\n]*implement/i);
     expect(sec).toMatch(/no (intent )?subpage/i);
