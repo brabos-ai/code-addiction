@@ -52,7 +52,7 @@ GitNexus indexes repositories **by name** and serves them all from one MCP insta
 
 ## Freshness
 
-**The command that reached you checks the graph once per run, before its first GitNexus call — a dispatched agent never does.** Parallel agents would each re-index one repo at once.
+**The command that reached you checks the graph once per run, before its first GitNexus call, when it carries a `graph-fresh` section (`add-plan`, `add-hotfix`, `add-diagnose`, `add-review`) — a dispatched agent never does.** Parallel agents would each re-index one repo at once. Reached from any other command (`add-build`, `add-new`, `add-wiki`), no check ran: treat the graph as "freshness unknown" and query anyway.
 
 Run `gitnexus status --json` from the repo root and read it:
 
@@ -69,7 +69,7 @@ Never block the run on any row.
 
 - `impact`: call it with `summaryOnly: true` first. Then ask only the depths you need, paged with `limit` and `offset` (they apply per depth level).
 - `maxTokens` is a safety net, never the size control — it cuts text mid-way, JSON included.
-- `detect_changes` answers "what does this diff affect" in one call: changed symbols, affected processes, a risk summary. Use `scope: "compare"` with `base_ref` set to the dispatcher's base, else the main branch printed by `node .codeadd/scripts/get-main-branch.cjs`. It runs `git diff <base_ref>`, so it covers committed, staged and unstaged tracked changes; untracked files are outside it. Never rely on `scope: "all"` alone — after a commit the working tree is clean and it returns nothing. Pass `worktree` when the MCP server runs from a different directory than the tree under review.
+- `detect_changes` answers "what does this diff affect" in one call: changed symbols, affected processes, a risk summary. Use `scope: "compare"` with `base_ref` set to the dispatcher's base, else the main branch printed by `node .codeadd/scripts/get-main-branch.cjs` (on exit 1 or 2, skip `detect_changes`, say why, and fall back to grep). It runs `git diff <base_ref>`, so it covers committed, staged and unstaged tracked changes; untracked files are outside it. Never rely on `scope: "all"` alone — after a commit the working tree is clean and it returns nothing. Pass `worktree` when the MCP server runs from a different directory than the tree under review.
 
 ## Resolving an intent
 
@@ -89,4 +89,4 @@ Never block the run on any row.
 
 ## Operating note
 
-This skill assumes an **indexed graph**. Freshness is the calling command's check (see **Freshness**), and `add-done` re-indexes after significant changes. If the graph returns nothing, the repo may be unindexed — **say so explicitly**, then proceed with grep; do not block.
+This skill assumes an **indexed graph**. Freshness is the calling command's check where it carries one (see **Freshness**), and `add-done` re-indexes after significant changes. If the graph returns nothing, the repo may be unindexed — **say so explicitly**, then proceed with grep; do not block.

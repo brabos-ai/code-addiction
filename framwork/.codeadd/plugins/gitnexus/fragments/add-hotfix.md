@@ -13,7 +13,7 @@
 
 **Before editing, map the blast-radius of every symbol you will change:** load skill `add--gitnexus`, run `impact` — `summaryOnly` first, then paged with `limit`/`offset` (`add--gitnexus § Small answers`) — to enumerate callers and dependents, and keep the fix minimal to what the graph shows is reachable — a hotfix shipped without this is incomplete. Grep alone misses DI-by-token, barrels/reexports, dynamic refs, and inheritance, so it is not sufficient evidence of impact. If the graph is empty or unindexed, say so explicitly and fall back to grep — do not block.
 
-**Bridge to delivery history:** the files of the symbols `impact` returned go to `add--knowledge-discovery`'s GRAPH step as one **GRAPH question** — *which delivered work items touch these files?* Resolve it in that skill's action table; name no action here. Deduplicate against what STEP add-hotfix.delivery-index already asked. Carry the hits from STEP add-hotfix.implement to the blast radius that STEP add-hotfix.review-input assembles.
+**Bridge to delivery history:** the files of the symbols `impact` returned go to `add--knowledge-discovery`'s GRAPH step as one **GRAPH question** — *which delivered work items touch these files?* Resolve it in that skill's action table; name no action here. Deduplicate against what STEP add-hotfix.delivery-index already asked. Carry the hits from STEP add-hotfix.implement to the blast radius that STEP add-hotfix.review-input assembles; that step asks again over the final changed paths, so skip hits already carried.
 
 **Repo first:** if more than one repository is indexed, call `list_repos` once, pick this project's entry, and pass it as `repo` on every GitNexus call — a call without `repo` fails.
 

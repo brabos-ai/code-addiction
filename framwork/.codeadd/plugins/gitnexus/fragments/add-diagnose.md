@@ -5,7 +5,7 @@
 
 <!-- section:graph-fresh -->
 
-**Check the graph once, before the first GitNexus call of this run:** run `gitnexus status --json` from the repo root. `status: "up-to-date"` → query. `status: "stale"` → run `gitnexus analyze --skip-agents-md` from the repo root, then query. An `error` key, output that is not JSON, or no `status` → follow `add--gitnexus § Freshness`; never block on it.  The check is yours, once — a dispatched agent never runs `status` or `analyze`.
+**Check the graph once, before the first GitNexus call of this run:** run `gitnexus status --json` from the repo root. `status: "up-to-date"` → query. `status: "stale"` → run `gitnexus analyze --skip-agents-md` from the repo root, then query. An `error` key, output that is not JSON, or no `status` → follow `add--gitnexus § Freshness`; never block on it. The check is yours, once — a dispatched agent never runs `status` or `analyze`.
 
 <!-- /section:graph-fresh -->
 

@@ -106,8 +106,9 @@ describe('0073 L1 — build side', () => {
 
   it('L1.4 the gitnexus anchor on add-hotfix is preserved byte-for-byte', () => {
     const gitnexus = sidecarPoints().filter(
-      (p) => p.namespace === 'plugin' && p.name === 'gitnexus' && p.resource.name === 'add-hotfix',
+      (p) => p.namespace === 'plugin' && p.name === 'gitnexus' && p.resource.name === 'add-hotfix' && p.section === 'graph-impact',
     );
+    // graph-fresh joined add-hotfix with plan 2026-11-16T205432-PLAN--gitnexus-integration, F3; this test pins the graph-impact anchor only.
     expect(gitnexus).toHaveLength(1);
     // These two strings are the contract F5 must not disturb. The anchor line
     // must stay present and variable-free, and nothing may be inserted between

@@ -129,10 +129,11 @@ describe('0070 L1 — build-side unit', () => {
     }
   });
 
-  it('L1.0 gitnexus contributes exactly 21 points and never targets test-agent or fix-agent', () => {
+  it('L1.0 gitnexus contributes exactly 26 points and never targets test-agent or fix-agent', () => {
     const gitnexus = sidecarPoints().filter((p) => p.namespace === 'plugin' && p.name === 'gitnexus');
     // 20 -> 21: graph-build on add-build (plan 2026-09-17T132658, F5).
-    expect(gitnexus).toHaveLength(21);
+    // 21 -> 26: graph-fresh on add-plan, add-hotfix, add-diagnose and add-review, graph-review on add-review (plan 2026-11-16T205432-PLAN--gitnexus-integration, F3+F4).
+    expect(gitnexus).toHaveLength(26);
     const targets = gitnexus.map((p) => p.resource.name);
     expect(targets).not.toContain('test-agent');
     expect(targets).not.toContain('fix-agent');
