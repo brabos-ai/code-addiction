@@ -181,3 +181,32 @@ describe('L1 — product pipeline parity, static contract', () => {
     expect(text).toMatch(/## Where the Automatic Path Ends/);
   });
 });
+
+describe('L1 — the intent template carries the PM refinement standard (0081F)', () => {
+  it('L1.1 the brainstorm-intent schema names the refined-card sections in order, the four parts, WHEN/THEN and Open recommendations', () => {
+    const sections = sectionsLine('brainstorm-intent');
+    const order = ['Problem', 'Objective', 'What we expect', 'Decided', 'Open', 'Acceptance criteria', 'Prior art', 'Rejected'];
+    const at = order.map((name) => sections.indexOf(name));
+    for (const [i, pos] of at.entries()) expect(pos, `Sections names ${order[i]}`).toBeGreaterThan(-1);
+    expect(at, 'Sections are in order').toEqual([...at].sort((a, b) => a - b));
+    const text = schema('brainstorm-intent');
+    for (const anchor of ['moment of use', 'output example', 'done when', 'out of scope', 'fictitious', 'WHEN', 'THEN']) {
+      expect(text, `the schema names ${anchor}`).toContain(anchor);
+    }
+    expect(text).toMatch(/recommendation/i);
+    expect(text).toMatch(/delivery:\s*confirm\|automatic/);
+  });
+
+  it('L1.2 add-brainstorm collects the new parts at write-intent-file and in the bounded short design', () => {
+    const text = read(P.brainstorm);
+    const start = text.indexOf('### STEP add-brainstorm.write-intent-file');
+    const end = text.indexOf('### STEP add-brainstorm.route');
+    expect(start).toBeGreaterThan(-1);
+    const step = text.slice(start, end);
+    for (const anchor of ['Problem', 'What we expect', 'Acceptance criteria', 'WHEN']) expect(step, `write-intent-file names ${anchor}`).toContain(anchor);
+    const bounded = text.split('\n').find((l) => l.startsWith('| **bounded** | STEP add-brainstorm.draft-objective-first'));
+    expect(bounded, 'the bounded routing row exists').toBeTruthy();
+    expect(bounded).toContain('output example');
+    expect(bounded).toContain('done criterion');
+  });
+});

@@ -240,3 +240,13 @@ describe('F6 — no retired Notion skill is left in the source (0077F)', () => {
     }
   });
 });
+
+describe('F4b — add--agent-notion says the card body is the intent (0081F)', () => {
+  it('L1.7 the "Use the board, each day" section names card body, Refined card and no intent subpage', () => {
+    const section = sectionOf(read(skillPath('add--agent-notion')), '## Use the board, each day');
+    expect(section).toContain('card body');
+    expect(section).toContain('Refined card');
+    expect(section).toMatch(/no intent subpage/i);
+    expect(section).toMatch(/subpage[^\n]*(left alone|stay as they are)/i);
+  });
+});
