@@ -3,6 +3,10 @@ name: add--gitnexus
 description: Use when a task needs structural/relational code navigation — call graph, references, blast-radius, trace flows, safe refactors — and the GitNexus plugin is enabled. Routes intent to the native gitnexus-* skills.
 ---
 
+<!-- uses:
+- script: get-main-branch.cjs
+-->
+
 # add--gitnexus
 
 ## Overview
@@ -40,9 +44,32 @@ GitNexus indexes repositories **by name** and serves them all from one MCP insta
 | Blast-radius, "what breaks if I change X", safe-to-edit | `gitnexus-impact-analysis` |
 | Trace an error, "why does X fail" | `gitnexus-debugging` |
 | Rename / extract / split / move safely | `gitnexus-refactoring` |
-| Review a PR, assess merge risk | `gitnexus-pr-review` |
+| Review a change, assess merge risk | `detect_changes` over the diff (see **Small answers**), then `gitnexus-impact-analysis` for the symbols it flags |
 | Run GitNexus CLI (index / status / wiki) | `gitnexus-cli` |
 | Graph schema / available tools | `gitnexus-guide` |
+
+**Only these six native skills exist after `gitnexus analyze --skip-agents-md`:** `gitnexus-exploring`, `gitnexus-impact-analysis`, `gitnexus-debugging`, `gitnexus-refactoring`, `gitnexus-guide`, `gitnexus-cli`. Name no other. Hooks come only from `gitnexus setup`, which this framework never recommends — do not run it.
+
+## Freshness
+
+**The command that reached you checks the graph once per run, before its first GitNexus call — a dispatched agent never does.** Parallel agents would each re-index one repo at once.
+
+Run `gitnexus status --json` from the repo root and read it:
+
+| Output | Do |
+|---|---|
+| `status` is `"up-to-date"` | Query |
+| `status` is `"stale"` | Run `gitnexus analyze --skip-agents-md` from the repo root, then query |
+| An `error` key (`not-indexed`, `stale-kuzu-index`) | Say so, fall back to grep. Do not index on your own — a first full index in the middle of a task is the user's call |
+| Not JSON, or neither key (an older GitNexus) | Say "freshness unknown" and query anyway |
+
+Never block the run on any row.
+
+## Small answers
+
+- `impact`: call it with `summaryOnly: true` first. Then ask only the depths you need, paged with `limit` and `offset` (they apply per depth level).
+- `maxTokens` is a safety net, never the size control — it cuts text mid-way, JSON included.
+- `detect_changes` answers "what does this diff affect" in one call: changed symbols, affected processes, a risk summary. Use `scope: "compare"` with `base_ref` set to the dispatcher's base, else the main branch printed by `node .codeadd/scripts/get-main-branch.cjs`. It runs `git diff <base_ref>`, so it covers committed, staged and unstaged tracked changes; untracked files are outside it. Never rely on `scope: "all"` alone — after a commit the working tree is clean and it returns nothing. Pass `worktree` when the MCP server runs from a different directory than the tree under review.
 
 ## Resolving an intent
 
@@ -62,4 +89,4 @@ GitNexus indexes repositories **by name** and serves them all from one MCP insta
 
 ## Operating note
 
-This skill assumes an **indexed graph**. Freshness is handled at `add-done` (re-index after significant changes), not here. If the graph returns nothing, the repo may be unindexed — **say so explicitly**, then proceed with grep; do not block.
+This skill assumes an **indexed graph**. Freshness is the calling command's check (see **Freshness**), and `add-done` re-indexes after significant changes. If the graph returns nothing, the repo may be unindexed — **say so explicitly**, then proceed with grep; do not block.
