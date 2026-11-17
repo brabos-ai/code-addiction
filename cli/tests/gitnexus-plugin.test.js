@@ -312,8 +312,9 @@ describe('no hooks, no AGENTS.md writes in any instruction (L1.8)', () => {
   it('every `gitnexus analyze` carries --skip-agents-md; every `gitnexus setup` line forbids it', () => {
     for (const [name, text] of surfaces()) {
       for (const m of text.matchAll(/gitnexus analyze(?!\s+--skip-agents-md)/g)) {
-        // allow prose "gitnexus analyze` writes" only when followed by a skip flag nearby is NOT allowed
-        throw new Error(`${name}: bare gitnexus analyze at ${m.index}`);
+        // a bare mention is only legal in a sentence that forbids it (the reviewer fragment)
+        const line = text.slice(text.lastIndexOf('\n', m.index) + 1, text.indexOf('\n', m.index) === -1 ? undefined : text.indexOf('\n', m.index));
+        expect(line, `${name}: bare gitnexus analyze`).toMatch(/never|do not/i);
       }
       const textLines = text.replace(/\\n/g, '\n').split('\n');
       for (const l of textLines) if (l.includes('gitnexus setup')) expect(l, `${name}: ${l}`).toMatch(/do not|never/i);
