@@ -235,7 +235,7 @@ still presented, and this command still stops until the user says yes.
 | Path | What STEP add-brainstorm.explore does | Then |
 |------|-----------------|------|
 | **spike** | Present the question and the probe in **2–3 sentences**, get a nod, investigate, report a recommendation. Anything built is labelled **throwaway**. | Skip STEPS 3 and 4 → STEP add-brainstorm.route, which reports and names the route, then offers it. No intent file, no approval question. |
-| **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
+| **bounded** | STEP add-brainstorm.draft-objective-first, then only the clarifying questions that matter, then a **short design in chat**: the objective, what changes, who uses it (2.5), the output example (marked fictitious), the done criterion the user can check, how it is tested. The user approves it. | Skip STEPS 3 and 4 → STEP add-brainstorm.handoff, which asks the approval and writes the intent file. |
 | **architectural** | Everything written below. | STEPS 3 → 4 → 5. |
 
 <!-- slot:agent-mode.cap-scope fallback="fallbacks/agent-mode.add-brainstorm.cap-scope.md" -->
@@ -571,6 +571,8 @@ id either way.
 classified at STEP add-brainstorm.classify, the approval's answer as `delivery:`, the objective from STEP add-brainstorm.draft-objective-first, every decision the
 conversation closed with its rationale and what it serves, whatever it could not close, the prior art
 STEP add-brainstorm.load-context found, and the directions that were rejected.
+
+It also carries the product view the schema's depth floors check: the **Problem** (the user pain), the four parts of **What we expect** (moment of use, an output example marked fictitious, done when, out of scope) and the **Acceptance criteria** as `WHEN … THEN …` lines. Take each from what the user said. When the conversation never reached one, ask it before the approval question — never invent it and never write `unknown`.
 
 
 ```

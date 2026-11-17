@@ -256,3 +256,50 @@ describe('agent team roles', () => {
     }
   });
 });
+
+describe('product PM refined-card standard (0081F)', () => {
+  const GUIDE_TEXT = () => fs.readFileSync(GUIDE, 'utf8');
+  const refined = () => {
+    const text = roleText('product-pm');
+    const lines = text.split('\n');
+    expect(lines.filter((l) => l.trim() === '## Refined card'), 'exactly one ## Refined card heading').toHaveLength(1);
+    const start = text.indexOf('\n## Refined card\n') + 1;
+    const next = text.indexOf('\n## ', start + 5);
+    return text.slice(start, next === -1 ? undefined : next);
+  };
+
+  it('L1.3 product-pm.md has a Refined card section naming the six parts, the four parts, and the size and view rules', () => {
+    const sec = refined();
+    for (const anchor of ['Problem', 'Objective', 'What we expect', 'Decided', 'Open', 'Acceptance criteria', 'WHEN', 'THEN',
+      'moment of use', 'output example', 'fictitious', 'done when', 'out of scope', 'one line', 'open feature', 'card body']) {
+      expect(sec.toLowerCase(), `Refined card names ${anchor}`).toContain(anchor.toLowerCase());
+    }
+    expect(sec).toMatch(/never (say|says|how)[^\n]*implement/i);
+    expect(sec).toMatch(/no (intent )?subpage/i);
+    expect(sec).toMatch(/recommendation/i);
+  });
+
+  it('L1.4 product-pm.md names the Backlog to /add-new flow and leaves cards with an intent subpage as they are', () => {
+    const sec = refined();
+    expect(sec).toContain('Backlog');
+    expect(sec).toContain('/add-new');
+    expect(sec).toMatch(/already (has|have|hold|holds)[^\n]*subpage[^\n]*(stay|as they are)/i);
+  });
+
+  it('L1.5 chief-engineer.md reads the card body with Notion, and the intent file without', () => {
+    const text = roleText('chief-engineer');
+    expect(text).toContain('card body');
+    expect(text).toContain('no card is assigned');
+    expect(text).toContain('-intent.md');
+  });
+
+  it('L1.6 the guide section 10 says the card body is the intent and points at roles/product-pm.md', () => {
+    const guide = GUIDE_TEXT();
+    const start = guide.indexOf('## 10. Track work in Notion (optional)');
+    expect(start).toBeGreaterThan(-1);
+    const section = guide.slice(start);
+    expect(section).toContain('card body');
+    expect(section).toContain('roles/product-pm.md');
+    expect(section).toContain('Refined card');
+  });
+});

@@ -65,7 +65,8 @@ That page is the source of truth. It wins over everything in this skill.
 
 1. **Read "How it works" before any write.** Find it by title through the Notion tools. When it does not exist, say the board is not built, offer to build it with the user, and continue the work with no card.
 2. **Find the card by its `<id>-<slug>` title.** Always show the id with the slug, as in `0075F-remove-board`. No card found: the PM creates one. When the team has no PM, the engineer creates it. An engineer on a team with a PM who finds none tells the PM and continues; the one exception is a hotfix, where the engineer starting it creates the card.
-3. **Update the card at each milestone.** Apply the page's rule. Only where the page has no rule, use this fallback:
+3. **The card body is the intent.** Fill the body of a new card in the shape of `roles/product-pm.md`, section Refined card: Problem, Objective, What we expect, Decided, Open and Acceptance criteria. Create no intent subpage. A card that already has an intent subpage keeps it; subpages are left alone.
+4. **Update the card at each milestone.** Apply the page's rule. Only where the page has no rule, use this fallback:
 
 | Milestone | Card |
 |---|---|
