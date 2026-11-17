@@ -49,15 +49,23 @@ export const TOOLS = [
   {
     name: 'search',
     description:
-      'Find work items and reference pages by keyword. Every hit carries its id, kind, status, ' +
-      'tags, path, relations, attachments and the FIRST SENTENCE of its TL;DR — enough to reject ' +
-      'a candidate without opening the file. In-flight items are returned with their status; ' +
-      'filtering is yours to do against that field.',
+      'Find work items and reference pages by keyword, ranked. Whole words and word prefixes ' +
+      'match; stopwords (pt and en) and terms under 3 letters are ignored, and a query made ' +
+      'only of those matches nothing (stop: no-terms). Rare terms outweigh common ones (BM25). ' +
+      'Each hit is lean: id, kind, status, title, score, snippet, path. `score` runs 0 to 1 ' +
+      'against the first hit; `snippet` is about 200 characters of the field that matched. ' +
+      'A supersession chain returns ONE hit — the current version, with `replaces` listing the ' +
+      'older ids, or an older version alone with `superseded_by`. The answer says how many ' +
+      'matched, how many came back and why it stopped (`stop`: limit, floor, drop, budget, end ' +
+      'or no-terms); continue with `offset` = `next_offset`. Tags, area, relations and ' +
+      'attachments are not in a hit: call `get` with the id. In-flight items are returned with ' +
+      'their status; filtering is yours to do against that field.',
     inputSchema: {
       type: 'object',
       properties: {
-        terms: { type: 'string', description: 'Space-separated keywords. Empty returns everything.' },
-        limit: { type: 'number', description: 'Maximum hits. Defaults to 10.' },
+        terms: { type: 'string', description: 'Space-separated keywords. Empty enumerates by id, with no score and no relevance cut.' },
+        limit: { type: 'number', description: 'Maximum hits per page. Defaults to 5, at most 20.' },
+        offset: { type: 'number', description: 'Hits to skip, to read the next page. Use next_offset from the previous answer.' },
         kind: { type: 'string', description: 'Restrict to one node kind.' },
         status: { type: 'string', description: 'Restrict to one status value.' },
         tag: { type: 'string', description: 'Restrict to nodes carrying this tag.' },
@@ -67,8 +75,11 @@ export const TOOLS = [
   {
     name: 'get',
     description:
-      'One node in full: the whole TL;DR, its observations, its relations both ways, its file ' +
-      'set and its attachments. Use it after `search`, which returns only the first sentence.',
+      'One node in full: the summary and whole TL;DR, tags, area, its observations, its relations ' +
+      'both ways, its file set and its attachments. Use it after `search`, which returns only a ' +
+      'score and a snippet. The answer is bounded at about 4,000 tokens: past that it drops ' +
+      'observations, then files, then inbound relations from the tail and says how many in ' +
+      '`truncated`.',
     inputSchema: {
       type: 'object',
       properties: {

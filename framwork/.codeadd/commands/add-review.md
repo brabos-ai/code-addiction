@@ -288,6 +288,11 @@ Proceed directly. Save `STAGED_CHANGES=false`.
 
 ## STEP add-review.bootstrap: Bootstrap Context
 
+<!-- slot:gitnexus.graph-fresh fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-fresh -->
+<!-- /plugin:gitnexus:graph-fresh -->
+<!-- /slot:gitnexus.graph-fresh -->
+
 ### STEP add-review.detect-current-feature Detect Current Feature
 
 ```bash
@@ -330,6 +335,11 @@ IF `RELATED_WORK` IS STILL BLANK AFTER THE GRAPH STEP:
 
    - IF `WIKI:present` is false: note "knowledge base unavailable — /add-wiki generates it" and continue with code-derived patterns only.
    - These pages contain implementation patterns and conventions to validate against
+
+<!-- slot:gitnexus.graph-review fallback="fallbacks/empty.md" -->
+<!-- plugin:gitnexus:graph-review -->
+<!-- /plugin:gitnexus:graph-review -->
+<!-- /slot:gitnexus.graph-review -->
 
 ### STEP add-review.load-project-architecture Load Project Architecture Reference
 

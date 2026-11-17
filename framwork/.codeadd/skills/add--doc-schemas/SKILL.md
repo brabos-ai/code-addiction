@@ -263,7 +263,7 @@ It has one added role: it is **migration input**. The `codeadd update` migration
 
 ### The TL;DR Is the Node's Rejection Surface
 
-`## TL;DR` is already required by Universal Document Requirements below, and nothing about its content changes. What changes is that something now reads it: a graph search returns its **first sentence** with every hit, so an agent discards an irrelevant work item without opening the document. The full section comes on a follow-up call.
+`## TL;DR` is already required by Universal Document Requirements below, and nothing about its content changes. What changes is that something now reads it: a graph search returns a **snippet** (about 200 characters) of the field that matched, with a score, so an agent discards an irrelevant work item without opening the document. The summary and the full section come on a follow-up `get`.
 
 That is why an empty `## TL;DR` heading satisfies nothing. `/add-done` refuses to close a delivery whose document carries an empty one, and the graph's `orphans` action reports every node still missing one.
 

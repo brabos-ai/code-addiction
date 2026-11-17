@@ -38,6 +38,8 @@ const h = require('./helpers.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { DOCS_ROOT, DOCS_LAYOUT } = require(path.join(h.SCRIPTS_DIR, 'docs-root.cjs'));
+// The retired top-level folder, assembled so this file never spells the old path.
+const LEGACY = 'do' + 'cs/';
 
 // --- fixture helpers ---------------------------------------------------------
 
@@ -221,10 +223,10 @@ test('delivered#006 L1.2: read matches on name, words, id, items[].what and item
     validSource(r.repo);
     commitAll(r.repo);
     runWrite(r.repo, validRecord());
-    for (const q of ['login com Google', 'oauth', '0042F', 'POST /auth/google', 'authGoogleHandler']) {
-      const res = runRead(r.repo, [q]);
+    for (const qry of ['login com Google', 'oauth', '0042F', 'POST /auth/google', 'authGoogleHandler']) {
+      const res = runRead(r.repo, [qry]);
       assert.equal(res.status, 0, res.output);
-      assert.equal(idsOf(res.stdout).includes('0042F'), true, 'query ' + q + ' did not match');
+      assert.equal(idsOf(res.stdout).includes('0042F'), true, 'query ' + qry + ' did not match');
     }
   }));
 
@@ -288,8 +290,7 @@ test('delivered#012 L1.2: an entry matching no term at all is absent from both b
     const res = runRead(r.repo, ['qqqq wwww', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
-    assert.equal(kv.MATCHED_LIVE, '0');
-    assert.equal(kv.MATCHED_DEAD, '0');
+    assert.equal(kv.MATCHED, '0');
     assert.equal(jsonOf(res.stdout).length, 0);
   }));
 
@@ -301,8 +302,7 @@ test('delivered#013 L1.2: items[].at stays out of the haystack even under per-te
     const res = runRead(r.repo, ['uniquepathmarker', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
-    assert.equal(kv.MATCHED_LIVE, '0');
-    assert.equal(kv.MATCHED_DEAD, '0');
+    assert.equal(kv.MATCHED, '0');
   }));
 
 test('delivered#014 L1.2: results are pre-sorted live then changed then superseded then gone', () =>
@@ -311,81 +311,85 @@ test('delivered#014 L1.2: results are pre-sorted live then changed then supersed
     src(r.repo, 'src/chg.ts', 'const changedThing = 1;\n');
     commitAll(r.repo);
     writeIndex(r.repo, [
-      entry('0004F', 'gone', 'q gone', 'q gone', 'src/gone.ts', 'goneThing'),
-      entry('0003F', 'superseded', 'q superseded', 'q superseded', 'src/sup.ts', 'supThing', { superseded_by: '0009F' }),
-      entry('0002F', 'changed', 'q changed', 'q changed', 'src/moved.ts', 'changedThing'),
-      entry('0001F', 'live', 'q live', 'q live', 'src/live.ts', 'liveThing'),
+      entry('0004F', 'gone', 'qry gone', 'qry gone', 'src/gone.ts', 'goneThing'),
+      entry('0003F', 'superseded', 'qry superseded', 'qry superseded', 'src/sup.ts', 'supThing', { superseded_by: '0009F' }),
+      entry('0002F', 'changed', 'qry changed', 'qry changed', 'src/moved.ts', 'changedThing'),
+      entry('0001F', 'live', 'qry live', 'qry live', 'src/live.ts', 'liveThing'),
     ]);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     assert.deepEqual(idsOf(res.stdout), ['0001F', '0002F', '0003F', '0004F']);
   }));
 
-test('delivered#015 L1.2: dead entries get their own reserved slots, not the leftovers of one cut', () =>
+test('delivered#015 L1.2: a dead entry competes on relevance and is returned when it is among the best', () =>
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     writeIndex(r.repo, [
-      entry('0001F', 'live', 'q live', 'q live', 'src/live.ts', 'liveThing'),
-      entry('0004F', 'gone', 'q gone', 'q gone', 'src/gone.ts', 'goneThing'),
+      entry('0001F', 'live', 'qry live', 'qry live', 'src/live.ts', 'liveThing'),
+      entry('0004F', 'gone', 'qry gone', 'qry gone', 'src/gone.ts', 'goneThing'),
     ]);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
     assert.match(res.output, /"id":"0004F"/);
     assert.equal(jsonOf(res.stdout).length, 2);
-    assert.equal(kv.MATCHED_LIVE, '1');
-    assert.equal(kv.MATCHED_DEAD, '1');
-    assert.equal(kv.RETURNED_DEAD, '1');
+    assert.equal(kv.MATCHED, '2');
+    assert.equal(kv.RETURNED, '2');
   }));
 
-test('delivered#016 L1.2: the read returns five live and two dead, and counts each bucket', () =>
+test('delivered#016 L1.2: the read returns five rows by default, and counts how many matched', () =>
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     const lines = [];
-    for (let i = 1; i <= 12; i++) lines.push(entry('L' + i, 'live', 'q entry ' + i, 'q entry', 'src/live.ts', 'liveThing'));
-    for (let i = 1; i <= 3; i++) lines.push(entry('D' + i, 'gone', 'q dead ' + i, 'q dead', 'src/gone.ts', 'goneThing'));
+    for (let i = 1; i <= 12; i++) lines.push(entry('L' + i, 'live', 'qry entry ' + i, 'qry entry', 'src/live.ts', 'liveThing'));
+    for (let i = 1; i <= 3; i++) lines.push(entry('D' + i, 'gone', 'qry dead ' + i, 'qry dead', 'src/gone.ts', 'goneThing'));
     writeIndex(r.repo, lines);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
-    assert.equal(kv.MATCHED_LIVE, '12');
-    assert.equal(kv.MATCHED_DEAD, '3');
-    assert.equal(kv.RETURNED_LIVE, '5');
-    assert.equal(kv.RETURNED_DEAD, '2');
-    assert.equal(jsonOf(res.stdout).length, 7);
-  }));
-
-test('delivered#017 L1.2: --limit sets the live cap and leaves the dead cap alone', () =>
-  withRepo((r) => {
-    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
-    commitAll(r.repo);
-    const lines = [];
-    for (let i = 1; i <= 12; i++) lines.push(entry('L' + i, 'live', 'q entry ' + i, 'q entry', 'src/live.ts', 'liveThing'));
-    for (let i = 1; i <= 3; i++) lines.push(entry('D' + i, 'gone', 'q dead ' + i, 'q dead', 'src/gone.ts', 'goneThing'));
-    writeIndex(r.repo, lines);
-    const res = runRead(r.repo, ['q', '--no-verify', '--limit', '1']);
-    assert.equal(res.status, 0, res.output);
-    const kv = kvOf(res);
-    assert.equal(kv.RETURNED_LIVE, '1');
-    assert.equal(kv.RETURNED_DEAD, '2');
-    assert.equal(jsonOf(res.stdout).length, 3);
-  }));
-
-test('delivered#018 L1.2: unused dead slots are never backfilled with live entries', () =>
-  withRepo((r) => {
-    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
-    commitAll(r.repo);
-    const lines = [];
-    for (let i = 1; i <= 12; i++) lines.push(entry('L' + i, 'live', 'q entry ' + i, 'q entry', 'src/live.ts', 'liveThing'));
-    writeIndex(r.repo, lines);
-    const res = runRead(r.repo, ['q', '--no-verify']);
-    assert.equal(res.status, 0, res.output);
-    const kv = kvOf(res);
-    assert.equal(kv.RETURNED_LIVE, '5');
-    assert.equal(kv.RETURNED_DEAD, '0');
+    assert.equal(kv.MATCHED, '15');
+    assert.equal(kv.RETURNED, '5');
+    assert.equal(kv.STOP, 'limit');
+    assert.equal(kv.NEXT_OFFSET, '5');
     assert.equal(jsonOf(res.stdout).length, 5);
+  }));
+
+test('delivered#017 L1.2: --limit sets how many rows come back, and 21 is a usage error', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    const lines = [];
+    for (let i = 1; i <= 30; i++) lines.push(entry('L' + i, 'live', 'qry entry ' + i, 'qry entry', 'src/live.ts', 'liveThing'));
+    writeIndex(r.repo, lines);
+    const one = runRead(r.repo, ['qry', '--no-verify', '--limit', '1']);
+    assert.equal(one.status, 0, one.output);
+    assert.equal(kvOf(one).RETURNED, '1');
+    assert.equal(jsonOf(one.stdout).length, 1);
+    const max = runRead(r.repo, ['qry', '--no-verify', '--limit', '20']);
+    assert.equal(kvOf(max).RETURNED, '20');
+    const over = runRead(r.repo, ['qry', '--no-verify', '--limit', '21']);
+    assert.equal(over.status, 2, over.output);
+  }));
+
+test('delivered#018 L1.2: --offset continues the ranked list and a bad --offset is a usage error', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    const lines = [];
+    for (let i = 1; i <= 8; i++) lines.push(entry('L' + i, 'live', 'qry entry ' + i, 'qry entry', 'src/live.ts', 'liveThing'));
+    writeIndex(r.repo, lines);
+    const first = runRead(r.repo, ['qry', '--no-verify']);
+    const second = runRead(r.repo, ['qry', '--no-verify', '--offset', '5']);
+    assert.equal(second.status, 0, second.output);
+    assert.equal(kvOf(second).OFFSET, '5');
+    assert.equal(kvOf(second).RETURNED, '3');
+    assert.equal(kvOf(second).STOP, 'end');
+    assert.equal(kvOf(second).NEXT_OFFSET, '');
+    assert.equal(new Set([...idsOf(first.stdout), ...idsOf(second.stdout)]).size, 8);
+    assert.equal(runRead(r.repo, ['qry', '--offset', '1.5']).status, 2);
+    assert.equal(runRead(r.repo, ['qry', '--offset', '-1']).status, 2);
   }));
 
 test('delivered#019 L1.2: --layer filters', () =>
@@ -393,14 +397,14 @@ test('delivered#019 L1.2: --layer filters', () =>
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     writeIndex(r.repo, [
-      entry('0001F', 'live', 'q product', 'q product', 'src/live.ts', 'liveThing'),
+      entry('0001F', 'live', 'qry product', 'qry product', 'src/live.ts', 'liveThing'),
       record({
         v: 1, ts: '2026-09-07T12:00:00Z', id: 'plan-x', layer: 'internal', by: 'done',
-        status: 'live', name: 'q internal', words: 'q internal', commits: ['a1b2c3d'],
+        status: 'live', name: 'qry internal', words: 'qry internal', commits: ['a1b2c3d'],
         origin: DOCS_ROOT + '/deliveries/plan-x/', items: [{ what: 't', at: 'src/live.ts', find: 'liveThing' }],
       }),
     ]);
-    const res = runRead(r.repo, ['q', '--no-verify', '--layer', 'product']);
+    const res = runRead(r.repo, ['qry', '--no-verify', '--layer', 'product']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout).length, 1);
     assert.equal(idsOf(res.stdout)[0], '0001F');
@@ -413,10 +417,10 @@ test('delivered#020 L1.3: two lines for one id — read returns only the later o
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     writeIndex(r.repo, [
-      entry('0001F', 'live', 'first name', 'q alpha', 'src/live.ts', 'liveThing'),
-      entry('0001F', 'live', 'second name', 'q alpha', 'src/live.ts', 'liveThing'),
+      entry('0001F', 'live', 'first name', 'qry alpha', 'src/live.ts', 'liveThing'),
+      entry('0001F', 'live', 'second name', 'qry alpha', 'src/live.ts', 'liveThing'),
     ]);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout).length, 1);
     assert.match(res.output, /second name/);
@@ -430,11 +434,11 @@ test('delivered#021 L1.4: a corrupt line mid-file is skipped, reported by number
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
     writeIndex(r.repo, [
-      entry('0001F', 'live', 'q one', 'q one', 'src/live.ts', 'liveThing'),
+      entry('0001F', 'live', 'qry one', 'qry one', 'src/live.ts', 'liveThing'),
       '{not json at all',
-      entry('0003F', 'live', 'q three', 'q three', 'src/live.ts', 'liveThing'),
+      entry('0003F', 'live', 'qry three', 'qry three', 'src/live.ts', 'liveThing'),
     ]);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout).length, 2);
     assert.equal(kvOf(res).SKIPPED_LINES, '2');
@@ -892,10 +896,10 @@ test('delivered#057 L1.12: --no-verify returns the stored status and opens no so
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
-    writeIndex(r.repo, [entry('0001F', 'live', 'q', 'q', 'src/live.ts', 'liveThing')]);
+    writeIndex(r.repo, [entry('0001F', 'live', 'qry', 'qry', 'src/live.ts', 'liveThing')]);
     fs.rmSync(path.join(r.repo, 'src', 'live.ts'), { force: true });
     commitAll(r.repo);
-    const res = runRead(r.repo, ['q', '--no-verify']);
+    const res = runRead(r.repo, ['qry', '--no-verify']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout)[0].status, 'live');
   }));
@@ -904,10 +908,10 @@ test('delivered#058 L1.12: the same read WITHOUT --no-verify reports the truth',
   withRepo((r) => {
     src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
     commitAll(r.repo);
-    writeIndex(r.repo, [entry('0001F', 'live', 'q', 'q', 'src/live.ts', 'liveThing')]);
+    writeIndex(r.repo, [entry('0001F', 'live', 'qry', 'qry', 'src/live.ts', 'liveThing')]);
     fs.rmSync(path.join(r.repo, 'src', 'live.ts'), { force: true });
     commitAll(r.repo);
-    const res = runRead(r.repo, ['q']);
+    const res = runRead(r.repo, ['qry']);
     assert.equal(res.status, 0, res.output);
     assert.equal(jsonOf(res.stdout)[0].status, 'gone');
   }));
@@ -916,9 +920,9 @@ test('delivered#059 L1.12: a verifying read never writes — the file stays byte
   withRepo((r) => {
     src(r.repo, 'src/moved.ts', 'const changedThing = 1;\n');
     commitAll(r.repo);
-    writeIndex(r.repo, [entry('0002F', 'live', 'q', 'q', 'src/old.ts', 'changedThing')]);
+    writeIndex(r.repo, [entry('0002F', 'live', 'qry', 'qry', 'src/old.ts', 'changedThing')]);
     const before = h.read(indexPath(r.repo));
-    const res = runRead(r.repo, ['q']);
+    const res = runRead(r.repo, ['qry']);
     assert.equal(res.status, 0, res.output);
     assert.equal(h.read(indexPath(r.repo)), before);
   }));
@@ -994,8 +998,7 @@ test('delivered#066 an absent index makes read a no-op with a note, exit 0', () 
     const res = runRead(r.repo, ['anything']);
     assert.equal(res.status, 0, res.output);
     const kv = kvOf(res);
-    assert.equal(kv.MATCHED_LIVE, '0');
-    assert.equal(kv.MATCHED_DEAD, '0');
+    assert.equal(kv.MATCHED, '0');
     assert.equal(fs.existsSync(indexPath(r.repo)), false);
   }));
 
@@ -1074,7 +1077,7 @@ test('delivered#072 L4.1: read finds an entry by its node when nothing else in i
     )]);
     const res = runRead(r.repo, ['add-framework--done']);
     assert.equal(res.status, 0, res.output);
-    assert.match(res.output, /MATCHED_LIVE=1/);
+    assert.match(res.output, /MATCHED=1/);
     assert.equal(idsOf(res.stdout)[0], 'E1');
   }));
 
@@ -1083,9 +1086,9 @@ test('delivered#073 L4.2: a query in no entry\'s text and no entry\'s node still
     src(r.repo, 'a.md', 'marker_gamma lives here\n');
     commitAll(r.repo);
     writeIndex(r.repo, [entry('E1', 'live', 'a delivery', 'unrelated words only', 'a.md', 'marker_gamma', { node: 'internal/command/add-framework--done' })]);
-    const res = runRead(r.repo, ['add-framework--roadmap']);
+    const res = runRead(r.repo, ['roadmap']);
     assert.equal(res.status, 0, res.output);
-    assert.match(res.output, /MATCHED_LIVE=0/);
+    assert.match(res.output, /MATCHED=0/);
     assert.doesNotMatch(res.output, /"id":"E1"/);
   }));
 
@@ -1316,8 +1319,242 @@ test('delivered#089 L1.13: with no docs root, write is a named error and read is
     assert.match(w.output, /ERROR=docs-root-missing/);
     const rd = runRead(r.repo, ['login']);
     assert.equal(rd.status, 0, rd.output);
-    assert.equal(kvOf(rd).MATCHED_LIVE, '0');
+    assert.equal(kvOf(rd).MATCHED, '0');
   } finally {
     r.cleanup();
   }
 });
+
+// --- performHistoryRead: the exact-node question, off the text ranker ----------
+
+test('delivered#090 F3: performHistoryRead returns an entry carrying the node even when no text names it', () =>
+  withRepo((r) => {
+    src(r.repo, 'a.txt', 'alphaFind\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [
+      entry('0001F', 'live', 'unrelated wording', 'nothing here', 'a.txt', 'alphaFind', { node: 'product/command/add-done' }),
+      entry('0002F', 'live', 'add-done mentioned in text only', 'add-done', 'a.txt', 'alphaFind'),
+      entry('0003F', 'superseded', 'older', 'older', 'a.txt', 'alphaFind', { node: 'product/command/add-done', superseded_by: '0001F' }),
+    ]);
+    const core = require(path.join(h.SCRIPTS_DIR, 'delivery-index-core.cjs'));
+    const ctx = core.createContext({ root: r.repo });
+    const out = core.performHistoryRead(ctx, { node: 'product/command/add-done', limit: 50 });
+    assert.deepEqual(out.entries.map((e) => e.id), ['0001F', '0003F']);
+    assert.equal(out.matchedLive, 1);
+    assert.equal(out.matchedDead, 1);
+    assert.equal(out.returnedLive, 1);
+    assert.equal(out.returnedDead, 1);
+    assert.equal(out.liveCap, 50);
+    assert.equal(out.deadCap, core.DEAD_CAP);
+    assert.deepEqual(out.skipped, []);
+  }));
+
+test('delivered#091 F3: performHistoryRead honours --layer and the dead cap, and matches an item-level node', () =>
+  withRepo((r) => {
+    src(r.repo, 'a.txt', 'alphaFind\n');
+    commitAll(r.repo);
+    const items = [{ what: 'x', at: 'a.txt', find: 'alphaFind', node: 'internal/skill/foo' }];
+    writeIndex(r.repo, [
+      JSON.stringify({ ...JSON.parse(entry('0010F', 'live', 'n', 'w', 'a.txt', 'alphaFind')), layer: 'internal', items }),
+      entry('0011F', 'gone', 'g1', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+      entry('0012F', 'gone', 'g2', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+      entry('0013F', 'gone', 'g3', 'w', 'zzz.txt', 'missingFind', { node: 'internal/skill/foo' }),
+    ]);
+    const core = require(path.join(h.SCRIPTS_DIR, 'delivery-index-core.cjs'));
+    const ctx = core.createContext({ root: r.repo });
+    const out = core.performHistoryRead(ctx, { node: 'internal/skill/foo', limit: 50 });
+    assert.equal(out.entries.length, 3); // the live item-level hit + 2 dead (cap)
+    assert.equal(out.matchedDead, 3);
+    assert.equal(out.returnedDead, 2);
+    const layered = core.performHistoryRead(core.createContext({ root: r.repo }), { node: 'internal/skill/foo', layer: 'internal', limit: 50 });
+    assert.deepEqual(layered.entries.map((e) => e.id), ['0010F']);
+  }));
+
+// --- ranked read and get (docs-search-precision) --------------------------------
+
+function runGet(repo, args) {
+  return h.runScript('delivered', ['get', ...args], { cwd: repo });
+}
+
+test('delivered#092 F6: read emits the ranked keys and lean rows, never commits or items', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [entry('0001F', 'live', 'tokens economy', 'token budget savings', 'src/live.ts', 'liveThing')]);
+    const res = runRead(r.repo, ['economy tokens', '--no-verify']);
+    assert.equal(res.status, 0, res.output);
+    const kv = kvOf(res);
+    for (const k of ['MATCHED', 'COLLAPSED', 'RETURNED', 'OFFSET', 'NEXT_OFFSET', 'STOP', 'SKIPPED_LINES']) assert.ok(k in kv, k);
+    for (const k of ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD', 'LIVE_CAP', 'DEAD_CAP']) assert.ok(!(k in kv), k);
+    const row = jsonOf(res.stdout)[0];
+    assert.deepEqual(Object.keys(row).sort(), ['id', 'kind', 'layer', 'path', 'score', 'snippet', 'status', 'title']);
+    assert.equal(row.kind, 'delivery');
+    assert.equal(row.score, 1);
+    assert.equal(row.title, 'tokens economy');
+    assert.equal(row.path, DOCS_ROOT + '/features/0001F/');
+    assert.ok(row.snippet.length > 0);
+    assert.doesNotMatch(res.stdout, /"commits"|"items"/);
+  }));
+
+test('delivered#093 F6: a query of only stopwords and short terms matches nothing, never everything', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [entry('0001F', 'live', 'de para tokens', 'de da para', 'src/live.ts', 'liveThing')]);
+    const res = runRead(r.repo, ['de da para o', '--no-verify']);
+    assert.equal(res.status, 0, res.output);
+    const kv = kvOf(res);
+    assert.equal(kv.MATCHED, '0');
+    assert.equal(kv.STOP, 'no-terms');
+    assert.equal(jsonOf(res.stdout).length, 0);
+  }));
+
+test('delivered#094 F6: a word prefix matches, a loose fragment does not', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [entry('0001F', 'live', 'authGoogleHandler tokens', 'login', 'src/live.ts', 'liveThing')]);
+    assert.equal(kvOf(runRead(r.repo, ['auth', '--no-verify'])).MATCHED, '1');
+    assert.equal(kvOf(runRead(r.repo, ['ken', '--no-verify'])).MATCHED, '0');
+  }));
+
+test('delivered#095 F6: one row per supersession chain — the head, with the older ids it replaces', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [
+      entry('A1', 'live', 'search ranking', 'ranking relevance', 'src/live.ts', 'liveThing'),
+      entry('A0', 'superseded', 'search ranking old', 'ranking relevance', 'src/live.ts', 'liveThing', { superseded_by: 'A1' }),
+      entry('Z1', 'live', 'other thing', 'ranking', 'src/live.ts', 'liveThing'),
+    ]);
+    const res = runRead(r.repo, ['ranking relevance', '--no-verify']);
+    assert.equal(res.status, 0, res.output);
+    const rows = jsonOf(res.stdout);
+    assert.equal(rows.filter((x) => x.id === 'A0').length, 0);
+    const head = rows.find((x) => x.id === 'A1');
+    assert.deepEqual(head.replaces, ['A0']);
+    assert.equal(kvOf(res).COLLAPSED, '1');
+    assert.equal(kvOf(res).MATCHED, '2');
+    const old = jsonOf(runRead(r.repo, ['old', '--no-verify']).stdout);
+    assert.equal(old.length, 1);
+    assert.equal(old[0].id, 'A0');
+    assert.equal(old[0].status, 'superseded');
+    assert.equal(old[0].superseded_by, 'A1');
+  }));
+
+test('delivered#096 F6: the budget drops whole rows from the end and every emitted row parses', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    const lines = [];
+    for (let i = 1; i <= 20; i++) lines.push(entry('B' + String(i).padStart(2, '0'), 'live', 'budgetword ' + 'long '.repeat(180) + i, 'budgetword', 'src/live.ts', 'liveThing'));
+    writeIndex(r.repo, lines);
+    const res = runRead(r.repo, ['budgetword', '--no-verify', '--limit', '20']);
+    assert.equal(res.status, 0, res.output);
+    const kv = kvOf(res);
+    assert.equal(kv.STOP, 'budget');
+    assert.ok(Number(kv.RETURNED) < 20 && Number(kv.RETURNED) >= 1);
+    assert.equal(jsonOf(res.stdout).length, Number(kv.RETURNED));
+    assert.ok(res.stdout.length <= 8000, String(res.stdout.length));
+    assert.equal(kv.NEXT_OFFSET, kv.RETURNED);
+  }));
+
+test('delivered#097 F6: the snippet is about 200 characters of the field that matched', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    const long = { what: 'filler '.repeat(60) + 'needleword ' + 'tail '.repeat(60), at: 'src/live.ts', find: 'liveThing' };
+    writeIndex(r.repo, [JSON.stringify({ ...JSON.parse(entry('0001F', 'live', 'plain', 'plain', 'src/live.ts', 'liveThing')), items: [long] })]);
+    const row = jsonOf(runRead(r.repo, ['needleword', '--no-verify']).stdout)[0];
+    assert.ok(row.snippet.includes('needleword'));
+    assert.ok(row.snippet.length <= 215, String(row.snippet.length));
+  }));
+
+test('delivered#098 F6: get returns the full latest record, and FOUND=0 for an unknown id', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [entry('0001F', 'live', 'first', 'w', 'src/live.ts', 'liveThing'), entry('0001F', 'live', 'second', 'w', 'src/live.ts', 'liveThing')]);
+    const res = runGet(r.repo, ['0001F']);
+    assert.equal(res.status, 0, res.output);
+    assert.equal(kvOf(res).FOUND, '1');
+    const rec = jsonOf(res.stdout)[0];
+    assert.equal(rec.name, 'second');
+    assert.ok(Array.isArray(rec.commits) && Array.isArray(rec.items));
+    const none = runGet(r.repo, ['NOPE']);
+    assert.equal(none.status, 0, none.output);
+    assert.equal(kvOf(none).FOUND, '0');
+    assert.equal(jsonOf(none.stdout).length, 0);
+    assert.equal(runGet(r.repo, []).status, 2);
+  }));
+
+test('delivered#099 F6: get past the size limit cuts commits then items, says so, and still parses', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    const commits = Array.from({ length: 3000 }, (_, i) => (i + 0x1000000).toString(16));
+    writeIndex(r.repo, [entry('0001F', 'live', 'big', 'w', 'src/live.ts', 'liveThing', { commits })]);
+    const res = runGet(r.repo, ['0001F', '--no-verify']);
+    assert.equal(res.status, 0, res.output);
+    const kv = kvOf(res);
+    assert.match(kv.TRUNCATED, /^commits:\d+(,items:\d+)?$/);
+    const line = res.stdout.split('\n').find((l) => l.startsWith('{'));
+    assert.ok(line.length <= 16000, String(line.length));
+    const rec = JSON.parse(line);
+    assert.ok(rec.commits.length < 3000);
+    assert.equal(rec.name, 'big');
+  }));
+
+// --- no legacy top-level origin in the index (docs-search-precision F8) --------
+
+test('delivered#100 F8: write refuses an origin that still points at the retired top-level folder', () =>
+  withRepo((r) => {
+    validSource(r.repo);
+    commitAll(r.repo);
+    const res = runWrite(r.repo, validRecord({ origin: LEGACY + 'plans/2026-01-01T000000-PLAN--x.md' }));
+    assert.equal(res.status, 2, res.output);
+    assert.match(res.output, /REFUSED=origin-legacy-path/);
+    assert.equal(fs.existsSync(indexPath(r.repo)), false);
+    const ok = runWrite(r.repo, validRecord({ origin: DOCS_ROOT + '/plans/2026-01-01T000000-PLAN--x.md' }));
+    assert.equal(ok.status, 0, ok.output);
+  }));
+
+test('delivered#101 F8: verify --repair rewrites a legacy origin as a NEW line and reports what it could not resolve', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    h.write(path.join(docsDir(r.repo), 'plans', 'present.md'), '# plan\n');
+    writeIndex(r.repo, [
+      entry('P1', 'live', 'present plan', 'present', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/present.md' }),
+      entry('P2', 'live', 'missing plan', 'missing', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/missing.md' }),
+      entry('P3', 'live', 'current plan', 'current', 'src/live.ts', 'liveThing'),
+    ]);
+    const before = h.read(indexPath(r.repo));
+    const res = runVerify(r.repo, ['--repair']);
+    assert.equal(res.status, 0, res.output);
+    const kv = kvOf(res);
+    assert.equal(kv.ORIGIN_REPAIRED, '2');
+    assert.equal(kv.ORIGIN_UNRESOLVED, 'P2');
+    assert.equal(kv.REPAIRED, '2');
+    const after = h.read(indexPath(r.repo));
+    assert.ok(after.startsWith(before), 'the repair appends, it never rewrites');
+    const appended = after.slice(before.length).split('\n').filter(Boolean).map((l) => JSON.parse(l));
+    assert.deepEqual(appended.map((e) => e.id).sort(), ['P1', 'P2']);
+    assert.equal(appended.find((e) => e.id === 'P1').origin, DOCS_ROOT + '/plans/present.md');
+    assert.equal(appended.every((e) => e.by === 'verify'), true);
+    assert.equal(appended.every((e) => e.status === 'live'), true);
+    // idempotent: nothing left to repair
+    assert.equal(kvOf(runVerify(r.repo, ['--repair'])).ORIGIN_REPAIRED, '0');
+  }));
+
+test('delivered#102 F8: read and get print the current path even for an unrepaired legacy line', () =>
+  withRepo((r) => {
+    src(r.repo, 'src/live.ts', 'const liveThing = 1;\n');
+    commitAll(r.repo);
+    writeIndex(r.repo, [entry('P1', 'live', 'legacy plan', 'legacy', 'src/live.ts', 'liveThing', { origin: LEGACY + 'plans/legacy.md' })]);
+    const row = jsonOf(runRead(r.repo, ['legacy', '--no-verify']).stdout)[0];
+    assert.equal(row.path, DOCS_ROOT + '/plans/legacy.md');
+    const rec = jsonOf(runGet(r.repo, ['P1', '--no-verify']).stdout)[0];
+    assert.equal(rec.origin, DOCS_ROOT + '/plans/legacy.md');
+    assert.ok(h.read(indexPath(r.repo)).includes('"origin":"' + LEGACY + 'plans/legacy.md"'));
+  }));

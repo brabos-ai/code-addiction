@@ -120,3 +120,77 @@ describe('gitnexus plugin injection round-trip on real built files', () => {
     for (const f of [...cmdTargets, ...agentTargets]) expect(snapshot(f)).toBe(before[f]);
   });
 });
+
+// ─── plan 2026-11-16T205432-PLAN--gitnexus-integration — L3 combination matrix ───
+describe('gitnexus + playwright on add-review (L3)', () => {
+  const claude = (...p) => path.join(tmp, '.claude', ...p);
+  const REVIEW = () => claude('commands', 'add-review.md');
+  const GN_COMMANDS = ['add-plan', 'add-hotfix', 'add-diagnose', 'add-review'];
+  const count = (text, needle) => text.split(needle).length - 1;
+
+  function detectableCatalog(names) {
+    const real = JSON.parse(fs.readFileSync(path.join(ROOT, 'cli', 'src', 'plugins.json'), 'utf8'));
+    const cat = Object.fromEntries(names.map((n) => [n, { ...real[n], detect: 'node -e "process.exit(0)"' }]));
+    const p = path.join(tmp, 'catalog.json');
+    fs.writeFileSync(p, JSON.stringify(cat, null, 2));
+    process.env.CODEADD_PLUGINS_CATALOG = p;
+  }
+
+  it('L3.1 plugin off: no GitNexus text in the four commands or the reviewer', () => {
+    for (const c of GN_COMMANDS) expect(snapshot(claude('commands', `${c}.md`)), c).not.toMatch(/gitnexus/i);
+    expect(snapshot(claude('agents', 'reviewer-agent.md'))).not.toMatch(/gitnexus/i);
+  });
+
+  it('L3.2 plugin on: each section lands exactly once', () => {
+    detectableCatalog(['gitnexus']);
+    expect(enablePlugin(tmp, 'gitnexus').ok).toBe(true);
+    for (const c of GN_COMMANDS) {
+      const t = snapshot(claude('commands', `${c}.md`));
+      expect(count(t, '`gitnexus status --json`'), `${c} graph-fresh`).toBe(1);
+    }
+    const review = snapshot(REVIEW());
+    expect(count(review, '**Ask the graph what the whole diff affects')).toBe(1);
+  });
+
+  it('L3.3 shared resource: gitnexus and playwright both land on add-review once each', () => {
+    detectableCatalog(['gitnexus', 'playwright']);
+    enablePlugin(tmp, 'gitnexus');
+    enablePlugin(tmp, 'playwright');
+    const t = snapshot(REVIEW());
+    expect(count(t, '`gitnexus status --json`')).toBe(1);
+    expect(count(t, '**Ask the graph what the whole diff affects')).toBe(1);
+    expect(t).toMatch(/playwright/i);
+  });
+
+  it('L3.4 partial disable leaves the playwright section byte-identical', () => {
+    detectableCatalog(['gitnexus', 'playwright']);
+    enablePlugin(tmp, 'playwright');
+    const onlyPlaywright = snapshot(REVIEW());
+    enablePlugin(tmp, 'gitnexus');
+    disablePlugin(tmp, 'gitnexus');
+    expect(snapshot(REVIEW())).toBe(onlyPlaywright);
+  });
+
+  it('L3.5 order independence', () => {
+    detectableCatalog(['gitnexus', 'playwright']);
+    enablePlugin(tmp, 'playwright');
+    enablePlugin(tmp, 'gitnexus');
+    const ab = snapshot(REVIEW());
+    disablePlugin(tmp, 'gitnexus');
+    disablePlugin(tmp, 'playwright');
+    enablePlugin(tmp, 'gitnexus');
+    enablePlugin(tmp, 'playwright');
+    expect(snapshot(REVIEW())).toBe(ab);
+  });
+
+  it('L3.6 full round-trip restores the pristine bytes', () => {
+    detectableCatalog(['gitnexus', 'playwright']);
+    const files = [REVIEW(), ...GN_COMMANDS.map((c) => claude('commands', `${c}.md`)), claude('agents', 'reviewer-agent.md')];
+    const before = Object.fromEntries(files.map((f) => [f, snapshot(f)]));
+    enablePlugin(tmp, 'gitnexus');
+    enablePlugin(tmp, 'playwright');
+    disablePlugin(tmp, 'gitnexus');
+    disablePlugin(tmp, 'playwright');
+    for (const f of files) expect(snapshot(f)).toBe(before[f]);
+  });
+});

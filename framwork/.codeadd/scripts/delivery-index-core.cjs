@@ -20,12 +20,17 @@
  *     copies alive; a tracked-only scan would report fresh uncommitted work dead.
  *   - `write` appends ONE minified line per call, generating `v` and `ts`; it
  *     never rewrites an existing line. Hard bans refuse with a `REFUSED=` name.
- *   - `read` matches PER TERM over id/name/words/node/items[].what/items[].find
- *     (never items[].at), scores by DISTINCT terms hit, sorts status rank ->
- *     score -> recency -> id, and cuts two independent buckets (5 live, 2 dead)
- *     with NO backfill. `--no-verify` returns the stored status.
+ *   - `read` ranks with search-rank-core.cjs: whole-word or word-prefix matching
+ *     over id/name/words/node/items[].what/items[].find (never items[].at), pt+en
+ *     stopwords and terms under 3 letters dropped, BM25, scores normalised to the
+ *     first row, one row per supersession chain, a relevance cut and a ~2,000-token
+ *     budget that drops whole rows. Rows are lean; `get` returns the full record.
+ *     `--no-verify` returns the stored status.
  *   - `verify` reports each entry; only `--repair` writes, and a repair is a
  *     NEW line (`by=verify`, `status=changed`) that points at a UNIQUE match.
+ *     It also rewrites an `origin` still spelled with the retired top-level
+ *     folder (see LEGACY_PREFIX) to the docs root, and
+ *     `write` refuses one (`origin-legacy-path`): no legacy path in the index.
  *   - `write` also accepts two optional, additive fields — `code_sha` (the code
  *     commit that delivered the entry) and `pr` (its pull request number, or
  *     null) — without bumping `v`. `stamp` appends a NEW line carrying them for
@@ -47,7 +52,9 @@
  *                                           (reads are empty, writes say why)
  *   performWrite(ctx, raw)               -> refused | cannot-write-index | summary
  *   performStamp(ctx, opts)              -> the same, for one recorded id
- *   performRead(ctx, opts)               -> counts, skipped, entries
+ *   performRead(ctx, opts)               -> matched, returned, stop, skipped, rows (ranked)
+ *   performGet(ctx, opts)                -> one record in full, bounded
+ *   performHistoryRead(ctx, opts)        -> the entries recording one node id
  *   performVerify(ctx, opts)             -> results, repaired, skipped | error
  *   performTouched(ctx, opts)            -> complete, curated, curatedOnly, ...
  *
@@ -59,7 +66,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { DOCS_ROOT, DOCS_LAYOUT, docsPath } = require('./docs-root.cjs');
+const { DOCS_ROOT, DOCS_LAYOUT, docsPath, docsRoot } = require('./docs-root.cjs');
 
 const STATUSES = ['live', 'changed', 'gone', 'superseded'];
 const RANK = { live: 0, changed: 1, superseded: 2, gone: 3 };
@@ -68,7 +75,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
 // A declared tunable, not a discovery. Changing either needs evidence and an
 // updated line in add--doc-schemas/references/delivery-index.md.
-const DEFAULT_LIVE_CAP = 5;
+const DEFAULT_LIVE_CAP = 5; // history's live bucket; `read` is ranked and has no buckets
 const DEAD_CAP = 2;
 // One past the over-match ceiling: a scan that reaches 21 has already proved
 // the answer is "more than 20" and stops reading a whole monorepo.
@@ -80,6 +87,38 @@ const LOOSE_THRESHOLD = 6;
 /** Normalise a repository-relative path: backslashes to slashes, drop one `./`. */
 function norm(p) {
   return String(p).replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+/**
+ * The origin as it reads today. The docs live under DOCS_ROOT; an origin still
+ * starting with LEGACY_PREFIX is the retired pre-move path, so it is shown (and
+ * repaired) as DOCS_ROOT + the rest. Anything else is returned untouched.
+ */
+// The retired top-level folder, assembled so no source file spells the old path.
+const LEGACY_PREFIX = 'do' + 'cs/';
+
+function currentOrigin(origin) {
+  const o = norm(origin === undefined || origin === null ? '' : origin);
+  return o.indexOf(LEGACY_PREFIX) === 0 ? DOCS_ROOT + '/' + o.slice(LEGACY_PREFIX.length) : o;
+}
+
+/**
+ * Does the document an origin names exist? The docs root is a worktree of its own
+ * branch, so the path is resolved under it — through docs-root.cjs — and never
+ * relative to whichever checkout the script happened to run in.
+ */
+function originExists(ctx, origin) {
+  const o = norm(origin);
+  if (o.indexOf(DOCS_ROOT + '/') !== 0) return fs.existsSync(path.join(ctx.root, o));
+  try {
+    return fs.existsSync(path.join(docsRoot(ctx.root), o.slice(DOCS_ROOT.length + 1)));
+  } catch (e) {
+    return false;
+  }
+}
+
+function isLegacyOrigin(origin) {
+  return typeof origin === 'string' && norm(origin).indexOf(LEGACY_PREFIX) === 0;
 }
 
 /** Second-precision UTC timestamp, the format the index records. */
@@ -340,6 +379,7 @@ function performWrite(ctx, raw) {
     const v = rec[f];
     if (v === undefined || v === null || v === '') return refused('missing-field');
   }
+  if (isLegacyOrigin(rec.origin)) return refused('origin-legacy-path');
   if (typeof rec.layer !== 'string' || ['product', 'internal'].indexOf(rec.layer) === -1) return refused('missing-field');
   if (typeof rec.by !== 'string' || ['done', 'verify', 'human'].indexOf(rec.by) === -1) return refused('missing-field');
   if (!Array.isArray(rec.commits) || rec.commits.length < 1) return refused('no-commits');
@@ -417,44 +457,176 @@ function performStamp(ctx, opts = {}) {
 
 // ─── read ────────────────────────────────────────────────────────────────────
 
+// Field weights of the ranked read. `items[].at` is deliberately NOT searched: it
+// is a hint that --repair rewrites, and matching it would return an entry on a
+// stale path. `node` is, because graph history's older callers asked with a name.
+const READ_WEIGHTS = { id: 3, name: 3, words: 2, node: 2, what: 1, find: 1 };
+// The characters of a read's key lines, kept out of the row budget so the whole
+// output stays inside BUDGET_TOKENS.
+const READ_HEADER_RESERVE = 200;
+// `get` is bounded like a read is: a record that would exceed it drops commits,
+// then items, from the tail, and says how many.
+const GET_BUDGET_TOKENS = 4000;
+
+const round3 = (n) => Math.round(n * 1000) / 1000;
+
+function fieldsOf(e) {
+  const items = Array.isArray(e.items) ? e.items : [];
+  return {
+    id: e.id,
+    name: e.name,
+    words: e.words,
+    node: e.node || '',
+    what: items.map((it) => (it && it.what) || '').join(' '),
+    find: items.map((it) => (it && it.find) || '').join(' '),
+  };
+}
+
+function rankOf(status) {
+  return RANK[status] === undefined ? 9 : RANK[status];
+}
+
+/**
+ * The ranked read: BM25 over the entries (search-rank-core.cjs), one row per
+ * supersession chain, a relevance cut and a token budget. Order: score, then the
+ * stored status rank, then recency, then id. Verification runs on the RETURNED
+ * rows only, after the cut — status is a tie-break here, not a sort key.
+ *
+ * Returns { matched, collapsed, returned, offset, nextOffset, stop, skipped, rows };
+ * a row is { id, kind, layer, status, superseded_by?, replaces?, title, score,
+ * snippet, path } — the commits and the items come from `performGet`.
+ */
 function performRead(ctx, opts = {}) {
+  const rank = require('./search-rank-core.cjs');
   const { byId, skipped } = loadIndex(ctx);
-  const q = String(opts.query === undefined ? '' : opts.query).toLowerCase();
   const layer = opts.layer || '';
+  const offset = Math.max(0, Math.trunc(opts.offset) || 0);
+  const requested = typeof opts.limit === 'string' ? parseInt(opts.limit, 10) : opts.limit;
+  const limit = Number.isFinite(requested) && requested > 0 ? Math.min(Math.trunc(requested), rank.MAX_LIMIT) : rank.DEFAULT_LIMIT;
 
   let list = Array.from(byId.values());
   if (layer) list = list.filter((e) => e.layer === layer);
 
-  // `node` is in the haystack because graph history asks with the artefact's
-  // BARE NAME; `items[].at` is deliberately NOT, because it is a hint that
-  // --repair rewrites and matching it would return an entry on a stale path.
-  // PER-TERM, substring, DEDUPED: the score is the count of DISTINCT terms hit.
-  const TERMS = [...new Set(q.split(/\s+/).filter(Boolean))];
-
-  // Held beside the entry, not on it: these objects are serialised straight to
-  // the caller, and a `_score` property would ship into the JSON.
-  const SCORE = new Map();
-
-  list = list.filter((e) => {
-    const items = Array.isArray(e.items) ? e.items : [];
-    const hay = [e.id, e.name, e.words, e.node || '']
-      .concat(items.map((it) => (it && it.what) || ''))
-      .concat(items.map((it) => (it && it.find) || ''))
-      .join(' ')
-      .toLowerCase();
-    // An all-whitespace query keeps its old meaning — everything matches.
-    if (TERMS.length === 0) {
-      SCORE.set(e, 0);
-      return true;
-    }
-    let hits = 0;
-    for (const t of TERMS) if (hay.indexOf(t) !== -1) hits += 1;
-    SCORE.set(e, hits);
-    return hits > 0;
+  const ranked = rank.rank(list.map((e) => ({ id: e.id, fields: fieldsOf(e), rec: e })), opts.query === undefined ? '' : opts.query, {
+    weights: READ_WEIGHTS,
+    compare: (a, b) => {
+      const ra = rankOf(a.rec.status);
+      const rb = rankOf(b.rec.status);
+      if (ra !== rb) return ra - rb;
+      if (a.rec.ts !== b.rec.ts) return a.rec.ts < b.rec.ts ? 1 : -1;
+      return a.rec.id < b.rec.id ? -1 : a.rec.id > b.rec.id ? 1 : 0;
+    },
   });
 
-  // Bounded to what MATCHED, never to the file: the sort below ranks on status,
-  // so every matched entry must be verified before the cut can choose.
+  const supersededBy = new Map();
+  for (const e of byId.values()) if (e.status === 'superseded' && e.superseded_by) supersededBy.set(e.id, e.superseded_by);
+
+  const recs = new Map();
+  const rows = ranked.rows.map((r) => {
+    recs.set(r.doc.id, r.doc.rec);
+    const row = {
+      id: r.doc.id,
+      kind: 'delivery',
+      layer: r.doc.rec.layer,
+      status: r.doc.rec.status,
+      title: r.doc.rec.name,
+      score: r.score,
+      snippet: r.snippet,
+      path: currentOrigin(r.doc.rec.origin),
+    };
+    if (r.doc.rec.status === 'superseded' && r.doc.rec.superseded_by) row.superseded_by = r.doc.rec.superseded_by;
+    return row;
+  });
+  const collapsedRows = rank.collapseChains(rows, supersededBy);
+
+  const emit = (row) => {
+    const o = {
+      id: row.id, kind: row.kind, layer: row.layer, status: row.status,
+    };
+    if (row.superseded_by) o.superseded_by = row.superseded_by;
+    if (row.replaces) o.replaces = row.replaces;
+    o.title = row.title;
+    o.score = round3(row.score);
+    o.snippet = row.snippet;
+    o.path = row.path;
+    return o;
+  };
+  const page = rank.cut(collapsedRows, {
+    limit,
+    offset,
+    serialize: (row) => JSON.stringify(emit(row)),
+    reserve: READ_HEADER_RESERVE,
+  });
+
+  const out = page.rows.map((row) => {
+    if (!opts.noVerify) row.status = verifyEntry(ctx, recs.get(row.id)).status;
+    return emit(row);
+  });
+
+  return {
+    ok: true,
+    matched: collapsedRows.length,
+    collapsed: rows.length - collapsedRows.length,
+    returned: out.length,
+    offset,
+    nextOffset: page.nextOffset,
+    stop: ranked.stop || page.stop,
+    skipped,
+    rows: out,
+  };
+}
+
+/**
+ * One entry in full — the latest line for the id, verified unless `noVerify`.
+ * Bounded at GET_BUDGET_TOKENS: `commits` then `items` are dropped from the tail
+ * until it fits, and `truncated` says how many of each went. The record always
+ * serialises to one parseable line.
+ */
+function performGet(ctx, opts = {}) {
+  const { byId, skipped } = loadIndex(ctx);
+  const found = byId.get(String(opts.id === undefined ? '' : opts.id));
+  if (!found) return { ok: true, found: false, record: null, truncated: null, skipped };
+  const rec = JSON.parse(JSON.stringify(found));
+  rec.origin = currentOrigin(rec.origin);
+  if (!opts.noVerify) rec.status = verifyEntry(ctx, rec).status;
+
+  const budget = GET_BUDGET_TOKENS * 4;
+  let droppedCommits = 0;
+  let droppedItems = 0;
+  while (JSON.stringify(rec).length > budget && Array.isArray(rec.commits) && rec.commits.length > 0) {
+    rec.commits.pop();
+    droppedCommits++;
+  }
+  while (JSON.stringify(rec).length > budget && Array.isArray(rec.items) && rec.items.length > 0) {
+    rec.items.pop();
+    droppedItems++;
+  }
+  const truncated = droppedCommits || droppedItems ? { commits: droppedCommits, items: droppedItems } : null;
+  return { ok: true, found: true, record: rec, truncated, skipped };
+}
+
+// ─── history read ────────────────────────────────────────────────────────────
+
+/**
+ * The entries recording ONE artefact: those whose `node` equals the full node id,
+ * at the record or at an item. This is an exact-node question, not a text search —
+ * it must never pass through the text ranker, because a relevance cut could drop
+ * the very entry that carries the node. Graph `history` and the MCP `history` ask it.
+ *
+ * Status-first order (live -> changed -> superseded -> gone), then recency, then
+ * id; two independent buckets (`limit` live, DEAD_CAP dead) with no backfill; the
+ * six counts `history` has always reported. `noVerify` returns the stored status.
+ */
+function performHistoryRead(ctx, opts = {}) {
+  const { byId, skipped } = loadIndex(ctx);
+  const node = String(opts.node === undefined ? '' : opts.node);
+  const layer = opts.layer || '';
+
+  let list = Array.from(byId.values());
+  if (layer) list = list.filter((e) => e.layer === layer);
+  list = list.filter((e) => e.node === node
+    || (Array.isArray(e.items) && e.items.some((it) => it && it.node === node)));
+
   if (!opts.noVerify) {
     for (const e of list) e.status = verifyEntry(ctx, e).status;
   }
@@ -463,25 +635,15 @@ function performRead(ctx, opts = {}) {
     const ra = RANK[a.status] === undefined ? 9 : RANK[a.status];
     const rb = RANK[b.status] === undefined ? 9 : RANK[b.status];
     if (ra !== rb) return ra - rb;
-    // Score outranks recency: answering more of the query beats being newer.
-    const sa = SCORE.get(a) || 0;
-    const sb = SCORE.get(b) || 0;
-    if (sa !== sb) return sb - sa;
     if (a.ts !== b.ts) return a.ts < b.ts ? 1 : -1;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
 
-  // TWO INDEPENDENT CAPS. The list is sorted live -> changed -> superseded ->
-  // gone, so one `slice(0, limit)` always cut from the gone end. NO BACKFILL:
-  // unused dead slots never go to live entries.
   const requested = typeof opts.limit === 'string' ? parseInt(opts.limit, 10) : opts.limit;
   const LIVE_CAP = Number.isFinite(requested) && requested > 0 ? Math.trunc(requested) : DEFAULT_LIVE_CAP;
   const DEAD = new Set(['superseded', 'gone']);
-  // An unknown status goes in the LIVE bucket — dropping it is the failure the
-  // caps exist to fix, and `write` refuses any non-four status anyway.
   const liveList = list.filter((e) => !DEAD.has(e.status));
   const deadList = list.filter((e) => DEAD.has(e.status));
-
   const returnedLive = liveList.slice(0, LIVE_CAP);
   const returnedDead = deadList.slice(0, DEAD_CAP);
 
@@ -507,21 +669,31 @@ function performVerify(ctx, opts = {}) {
 
   const newLines = [];
   const results = [];
+  const originUnresolved = [];
   let repaired = 0;
+  let originRepaired = 0;
 
   for (const e of list) {
     const r = verifyEntry(ctx, e);
     results.push({ id: e.id, status: r.status });
-    if (!opts.repair || r.repairs.length === 0) continue;
+    const legacy = isLegacyOrigin(e.origin);
+    if (!opts.repair || (r.repairs.length === 0 && !legacy)) continue;
 
     // A repair is a NEW LINE. Nothing is rewritten in place; last line wins.
     const copy = JSON.parse(JSON.stringify(e));
     for (const rep of r.repairs) copy.items[rep.index].at = rep.to;
+    if (legacy) {
+      copy.origin = currentOrigin(e.origin);
+      originRepaired++;
+      // The pointer was fixed; the target may not exist (an early plan that was
+      // never archived). That is reported, never invented.
+      if (!originExists(ctx, copy.origin)) originUnresolved.push(e.id);
+    }
     copy.ts = nowTs();
     copy.by = 'verify';
-    // `changed` on a repaired line means "a pointer was just repaired", not
-    // "something is broken here".
-    copy.status = 'changed';
+    // `changed` on an item repair means "a pointer was just repaired", not
+    // "something is broken here". An origin-only repair keeps the verified status.
+    copy.status = r.repairs.length ? 'changed' : r.status;
     newLines.push(serialize(copy));
     repaired++;
   }
@@ -533,7 +705,7 @@ function performVerify(ctx, opts = {}) {
     if (!appended.ok) return { ok: false, exit: 1, error: appended.error, results };
   }
 
-  return { ok: true, results, repaired, skipped };
+  return { ok: true, results, repaired, originRepaired, originUnresolved, skipped };
 }
 
 // ─── touched ─────────────────────────────────────────────────────────────────
@@ -612,6 +784,7 @@ module.exports = {
   DEFAULT_LIVE_CAP,
   DEAD_CAP,
   norm,
+  currentOrigin,
   nowTs,
   resolveRoot,
   createContext,
@@ -626,6 +799,8 @@ module.exports = {
   verifyEntry,
   performWrite,
   performRead,
+  performGet,
+  performHistoryRead,
   performVerify,
   performStamp,
   performTouched,

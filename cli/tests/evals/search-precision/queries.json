@@ -1,0 +1,102 @@
+[
+  {
+    "lang": "en",
+    "query": "did we already remove the board feature",
+    "expect": "2026-10-29T223023-PLAN--remove-board"
+  },
+  {
+    "lang": "en",
+    "query": "graph history verb reading the delivery index",
+    "expect": "2026-09-07T162415-SELF-PLAN--delivery-index-internal"
+  },
+  {
+    "lang": "en",
+    "query": "installer that runs from flags without a terminal",
+    "expect": "2026-10-09T105631-PLAN--non-interactive-installer"
+  },
+  {
+    "lang": "en",
+    "query": "test-loss guard for a removed test with a commit trailer",
+    "expect": "2026-10-08T155700-PLAN--workbench-run-safety"
+  },
+  {
+    "lang": "en",
+    "query": "done read a stale ticket from the branch instead of main",
+    "expect": "2026-10-09T103233-FIX--done-stale-board-read"
+  },
+  {
+    "lang": "en",
+    "query": "adding a sixth provider that reuses the codex output",
+    "expect": "2026-09-24T004540-PLAN--zcode-sixth-provider"
+  },
+  {
+    "lang": "en",
+    "query": "run the vitest and bats suites in parallel inside one container",
+    "expect": "2026-09-21T001942-PLAN--parallel-tests-in-one-container"
+  },
+  {
+    "lang": "en",
+    "query": "qa seed that replaced the stored authSeed password",
+    "expect": "2026-11-12T212018-PLAN--qa-project-seed"
+  },
+  {
+    "lang": "en",
+    "query": "plan review agent was too slow",
+    "expect": "2026-09-09T061636-PLAN--plan-review-agent-speed"
+  },
+  {
+    "lang": "en",
+    "query": "json schema for the result block of claude -p output",
+    "expect": "2026-10-07T220115-PLAN--result-block-json-schema"
+  },
+  {
+    "lang": "pt",
+    "query": "regra de linguagem simples sem figuras de linguagem",
+    "expect": "2026-09-08T121115-PLAN--plain-language-rule"
+  },
+  {
+    "lang": "pt",
+    "query": "formato do relatório de fechamento dos comandos",
+    "expect": "2026-09-09T163448-PLAN--final-report-shape"
+  },
+  {
+    "lang": "pt",
+    "query": "onde fica a saída dos comandos na branch de documentação",
+    "expect": "2026-11-11T121728-PLAN--docs-branch"
+  },
+  {
+    "lang": "pt",
+    "query": "testes do cli ficaram lentos por causa do fixture",
+    "expect": "2026-09-11T005514-PLAN--vitest-fixture-scope"
+  },
+  {
+    "lang": "pt",
+    "query": "site em inglês e português com a tradução dos textos",
+    "expect": "2026-10-25T194930-PLAN--site-i18n"
+  },
+  {
+    "lang": "pt",
+    "query": "comando para registrar o roadmap e a prioridade do que fazer depois",
+    "expect": "2026-09-09T065116-PLAN--roadmap-command"
+  },
+  {
+    "lang": "pt",
+    "query": "agentes trabalhando como equipe com papel de gerente de produto",
+    "expect": "2026-10-20T130553-PLAN--agent-team-roles"
+  },
+  {
+    "lang": "pt",
+    "query": "a entrega não inclui deploy em produção",
+    "expect": "2026-10-17T083012-PLAN--deploy-out-of-scope"
+  },
+  {
+    "lang": "pt",
+    "query": "revisão acontece uma vez só, sem ciclos de repetição",
+    "expect": "2026-09-09T090201-PLAN--review-no-loops"
+  },
+  {
+    "lang": "pt",
+    "query": "oferecer continuar a conversa em um contexto novo",
+    "expect": "2026-10-04T185331-PLAN--optional-chat-continuation-handoff"
+  }
+]

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { ACTIONS } from '../../mcp/engine.mjs';
 
@@ -27,6 +28,7 @@ import { ACTIONS } from '../../mcp/engine.mjs';
  */
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
+const require = createRequire(import.meta.url);
 const CODEADD = path.join(REPO, 'framwork', '.codeadd');
 
 const read = (...p) => fs.readFileSync(path.join(CODEADD, ...p), 'utf8');
@@ -47,9 +49,6 @@ const GRAPH_COMMANDS = [
   'add-review.md',
 ];
 
-/** The per-bucket keys F2 emits in place of MATCHED/RETURNED. */
-const BUCKET_KEYS = ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD'];
-
 const AGENT_FRAGMENT_DIR = path.join(CODEADD, 'plugins', 'gitnexus', 'fragments', 'agents');
 const COMMAND_FRAGMENT_DIR = path.join(CODEADD, 'plugins', 'gitnexus', 'fragments');
 
@@ -65,48 +64,107 @@ const commandFragments = () =>
 // ─── L2 — the written contracts describe what the code does ──────────────────
 
 describe('L2.1 — the entry and its side-effect-free core carry the contract', () => {
-  it('names the two caps and the scoring rule in the usage block', () => {
+  it('names the ranking rule and the read keys in the entry and the core headers', () => {
     // The native reader split the shell header across two files: the entry
-    // owns argv/exit, and the core owns the caps and the scoring rule.
+    // owns argv/exit and the keys, and the core owns the ranking rule.
     const header = read(...CORE);
-    expect(header).toMatch(/per-term|terms? are scored|score/i);
-    expect(header).toMatch(/5 live|five live/i);
-    expect(header).toMatch(/2 dead|two dead/i);
-    expect(read(...SCRIPT)).toMatch(/MATCHED_LIVE|RETURNED_LIVE|LIVE_CAP|DEAD_CAP/);
+    expect(header).toMatch(/BM25/);
+    expect(header).toMatch(/whole-word or word-prefix/i);
+    expect(header).toMatch(/relevance cut/i);
+    const entry = read(...SCRIPT);
+    for (const k of ['MATCHED', 'COLLAPSED', 'RETURNED', 'NEXT_OFFSET', 'STOP']) expect(entry).toContain(k);
+    expect(entry).not.toMatch(/MATCHED_LIVE|RETURNED_LIVE|LIVE_CAP|DEAD_CAP/);
   });
 });
 
-describe('L2.2 — the read contract stops promising what the script does not do', () => {
+describe('L2.2 — the read contract describes the ranked read and every tunable as declared', () => {
   const contract = () => read(...CONTRACT);
+  const rankCore = require('../../framwork/.codeadd/scripts/search-rank-core.cjs');
 
-  it('states per-term matching', () => {
-    expect(contract()).toMatch(/per-term|each term|term by term/i);
+  it('states whole-word or word-prefix matching, BM25 and the dropped terms', () => {
+    const c = contract();
+    expect(c).toMatch(/whole word or a word prefix|whole-word or word-prefix/i);
+    expect(c).toMatch(/BM25/);
+    expect(c).toMatch(/stopwords/i);
+    expect(c).toMatch(/under 3 letters|MIN_TERM_LEN/);
+    expect(c).not.toMatch(/Match PER TERM/);
   });
 
-  it('states the two-bucket cut with both caps', () => {
+  it('lists every tunable of the ranking core with its declared value', () => {
     const c = contract();
-    expect(c).toMatch(/5 live|five live/i);
-    expect(c).toMatch(/2 dead|two dead/i);
+    for (const name of ['DEFAULT_LIMIT', 'MAX_LIMIT', 'MIN_TERM_LEN', 'K1', 'B', 'FLOOR', 'DROP_RATIO', 'BUDGET_TOKENS', 'CHARS_PER_TOKEN', 'SNIPPET_CHARS']) {
+      const row = c.split('\n').find((l) => l.startsWith('| `' + name + '`'));
+      expect(row, name + ' is listed').toBeTruthy();
+      expect(row, name + ' carries its value').toContain('`' + String(rankCore[name]) + '`');
+    }
+    expect(c).toMatch(/`GET_BUDGET_TOKENS`[^\n]*`4000`/);
+    for (const w of ['id 3', 'name 3', 'words 2', 'node 2', 'what 1', 'find 1']) expect(c).toContain(w);
   });
 
-  it('never promises dead entries are returned without naming the dead cap', () => {
-    // The old line read "Dead entries are returned, never filtered." — true only
-    // while MATCHED <= LIMIT, which is the defect F2 closes.
+  it('names the read and get keys, the cut reasons and the budget rule, and none of the six bucket keys', () => {
     const c = contract();
-    const unqualified = /never filtered\.|NEVER dropped\./;
-    expect(c).not.toMatch(unqualified);
+    for (const k of ['MATCHED', 'COLLAPSED', 'RETURNED', 'OFFSET', 'NEXT_OFFSET', 'STOP', 'FOUND', 'TRUNCATED']) expect(c).toContain(k + '=');
+    for (const r of ['drop', 'floor', 'limit', 'budget', 'end', 'no-terms']) expect(c).toContain('`' + r + '`');
+    for (const k of ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD', 'LIVE_CAP', 'DEAD_CAP']) expect(c).not.toContain(k);
+    expect(c).toMatch(/drops\s+WHOLE rows/i);
+  });
+
+  it('states one row per supersession chain and the score order', () => {
+    const c = contract();
+    expect(c).toMatch(/one row per supersession chain/i);
+    expect(c).toMatch(/superseded→|superseded_by/);
+    expect(c).toMatch(/score DESCENDING/);
+  });
+
+  it('words are written in English and the team language, and the origin repair is documented', () => {
+    const c = contract();
+    expect(c).toMatch(/English AND the team's language/);
+    for (const k of ['REFUSED=origin-legacy-path', 'origin-legacy-path', 'ORIGIN_REPAIRED', 'ORIGIN_UNRESOLVED']) expect(c).toContain(k);
+    expect(c).not.toMatch(/Lines already on disk keep whatever they were written with/);
+  });
+
+  it('never promises dead entries are returned without relevance', () => {
+    // The old line read "Dead entries are returned, never filtered."
+    const c = contract();
+    expect(c).not.toMatch(/never filtered\.|NEVER dropped\./);
+  });
+
+  it('the doc-schemas skill says a hit carries a snippet, not the first sentence', () => {
+    const skill = read('skills', 'add--doc-schemas', 'SKILL.md');
+    expect(skill).not.toMatch(/returns its \*\*first sentence\*\* with every hit/);
+    expect(skill).toMatch(/snippet/);
   });
 });
 
-describe('L2.3 — every reader of doRead output speaks the new keys, and there are exactly two', () => {
-  it('the skill INDEX step names the per-bucket keys', () => {
+const READ_KEYS = ['MATCHED', 'RETURNED', 'STOP'];
+const RETIRED_KEYS = ['MATCHED_LIVE', 'MATCHED_DEAD', 'RETURNED_LIVE', 'RETURNED_DEAD', 'LIVE_CAP', 'DEAD_CAP'];
+
+describe('L2.3 — every reader of the read output speaks the ranked keys, and there are exactly two', () => {
+  it('the skill INDEX step names the ranked keys, the score and `get`, and none of the six bucket keys', () => {
     const s = read(...SKILL);
-    for (const k of BUCKET_KEYS) expect(s).toContain(k);
+    for (const k of [...READ_KEYS, 'NEXT_OFFSET', 'COLLAPSED']) expect(s).toContain(k);
+    expect(s).toContain('score');
+    expect(s).toContain('delivered.cjs get');
+    for (const k of RETIRED_KEYS) expect(s).not.toContain(k);
   });
 
-  it('add-hotfix.md, which calls `delivered.cjs read` directly, names them too', () => {
+  it('the INDEX step retries once in the other language only when the result is weak', () => {
+    const s = read(...SKILL);
+    expect(s).toMatch(/other language/i);
+    expect(s).toMatch(/RETURNED=0/);
+    expect(s).toMatch(/only when the result is weak|only when the first read is weak/i);
+  });
+
+  it('the GRAPH step says hits carry a snippet, and typed relations come from get', () => {
+    const s = read(...SKILL);
+    expect(s).not.toMatch(/the first sentence of its TL;DR/);
+    expect(s).toMatch(/snippet/);
+  });
+
+  it('add-hotfix.md, which calls `delivered.cjs read` directly, reads MATCHED, RETURNED and STOP', () => {
     const h = read('commands', 'add-hotfix.md');
-    for (const k of BUCKET_KEYS) expect(h).toContain(k);
+    for (const k of READ_KEYS) expect(h).toContain(k);
+    for (const k of RETIRED_KEYS) expect(h).not.toContain(k);
   });
 
   it('no third artefact invokes `delivered.cjs read`', () => {
@@ -194,6 +252,7 @@ describe('L2.5 — the injection surface is untouched', () => {
       'add-hotfix.md',
       'add-new.md',
       'add-plan.md',
+      'add-review.md', // plan 2026-11-16T205432-PLAN--gitnexus-integration, F4
       'add-wiki.md',
     ]);
   });

@@ -1021,7 +1021,8 @@ describe('node inventory snapshot', () => {
       // fragment 32 -> 32 + the agent-mode files: one per command whose slots have landed (2026-10-09T184411-PLAN--agent-mode-feature, F10-F21).
       // fragment 32 -> 36 + the agent-mode files: the four design plugin fragments (0065B, F2).
       // fragment 36 -> 30: the six fragments/board/ files are removed (0075B, F2).
-      fragment: 30 + agentModeFragments(),
+      // fragment 30 -> 31: plugins/gitnexus/fragments/add-review.md (plan 2026-11-16T205432-PLAN--gitnexus-integration, F4).
+      fragment: 31 + agentModeFragments(),
       // template 0 -> 4: the four files under .codeadd/templates. They ship in
       // the release ZIP and nothing in .codeadd/ names any of them, so all four
       // land in `orphans` — that is the first true thing indexing them says.
@@ -1159,13 +1160,14 @@ describe('node inventory snapshot', () => {
     // 194 -> 195: add--agent-notion (0077F, F4); a skill is a declaring kind, so 138 -> 139.
     // 195 -> 193: the two Notion skills of 0076B removed (0077F, F6); both declared, so 139 -> 137.
     // 193 -> 194: the docs-migrate-prompt template node (0078F, F27); it declares nothing.
-    expect(nodes).toHaveLength(194 + agentModeFragments() + shippedScriptsCount);
+    // 194 -> 195, declares 137 -> 138: plugins/gitnexus/fragments/add-review.md, a fragment (a declaring kind) (plan 2026-11-16T205432-PLAN--gitnexus-integration, F4).
+    expect(nodes).toHaveLength(195 + agentModeFragments() + shippedScriptsCount);
     // declares 143 -> 138: a skill is a declaring kind, and the five removed skills each declared.
     // declares 138 -> 142: each of the four design fragments declares (0065B, F2).
     // 144 -> 138: each of the six removed board fragments declared (0075B, F2).
     // declares 138 -> 137: add--backlog declared (0075B, F5).
     // declares 137 -> 136: add-framework--backlog declared (0075B, F13).
-    expect(nodes.filter((n) => n.declares)).toHaveLength(137 + agentModeFragments());
+    expect(nodes.filter((n) => n.declares)).toHaveLength(138 + agentModeFragments());
   });
 
   it('every on-disk script has a graph node, and no shell entry survives', () => {
@@ -1225,4 +1227,27 @@ describe('/add-framework--done — the CI gate it reproduces', () => {
       }
     });
   }
+});
+
+describe('docs-search-precision — the workbench graph skill describes the lean, scored search', () => {
+  const skill = fs.readFileSync(
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'workbench', 'skills', 'add-artefact-graph', 'SKILL.md'),
+    'utf8',
+  );
+  const row = (verb) => skill.split('\n').filter((l) => l.startsWith(`| \`${verb}\``) || l.includes(`\`${verb}\` — **MCP only**`)).join('\n');
+
+  it('search says hits are lean and scored, with a snippet and a page cursor', () => {
+    const r = row('search');
+    expect(r).toMatch(/score/);
+    expect(r).toMatch(/snippet/);
+    expect(r).toMatch(/offset/);
+  });
+
+  it('get says it carries relations, tags and attachments and may report truncated', () => {
+    const r = row('get');
+    expect(r).toMatch(/relations/);
+    expect(r).toMatch(/tags/);
+    expect(r).toMatch(/attachments/);
+    expect(r).toMatch(/truncated/);
+  });
 });

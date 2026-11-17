@@ -146,6 +146,8 @@ describe('L2 — build integrity', () => {
   // 66 -> 70: feature:board brings add-hotfix in with four sections -- resolve, doing, frontmatter, report (plan 2026-09-23T193550-PLAN--board-pipeline-phase-statuses, F29+F30).
   // 70 -> 71: feature:qa-pipeline adds add-build's next-command section (plan 2026-10-09T114527-PLAN--lighter-product-qa, F2).
   // 71 -> 46: the board feature's 25 sections are removed (plan 2026-10-29T223023-PLAN--remove-board, F2).
+  // 46 -> 49: plugin:gitnexus:graph-fresh on add-plan, add-hotfix and add-diagnose (plan 2026-11-16T205432-PLAN--gitnexus-integration, F3).
+  // 49 -> 51: plugin:gitnexus:graph-fresh and graph-review on add-review (plan 2026-11-16T205432-PLAN--gitnexus-integration, F4).
   it('L2.3: the injection-point total is the absolute baseline 46 + the agent-mode sections', () => {
     expect(SIDECAR().points).toHaveLength(TOTAL_POINTS());
   });

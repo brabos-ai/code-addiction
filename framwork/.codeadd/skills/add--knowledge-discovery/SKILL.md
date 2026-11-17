@@ -44,32 +44,51 @@ Ask the cheap question first: **was this built before, and is it still there?** 
 node .codeadd/scripts/delivered.cjs read "<terms from the task>"
 ```
 
-Add `--no-verify` when the calling command forbids reading source at that point. Results arrive **already ordered** `live` → `changed` → `superseded` → `gone`, with the latest line per entry applied.
+Add `--no-verify` when the calling command forbids reading source at that point. Results arrive **ranked by relevance** — whole words and word prefixes, a rare term counting more than a common one, `de`/`para`/`the` ignored — and each row is lean: `id`, `status`, `title`, `score`, `snippet`, `path`. The latest line per entry is applied, and a supersession chain returns ONE row.
 
 | What you get | What to do with it |
 |---|---|
-| `live` entries | This exists. Read its `origin` before proposing to build it again |
-| `changed` entries | It exists but moved. Documentation elsewhere probably still points at the old path |
-| `superseded` entries | It was replaced. Follow `superseded_by` |
-| `gone` entries | It was built and is now absent. **The most valuable answer available** — it says this was tried and dropped |
+| `score` | 0 to 1 against the first row. The first is always `1`; a row near it is a strong match, a row far below it is a weak one |
+| `snippet` | The text that matched, about 200 characters. It is the rejection surface — discard a row whose snippet is plainly about something else |
+| `live` row | This exists. Read its `path` before proposing to build it again |
+| `changed` row | It exists but moved. Documentation elsewhere probably still points at the old path |
+| `superseded` row | It was replaced. Follow `superseded_by` — it names the current delivery |
+| `gone` row | It was built and is now absent. **The most valuable answer available** — it says this was tried and dropped |
+| `replaces` on a row | The older deliveries this one superseded and that also matched. They are not repeated as rows |
 
-**The read cuts in two buckets — 5 live and 2 dead — and tells you what it cut.** `live` and `changed` fill the live bucket, `superseded` and `gone` the dead one, and the dead slots are never backfilled with live entries. Six keys come back:
+**The detail comes in a second call.** A row carries no commits and no items. When a row survives and you need them:
+
+```bash
+node .codeadd/scripts/delivered.cjs get <id>
+```
+
+`get` returns the full latest record, bounded at about 4,000 tokens; `TRUNCATED=commits:N,items:M` says when it cut.
+
+**The read stops on relevance, never on a blind cut, and tells you why.** Five rows by default, 20 at most, about 2,000 tokens. These keys come back:
 
 | Key | Says |
 |---|---|
-| `MATCHED_LIVE` / `MATCHED_DEAD` | How many entries matched, per bucket |
-| `RETURNED_LIVE` / `RETURNED_DEAD` | How many survived the cut, per bucket |
-| `LIVE_CAP` / `DEAD_CAP` | The caps in force. `--limit N` sets the live one only |
+| `MATCHED` | How many deliveries matched, after one-per-chain |
+| `COLLAPSED` | How many older versions were folded into a newer row |
+| `RETURNED` | How many rows are in this answer |
+| `OFFSET` / `NEXT_OFFSET` | Where this page started, and where the next begins — empty when there is none. `--offset N` reads it |
+| `STOP` | Why the page ended: `limit`, `floor` (the next row scores under 30% of the first), `drop` (a sharp fall from the row before), `budget` (whole rows dropped to fit about 2,000 tokens), `end`, or `no-terms` |
 
 ```
-IF MATCHED_DEAD IS GREATER THAN RETURNED_DEAD:
-  ⛔ DO NOT: Conclude the returned dead entries are all there were
-  ✅ DO: Narrow the query, or read again with the terms that name the area more exactly
+IF STOP IS limit OR budget AND THE ROWS RETURNED DO NOT NAME THE SUBJECT:
+  ⛔ DO NOT: Conclude nothing relevant exists
+  ✅ DO: Read the next page with --offset NEXT_OFFSET, or narrow the query with more specific terms
+
+IF STOP IS no-terms:
+  ⛔ DO NOT: Read it as "nothing was ever delivered here"
+  ✅ DO: Re-ask with the words of the subject — every term you passed was a stopword or under three letters
 ```
 
-**A `gone` result is what stops a plan from rebuilding something the project already abandoned**, which is why it gets reserved slots instead of competing with live entries for one cut. It is not unfiltered: a matching dead set larger than `DEAD_CAP` IS cut, and `MATCHED_DEAD` is how you find out. **You never re-rank what comes back** — the ordering is the read contract's, not yours, and several consumers each sorting one shared result is how two of them come to disagree.
+**Retry once in the other language, only when the result is weak.** An entry's `words` are written in English AND the team's language, so one language usually finds it. Weak means `RETURNED=0`, or no returned snippet names the task's subject. Then run the same read once more with the terms in the other language (English ↔ the team's). Never retry a read that already named the subject.
 
-**Pass the terms, not a sentence.** The query is split on whitespace and each term is matched on its own, so an entry hitting more of them ranks higher. A full sentence works; its filler words simply score nothing.
+**You never re-rank what comes back** — the ordering is the read contract's, not yours, and several consumers each sorting one shared result is how two of them come to disagree. A `gone` row competes on relevance like any other; it can fall below the cut, so a topic with a strong `gone` match is told by its score and snippet, not by a reserved slot.
+
+**Pass the terms, not a sentence.** A full sentence works; its filler words are ignored. More specific terms beat more terms.
 
 **The index answers *whether*, never *how*.** An entry carries anchored items and, by its format's own rule, no explanation of what the code does. Do NOT stop here and call the area understood: a match tells you where to look next, and the wiki and the code are still what explain it.
 
@@ -144,15 +163,17 @@ IF ONE ACTION ANSWERED ONLY HALF YOUR QUESTION:
   ✅ DO: Run the second action the question needs, then report both
 ```
 
+**`search` returns a page, not the whole answer.** Read `stop` and `matched`: when the rows do not name the subject and `stop` is `limit` or `budget`, continue with `offset` = `next_offset`. `get` says what it cut in `truncated`.
+
 **`reindex` is the one row that is not a question.** It is an operation with exactly one call, and `{{cmd:add-done}}` already runs it after a delivery. Run it here only when a read came back describing documents you know have changed.
 
-**Produces `RELATED_WORK`:** the hits, each carrying its `id`, `kind`, `status`, `tags`, `path`, the first sentence of its TL;DR and its typed relations. Every command that loads this skill names where `RELATED_WORK` goes; none of them may leave it unused.
+**Produces `RELATED_WORK`:** the hits, each carrying its `id`, `kind`, `status`, `title`, `score`, `snippet` and `path`; the typed relations, tags and summary come from a `get` on a hit that survives. Every command that loads this skill names where `RELATED_WORK` goes; none of them may leave it unused.
 
 | What you get | What to do with it |
 |---|---|
-| A hit whose first sentence rules it out | Discard it. That sentence is the rejection surface — do not open the document to decide |
-| A hit that survives | Read its `path`. The TL;DR's first sentence is a filter, never the answer |
-| `relations` on a hit | Follow `caused_by` and `depends_on` before proposing anything that touches the same area |
+| A hit whose snippet rules it out | Discard it. The snippet is the rejection surface — do not open the document to decide |
+| A hit that survives | Call `get` on its id for the summary and the typed relations, then read its `path`. The snippet is a filter, never the answer |
+| `relations` from a `get` | Follow `caused_by` and `depends_on` before proposing anything that touches the same area |
 | `touched_by` work items, `answer: complete` | These deliveries changed the files in hand, from the delivery's own commit. Exact and whole |
 | `touched_by` work items, `answer: curated` | The path is one of that delivery's anchors — at most five per delivery, carrying each anchor's verified status. A sample of what mattered, not a diff |
 | `touched_by` `curatedOnly` above zero | That many of THESE HITS answered from anchors alone, because their delivery's commit could not be derived. Narrower coverage, not an error |

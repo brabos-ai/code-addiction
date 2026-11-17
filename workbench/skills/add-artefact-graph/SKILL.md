@@ -105,8 +105,8 @@ IF YOU HAVE NO MCP AND THE QUESTION NEEDS search, get, touched_by OR reindex:
 | `neighbors` | What are this node's immediate edges, both directions, weak ones included? |
 | `path` | How do these two artefacts connect? |
 | `orphans` | What has no consumer left? |
-| `search` | Which artefacts match these keywords? |
-| `get` | One node in full — its relations, its files, its attachments |
+| `search` | Which artefacts match these keywords? Ranked, lean hits — id, kind, status, title, score, snippet, path — paged with `offset` |
+| `get` | One node in full — its relations, tags, files and attachments; bounded, and says in `truncated` what it cut |
 | `stats` | Counts by kind, by edge type, and the hubs |
 | `touched_by` | Which nodes does this file belong to? |
 | `reindex` | Rebuild the index for a corpus that is not build-emitted |
@@ -136,8 +136,8 @@ needing the verb. The second is the direction every command actually arrives fro
 | How do these two artefacts connect? | `path <a> <b>` | A route, or the fact that there is none. "No path" is an answer |
 | Does anything still consume this? | `orphans` | A list to judge, not a verdict — see Reading an Answer |
 | Has this shipped before and been dropped? | `history <name>` | A `gone` or `superseded` entry naming what replaced it, or nothing — but **at most 2 of them**: the underlying read caps dead entries, and its `MATCHED_DEAD` key is what says whether more matched |
-| Which artefacts are about this topic? | `search` — **MCP only** | Ranked matches. With no MCP, no verb substitutes: report NOT VERIFIED |
-| What is this one node, in full? | `get` — **MCP only** | With no MCP, `neighbors` plus `dependencies` covers most of it |
+| Which artefacts are about this topic? | `search` — **MCP only** | Ranked, scored hits (`score` 0–1, a `snippet`, `offset` to page; relations, tags and attachments only in `get`). With no MCP, no verb substitutes: report NOT VERIFIED |
+| What is this one node, in full? | `get` — **MCP only** | Relations, tags and attachments, which a search hit does not carry; may report `truncated`. With no MCP, `neighbors` plus `dependencies` covers most of it |
 | Which nodes does this file belong to? | `touched_by` — **MCP only** | With no MCP, no verb substitutes: report NOT VERIFIED |
 | What is the overall shape, and what are the hubs? | `stats` | Counts by kind and edge type, and the hub list |
 
