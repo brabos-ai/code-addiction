@@ -252,4 +252,6 @@ A team can keep its cards in Notion. Notion is optional: the commands work the s
   Notion and check each one arrived. The agent shows you what it sent and the three deletions and waits. Then, after you say yes, delete `.codeadd/board.json`, the local folder
   `~/.codeadd/<key>/board/` and the remote `board` branch, the branch last. Done and dropped cards are not moved.
 
+In a Notion project the card body is the intent: there is no intent subpage, and the engineer reads the card body and the feature folder. What a card must hold is in `roles/product-pm.md`, section Refined card. Cards that already have an intent subpage stay as they are.
+
 Without Notion, the handoff is the intent file and the feature folder, as in section 9.
