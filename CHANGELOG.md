@@ -6,10 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+- **v1.10.0 was tagged but never published.** Its release pipeline failed on a changelog line that named the old docs location, so no GitHub Release or npm package exists for it. 1.10.1 carries all of the 1.10.0 content below, plus this fix.
+- The framework release command now creates `.codeadd/.temp/` before its first temp-file write, and runs the docs-no-legacy check after the changelog promote and again before tagging, so a bad changelog line stops the release before the tag is pushed.
+
 ## [1.10.0] - 2026-11-16
 
 ### Added
-- **docs-search-precision:** searching the delivery index and the knowledge-graph MCP now ranks results with BM25. Hits are lean and scored, cut by relevance and capped to a 2k-token budget, with `offset` paging and a bounded `get` for detail. `history` reads the exact node. The delivery index refuses the legacy `docs/` origin, and `verify --repair` rewrites it to the current path.
+- **docs-search-precision:** searching the delivery index and the knowledge-graph MCP now ranks results with BM25. Hits are lean and scored, cut by relevance and capped to a 2k-token budget, with `offset` paging and a bounded `get` for detail. `history` reads the exact node. The delivery index refuses an origin under the old, pre-docs-branch location, and `verify --repair` rewrites it to the current path.
 - **pm-refinement-standard:** a refined card now holds Problem, What we expect and Acceptance criteria (WHEN/THEN). The brainstorm intent writer collects them and asks for missing parts before approval. In agent mode the PM role states the standard and the engineer reads the card body as the intent, with no separate intent subpage.
 - **gitnexus-integration:** the optional gitnexus plugin has a freshness-aware dispatcher, graph-fresh sections in plan, hotfix and diagnose, and a delivery-history bridge. `/add-review` runs `detect_changes` once over the diff and the reviewer uses graph impact. `/add-setup` registers the MCP by hand and shows the PolyForm Noncommercial license. The `/add-done` re-index skips the AGENTS.md block.
 
