@@ -287,7 +287,7 @@ function resolveReader(corpus, root, override) {
 function loadDeliveryCore(readerPath) {
   const loaded = loadCjs(readerPath);
   const core = loaded?.core ?? loaded;
-  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performTouched']) {
+  for (const method of ['resolveRoot', 'createContext', 'performRead', 'performHistoryRead', 'performTouched']) {
     if (typeof core?.[method] !== 'function') throw new Error(`Native delivery reader lacks ${method}`);
   }
   return core;
@@ -694,7 +694,7 @@ export const actions = {
     // here: it narrows which entries are read at all.
     let read;
     try {
-      read = core.performRead(bound.ctx, { query: name, layer: layer || '', limit });
+      read = core.performHistoryRead(bound.ctx, { node, layer: layer || '', limit });
     } catch (e) {
       return unavailable('read-failed', e.message);
     }

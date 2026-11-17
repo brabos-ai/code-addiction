@@ -43,7 +43,7 @@ it('native history overrides select the same implementation in graph and MCP', (
   const coreFile = path.join(emptyTree, 'alternate-reader.cjs');
   const entryFile = path.join(emptyTree, 'alternate-entry.cjs');
   const realCore = path.join(REPO, 'framwork', '.codeadd', 'scripts', 'delivery-index-core.cjs');
-  fs.writeFileSync(coreFile, `const base = require(${JSON.stringify(realCore)}); module.exports = { ...base, performRead(ctx, args) { const r = base.performRead(ctx, args); return { ...r, entries: [{ id: 'OVERRIDE-READER', node: ${JSON.stringify(probe)}, items: [] }], matchedLive: 1, returnedLive: 1 }; } };`);
+  fs.writeFileSync(coreFile, `const base = require(${JSON.stringify(realCore)}); module.exports = { ...base, performHistoryRead(ctx, args) { const r = base.performHistoryRead(ctx, args); return { ...r, entries: [{ id: 'OVERRIDE-READER', node: ${JSON.stringify(probe)}, items: [] }], matchedLive: 1, returnedLive: 1 }; } };`);
   fs.writeFileSync(entryFile, `module.exports = { core: require(${JSON.stringify(coreFile)}) };`);
   for (const script of [coreFile, entryFile]) {
     const shell = G.history(G.loadGraph(), probe, { cwd: REPO, script });
