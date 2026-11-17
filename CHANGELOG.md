@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-11-17
+
 ### Fixed
 - **v1.10.0 was tagged but never published.** Its release pipeline failed on a changelog line that named the old docs location, so no GitHub Release or npm package exists for it. 1.10.1 carries all of the 1.10.0 content below, plus this fix.
 - The framework release command now creates `.codeadd/.temp/` before its first temp-file write, and runs the docs-no-legacy check after the changelog promote and again before tagging, so a bad changelog line stops the release before the tag is pushed.
