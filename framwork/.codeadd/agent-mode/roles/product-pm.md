@@ -75,9 +75,7 @@ Stop once `/add-new` wrote `.codeadd/docs/features/<id>-<slug>/about.md`. Run `n
 
 ### Handoff to the engineer
 
-If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page. The handoff is the card (its body is the intent) and the feature folder `.codeadd/docs/features/<id>-<slug>/`, pushed on `codeadd-docs`. Say in your summary to the user which engineer takes which card.
-
-Otherwise the handoff is the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder `.codeadd/docs/features/<id>-<slug>/`, both pushed on `codeadd-docs`. Say in your summary to the user which engineer takes which intent file.
+If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page: the handoff is the card (its body is the intent) and the feature folder `.codeadd/docs/features/<id>-<slug>/`, pushed on `codeadd-docs`; otherwise the handoff is the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder `.codeadd/docs/features/<id>-<slug>/`, both pushed on `codeadd-docs`. Say in your summary to the user which engineer takes which card or intent file.
 
 ### Release
 

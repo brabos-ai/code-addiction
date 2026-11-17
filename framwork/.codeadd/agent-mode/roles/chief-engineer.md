@@ -37,9 +37,7 @@ The one-feature rule is in section 9 of the guide.
 
 ### Where you pick up the work
 
-If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page. The product PM hands you the card and the feature folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope). The card body is the intent: read it, and the feature folder, to run `/add-plan`. What a card holds is in `roles/product-pm.md`, section Refined card.
-
-Otherwise the product PM hands you the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope), both on `codeadd-docs`. Start from those two.
+If the project tracks work in Notion, load `add--agent-notion` and follow the 'How it works' page: the product PM hands you the card and the feature folder `.codeadd/docs/features/<id>-<slug>/` (its `about.md` holds the scope). The card body is the intent: read it, and the feature folder, to run `/add-plan`. What a card holds is in `roles/product-pm.md`, section Refined card; otherwise the handoff is the intent file (`.codeadd/docs/brainstorm/<timestamp>-<slug>-intent.md`) and the feature folder, both on `codeadd-docs`. Start from those two.
 
 Pull the main branch into your worktree before `/add-plan`.
 
